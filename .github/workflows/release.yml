@@ -1,0 +1,101 @@
+name: Build and Release
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js 22
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+
+            - name: Set up Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Cache Bun dependencies
+              uses: actions/cache@v3
+              with:
+                  path: |
+                      ~/.bun
+                      node_modules
+                  key: bun-${{ runner.os }}-${{ hashFiles('bun.lock', 'package.json') }}
+                  restore-keys: |
+                      bun-${{ runner.os }}-
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Build project
+              run: bun run build
+
+            - name: Get version
+              id: package_version
+              run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
+
+            - name: Build for macOS
+              run: bun run build:mac
+
+            - name: Build for Linux
+              run: bun run build:linux
+
+            - name: Build for Windows
+              run: bun run build:win
+
+            - name: Archive artifacts with version
+              run: |
+                  VERSION=${{ steps.package_version.outputs.version }}
+                  tar -czf FGate-Nexus-v${VERSION}-linux-x64.tar.gz dist/FGate-Nexus-linux-x64 dist/migrations
+                  tar -czf FGate-Nexus-v${VERSION}-linux-arm64.tar.gz dist/FGate-Nexus-linux-arm64 dist/migrations
+                  tar -czf FGate-Nexus-v${VERSION}-mac-x64.tar.gz dist/FGate-Nexus-mac-x64 dist/migrations
+                  tar -czf FGate-Nexus-v${VERSION}-mac-arm64.tar.gz dist/FGate-Nexus-mac-arm64 dist/migrations
+                  zip -r FGate-Nexus-v${VERSION}-win.zip dist/FGate-Nexus-win-x64.exe dist/migrations
+
+            - name: Upload Linux x64 artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: FGate-Nexus-v${{ steps.package_version.outputs.version }}-linux-x64
+                  path: |
+                      dist/FGate-Nexus-linux-x64
+                      dist/migrations
+
+            - name: Upload Linux arm64 artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: FGate-Nexus-v${{ steps.package_version.outputs.version }}-linux-arm64
+                  path: |
+                      dist/FGate-Nexus-linux-arm64
+                      dist/migrations
+
+            - name: Upload macOS x64 artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: FGate-Nexus-v${{ steps.package_version.outputs.version }}-mac-x64
+                  path: |
+                      dist/FGate-Nexus-mac-x64
+                      dist/migrations
+
+            - name: Upload macOS arm64 artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: FGate-Nexus-v${{ steps.package_version.outputs.version }}-mac-arm64
+                  path: |
+                      dist/FGate-Nexus-mac-arm64
+                      dist/migrations
+
+            - name: Upload Windows artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: FGate-Nexus-v${{ steps.package_version.outputs.version }}-win
+                  path: |
+                      dist/FGate-Nexus-win-x64.exe
+                      dist/migrations
