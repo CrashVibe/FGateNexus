@@ -25,8 +25,6 @@ const themeOverrides = {
 const loadingBarRef = ref();
 
 onMounted(() => {
-  console.log("[APP] App mounted");
-
   const router = useRouter();
   let isNavigating = false;
 
