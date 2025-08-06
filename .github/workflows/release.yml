@@ -42,18 +42,14 @@ jobs:
               id: package_version
               run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
 
-            - name: Build for macOS
-              run: bun run build:mac
-
-            - name: Build for Linux
-              run: bun run build:linux
-
-            - name: Build for Windows
-              run: bun run build:win
+            - name: Build for All Platforms
+              run: bun run build:all
 
             - name: Archive artifacts with version
               run: |
+                  ls dist
                   VERSION=${{ steps.package_version.outputs.version }}
+                  chmod +r dist/*
                   tar -czf FGate-Nexus-v${VERSION}-linux-x64.tar.gz dist/FGate-Nexus-linux-x64 dist/migrations
                   tar -czf FGate-Nexus-v${VERSION}-linux-arm64.tar.gz dist/FGate-Nexus-linux-arm64 dist/migrations
                   tar -czf FGate-Nexus-v${VERSION}-mac-x64.tar.gz dist/FGate-Nexus-mac-x64 dist/migrations
