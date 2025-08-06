@@ -60,11 +60,12 @@ export default defineWebSocketHandler({
 
     async close(peer) {
         if (pluginBridge.hasConnection(peer as unknown as Peer<AdapterInternal>)) {
-            const serverId = pluginBridge.removeConnection(peer as unknown as Peer<AdapterInternal>);
+            const data = pluginBridge.removeConnection(peer as unknown as Peer<AdapterInternal>);
             console.info("WebSocket 连接已移除：", {
                 peerId: peer.id,
-                serverId
+                serverId: data.serverId
             });
+            return;
         }
         console.info("WebSocket 连接已关闭：", {
             peerId: peer.id

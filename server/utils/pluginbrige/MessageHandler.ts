@@ -56,6 +56,7 @@ export class MessageHandler {
                 pendingRequest.reject(new Error(response.error.message));
             } else {
                 pendingRequest.resolve(response.result);
+                console.debug(`[RESPONSE] 响应已处理: ${pendingRequest.peerId} - ID: ${response.id}`);
             }
         }
     }
@@ -100,7 +101,7 @@ export class MessageHandler {
 
             try {
                 peer.send(JSON.stringify(request));
-                console.info(`[SEND] 请求已发送: ${peer.id} - ${method} (ID: ${id})`);
+                console.debug(`[SEND] 请求已发送: ${peer.id} - ${method} (ID: ${id})`);
             } catch (error) {
                 clearTimeout(timeoutHandle);
                 this.pendingRequests.delete(id);
