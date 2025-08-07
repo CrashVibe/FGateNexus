@@ -9,7 +9,6 @@
         "generate": "nuxt generate",
         "preview": "nuxt preview",
         "postinstall": "nuxt prepare",
-        "start": "node .output/server/index.mjs",
         "db:generate": "drizzle-kit generate",
         "db:migrate": "drizzle-kit migrate",
         "build:all": "bun run build && bun run build:mac && bun run build:linux && bun run build:win && bun run copy:migrations",
