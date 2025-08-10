@@ -70,16 +70,7 @@ export class ChatBridge {
             if (!adapter.enabled) {
                 continue;
             }
-            if (adapter.type === AdapterType.Onebot) {
-                this.connectionMap.set(adapter.id, {
-                    pluginInstance: this.createOnebot(adapter.config),
-                    adapterID: adapter.id,
-                    adapterType: adapter.type,
-                    config: adapter.config
-                });
-            } else {
-                throw new Error(`不支持的适配器类型(可能版本太低了吧?): ${adapter.type}`);
-            }
+            this.addBot(adapter.id, adapter.type, adapter.config);
         }
     }
 
