@@ -22,9 +22,9 @@
         </div>
 
         <div class="flex items-center justify-between text-sm">
-          <n-text depth="2">适配器状态</n-text>
+          <n-text depth="2">适配器开关</n-text>
           <n-tag :type="adapter.isOnline ? 'success' : 'warning'" :bordered="false" size="small">
-            {{ adapter.isOnline ? "运行中" : "已停止" }}
+            {{ adapter.enabled ? "启用" : "禁用" }}
           </n-tag>
         </div>
 

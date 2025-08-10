@@ -5,10 +5,10 @@ import { setResponseStatus, type EventHandlerRequest, type H3Event } from "h3";
  * API 错误响应模型，用于 OpenAPI 文档
  */
 export interface ApiErrorResponse {
+    /** HTTP 状态码 */
+    code: number;
     /** 错误信息 */
     message: string;
-    /** HTTP 状态码 */
-    status: number;
     /** 错误详情 */
     errors?: Record<string, string[]>;
 }
@@ -85,7 +85,7 @@ export class ApiError extends Error {
 
         return {
             message: errorMessage,
-            status: this.status,
+            code: this.status,
             errors: this.errors // 可选
         };
     }

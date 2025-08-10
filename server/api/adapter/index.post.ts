@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
             })
             .returning();
         if (result[0]) {
-            await chatBridge.addBot(result[0].id, body.adapterType, config.data);
+            chatBridge.addBot(result[0].id, body.adapterType, config.data);
             return createApiResponse("添加适配器成功", StatusCodes.CREATED);
         } else {
             const apiError = ApiError.database("添加适配器失败: 未能插入适配器");

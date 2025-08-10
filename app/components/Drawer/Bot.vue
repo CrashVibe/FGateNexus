@@ -12,6 +12,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: BotInstanceData];
   delete: [adapterID: number];
+  toggle: [adapterID: number, enabled: boolean];
 }>();
 
 const formRef = ref<FormInst>();
@@ -89,6 +90,14 @@ const handleDelete = () => {
   }
 };
 
+const handleToggle = () => {
+  if (typeof formData.value.adapterID === "number") {
+    const enabled = !props.adapter.enabled;
+    emit("toggle", formData.value.adapterID, enabled);
+  }
+};
+
+
 onMounted(() => {
   if (formData.value.config?.protocol === "ws") {
     Object.assign(wsConfig.value, {
@@ -111,7 +120,7 @@ onMounted(() => {
         label-placement="top"
         require-mark-placement="left"
       >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
             <n-form-item label="适配器类型">
               <n-select :value="adapter.type" :options="[{ label: 'OneBot', value: AdapterType.Onebot }]" disabled />
@@ -179,6 +188,7 @@ onMounted(() => {
     <template #footer>
       <div class="flex justify-end gap-3">
         <n-button type="error" ghost @click="handleDelete"> 删除 </n-button>
+        <n-button type="default" @click="handleToggle"> {{ props.adapter.enabled ? '禁用' : '启用' }} </n-button>
         <n-button type="primary" :loading="loading" @click="handleSave"> 保存 </n-button>
       </div>
     </template>
