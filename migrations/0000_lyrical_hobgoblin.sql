@@ -1,6 +1,7 @@
 CREATE TABLE `adapters` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`type` text NOT NULL,
+	`enabled` integer DEFAULT true NOT NULL,
 	`config` text NOT NULL
 );
 --> statement-breakpoint

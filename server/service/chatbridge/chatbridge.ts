@@ -17,7 +17,7 @@ type BotConnection = {
     /**
      * bot 的实例
      */
-    bot: ForkScope;
+    pluginInstance: ForkScope;
     /**
      * 适配器 ID
      */
@@ -67,9 +67,12 @@ export class ChatBridge {
         const database = await getDatabase();
         const result = await database.select().from(adapters);
         for (const adapter of result) {
+            if (!adapter.enabled) {
+                continue;
+            }
             if (adapter.type === AdapterType.Onebot) {
                 this.connectionMap.set(adapter.id, {
-                    bot: await this.createOnebot(adapter.config),
+                    pluginInstance: this.createOnebot(adapter.config),
                     adapterID: adapter.id,
                     adapterType: adapter.type,
                     config: adapter.config
@@ -80,7 +83,10 @@ export class ChatBridge {
         }
     }
 
-    public async createOnebot(config: OneBotConfig): Promise<ForkScope> {
+    /**
+     * 创建 Onebot Bot 实例
+     */
+    public createOnebot(config: OneBotConfig): ForkScope {
         console.info("创建 Onebot Bot 实例:", config);
         if (config.protocol === "ws-reverse") {
             return this.app.plugin(OneBotBot, {
@@ -94,10 +100,13 @@ export class ChatBridge {
         }
     }
 
+    /**
+     * 移除 Bot 连接
+     */
     public removeBot(adapterID: number): void {
         const connection = this.connectionMap.get(adapterID);
         if (connection) {
-            connection.bot.dispose();
+            connection.pluginInstance.dispose();
             this.connectionMap.delete(adapterID);
             console.info(`已移除 Bot 连接: ${adapterID}`);
             return;
@@ -105,27 +114,44 @@ export class ChatBridge {
         throw new Error(`找不到 Bot 连接: ${adapterID}`);
     }
 
-    public async addBot(adapterID: number, adapterType: AdapterType, config: OneBotConfig): Promise<void> {
+    /**
+     * 添加 Bot 连接
+     */
+    public addBot(adapterID: number, adapterType: AdapterType, config: OneBotConfig): void {
         if (this.connectionMap.has(adapterID)) {
             throw new Error(`Bot 连接已存在: ${adapterID}`);
         }
         if (adapterType === AdapterType.Onebot) {
-            const bot = await this.createOnebot(config);
-            this.connectionMap.set(adapterID, { bot, adapterID, adapterType, config });
+            const bot = this.createOnebot(config);
+            this.connectionMap.set(adapterID, { pluginInstance: bot, adapterID, adapterType, config });
             console.info(`已添加 Bot 连接: ${adapterID}`);
         } else {
             throw new Error(`不支持的适配器类型(可能版本太低了吧?): ${adapterType}`);
         }
     }
 
+    /**
+     * 获取 Bot 连接数据
+     */
     public getConnectionData(adapterID: number): BotConnection | undefined {
         return this.connectionMap.get(adapterID);
     }
 
+    /**
+     * 检查 Bot 是否在线
+     */
     public isOnline(adapterID: number): boolean {
+        const bot = this.findBot(adapterID);
+        return bot.status === 1; // 1 - 在线状态
+    }
+
+    /**
+     * 查找 Bot 实例
+     */
+    private findBot(adapterID: number): Bot {
         const connection = this.connectionMap.get(adapterID);
         if (!connection) {
-            return false;
+            throw new Error(`找不到 Bot 连接: ${adapterID}`);
         }
         let bot: Bot | undefined;
 
@@ -138,17 +164,19 @@ export class ChatBridge {
         if (!bot) {
             throw new Error(`找不到 Bot 实例: ${connection.config.selfId}`);
         }
-        console.info(`检查 Bot 在线状态: ${connection.config.selfId}, 状态: ${bot?.status}`);
-        return bot.status === 1; // 1 - 在线状态
+        return bot;
     }
 
+    /**
+     * 更新 Bot 配置
+     */
     public updateConfig(adapterID: number, config: OneBotConfig): Promise<void> {
         const connection = this.connectionMap.get(adapterID);
         if (!connection) {
             throw new Error(`找不到 Bot 连接: ${adapterID}`);
         }
         connection.config = config;
-        connection.bot.update(config, true);
+        connection.pluginInstance.update(config, true);
         return Promise.resolve();
     }
 }

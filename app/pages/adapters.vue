@@ -5,6 +5,7 @@ import type { ApiResponse, ApiResponseType } from "~~/shared/types";
 import { AdapterConfigSchema } from "~~/shared/schemas/adapters";
 import { type AdapterWithStatus, type BotInstanceData, AdapterType } from "~~/shared/schemas/adapters";
 import { CardAdapter } from "#components";
+import { StatusCodes } from "http-status-codes";
 
 // 选取适配器组件
 const adapterComponentMap: Record<AdapterType, Component> = {
@@ -78,7 +79,7 @@ async function fetchAdapterList() {
   try {
     isLoadingList.value = true;
     const response = await $fetch<ApiResponse<AdapterWithStatus[]>>("/api/adapter");
-    if (response.code === 200 && response.data) {
+    if (response.code === StatusCodes.OK && response.data) {
       adapterList.value = response.data;
     } else {
       message.error("获取适配器列表失败");
@@ -114,10 +115,15 @@ function handleChildClick(adapterID: number) {
 
 // 保存
 async function handleSave(adapter: BotInstanceData) {
-  await $fetch<ApiResponseType>("/api/adapter", {
-    method: "PUT",
-    body: adapter
-  });
+  try {
+    await $fetch<ApiResponseType>("/api/adapter", {
+      method: "PUT",
+      body: adapter
+    });
+  } catch (error) {
+    message.error("操作失败，请检查后端日志");
+    return;
+  }
   message.success("Bot 实例更新成功");
   showDrawer.value = false;
   await fetchAdapterList();
@@ -125,10 +131,32 @@ async function handleSave(adapter: BotInstanceData) {
 
 // 删除
 async function handleDelete(adapterID: number) {
-  await $fetch<ApiResponseType>(`/api/adapter/${adapterID}`, {
-    method: "DELETE"
-  });
+  try {
+    await $fetch<ApiResponseType>(`/api/adapter/${adapterID}`, {
+      method: "DELETE"
+    });
+  } catch (error) {
+    message.error("操作失败，请检查后端日志");
+    return;
+  }
   message.success("Bot 实例删除成功");
+  showDrawer.value = false;
+  await fetchAdapterList();
+}
+
+// 更改
+async function handleToggle(adapterID: number, enabled: boolean) {
+  try {
+    await $fetch<ApiResponseType>(`/api/adapter/toggle/${adapterID}`, {
+      method: "POST",
+      body: { enabled }
+    });
+  } catch (error) {
+    message.error("操作失败，请检查后端日志");
+    return;
+  }
+
+  message.success(`Bot 实例已${enabled ? "启用" : "禁用"}成功`);
   showDrawer.value = false;
   await fetchAdapterList();
 }
@@ -198,7 +226,13 @@ async function handleDelete(adapterID: number) {
     </div>
     <!-- 抽屉 -->
     <n-drawer v-model:show="showDrawer" width="500">
-      <drawer-bot v-if="selectedAdapter" :adapter="selectedAdapter" @save="handleSave" @delete="handleDelete" />
+      <drawer-bot
+        v-if="selectedAdapter"
+        :adapter="selectedAdapter"
+        @save="handleSave"
+        @delete="handleDelete"
+        @toggle="handleToggle"
+      />
     </n-drawer>
   </div>
 </template>

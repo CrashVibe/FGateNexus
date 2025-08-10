@@ -1,122 +1,138 @@
 {
-    "version": "6",
-    "dialect": "sqlite",
-    "id": "6748f05c-95eb-4e67-a439-644cd5143a90",
-    "prevId": "00000000-0000-0000-0000-000000000000",
-    "tables": {
-        "adapters": {
-            "name": "adapters",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": true
-                },
-                "type": {
-                    "name": "type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "config": {
-                    "name": "config",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "1603197d-3648-4342-8ce5-102e881f0f41",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "tables": {
+    "adapters": {
+      "name": "adapters",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
         },
-        "servers": {
-            "name": "servers",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": true
-                },
-                "name": {
-                    "name": "name",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "token": {
-                    "name": "token",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "software": {
-                    "name": "software",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "version": {
-                    "name": "version",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "adapter_id": {
-                    "name": "adapter_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "name_idx": {
-                    "name": "name_idx",
-                    "columns": ["name"],
-                    "isUnique": true
-                },
-                "token_idx": {
-                    "name": "token_idx",
-                    "columns": ["token"],
-                    "isUnique": true
-                }
-            },
-            "foreignKeys": {
-                "servers_adapter_id_adapters_id_fk": {
-                    "name": "servers_adapter_id_adapters_id_fk",
-                    "tableFrom": "servers",
-                    "tableTo": "adapters",
-                    "columnsFrom": ["adapter_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "config": {
+          "name": "config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "views": {},
-    "enums": {},
-    "_meta": {
-        "schemas": {},
-        "tables": {},
-        "columns": {}
-    },
-    "internal": {
-        "indexes": {}
+    "servers": {
+      "name": "servers",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "software": {
+          "name": "software",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "version": {
+          "name": "version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "adapter_id": {
+          "name": "adapter_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "name_idx": {
+          "name": "name_idx",
+          "columns": [
+            "name"
+          ],
+          "isUnique": true
+        },
+        "token_idx": {
+          "name": "token_idx",
+          "columns": [
+            "token"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "servers_adapter_id_adapters_id_fk": {
+          "name": "servers_adapter_id_adapters_id_fk",
+          "tableFrom": "servers",
+          "tableTo": "adapters",
+          "columnsFrom": [
+            "adapter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
 }

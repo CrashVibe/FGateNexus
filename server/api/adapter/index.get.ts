@@ -11,10 +11,17 @@ export default defineEventHandler(async (event) => {
         const database = await getDatabase();
         const result = await database.select().from(adapters);
 
+
         const adaptersWithStatus: AdapterWithStatus[] = result.map((adapter) => {
+            let isOnline = false;
+            if (!chatBridge.getConnectionData(adapter.id)) {
+                isOnline = false;
+            } else {
+                isOnline = chatBridge.isOnline(adapter.id);
+            }
             return {
                 ...adapter,
-                isOnline: chatBridge.isOnline(adapter.id)
+                isOnline
             };
         });
 

@@ -38,7 +38,9 @@ export default defineEventHandler(async (event) => {
             .returning();
 
         if (result[0]) {
-            await chatBridge.updateConfig(body.adapterID, config.data);
+            if (chatBridge.getConnectionData(result[0].id)) {
+                await chatBridge.updateConfig(body.adapterID, config.data);
+            }
             return createApiResponse("更新适配器成功", StatusCodes.OK);
         } else {
             const apiError = ApiError.database("更新适配器失败: 未能更新适配器");

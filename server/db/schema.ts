@@ -8,6 +8,7 @@ export const adapters = sqliteTable("adapters", {
     type: text("type", {
         enum: [AdapterType.Onebot]
     }).notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
     config: text("config", { mode: "json" }).notNull().$type<AdapterConfig>()
 });
 
