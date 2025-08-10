@@ -44,7 +44,7 @@ async function handleSubmitClick(e: MouseEvent) {
     isSubmitting.value = true;
     try {
       await botSelectorRef.value?.validate();
-    } catch (error) {
+    } catch {
       return;
     }
 
@@ -120,7 +120,7 @@ async function handleSave(adapter: BotInstanceData) {
       method: "PUT",
       body: adapter
     });
-  } catch (error) {
+  } catch {
     message.error("操作失败，请检查后端日志");
     return;
   }
@@ -135,7 +135,7 @@ async function handleDelete(adapterID: number) {
     await $fetch<ApiResponseType>(`/api/adapter/${adapterID}`, {
       method: "DELETE"
     });
-  } catch (error) {
+  } catch{
     message.error("操作失败，请检查后端日志");
     return;
   }
@@ -151,7 +151,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
       method: "POST",
       body: { enabled }
     });
-  } catch (error) {
+  } catch {
     message.error("操作失败，请检查后端日志");
     return;
   }
