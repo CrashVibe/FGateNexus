@@ -4,15 +4,43 @@ import { servers } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { pluginBridge } from "./MCWSBridge";
 
+/**
+ * 服务器连接信息
+ */
 type ServerConnection = {
-    peer: Peer<AdapterInternal>; // 实际连接
-    serverId: number; // 对应数据库 id
+    /**
+     * 实际连接
+     */
+    peer: Peer<AdapterInternal>;
+    /**
+     * 服务器的 id
+     *
+     * 服务器在数据库中的 ID
+     */
+    serverId: number;
+    /**
+     * 客户端信息
+     */
     data?: GetClientInfoResult;
 };
 
+/**
+ * 获取客户端信息的结果
+ *
+ * 包含客户端支持的功能和玩家数量等信息
+ */
 export interface GetClientInfoResult {
+    /**
+     * 是否支持 PAPI
+     */
     supports_papi: boolean | null;
+    /**
+     * 是否支持 RCON
+     */
     supports_rcon: boolean | null;
+    /**
+     * 玩家数量
+     */
     player_count: number | null;
 }
 

@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import { zodToNaiveRules } from "#shared/validation";
 import { serverSchemaRequset, type serverSchemaRequsetType, type ServerWithStatus } from "#shared/schemas/servers";
 import type { FormInst } from "naive-ui";
-import type { ApiResponse } from "~~/shared/types";
+import type { ApiResponse, ApiResponseType } from "~~/shared/types";
+import { StatusCodes } from "http-status-codes";
 
 const formRef = ref<FormInst>();
 const formData = ref<serverSchemaRequsetType>({
@@ -32,12 +33,13 @@ async function handleSubmitClick(e: MouseEvent) {
   try {
     isSubmitting.value = true;
 
-    await formRef.value?.validate().catch((error) => {
-      console.error("Form validation failed:", error);
-      throw error;
-    });
+    try {
+      await formRef.value?.validate();
+    } catch (error) {
+      return;
+    }
 
-    await $fetch<ApiResponse<FormData>>("/api/servers", {
+    await $fetch<ApiResponseType>("/api/servers", {
       method: "POST",
       body: formData.value
     });
@@ -66,7 +68,7 @@ async function fetchServerList() {
   try {
     isLoadingList.value = true;
     const response = await $fetch<ApiResponse<ServerWithStatus[]>>("/api/servers");
-    if (response.code === 200 && response.data) {
+    if (response.code === StatusCodes.OK && response.data) {
       serverList.value = response.data;
     } else {
       message.error("获取服务器列表失败");
