@@ -2,6 +2,7 @@ import { getDatabase } from "~~/server/db/client";
 import { servers } from "../db/schema";
 import { eq } from "drizzle-orm";
 import type { AdapterInternal, Peer } from "crossws";
+import { pluginBridge } from "../service/mcwsbridge/MCWSBridge";
 
 export default defineWebSocketHandler({
     async open(peer) {

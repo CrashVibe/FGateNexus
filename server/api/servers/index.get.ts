@@ -5,7 +5,7 @@ import { createApiResponse } from "#shared/types";
 import { ApiError, createErrorResponse } from "#shared/error";
 import { StatusCodes } from "http-status-codes";
 import type { ServerWithStatus } from "~~/shared/schemas/servers";
-import { pluginBridge } from "~~/server/utils/mcwsbridge/MCWSBridge";
+import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
 
 export default defineEventHandler(async (event) => {
     try {

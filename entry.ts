@@ -37,7 +37,11 @@ async function initDatabase() {
 async function startApplication() {
     try {
         await initDatabase();
-
+        const _chatBridge = await import("./server/service/chatbridge/chatbridge");
+        const config = (await import("./shared/config")).configManager.getConfig();
+        // 设置环境变量
+        process.env.NITRO_HOST = config.nitro.host;
+        process.env.NITRO_PORT = String(config.nitro.port);
         await import("./.output/server/index.mjs");
     } catch (e) {
         console.error("应用启动失败:", e);

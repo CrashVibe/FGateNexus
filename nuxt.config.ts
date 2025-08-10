@@ -6,37 +6,34 @@ export default defineNuxtConfig({
     compatibilityDate: "latest",
     devtools: { enabled: true },
     ssr: false,
-
     css: ["~/assets/css/main.less"],
     typescript: {
-        strict: true,
         // typeCheck: true,
+        strict: true,
         tsConfig: {
             compilerOptions: {
-                // Enable latest features
-                lib: ["ESNext", "DOM"],
                 target: "ESNext",
                 module: "ESNext",
                 moduleDetection: "force",
-                jsx: "react-jsx",
-                allowJs: true,
                 types: ["bun-types"],
-
                 // Bundler mode
                 moduleResolution: "bundler",
                 allowImportingTsExtensions: true,
                 verbatimModuleSyntax: true,
                 noEmit: true,
+                incremental: true,
+                sourceMap: true,
 
                 // Best practices
-                strict: true,
                 skipLibCheck: true,
                 noFallthroughCasesInSwitch: true,
 
                 // Some stricter flags
                 noUnusedLocals: true,
                 noUnusedParameters: true,
-                noPropertyAccessFromIndexSignature: true
+                noPropertyAccessFromIndexSignature: true,
+                // 支持解析json文件
+                resolveJsonModule: true
             }
         }
     },
@@ -50,7 +47,7 @@ export default defineNuxtConfig({
         writeEarlyHints: true
     },
     devServer: {
-        host: "0.0.0.0",
+        host: "127.0.0.1",
         port: 3001
     },
     modules: ["nuxtjs-naive-ui", "@nuxt/eslint", "@nuxtjs/tailwindcss"],
@@ -64,6 +61,9 @@ export default defineNuxtConfig({
                 keepNames: true
             }
         },
+        server: {
+            hmr: false
+        },
         build: {
             rollupOptions: {
                 external: ["@prisma/client", ".prisma/client"]
@@ -73,7 +73,7 @@ export default defineNuxtConfig({
             terserOptions: {
                 compress: {
                     drop_console: true,
-                    drop_debugger: true,
+                    drop_debugger: true
                 },
                 format: {
                     comments: false
@@ -121,7 +121,7 @@ export default defineNuxtConfig({
         experimental: {
             websocket: true
         },
-        preset: "bun",
+        preset: "node-server",
         serveStatic: "inline",
         minify: true,
         compressPublicAssets: true,
@@ -142,7 +142,7 @@ export default defineNuxtConfig({
         },
         esbuild: {
             options: {
-                target: "esnext"
+                target: "es2022"
             }
         }
     }

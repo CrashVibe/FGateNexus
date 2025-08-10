@@ -30,3 +30,30 @@ export function zodToNaiveRules<T extends z.ZodRawShape>(schema: z.ZodObject<T>)
 
     return rules;
 }
+
+export function zodUnionToNaiveRules<T extends readonly [z.ZodTypeAny, ...z.ZodTypeAny[]]>(
+    unionSchema: z.ZodUnion<T>,
+    _discriminator: (data: unknown) => number
+): Record<string, ValidationRule[]> {
+    return {
+        _union: [
+            {
+                required: true,
+                trigger: "blur",
+                validator: (_rule: unknown, value: unknown) => {
+                    const result = unionSchema.safeParse(value);
+                    return result.success ? true : new Error(result.error.issues[0]?.message || "格式错误");
+                }
+            }
+        ]
+    };
+}
+
+export function createDynamicZodRules(
+    getSchema: () => z.ZodObject<z.ZodRawShape> | null
+): () => Record<string, ValidationRule[]> {
+    return () => {
+        const schema = getSchema();
+        return schema ? zodToNaiveRules(schema) : {};
+    };
+}
