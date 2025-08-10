@@ -12,11 +12,11 @@ export default defineEventHandler(async (event) => {
         const body: BotInstanceData = await readBody(event);
         const config = AdapterConfigSchema.safeParse(body.config);
         if (body.adapterType === null || !Object.values(AdapterType).includes(body.adapterType)) {
-            const apiError = ApiError.validation("添加服务器失败: 适配器类型无效");
+            const apiError = ApiError.validation("添加适配器失败: 适配器类型无效");
             return createErrorResponse(event, apiError);
         }
         if (!config.success) {
-            const apiError = ApiError.validation("添加服务器失败: 配置无效");
+            const apiError = ApiError.validation("添加适配器失败: 配置无效");
             return createErrorResponse(event, apiError, config.error);
         }
 
@@ -30,14 +30,14 @@ export default defineEventHandler(async (event) => {
             .returning();
         if (result[0]) {
             await chatBridge.addBot(result[0].id, body.adapterType, config.data);
-            return createApiResponse("添加服务器成功", StatusCodes.CREATED);
+            return createApiResponse("添加适配器成功", StatusCodes.CREATED);
         } else {
-            const apiError = ApiError.database("添加服务器失败: 未能插入适配器");
+            const apiError = ApiError.database("添加适配器失败: 未能插入适配器");
             return createErrorResponse(event, apiError);
         }
     } catch (err) {
         console.error("Database error:", err);
-        const apiError = ApiError.database("添加服务器失败");
+        const apiError = ApiError.database("添加适配器失败");
         return createErrorResponse(event, apiError);
     }
 });

@@ -10,13 +10,13 @@ export default defineEventHandler(async (event) => {
     try {
         const idParam = event.context.params?.id;
         if (!idParam) {
-            const apiError = ApiError.validation("删除服务器失败: 缺少适配器ID");
+            const apiError = ApiError.validation("删除适配器失败: 缺少适配器ID");
             return createErrorResponse(event, apiError);
         }
 
         const adapterID = parseInt(idParam, 10);
         if (isNaN(adapterID)) {
-            const apiError = ApiError.validation("删除服务器失败: 无效的适配器ID");
+            const apiError = ApiError.validation("删除适配器失败: 无效的适配器ID");
             return createErrorResponse(event, apiError);
         }
 
@@ -25,13 +25,13 @@ export default defineEventHandler(async (event) => {
 
         if (result[0]) {
             chatBridge.removeBot(adapterID);
-            return createApiResponse("删除服务器成功", StatusCodes.OK);
+            return createApiResponse("删除适配器成功", StatusCodes.OK);
         } else {
-            const apiError = ApiError.database("删除服务器失败: 未能找到适配器");
+            const apiError = ApiError.database("删除适配器失败: 未能找到适配器");
             return createErrorResponse(event, apiError);
         }
     } catch (err) {
-        const apiError = ApiError.internal("删除服务器失败");
+        const apiError = ApiError.internal("删除适配器失败");
         return createErrorResponse(event, apiError);
     }
 });
