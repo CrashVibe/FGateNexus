@@ -26,7 +26,7 @@ import { SunnyOutline, MoonOutline, TvOutline } from "@vicons/ionicons5";
 import { NButton, NDropdown, NIcon } from "naive-ui";
 
 const isDark = useDark({
-  storageKey: "theme-mode",
+  storageKey: "vueuse-color-scheme",
   selector: "html",
   attribute: "class",
   valueDark: "dark",

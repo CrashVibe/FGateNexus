@@ -4,6 +4,7 @@ body,
     height: 100%;
     padding: 0;
     margin: 0;
+    --header-height: 64px;
 }
 
 html {
@@ -54,4 +55,31 @@ html.dark {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+}
+
+/* 页面过渡动画 */
+.page-enter-active {
+    transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
+    transform-origin: center center;
+}
+
+.page-leave-active {
+    transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
+    transform-origin: center center;
+}
+
+.page-enter-from {
+    opacity: 0;
+    transform: scale(0.9) translateY(50px);
+}
+
+.page-leave-to {
+    opacity: 0;
+    transform: scale(1.1) translateY(-30px);
+}
+
+.page-enter-to,
+.page-leave-from {
+    opacity: 1;
+    transform: scale(1);
 }

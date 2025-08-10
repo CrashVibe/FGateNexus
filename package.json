@@ -46,6 +46,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/bun": "^1.2.19",
+    "@types/less": "~3.0.8",
     "@types/node": "^24.2.1",
     "eslint": "^9.33.0",
     "less": "^4.4.0",
