@@ -8,14 +8,14 @@
       :desc="desc"
       class="mb-4"
     />
-    <AlertUnsave
-      :show="isDirty"
-      :saving="dataState.isSubmitting"
-      message="您有未保存的配置更改"
+      <AlertUnsave
+        :show="isDirty"
+        :saving="dataState.isSubmitting"
+        message="您有未保存的配置更改"
       class="mb-4"
-      @discard="cancelChanges"
-      @save="handleSubmit"
-    />
+        @discard="cancelChanges"
+        @save="handleSubmit"
+      />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -123,9 +123,9 @@
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
-                    <n-text type="success">{{
-                      replaceBindSuccessMsgPlaceholders(formData.bindSuccessMsg, "Steve")
-                    }}</n-text>
+                    <n-text type="success">
+                      <span v-html="replaceBindSuccessMsgPlaceholders(formData.bindSuccessMsg, 'Steve')"></span>
+                    </n-text>
                   </div>
                 </div>
               </template>
@@ -146,9 +146,11 @@
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
-                    <n-text type="error">{{
-                      replaceBindFailMsgPlaceholders(formData.bindFailMsg, "Steve", "因为某种奇妙の原因")
-                    }}</n-text>
+                    <n-text type="error">
+                      <span
+                        v-html="replaceBindFailMsgPlaceholders(formData.bindFailMsg, 'Steve', '因为某种奇妙の原因')"
+                      ></span>
+                    </n-text>
                   </div>
                 </div>
               </template>
@@ -222,7 +224,7 @@
                     <n-tag size="tiny">#time</n-tag>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览: <n-text type="warning">{{ noBindKickMsgPreview }}</n-text>
+                    预览: <n-text><span v-html="noBindKickMsgPreview"></span></n-text>
                   </div>
                 </div>
               </template>
@@ -243,7 +245,7 @@
                     <n-tag size="tiny">#social_account</n-tag>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览: <n-text type="warning">{{ unbindKickMsgPreview }}</n-text>
+                    预览: <n-text><span v-html="unbindKickMsgPreview"></span></n-text>
                   </div>
                 </div>
               </template>
@@ -282,6 +284,7 @@ definePageMeta({
 });
 
 // ==================== 组合式函数和依赖注入 ====================
+const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();
 const menuOptions: Ref<MenuItem[]> = inject(
   "menuOptions",
   computed(() => [])
@@ -415,16 +418,18 @@ const unbindCommandExample = computed(() => {
 });
 
 const noBindKickMsgPreview = computed(() => {
-  return replaceNoBindKickMsgPlaceholders(
+  const replaced = replaceNoBindKickMsgPlaceholders(
     formData.value.nobindkickMsg,
     "Steve",
     bindCommandExample.value,
     moment().format("YYYY-MM-DD HH:mm:ss")
   );
+  return minecraftToHtml(replaced);
 });
 
 const unbindKickMsgPreview = computed(() => {
-  return replaceUnbindKickMsgPlaceholders(formData.value.unbindkickMsg, "114514");
+  const replaced = replaceUnbindKickMsgPlaceholders(formData.value.unbindkickMsg, "114514");
+  return minecraftToHtml(replaced);
 });
 
 // ==================== 数据管理器实例 ====================
@@ -446,7 +451,24 @@ function cancelChanges() {
 // ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
+  // 初始化混淆动画
+  initObfuscatedAnimation();
 });
+
+onUnmounted(() => {
+  // 清理混淆动画
+  stopObfuscatedAnimation();
+});
+
+// 监听表单数据变化，重新初始化动画
+watch(
+  () => [formData.value.nobindkickMsg, formData.value.unbindkickMsg],
+  () => {
+    nextTick(() => {
+      initObfuscatedAnimation();
+    });
+  }
+);
 </script>
 
 <style scoped>
