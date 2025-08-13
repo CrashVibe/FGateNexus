@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { RefreshOutline, AddCircleOutline } from "@vicons/ionicons5";
 import { v4 as uuidv4 } from "uuid";
-import { zodToNaiveRules } from "#shared/validation";
-import { serverSchemaRequset, type serverSchemaRequsetType, type ServerWithStatus } from "#shared/schemas/servers";
+import { zodToNaiveRules } from "#shared/utils/validation";
+import { serverSchemaRequset, type serverSchemaRequsetType, type ServerWithStatus } from "#shared/schemas/server/servers";
 import type { FormInst } from "naive-ui";
 import type { ApiResponse, ApiResponseType } from "~~/shared/types";
 import { StatusCodes } from "http-status-codes";
@@ -28,14 +28,13 @@ function openModal() {
 async function handleSubmitClick(e: MouseEvent) {
   e.preventDefault();
 
-  if (isSubmitting.value) return;
-
   try {
     isSubmitting.value = true;
 
     try {
       await formRef.value?.validate();
-    } catch (error) {
+    } catch {
+      isSubmitting.value = false;
       return;
     }
 
@@ -90,7 +89,7 @@ onMounted(() => {
 });
 </script>
 <template>
-  <div class="flex flex-col h-full gap-3 p-4 md:p-6">
+  <div class="flex flex-col h-full gap-3">
     <!-- head -->
     <div>
       <!-- text 区 -->
@@ -160,7 +159,7 @@ onMounted(() => {
           </n-button>
         </template>
       </n-empty>
-      <n-grid :cols="isMobile ? 1 : '600:2 1100:3'" x-gap="16" y-gap="16">
+      <n-grid :cols="isMobile ? 1 : '600:2 1100:3 1600:4'" x-gap="16" y-gap="16">
         <n-gi v-for="(server, index) in serverList || []" :key="serverList.indexOf(server)">
           <CardServer :server="server" :data-index="index" />
         </n-gi>

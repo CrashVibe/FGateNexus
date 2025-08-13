@@ -1,19 +1,20 @@
-import type { Bot, ForkScope } from "koishi";
+import type { Bot, ForkScope, Session } from "koishi";
 import { Context } from "koishi";
 import { Server } from "@koishijs/plugin-server";
 import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { HTTP } from "@koishijs/plugin-http";
-import type { AdapterConfig } from "../../../shared/schemas/adapters";
-import type { OneBotConfig } from "../../../shared/schemas/adapters/onebot";
-import { configManager } from "../../../shared/config";
+import type { AdapterConfig } from "../../../shared/schemas/adapter";
+import type { OneBotConfig } from "../../../shared/schemas/adapter/onebot";
+import { configManager } from "../config";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { AdapterType } from "~~/shared/schemas/adapters";
+import { AdapterType } from "~~/shared/schemas/adapter";
+import { bindingService } from "../bindingManger";
 
 /**
  * Bot 连接信息
  */
-type BotConnection = {
+export type BotConnection = {
     /**
      * bot 的实例
      */
@@ -37,12 +38,12 @@ type BotConnection = {
  */
 export class ChatBridge {
     static instance: ChatBridge | null = null;
-    private connectionMap = new Map<number, BotConnection>();
+    private connectionMap = new Map<number, BotConnection>(); // Bot ID -> Bot Connection
     private app: Context;
 
     private constructor() {
         this.app = new Context();
-        this.start();
+        this.init();
     }
 
     public static getInstance(): ChatBridge {
@@ -52,7 +53,7 @@ export class ChatBridge {
         return ChatBridge.instance;
     }
 
-    public async start(): Promise<void> {
+    public async init(): Promise<void> {
         const config = configManager.getConfig();
         this.app.plugin(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -72,6 +73,16 @@ export class ChatBridge {
             }
             this.addBot(adapter.id, adapter.type, adapter.config);
         }
+        this.app.on("message", async (session) => {
+            if (session.platform === "onebot") {
+                const connection = Array.from(this.connectionMap.values()).find(
+                    (conn) => conn.config.selfId === session.bot.selfId
+                );
+                if (connection && session.content) {
+                    await this.receiveMessage(connection, session);
+                }
+            }
+        });
     }
 
     /**
@@ -114,7 +125,7 @@ export class ChatBridge {
         }
         if (adapterType === AdapterType.Onebot) {
             const bot = this.createOnebot(config);
-            this.connectionMap.set(adapterID, { pluginInstance: bot, adapterID, adapterType, config });
+            this.connectionMap.set(adapterID, { pluginInstance: bot, adapterID: adapterID, adapterType, config });
             console.info(`已添加 Bot 连接: ${adapterID}`);
         } else {
             throw new Error(`不支持的适配器类型(可能版本太低了吧?): ${adapterType}`);
@@ -169,6 +180,13 @@ export class ChatBridge {
         connection.config = config;
         connection.pluginInstance.update(config, true);
         return Promise.resolve();
+    }
+
+    /**
+     * 接收消息
+     */
+    public async receiveMessage(connection: BotConnection, session: Session): Promise<void> {
+        await bindingService.processMessage(connection, session);
     }
 }
 

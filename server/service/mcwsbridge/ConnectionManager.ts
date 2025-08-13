@@ -7,7 +7,7 @@ import { pluginBridge } from "./MCWSBridge";
 /**
  * 服务器连接信息
  */
-type ServerConnection = {
+export type ServerConnection = {
     /**
      * 实际连接
      */
@@ -150,8 +150,12 @@ export class ConnectionManager {
      * @param serverId - 服务器 ID
      * @returns 对应的连接，如果不存在则返回 undefined
      */
-    public getConnection(serverId: number): ServerConnection | undefined {
-        return this.connectionMap.get(serverId);
+    public getConnection(serverId: number): ServerConnection {
+        const connection = this.connectionMap.get(serverId);
+        if (!connection) {
+            throw new Error(`无法找到对应的连接，服务器 ID: ${serverId}`);
+        }
+        return connection;
     }
 
     /**
@@ -160,13 +164,13 @@ export class ConnectionManager {
      * @param peer - WebSocket 连接
      * @returns 对应的服务器 ID，如果不存在则返回 undefined
      */
-    public getServerId(peer: Peer<AdapterInternal>): number | undefined {
+    public getServerId(peer: Peer<AdapterInternal>): number {
         for (const [serverId, connection] of this.connectionMap.entries()) {
             if (connection.peer === peer) {
                 return serverId;
             }
         }
-        return undefined;
+        throw new Error(`无法找到对应的 peer 连接: ${peer.id}`);
     }
 
     /**

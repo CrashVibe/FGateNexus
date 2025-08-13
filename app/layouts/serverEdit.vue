@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { LinkOutline, MenuOutline, PeopleOutline, PersonCircleOutline } from "@vicons/ionicons5";
+import {
+  ArrowBackOutline,
+  BuildOutline,
+  ChatbubbleOutline,
+  LinkOutline,
+  MenuOutline,
+  SettingsOutline
+} from "@vicons/ionicons5";
+import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
 const router = useRouter();
 const route = useRoute();
-
 const SIDEBAR_STORAGE_KEY = "sidebar-collapsed";
 const collapsed = ref(isMobile.value);
 
@@ -48,12 +55,56 @@ const handleExpand = () => {
 // 菜单配置
 const renderIcon = (icon: Component) => () => h(icon);
 
-const menuOptions = [
-  { label: "服务器管理", key: "/", icon: renderIcon(MenuOutline) },
-  { label: "Bot 实例", key: "/adapters", icon: renderIcon(LinkOutline) },
-  { label: "玩家列表", key: "/players", icon: renderIcon(PeopleOutline) },
-  { label: "社交账号", key: "/accounts", icon: renderIcon(PersonCircleOutline) }
-];
+export type MenuItem = MenuMixedOption & {
+  desc: string;
+};
+
+const menuOptions = computed(() => {
+  const route = useRoute();
+  const serverId = route.params?.["id"];
+  const menu: MenuMixedOption[] = [];
+  menu.push({
+    label: "返回服务器管理",
+    key: "/",
+    icon: renderIcon(ArrowBackOutline),
+    desc: "返回服务器列表主页。"
+  });
+  if (serverId) {
+    menu.push({
+      label: "配置概览",
+      key: `/servers/${serverId}`,
+      icon: renderIcon(MenuOutline),
+      desc: "查看所有可用的配置选项。"
+    });
+    menu.push({
+      label: "基础设置",
+      key: `/servers/${serverId}/general`,
+      icon: renderIcon(SettingsOutline),
+      desc: "配置服务器的基础运行参数和常规设置。"
+    });
+    menu.push({
+      label: "账号绑定",
+      key: `/servers/${serverId}/binding`,
+      icon: renderIcon(LinkOutline),
+      desc: "设置社交账号与游戏账号的绑定规则。"
+    });
+    menu.push({
+      label: "消息互通",
+      key: `/servers/${serverId}/message-sync`,
+      icon: renderIcon(ChatbubbleOutline),
+      desc: "Minecraft 与 QQ 群消息双向同步配置。"
+    });
+    menu.push({
+      label: "高级配置",
+      key: `/servers/${serverId}/advanced`,
+      icon: renderIcon(BuildOutline),
+      desc: "高级功能配置，包括性能优化、调试选项等。"
+    });
+  }
+  return menu;
+});
+
+provide("menuOptions", menuOptions);
 
 const selectedKey = computed(() => route.path);
 

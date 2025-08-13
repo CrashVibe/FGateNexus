@@ -2,13 +2,14 @@ import type { RequestHandler } from "./RequestHandler";
 import type { JsonRpcRequest } from "./types";
 import type { AdapterInternal, Peer } from "crossws";
 import { pluginBridge } from "./MCWSBridge";
+import { PlayerJoinHandler } from "./impl/PlayerJoin";
 
 class RequestDispatcher {
     static instance: RequestDispatcher | null = null;
 
     private handlers = new Map<string, RequestHandler>();
     private constructor() {
-        // this.registerHandler(new RequestHandler());
+        this.registerHandler(new PlayerJoinHandler());
     }
 
     public static getInstance(): RequestDispatcher {

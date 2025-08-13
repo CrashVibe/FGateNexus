@@ -8,19 +8,14 @@ import { eq } from "drizzle-orm";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 export default defineEventHandler(async (event) => {
     try {
-        const idParam = event.context.params?.id;
+        const adapterID = Number(getRouterParam(event, "id"));
         const body: { enabled: boolean } = await readBody(event);
-        if (!idParam) {
-            const apiError = ApiError.validation("开关适配器失败: 缺少适配器ID");
-            return createErrorResponse(event, apiError);
-        }
 
         if (typeof body.enabled !== "boolean") {
             const apiError = ApiError.validation("开关适配器失败: 缺少启用状态");
             return createErrorResponse(event, apiError);
         }
 
-        const adapterID = parseInt(idParam, 10);
         if (isNaN(adapterID)) {
             const apiError = ApiError.validation("开关适配器失败: 无效的适配器ID");
             return createErrorResponse(event, apiError);

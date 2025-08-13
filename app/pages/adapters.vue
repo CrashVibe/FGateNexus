@@ -2,8 +2,8 @@
 import { RefreshOutline, AddCircleOutline } from "@vicons/ionicons5";
 import type { FormInst } from "naive-ui";
 import type { ApiResponse, ApiResponseType } from "~~/shared/types";
-import { AdapterConfigSchema } from "~~/shared/schemas/adapters";
-import { type AdapterWithStatus, type BotInstanceData, AdapterType } from "~~/shared/schemas/adapters";
+import { AdapterConfigSchema } from "~~/shared/schemas/adapter";
+import { type AdapterWithStatus, type BotInstanceData, AdapterType } from "~~/shared/schemas/adapter";
 import { CardAdapter } from "#components";
 import { StatusCodes } from "http-status-codes";
 
@@ -107,7 +107,6 @@ const selectedAdapter = ref<AdapterWithStatus | null>(null);
 function handleChildClick(adapterID: number) {
   const adapter = adapterList.value.find((adapter) => adapter.id === adapterID);
   if (adapter) {
-    console.log("Selected adapter:", adapter);
     selectedAdapter.value = adapter;
     showDrawer.value = true;
   }
@@ -135,7 +134,7 @@ async function handleDelete(adapterID: number) {
     await $fetch<ApiResponseType>(`/api/adapter/${adapterID}`, {
       method: "DELETE"
     });
-  } catch{
+  } catch {
     message.error("操作失败，请检查后端日志");
     return;
   }
@@ -162,7 +161,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
 }
 </script>
 <template>
-  <div class="flex flex-col h-full gap-3 p-4 md:p-6">
+  <div class="flex flex-col h-full gap-3">
     <!-- head -->
     <div>
       <!-- text 区 -->
@@ -213,7 +212,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
           </n-button>
         </template>
       </n-empty>
-      <n-grid :cols="isMobile ? 1 : '600:3 1100:4'" x-gap="16" y-gap="16">
+      <n-grid :cols="isMobile ? 1 : '600:2 1100:3 1600:4'" x-gap="16" y-gap="16">
         <n-gi v-for="(adapter, index) in adapterList || []" :key="adapterList.indexOf(adapter)">
           <component
             :is="getAdapterComponent(adapter.type)"

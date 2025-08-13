@@ -17,5 +17,5 @@ export interface BotInstanceData {
 }
 
 export enum AdapterType {
-    Onebot = "Onebot"
+    Onebot = "onebot"
 }

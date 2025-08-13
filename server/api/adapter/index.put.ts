@@ -4,7 +4,7 @@ import { adapters } from "~~/server/db/schema";
 import { createApiResponse } from "#shared/types";
 import { ApiError, createErrorResponse } from "#shared/error";
 import { StatusCodes } from "http-status-codes";
-import { AdapterConfigSchema, AdapterType, type BotInstanceData } from "~~/shared/schemas/adapters";
+import { AdapterConfigSchema, AdapterType, type BotInstanceData } from "~~/shared/schemas/adapter";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { eq } from "drizzle-orm";
 export default defineEventHandler(async (event) => {

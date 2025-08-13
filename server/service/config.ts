@@ -1,20 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { z } from "zod";
-
-interface AppConfig {
-    koishi: {
-        host: string;
-        port: number;
-    };
-    nitro: {
-        host: string;
-        port: number;
-    };
-}
-function applyDefaults<T>(schema: z.ZodType<T>, config: Partial<T>): T {
-    return schema.parse(config);
-}
+import { applyDefaults } from "../utils/zod";
 
 /**
  * 合并用户配置与默认配置
@@ -24,6 +11,7 @@ function applyDefaults<T>(schema: z.ZodType<T>, config: Partial<T>): T {
 function mergeWithDefaults(userConfig: Partial<AppConfig> = {}): AppConfig {
     return applyDefaults(AppConfigSchema, userConfig);
 }
+
 const AppConfigSchema = z.object({
     koishi: z
         .object({
@@ -45,6 +33,8 @@ const AppConfigSchema = z.object({
         })
 });
 
+type AppConfig = z.infer<typeof AppConfigSchema>;
+
 class AppConfigManager {
     private static instance: AppConfigManager | null = null;
     private config: AppConfig;
@@ -52,12 +42,12 @@ class AppConfigManager {
     private constructor() {
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
         const configDir = path.dirname(configPath);
-        console.log("配置文件路径:", configPath);
+        console.info("配置文件路径:", configPath);
 
         let config: AppConfig;
 
         if (!fs.existsSync(configPath)) {
-            console.log("配置文件不存在，正在创建默认配置文件...");
+            console.info("配置文件不存在，正在创建默认配置文件...");
             const defaultConfig = mergeWithDefaults({});
 
             try {
@@ -65,7 +55,7 @@ class AppConfigManager {
                     fs.mkdirSync(configDir, { recursive: true });
                 }
                 fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 4), "utf-8");
-                console.log("默认配置文件已创建:", configPath);
+                console.info("默认配置文件已创建:", configPath);
 
                 config = defaultConfig;
             } catch (writeError) {
@@ -112,7 +102,7 @@ class AppConfigManager {
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
         try {
             fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 4), "utf-8");
-            console.log("配置已更新并保存");
+            console.info("配置已更新并保存");
         } catch (error) {
             console.error("保存配置失败:", error);
             throw error;
@@ -129,7 +119,7 @@ class AppConfigManager {
                 const fileContent = fs.readFileSync(configPath, "utf-8");
                 const parsedConfig = JSON.parse(fileContent);
                 this.config = mergeWithDefaults(parsedConfig);
-                console.log("配置已重新加载");
+                console.info("配置已重新加载");
             } catch (error) {
                 console.error("重新加载配置失败:", error);
                 throw error;

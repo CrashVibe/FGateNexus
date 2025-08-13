@@ -75,10 +75,15 @@ onMounted(() => {
     }, 300);
   });
 });
+
+import hljs from "highlight.js/lib/core";
+import typescript from "highlight.js/lib/languages/typescript";
+
+hljs.registerLanguage("typescript", typescript);
 </script>
 
 <template>
-  <n-config-provider :theme="theme" :theme-overrides="themeOverrides">
+  <n-config-provider :theme="theme" :theme-overrides="themeOverrides" :hljs="hljs">
     <n-loading-bar-provider ref="loadingBarRef">
       <n-message-provider>
         <n-dialog-provider>

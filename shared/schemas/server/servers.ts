@@ -15,3 +15,9 @@ export type ServerWithStatus = serverSchema &
     GetClientInfoResult & {
         isOnline: boolean;
     };
+
+export const chooseAdapterSchema = z.object({
+    adapterId: z.number().nullable(),
+});
+
+export type ChooseAdapter = z.infer<typeof chooseAdapterSchema>;
