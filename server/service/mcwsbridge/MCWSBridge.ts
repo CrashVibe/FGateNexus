@@ -1,5 +1,5 @@
 import type { AdapterInternal, Peer } from "crossws";
-import type { GetClientInfoResult } from "./ConnectionManager";
+import type { GetClientInfoResult, ServerConnection } from "./ConnectionManager";
 import { ConnectionManager } from "./ConnectionManager";
 import { MessageHandler } from "./MessageHandler";
 
@@ -126,7 +126,7 @@ class MCWSBridge {
      * @param serverId - 服务器 ID
      * @returns 对应的连接信息
      */
-    public getConnection(serverId: number) {
+    public getConnection(serverId: number): ServerConnection {
         return this.connectionManager.getConnection(serverId);
     }
 
@@ -136,7 +136,7 @@ class MCWSBridge {
      * @param peer - WebSocket 连接
      * @returns 对应的服务器 ID
      */
-    public getServerId(peer: Peer<AdapterInternal>): number | undefined {
+    public getServerId(peer: Peer<AdapterInternal>): number {
         return this.connectionManager.getServerId(peer);
     }
 

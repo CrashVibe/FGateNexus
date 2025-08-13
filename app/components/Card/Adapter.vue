@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import type { AdapterWithStatus } from "#shared/schemas/adapters";
+import type { AdapterWithStatus } from "#shared/schemas/adapter";
 
 defineProps<{
   adapter: AdapterWithStatus;

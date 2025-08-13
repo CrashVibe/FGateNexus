@@ -8,15 +8,10 @@ import { eq } from "drizzle-orm";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 export default defineEventHandler(async (event) => {
     try {
-        const idParam = event.context.params?.id;
-        if (!idParam) {
-            const apiError = ApiError.validation("删除适配器失败: 缺少适配器ID");
-            return createErrorResponse(event, apiError);
-        }
+        const adapterID = Number(getRouterParam(event, "id"));
 
-        const adapterID = parseInt(idParam, 10);
         if (isNaN(adapterID)) {
-            const apiError = ApiError.validation("删除适配器失败: 无效的适配器ID");
+            const apiError = ApiError.validation("无效的适配器ID");
             return createErrorResponse(event, apiError);
         }
 
@@ -27,10 +22,10 @@ export default defineEventHandler(async (event) => {
             chatBridge.removeBot(adapterID);
             return createApiResponse("删除适配器成功", StatusCodes.OK);
         } else {
-            const apiError = ApiError.database("删除适配器失败: 未能找到适配器");
+            const apiError = ApiError.database("未能找到适配器");
             return createErrorResponse(event, apiError);
         }
-    } catch (err) {
+    } catch {
         const apiError = ApiError.internal("删除适配器失败");
         return createErrorResponse(event, apiError);
     }

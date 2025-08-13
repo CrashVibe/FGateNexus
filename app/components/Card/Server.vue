@@ -4,7 +4,7 @@
       hoverable
       class="transition-all duration-300 ease-in-out rounded-lg cursor-pointer hover:-translate-y-1 hover:shadow-xl"
       :class="{ 'grayscale-[0.6]': !server.isOnline }"
-      @click="router.push(`/servers/${props.server.id}/config`)"
+      @click="router.push(`/servers/${props.server.id}`)"
     >
       <div class="flex flex-col gap-4">
         <!-- 名称+状态 与 版本 -->
@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ServerWithStatus } from "#shared/schemas/servers";
+import type { ServerWithStatus } from "#shared/schemas/server/servers";
 import MinecraftDefaultIcon from "@/assets/icon/software/minecraft.svg";
 
 const props = defineProps<{

@@ -3,14 +3,13 @@ import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { ApiError, createErrorResponse } from "~~/shared/error";
-import type { AdapterWithStatus } from "~~/shared/schemas/adapters";
+import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { createApiResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event) => {
     try {
         const database = await getDatabase();
         const result = await database.select().from(adapters);
-
 
         const adaptersWithStatus: AdapterWithStatus[] = result.map((adapter) => {
             let isOnline = false;

@@ -36,7 +36,7 @@ export abstract class RequestHandler {
         pluginBridge.sendError(peer, id, code, message, data);
     }
 
-    protected sendSuccessResponse(peer: Peer<AdapterInternal>, id: string | null, result?: unknown): void {
+    protected sendResponse(peer: Peer<AdapterInternal>, id: string | null, result?: unknown): void {
         pluginBridge.sendResponse(peer, id, result);
     }
 }
