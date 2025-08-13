@@ -8,14 +8,14 @@
       :desc="desc"
       class="mb-4"
     />
-      <AlertUnsave
-        :show="isDirty"
-        :saving="dataState.isSubmitting"
-        message="您有未保存的配置更改"
+    <AlertUnsave
+      :show="isDirty"
+      :saving="dataState.isSubmitting"
+      message="您有未保存的配置更改"
       class="mb-4"
-        @discard="cancelChanges"
-        @save="handleSubmit"
-      />
+      @discard="cancelChanges"
+      @save="handleSubmit"
+    />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -119,7 +119,12 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tag size="tiny">#user</n-tag>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#user</n-tag>
+                      </template>
+                      用户名 · [Steve]
+                    </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
@@ -141,8 +146,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tag size="tiny">#user</n-tag>
-                    <n-tag size="tiny">#why</n-tag>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#user</n-tag>
+                      </template>
+                      用户名 · [Steve]
+                    </n-tooltip>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#why</n-tag>
+                      </template>
+                      失败原因 · [因为某种奇妙の原因]
+                    </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
@@ -166,7 +181,12 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tag size="tiny">#user</n-tag>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#user</n-tag>
+                      </template>
+                      用户名 · [Steve]
+                    </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
@@ -188,8 +208,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tag size="tiny">#user</n-tag>
-                    <n-tag size="tiny">#why</n-tag>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#user</n-tag>
+                      </template>
+                      用户名 · [Steve]
+                    </n-tooltip>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#why</n-tag>
+                      </template>
+                      失败原因 · [因为某种奇妙の原因]
+                    </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
@@ -219,9 +249,24 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tag size="tiny">#name</n-tag>
-                    <n-tag size="tiny">#message</n-tag>
-                    <n-tag size="tiny">#time</n-tag>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#name</n-tag>
+                      </template>
+                      玩家名 · [Steve]
+                    </n-tooltip>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#message</n-tag>
+                      </template>
+                      {{ "绑定指令 · [" + bindCommandExample + "]" }}
+                    </n-tooltip>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#time</n-tag>
+                      </template>
+                      {{ "时间 · [" + bindExpireTimeExample + "]" }}
+                    </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览: <n-text><span v-html="noBindKickMsgPreview"></span></n-text>
@@ -242,7 +287,12 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tag size="tiny">#social_account</n-tag>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <n-tag size="tiny">#social_account</n-tag>
+                      </template>
+                      社交账号 · [114514]
+                    </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览: <n-text><span v-html="unbindKickMsgPreview"></span></n-text>
@@ -417,12 +467,18 @@ const unbindCommandExample = computed(() => {
   return formData.value.unbindPrefix + "Steve";
 });
 
+// 时间 + 过期时间
+const bindExpireTimeExample = computed(() => {
+  const expireTime = formData.value.codeExpire;
+  return moment().add(expireTime, "seconds").format("YYYY-MM-DD HH:mm:ss");
+});
+
 const noBindKickMsgPreview = computed(() => {
   const replaced = replaceNoBindKickMsgPlaceholders(
     formData.value.nobindkickMsg,
     "Steve",
     bindCommandExample.value,
-    moment().format("YYYY-MM-DD HH:mm:ss")
+    bindExpireTimeExample.value
   );
   return minecraftToHtml(replaced);
 });
