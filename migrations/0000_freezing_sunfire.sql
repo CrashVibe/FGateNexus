@@ -1,0 +1,50 @@
+CREATE TABLE `adapters` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`type` text NOT NULL,
+	`enabled` integer DEFAULT true NOT NULL,
+	`config` text NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `player_servers` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`player_id` integer NOT NULL,
+	`server_id` integer NOT NULL,
+	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`server_id`) REFERENCES `servers`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `players` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`uuid` text NOT NULL,
+	`name` text NOT NULL,
+	`ip` text,
+	`social_account_id` integer,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
+	FOREIGN KEY (`social_account_id`) REFERENCES `social_accounts`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uuid_idx` ON `players` (`uuid`);--> statement-breakpoint
+CREATE TABLE `servers` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`name` text NOT NULL,
+	`token` text NOT NULL,
+	`software` text,
+	`version` text,
+	`adapter_id` integer,
+	`binding_config` text NOT NULL,
+	FOREIGN KEY (`adapter_id`) REFERENCES `adapters`(`id`) ON UPDATE no action ON DELETE set null
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `name_idx` ON `servers` (`name`);--> statement-breakpoint
+CREATE UNIQUE INDEX `token_idx` ON `servers` (`token`);--> statement-breakpoint
+CREATE TABLE `social_accounts` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`nickname` text,
+	`uid` text NOT NULL,
+	`adapter_type` text NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uid_idx` ON `social_accounts` (`uid`);

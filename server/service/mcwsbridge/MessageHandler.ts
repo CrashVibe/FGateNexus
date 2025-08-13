@@ -126,7 +126,7 @@ export class MessageHandler {
 
         try {
             peer.send(JSON.stringify(response));
-            console.info(`[SUCCESS] 响应已发送: ${peer.id} - ID: ${id}`);
+            console.debug(`[SUCCESS] 响应已发送: ${peer.id} - ID: ${id}`);
         } catch (error) {
             console.error(`[FAILED] 发送响应失败: ${peer.id}`, error);
         }

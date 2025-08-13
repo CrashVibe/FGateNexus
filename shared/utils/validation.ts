@@ -1,4 +1,4 @@
-import type z from "zod";
+import z from "zod";
 
 type ValidationRule = {
     required: boolean;
@@ -14,7 +14,8 @@ export function zodToNaiveRules<T extends z.ZodRawShape>(schema: z.ZodObject<T>)
         const fieldSchema = shape[key] as z.ZodTypeAny;
         if (!fieldSchema) continue;
 
-        const isOptional = fieldSchema.safeParse(undefined).success;
+        const typeName = fieldSchema.def?.type;
+        const isOptional = typeName === "optional" || typeName === "nullable";
 
         rules[key] = [
             {
@@ -27,7 +28,6 @@ export function zodToNaiveRules<T extends z.ZodRawShape>(schema: z.ZodObject<T>)
             }
         ];
     }
-
     return rules;
 }
 

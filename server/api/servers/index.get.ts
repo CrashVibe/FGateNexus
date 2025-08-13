@@ -4,7 +4,7 @@ import { servers } from "~~/server/db/schema";
 import { createApiResponse } from "#shared/types";
 import { ApiError, createErrorResponse } from "#shared/error";
 import { StatusCodes } from "http-status-codes";
-import type { ServerWithStatus } from "~~/shared/schemas/servers";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
 
 export default defineEventHandler(async (event) => {
