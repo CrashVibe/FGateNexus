@@ -167,6 +167,22 @@ class MCWSBridge {
     public getConnectionData(serverId: number): GetClientInfoResult | undefined {
         return this.connectionManager.getConnectionData(serverId);
     }
+
+    /**
+     * 根据服务器 ID 踢出玩家
+     *
+     * @param serverId - 服务器 ID
+     * @param playerUUID - 玩家 UUID
+     * @param reason - 踢出原因
+     * @returns 操作结果
+     */
+    public async kickPlayerByServerId(
+        serverId: number,
+        playerUUID: string,
+        reason: string = "You have been kicked"
+    ): Promise<{ success: boolean; message: string }> {
+        return await this.connectionManager.kickPlayerByServerId(serverId, playerUUID, reason);
+    }
 }
 
 export const pluginBridge = MCWSBridge.getInstance();

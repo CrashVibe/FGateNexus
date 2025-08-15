@@ -2,6 +2,7 @@ import type { AdapterInternal, Peer } from "crossws";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
+import type { MessageHandler } from "./MessageHandler";
 import { pluginBridge } from "./MCWSBridge";
 
 /**
@@ -35,9 +36,9 @@ export interface GetClientInfoResult {
      */
     supports_papi: boolean | null;
     /**
-     * 是否支持 RCON
+     * 是否支持 Command
      */
-    supports_rcon: boolean | null;
+    supports_command: boolean | null;
     /**
      * 玩家数量
      */
@@ -207,38 +208,56 @@ export class ConnectionManager {
      */
     private async updateClientInfo(peer: Peer<AdapterInternal>, serverID: number): Promise<GetClientInfoResult> {
         const result = await pluginBridge.sendRequest<{
-            data: {
-                minecraft_version: string;
-                minecraft_software: string;
-                supports_papi: boolean;
-                supports_rcon: boolean;
-                player_count: number;
-            };
+            minecraft_version: string;
+            minecraft_software: string;
+            supports_papi: boolean;
+            supports_command: boolean;
+            player_count: number;
         }>(peer, "get.client.info");
         if (
-            !result.data ||
-            typeof result.data.minecraft_version !== "string" ||
-            typeof result.data.minecraft_software !== "string" ||
-            typeof result.data.supports_papi !== "boolean" ||
-            typeof result.data.supports_rcon !== "boolean" ||
-            typeof result.data.player_count !== "number"
+            typeof result.minecraft_version !== "string" ||
+            typeof result.minecraft_software !== "string" ||
+            typeof result.supports_papi !== "boolean" ||
+            typeof result.supports_command !== "boolean" ||
+            typeof result.player_count !== "number"
         ) {
-            pluginBridge.sendError(peer, null, -32603, "Invalid client info response", result.data);
+            pluginBridge.sendError(peer, null, -32603, "Invalid client info response", result);
             throw new Error(`[WARNING] 客户端信息不完整: ${peer.id}`);
         }
 
-        this.connectionMap.set(serverID, { peer, serverId: serverID, data: result.data });
+        this.connectionMap.set(serverID, { peer, serverId: serverID, data: result });
         // 更新数据库中的服务器信息
         const database = await getDatabase();
         await database
             .update(servers)
             .set({
-                minecraft_version: result.data.minecraft_version,
-                minecraft_software: result.data.minecraft_software
+                minecraft_version: result.minecraft_version,
+                minecraft_software: result.minecraft_software
             })
             .where(eq(servers.id, serverID))
             .execute();
 
-        return result.data;
+        return result;
+    }
+
+    /**
+     * 根据服务器 ID 踢出玩家
+     *
+     * @param serverId - 服务器 ID
+     * @param playerUUID - 玩家 UUID
+     * @param reason - 踢出原因
+     * @returns 操作结果
+     */
+    public async kickPlayerByServerId(
+        serverId: number,
+        playerUUID: string,
+        reason: string = "You have been kicked"
+    ): Promise<{ success: boolean; message: string }> {
+        const result = await pluginBridge.sendRequest<{ success: boolean; message: string }>(
+            this.getConnection(serverId).peer,
+            "kick.player",
+            { playerUUID, reason }
+        );
+        return { success: result.success, message: result.message };
     }
 }

@@ -3,8 +3,8 @@ import { Context } from "koishi";
 import { Server } from "@koishijs/plugin-server";
 import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { HTTP } from "@koishijs/plugin-http";
-import type { AdapterConfig } from "../../../shared/schemas/adapter";
-import type { OneBotConfig } from "../../../shared/schemas/adapter/onebot";
+import type { AdapterConfig } from "#shared/schemas/adapter";
+import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
 import { configManager } from "../config";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
@@ -74,7 +74,7 @@ export class ChatBridge {
             this.addBot(adapter.id, adapter.type, adapter.config);
         }
         this.app.on("message", async (session) => {
-            if (session.platform === "onebot") {
+            if (session.platform === AdapterType.Onebot) {
                 const connection = Array.from(this.connectionMap.values()).find(
                     (conn) => conn.config.selfId === session.bot.selfId
                 );
@@ -186,7 +186,7 @@ export class ChatBridge {
      * 接收消息
      */
     public async receiveMessage(connection: BotConnection, session: Session): Promise<void> {
-        await bindingService.processMessage(connection, session);
+        await Promise.all([bindingService.processMessage(connection, session)]);
     }
 }
 

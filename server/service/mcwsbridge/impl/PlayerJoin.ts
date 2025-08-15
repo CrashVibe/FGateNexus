@@ -77,28 +77,24 @@ export class PlayerJoinHandler extends RequestHandler {
         }
 
         const bindingConfig = await getConfig(serverID);
-        if (bindingConfig.forceBind) {
-            if (!!!player.socialAccountId) {
-                try {
-                    const bindingResult = await bindingService.addPendingBinding(serverID, player.uuid, player.name);
-                    const formattedTime = moment(bindingResult.expiresAt)
-                        .tz("Asia/Shanghai")
-                        .format("YYYY-MM-DD HH:mm:ss");
-                    const bindKickMsg = replaceBindKickMsgPlaceholders(
-                        bindingConfig.nobindkickMsg,
-                        player.name,
-                        bindingResult.message,
-                        formattedTime
-                    );
-                    this.sendResponse(peer, request.id, { action: "kick", reason: bindKickMsg });
-                    console.info(`[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间: ${formattedTime}`);
-                } catch (error: unknown) {
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    console.error("添加待处理绑定失败: ", errorMessage);
-                    this.sendResponse(peer, request.id, { action: "kick", reason: errorMessage });
-                    return;
-                }
+        if (bindingConfig.forceBind && !player.socialAccountId) {
+            try {
+                const bindingResult = await bindingService.addPendingBinding(serverID, player.uuid, player.name);
+                const formattedTime = moment(bindingResult.expiresAt).tz("Asia/Shanghai").format("YYYY-MM-DD HH:mm:ss");
+                const bindKickMsg = replaceBindKickMsgPlaceholders(
+                    bindingConfig.nobindkickMsg,
+                    player.name,
+                    bindingResult.message,
+                    formattedTime
+                );
+                this.sendResponse(peer, request.id, { action: "kick", reason: bindKickMsg });
+                console.info(`[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间: ${formattedTime}`);
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error("添加待处理绑定失败: ", errorMessage);
+                this.sendResponse(peer, request.id, { action: "kick", reason: errorMessage });
             }
+            return;
         }
         this.sendResponse(peer, request.id, { action: "allow" });
     }

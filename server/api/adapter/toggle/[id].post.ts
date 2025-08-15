@@ -6,6 +6,7 @@ import { ApiError, createErrorResponse } from "#shared/error";
 import { StatusCodes } from "http-status-codes";
 import { eq } from "drizzle-orm";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
+
 export default defineEventHandler(async (event) => {
     try {
         const adapterID = Number(getRouterParam(event, "id"));

@@ -7,6 +7,7 @@ import { StatusCodes } from "http-status-codes";
 import { AdapterConfigSchema, AdapterType, type BotInstanceData } from "~~/shared/schemas/adapter";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { eq } from "drizzle-orm";
+
 export default defineEventHandler(async (event) => {
     try {
         const body: BotInstanceData = await readBody(event);

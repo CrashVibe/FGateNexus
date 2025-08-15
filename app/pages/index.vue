@@ -2,7 +2,11 @@
 import { RefreshOutline, AddCircleOutline } from "@vicons/ionicons5";
 import { v4 as uuidv4 } from "uuid";
 import { zodToNaiveRules } from "#shared/utils/validation";
-import { serverSchemaRequset, type serverSchemaRequsetType, type ServerWithStatus } from "#shared/schemas/server/servers";
+import {
+  serverSchemaRequset,
+  type serverSchemaRequsetType,
+  type ServerWithStatus
+} from "#shared/schemas/server/servers";
 import type { FormInst } from "naive-ui";
 import type { ApiResponse, ApiResponseType } from "~~/shared/types";
 import { StatusCodes } from "http-status-codes";

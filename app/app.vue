@@ -3,6 +3,10 @@ import { darkTheme, lightTheme } from "naive-ui";
 import { ref, onMounted, computed } from "vue";
 import { useDark } from "@vueuse/core";
 
+import hljs from "highlight.js/lib/core";
+import typescript from "highlight.js/lib/languages/typescript";
+hljs.registerLanguage("typescript", typescript);
+
 const isDark = useDark({
   storageKey: "vueuse-color-scheme",
   selector: "html",
@@ -75,11 +79,6 @@ onMounted(() => {
     }, 300);
   });
 });
-
-import hljs from "highlight.js/lib/core";
-import typescript from "highlight.js/lib/languages/typescript";
-
-hljs.registerLanguage("typescript", typescript);
 </script>
 
 <template>

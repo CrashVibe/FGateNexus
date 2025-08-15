@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
                 ...server,
                 isOnline: connectionData ? true : false,
                 supports_papi: connectionData?.supports_papi ?? null,
-                supports_rcon: connectionData?.supports_rcon ?? null,
+                supports_command: connectionData?.supports_command ?? null,
                 player_count: connectionData?.player_count ?? null
             };
         });

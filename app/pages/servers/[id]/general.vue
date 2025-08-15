@@ -8,14 +8,14 @@
       :desc="desc"
       class="mb-4"
     />
-      <AlertUnsave
-        :show="isDirty"
-        :saving="dataState.isSubmitting"
-        message="您有未保存的配置更改"
+    <AlertUnsave
+      :show="isDirty"
+      :saving="dataState.isSubmitting"
+      message="您有未保存的配置更改"
       class="mb-4"
-        @discard="cancelChanges"
-        @save="handleSubmit"
-      />
+      @discard="cancelChanges"
+      @save="handleSubmit"
+    />
     <n-form :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '600:2 1600:3'">
         <n-gi>

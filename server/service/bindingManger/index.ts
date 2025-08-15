@@ -1,15 +1,19 @@
 import { getConfig } from "./config";
 import { getDatabase } from "~~/server/db/client";
 import { players, servers, socialAccounts } from "~~/server/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import {
     generateVerificationCode,
     replaceBindFailMsgPlaceholders,
-    replaceBindSuccessMsgPlaceholders
+    replaceBindSuccessMsgPlaceholders,
+    replaceUnbindFailMsgPlaceholders,
+    replaceUnbindKickMsgPlaceholders,
+    replaceUnbindSuccessMsgPlaceholders
 } from "#shared/utils/binding";
 import type { BotConnection } from "../chatbridge/chatbridge";
 import type { Session } from "koishi";
 import { AdapterType } from "~~/shared/schemas/adapter";
+import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 
 interface PendingBinding {
     /**
@@ -132,12 +136,14 @@ class BindingService {
      */
     public async processMessage(connection: BotConnection, ctx: Session): Promise<void> {
         this.cleanUpExpiredBindings();
+
         for (const binding of this.pendingBindings.get(connection.adapterID) || []) {
             if (binding.message === ctx.content) {
                 if (Object.values(AdapterType).find((key) => key === ctx.platform) && ctx.userId) {
                     const bindingConfig = await getConfig(binding.serverID);
                     try {
                         await this.performBinding(binding, ctx.platform as AdapterType, ctx.userId, ctx.username);
+                        this.pendingBindings.get(connection.adapterID)?.delete(binding);
                         await ctx.send(
                             replaceBindSuccessMsgPlaceholders(bindingConfig.bindSuccessMsg, binding.playerNickname)
                         );
@@ -155,6 +161,8 @@ class BindingService {
                 }
             }
         }
+
+        await this.processUnbindMessage(connection, ctx);
     }
 
     public async performBinding(
@@ -201,6 +209,99 @@ class BindingService {
         if (!updatedPlayer) {
             throw new Error(`Player with UUID ${pendingBinding.playerUID} not found`);
         }
+    }
+
+    private async processUnbindMessage(connection: BotConnection, ctx: Session): Promise<void> {
+        if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId) {
+            return;
+        }
+
+        const database = await getDatabase();
+        const serversWithBindingConfig = await database.query.servers.findMany({
+            where: eq(servers.adapterId, connection.adapterID)
+        });
+
+        const matchingServers = serversWithBindingConfig.filter(
+            (server) => server.bindingConfig.allowUnbind && ctx.content?.startsWith(server.bindingConfig.unbindPrefix)
+        );
+
+        if (matchingServers.length === 0) {
+            return;
+        }
+
+        const unbindPromises = matchingServers.map(async (server) => {
+            try {
+                const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
+                if (!playerName) {
+                    return;
+                }
+
+                const { playerUUID, socialUID } = await this.performUnbind(
+                    ctx.platform as AdapterType,
+                    ctx.userId!,
+                    playerName
+                );
+                console.info("玩家解绑成功：", {
+                    playerUUID,
+                    socialUID
+                });
+                await pluginBridge.kickPlayerByServerId(
+                    server.id,
+                    playerUUID,
+                    replaceUnbindKickMsgPlaceholders(server.bindingConfig.unbindkickMsg, socialUID)
+                );
+                await ctx.send(replaceUnbindSuccessMsgPlaceholders(server.bindingConfig.unbindSuccessMsg, playerName));
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error("无法处理解绑:", errorMessage);
+                const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
+                await ctx.send(
+                    replaceUnbindFailMsgPlaceholders(server.bindingConfig.unbindFailMsg, playerName, errorMessage)
+                );
+            }
+        });
+
+        await Promise.all(unbindPromises);
+    }
+
+    private async performUnbind(
+        adapterType: AdapterType,
+        socialUid: string,
+        playerName: string
+    ): Promise<{
+        playerUUID: string;
+        socialUID: string;
+    }> {
+        const database = await getDatabase();
+
+        const socialAccount = await database.query.socialAccounts.findFirst({
+            where: and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType)),
+            with: {
+                players: true
+            }
+        });
+
+        if (!socialAccount) {
+            throw new Error("未找到关联的社交账号");
+        }
+
+        const player = socialAccount.players.find((p) => p.name === playerName);
+        if (!player) {
+            throw new Error("未找到匹配的玩家");
+        }
+
+        await database
+            .update(players)
+            .set({
+                socialAccountId: null,
+                updatedAt: sql`(unixepoch())`
+            })
+            .where(eq(players.id, player.id));
+
+        return {
+            playerUUID: player.uuid,
+            socialUID: socialAccount.uid
+        };
     }
 }
 

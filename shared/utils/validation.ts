@@ -1,4 +1,4 @@
-import z from "zod";
+import type z from "zod";
 
 type ValidationRule = {
     required: boolean;
@@ -11,7 +11,7 @@ export function zodToNaiveRules<T extends z.ZodRawShape>(schema: z.ZodObject<T>)
     const rules: Record<string, ValidationRule[]> = {};
 
     for (const key in shape) {
-        const fieldSchema = shape[key] as z.ZodTypeAny;
+        const fieldSchema = shape[key] as unknown as z.ZodTypeAny;
         if (!fieldSchema) continue;
 
         const typeName = fieldSchema.def?.type;

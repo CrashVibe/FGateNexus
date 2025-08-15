@@ -17,7 +17,7 @@ export type ServerWithStatus = serverSchema &
     };
 
 export const chooseAdapterSchema = z.object({
-    adapterId: z.number().nullable(),
+    adapterId: z.number().nullable()
 });
 
 export type ChooseAdapter = z.infer<typeof chooseAdapterSchema>;

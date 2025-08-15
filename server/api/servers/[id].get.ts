@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
             ...result,
             isOnline: !!connectionData,
             supports_papi: connectionData?.supports_papi ?? null,
-            supports_rcon: connectionData?.supports_rcon ?? null,
+            supports_command: connectionData?.supports_command ?? null,
             player_count: connectionData?.player_count ?? null
         };
         return createApiResponse("获取服务器列表成功", StatusCodes.OK, serversWithStatus);
