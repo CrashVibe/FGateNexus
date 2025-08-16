@@ -1,7 +1,7 @@
 <template>
   <div>
     <HeaderServer
-      title="基础设置"
+      title="账号绑定"
       :server-name="serverData?.name || ''"
       back-button-text="服务器列表"
       back-path="/"
