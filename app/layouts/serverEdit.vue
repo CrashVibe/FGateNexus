@@ -153,7 +153,7 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
         />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
-        <div class="h-full p-8">
+        <div class="h-full p-8 max-w-screen-xl mx-auto">
           <slot />
         </div>
       </n-layout-content>
