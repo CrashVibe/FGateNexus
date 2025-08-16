@@ -118,7 +118,7 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
 
 <template>
   <n-layout bordered position="absolute">
-    <n-layout-header class="h-[var(--header-height)] p-4">
+    <n-layout-header bordered class="h-[var(--header-height)] p-4">
       <n-space justify="space-between">
         <n-space align="center" size="large">
           <n-image src="/favicon.ico" class="align-middle size-8" preview-disabled />
