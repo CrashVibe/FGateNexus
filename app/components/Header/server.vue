@@ -29,7 +29,7 @@ import { ArrowBackOutline } from "@vicons/ionicons5";
 interface Props {
   title: string;
   serverName: string;
-  desc?: string;
+  desc: string;
   backButtonText?: string;
   backPath?: string;
 }

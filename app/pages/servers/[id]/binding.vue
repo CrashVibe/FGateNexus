@@ -1,22 +1,13 @@
 <template>
   <div>
     <HeaderServer
-      title="账号绑定"
+      :title="found.label"
       :server-name="serverData?.name || ''"
       back-button-text="服务器列表"
       back-path="/"
-      :desc="desc"
+      :desc="found.desc"
       class="mb-4"
     />
-    <AlertUnsave
-      :show="isDirty"
-      :saving="dataState.isSubmitting"
-      message="您有未保存的配置更改"
-      class="mb-4"
-      @discard="cancelChanges"
-      @save="handleSubmit"
-    />
-
     <n-form ref="formRef" :model="formData" :rules="rules">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="space-y-6">
@@ -93,17 +84,15 @@
                 <n-code :code="bindCommandExample" language="text" />
               </div>
             </div>
-            <Transition name="unbind-slide" mode="out-in">
-              <div v-if="formData.allowUnbind">
-                <n-text type="warning" class="mb-2" round>
-                  <h1>解绑指令</h1>
-                  <p class="text-gray-500">使用专用解绑前缀进行解绑操作，直接输入玩家名称即可</p>
-                </n-text>
-                <div class="mb-2 p-2">
-                  <n-code :code="unbindCommandExample" language="text" />
-                </div>
+            <n-collapse-transition :show="formData.allowUnbind">
+              <n-text type="warning" class="mb-2" round>
+                <h1>解绑指令</h1>
+                <p class="text-gray-500">使用专用解绑前缀进行解绑操作，直接输入玩家名称即可</p>
+              </n-text>
+              <div class="mb-2 p-2">
+                <n-code :code="unbindCommandExample" language="text" />
               </div>
-            </Transition>
+            </n-collapse-transition>
           </n-card>
         </div>
 
@@ -129,7 +118,7 @@
                   <div class="text-sm text-gray-500">
                     预览:
                     <n-text type="success">
-                      <span v-html="replaceBindSuccessMsgPlaceholders(formData.bindSuccessMsg, 'Steve')"></span>
+                      {{ replaceBindSuccessMsgPlaceholders(formData.bindSuccessMsg, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -162,9 +151,7 @@
                   <div class="text-sm text-gray-500">
                     预览:
                     <n-text type="error">
-                      <span
-                        v-html="replaceBindFailMsgPlaceholders(formData.bindFailMsg, 'Steve', '因为某种奇妙の原因')"
-                      ></span>
+                      {{ replaceBindFailMsgPlaceholders(formData.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
                   </div>
                 </div>
@@ -269,7 +256,10 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览: <n-text><span v-html="noBindKickMsgPreview"></span></n-text>
+                    预览:
+                    <n-text>
+                      <span v-html="noBindKickMsgPreview"></span>
+                    </n-text>
                   </div>
                 </div>
               </template>
@@ -295,7 +285,10 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览: <n-text><span v-html="unbindKickMsgPreview"></span></n-text>
+                    预览:
+                    <n-text>
+                      <span v-html="unbindKickMsgPreview"></span>
+                    </n-text>
                   </div>
                 </div>
               </template>
@@ -320,14 +313,15 @@ import { StatusCodes } from "http-status-codes";
 import type { FormInst } from "naive-ui";
 import type { MenuItem } from "~/layouts/serverEdit.vue";
 import {
-  BindingConfigSchema,
   type BindingConfig,
-  getDefaultServerConfig,
-  CODE_MODES
+  BindingConfigSchema,
+  CODE_MODES,
+  getDefaultServerConfig
 } from "~~/shared/schemas/server/config";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
 import moment from "moment-timezone";
+
 // ==================== 页面配置 ====================
 definePageMeta({
   layout: "server-edit"
@@ -339,16 +333,17 @@ const menuOptions: Ref<MenuItem[]> = inject(
   "menuOptions",
   computed(() => [])
 );
+const registerPageState = inject<(state: PageState) => void>("registerPageState");
+const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
 const { serverData: serverData } = getServerData.value;
 
 // ==================== 计算属性 ====================
-const desc = computed(() => {
+const found = computed(() => {
   const found = menuOptions.value.find((item) => item.key === route.path);
-  if (found) {
-    return String(found.desc);
-  }
+  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
+  return found;
 });
 
 const isDirty = computed(
@@ -509,11 +504,20 @@ onMounted(async () => {
   await dataManager.refreshAll();
   // 初始化混淆动画
   initObfuscatedAnimation();
+  if (registerPageState) {
+    registerPageState({
+      isDirty: () => isDirty.value,
+      save: handleSubmit
+    });
+  }
 });
 
 onUnmounted(() => {
   // 清理混淆动画
   stopObfuscatedAnimation();
+  if (clearPageState) {
+    clearPageState();
+  }
 });
 
 // 监听表单数据变化，重新初始化动画
@@ -526,34 +530,3 @@ watch(
   }
 );
 </script>
-
-<style scoped>
-.unbind-slide-enter-active,
-.unbind-slide-leave-active {
-  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.unbind-slide-enter-from {
-  opacity: 0;
-  transform: translateY(-15px) scale(0.95);
-  max-height: 0;
-  margin-bottom: 0;
-  overflow: hidden;
-}
-
-.unbind-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-15px) scale(0.95);
-  max-height: 0;
-  margin-bottom: 0;
-  overflow: hidden;
-}
-
-.unbind-slide-enter-to,
-.unbind-slide-leave-from {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  max-height: 150px;
-  margin-bottom: 16px;
-}
-</style>

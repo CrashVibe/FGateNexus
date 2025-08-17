@@ -2,7 +2,6 @@ import type { AdapterInternal, Peer } from "crossws";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
-import type { MessageHandler } from "./MessageHandler";
 import { pluginBridge } from "./MCWSBridge";
 
 /**

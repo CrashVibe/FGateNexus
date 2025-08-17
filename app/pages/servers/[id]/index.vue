@@ -1,7 +1,7 @@
 <template>
   <div>
     <HeaderServer
-      :title="String(found.label) || '未知'"
+      :title="found.label"
       :server-name="serverData?.name || ''"
       back-button-text="服务器列表"
       back-path="/"
@@ -24,7 +24,7 @@
           class="config-card"
           @click="navigateToMenuItem(menuItem.key!)"
         >
-          <template #header-extra v-if="menuItem.icon">
+          <template v-if="menuItem.icon" #header-extra>
             <n-icon :component="menuItem.icon" size="20" />
           </template>
           <n-text depth="3">{{ menuItem["desc"] }}</n-text>
@@ -87,7 +87,7 @@ const { serverData: serverData } = getServerData.value;
 .config-card {
   height: 100%;
   cursor: pointer;
-  transition: all 0.2s var(--n-bezier);
+  transition: all 0.2s;
 
   &:hover {
     transform: translateY(-2px);

@@ -1,20 +1,12 @@
 <template>
   <div>
     <HeaderServer
-      title="基础设置"
+      :title="found.label"
       :server-name="dataState.data.serverData?.name || ''"
       back-button-text="服务器列表"
       back-path="/"
-      :desc="desc"
+      :desc="found.desc"
       class="mb-4"
-    />
-    <AlertUnsave
-      :show="isDirty"
-      :saving="dataState.isSubmitting"
-      message="您有未保存的配置更改"
-      class="mb-4"
-      @discard="cancelChanges"
-      @save="handleSubmit"
     />
     <n-form :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '600:2 1600:3'">
@@ -50,7 +42,7 @@ import { StatusCodes } from "http-status-codes";
 import type { SelectMixedOption } from "naive-ui/es/select/src/interface";
 import type { MenuItem } from "~/layouts/serverEdit.vue";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
-import { chooseAdapterSchema, type ChooseAdapter, type ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { type ChooseAdapter, chooseAdapterSchema, type ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
 
@@ -64,6 +56,8 @@ const menuOptions: Ref<MenuItem[]> = inject(
   "menuOptions",
   computed(() => [])
 );
+const registerPageState = inject<(state: PageState) => void>("registerPageState");
+const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
 
@@ -96,11 +90,11 @@ class DataManager {
   async fetchAdapterList(): Promise<void> {
     try {
       const response = await $fetch<ApiResponse<AdapterWithStatus[]>>("/api/adapter");
-      if (response.code === StatusCodes.OK && response.data) {
-        dataState.data.adapterList = response.data;
-      } else {
-        throw new Error("获取适配器列表失败");
+      if (response.code !== StatusCodes.OK || !response.data) {
+        message.error(response.message);
+        return;
       }
+      dataState.data.adapterList = response.data;
     } catch (error) {
       console.error("Failed to fetch adapter list:", error);
       message.error("获取适配器列表失败");
@@ -175,14 +169,25 @@ const dataManager = new DataManager();
 // ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
+  if (registerPageState) {
+    registerPageState({
+      isDirty: () => isDirty.value,
+      save: handleSubmit
+    });
+  }
+});
+
+onUnmounted(() => {
+  if (clearPageState) {
+    clearPageState();
+  }
 });
 
 // ==================== 计算属性 ====================
-const desc = computed(() => {
+const found = computed(() => {
   const found = menuOptions.value.find((item) => item.key === route.path);
-  if (found) {
-    return String(found.desc);
-  }
+  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
+  return found;
 });
 
 const adapterOptions = computed<SelectMixedOption[]>(() =>

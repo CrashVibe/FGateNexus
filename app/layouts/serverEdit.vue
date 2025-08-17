@@ -10,10 +10,40 @@ import {
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
+
 const router = useRouter();
 const route = useRoute();
 const SIDEBAR_STORAGE_KEY = "sidebar-collapsed";
 const collapsed = ref(isMobile.value);
+const dialog = useDialog();
+const { setPageState, clearPageState, isPageDirty, savePage } = usePageStateProvider();
+
+// 页面状态注册函数给子组件
+provide("registerPageState", setPageState);
+provide("clearPageState", clearPageState);
+
+const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
+  const targetPath = String(key);
+  if (!targetPath || targetPath === "undefined" || targetPath === route.path) return;
+
+  if (isPageDirty()) {
+    dialog.warning({
+      title: "有未保存的更改",
+      content: "切换页面前请保存更改，或放弃未保存内容。",
+      positiveText: "保存并切换",
+      negativeText: "放弃更改",
+      onPositiveClick: async () => {
+        await savePage();
+        router.push(targetPath).catch(() => {});
+      },
+      onNegativeClick: () => {
+        router.push(targetPath).catch(() => {});
+      }
+    });
+    return;
+  }
+  router.push(targetPath).catch(() => {});
+};
 
 onMounted(() => {
   if (!isMobile.value) {
@@ -56,6 +86,7 @@ const handleExpand = () => {
 const renderIcon = (icon: Component) => () => h(icon);
 
 export type MenuItem = MenuMixedOption & {
+  label: string;
   desc: string;
 };
 
@@ -90,7 +121,7 @@ const menuOptions = computed(() => {
     });
     menu.push({
       label: "消息互通",
-      key: `/servers/${serverId}/message-sync`,
+      key: `/servers/${serverId}/msgbridge`,
       icon: renderIcon(ChatbubbleOutline),
       desc: "Minecraft 与 QQ 群消息双向同步配置。"
     });
@@ -107,13 +138,6 @@ const menuOptions = computed(() => {
 provide("menuOptions", menuOptions);
 
 const selectedKey = computed(() => route.path);
-
-const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
-  const targetPath = String(key);
-  if (targetPath !== route.path) {
-    router.push(targetPath).catch(console.error);
-  }
-};
 </script>
 
 <template>
@@ -132,7 +156,7 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
     <n-layout has-sider bordered position="absolute" style="top: var(--header-height)">
       <n-layout-sider
         bordered
-        show-trigger
+        :show-trigger="true"
         :native-scrollbar="false"
         collapse-mode="width"
         :width="200"
