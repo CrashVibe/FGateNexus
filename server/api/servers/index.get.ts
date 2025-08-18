@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
         // 为每个服务器获取状态信息
         const serversWithStatus: ServerWithStatus[] = result.map((server) => {
-            const connectionData = pluginBridge.getConnectionData(server.id);
+            const connectionData = pluginBridge.connectionManager.getConnectionData(server.id);
             return {
                 ...server,
                 isOnline: connectionData ? true : false,

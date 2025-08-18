@@ -44,7 +44,3 @@ export const BindingConfigSchema = z.object({
 });
 
 export type BindingConfig = z.infer<typeof BindingConfigSchema>;
-
-export const getDefaultServerConfig = (): BindingConfig => {
-    return BindingConfigSchema.parse({});
-};

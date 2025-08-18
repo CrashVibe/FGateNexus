@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import {
   ArrowBackOutline,
   BuildOutline,
@@ -34,15 +34,15 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
       negativeText: "放弃更改",
       onPositiveClick: async () => {
         await savePage();
-        router.push(targetPath).catch(() => {});
+        router.push(targetPath).catch(() => { });
       },
       onNegativeClick: () => {
-        router.push(targetPath).catch(() => {});
+        router.push(targetPath).catch(() => { });
       }
     });
     return;
   }
-  router.push(targetPath).catch(() => {});
+  router.push(targetPath).catch(() => { });
 };
 
 onMounted(() => {
@@ -125,12 +125,6 @@ const menuOptions = computed(() => {
       icon: renderIcon(ChatbubbleOutline),
       desc: "Minecraft 与 QQ 群消息双向同步配置。"
     });
-    menu.push({
-      label: "高级配置",
-      key: `/servers/${serverId}/advanced`,
-      icon: renderIcon(BuildOutline),
-      desc: "高级功能配置，包括性能优化、调试选项等。"
-    });
   }
   return menu;
 });
@@ -145,36 +139,21 @@ const selectedKey = computed(() => route.path);
     <n-layout-header bordered class="h-[var(--header-height)] p-4">
       <n-space justify="space-between">
         <n-space align="center" size="large">
-          <n-image src="/favicon.ico" class="align-middle size-8" preview-disabled />
-          <n-text strong class="text-base align-middle">FGATE</n-text>
+          <n-image class="align-middle size-8" preview-disabled src="/favicon.ico" />
+          <n-text class="text-base align-middle" strong>FGATE</n-text>
         </n-space>
         <n-space align="center" size="large">
           <ThemeToggle />
         </n-space>
       </n-space>
     </n-layout-header>
-    <n-layout has-sider bordered position="absolute" style="top: var(--header-height)">
-      <n-layout-sider
-        bordered
-        :show-trigger="true"
-        :native-scrollbar="false"
-        collapse-mode="width"
-        :width="200"
-        :position="isMobile ? 'absolute' : 'static'"
-        :collapsed-width="isMobile ? 0 : 64"
-        :collapsed="collapsed"
-        @collapse="handleCollapse"
-        @expand="handleExpand"
-      >
-        <n-menu
-          :key="selectedKey"
-          :options="menuOptions"
-          :value="selectedKey"
-          :collapsed="collapsed"
-          :collapsed-width="isMobile ? 0 : 64"
-          :collapsed-icon-size="isMobile ? 0 : 22"
-          @update:value="handleMenuSelect"
-        />
+    <n-layout bordered has-sider position="absolute" style="top: var(--header-height)">
+      <n-layout-sider :collapsed="collapsed" :collapsed-width="isMobile ? 0 : 64" :native-scrollbar="false"
+        :position="isMobile ? 'absolute' : 'static'" :show-trigger="true" :width="200" bordered collapse-mode="width"
+        @collapse="handleCollapse" @expand="handleExpand">
+        <n-menu :key="selectedKey" :collapsed="collapsed" :collapsed-icon-size="isMobile ? 0 : 22"
+          :collapsed-width="isMobile ? 0 : 64" :options="menuOptions" :value="selectedKey"
+          @update:value="handleMenuSelect" />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
         <div class="h-full p-8 max-w-screen-xl mx-auto">

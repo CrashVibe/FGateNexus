@@ -1,40 +1,40 @@
 <template>
-  <transition name="card-appear" appear>
+  <transition appear name="card-appear">
     <n-card
-      hoverable
-      class="transition-all duration-300 ease-in-out rounded-lg cursor-pointer hover:-translate-y-1 hover:shadow-xl"
       :class="{ 'grayscale-[0.6]': !adapter.isOnline }"
+      class="transition-all duration-300 ease-in-out rounded-lg cursor-pointer hover:-translate-y-1 hover:shadow-xl"
+      hoverable
       @click="emit('click', adapter.id)"
     >
       <div class="flex flex-col gap-3">
         <!-- head -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
-            <n-text strong class="text-lg"># {{ adapter.id }}</n-text>
-            <n-tag :type="adapter.isOnline ? 'success' : 'error'" :bordered="false" size="small">
+            <n-text class="text-lg" strong># {{ adapter.id }}</n-text>
+            <n-tag :bordered="false" :type="adapter.isOnline ? 'success' : 'error'" size="small">
               {{ adapter.isOnline ? "在线" : "离线" }}
             </n-tag>
           </div>
         </div>
 
         <div class="flex items-center justify-center">
-          <n-text strong class="text-2xl text-primary">{{ adapter.type }}</n-text>
+          <n-text class="text-2xl text-primary" strong>{{ adapter.type }}</n-text>
         </div>
 
         <div class="flex items-center justify-between text-sm">
           <n-text depth="2">适配器开关</n-text>
-          <n-tag :type="adapter.isOnline ? 'success' : 'warning'" :bordered="false" size="small">
+          <n-tag :bordered="false" :type="adapter.isOnline ? 'success' : 'warning'" size="small">
             {{ adapter.enabled ? "启用" : "禁用" }}
           </n-tag>
         </div>
 
-        <n-text depth="3" class="text-xs text-right select-none opacity-70">点击卡片修改配置</n-text>
+        <n-text class="text-xs text-right select-none opacity-70" depth="3">点击卡片修改配置</n-text>
       </div>
     </n-card>
   </transition>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { AdapterWithStatus } from "#shared/schemas/adapter";
 
 defineProps<{

@@ -1,6 +1,6 @@
 import type { AdapterInternal, Peer } from "crossws";
-import type { JsonRpcRequest } from "./types";
 import { pluginBridge } from "./MCWSBridge";
+import type { JsonRpcRequest } from "./types";
 
 /**
  * WebSocket 请求处理器基类
@@ -33,10 +33,10 @@ export abstract class RequestHandler {
         message: string,
         data?: unknown
     ): void {
-        pluginBridge.sendError(peer, id, code, message, data);
+        pluginBridge.messageHandler.sendError(peer, id, code, message, data);
     }
 
     protected sendResponse(peer: Peer<AdapterInternal>, id: string | null, result?: unknown): void {
-        pluginBridge.sendResponse(peer, id, result);
+        pluginBridge.messageHandler.sendResponse(peer, id, result);
     }
 }

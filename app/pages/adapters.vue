@@ -1,9 +1,13 @@
-<script setup lang="ts">
-import { RefreshOutline, AddCircleOutline } from "@vicons/ionicons5";
+<script lang="ts" setup>
+import { AddCircleOutline, RefreshOutline } from "@vicons/ionicons5";
 import type { FormInst } from "naive-ui";
 import type { ApiResponse, ApiResponseType } from "~~/shared/types";
-import { AdapterConfigSchema } from "~~/shared/schemas/adapter";
-import { type AdapterWithStatus, type BotInstanceData, AdapterType } from "~~/shared/schemas/adapter";
+import {
+  AdapterConfigSchema,
+  AdapterType,
+  type AdapterWithStatus,
+  type BotInstanceData
+} from "~~/shared/schemas/adapter";
 import { CardAdapter } from "#components";
 import { StatusCodes } from "http-status-codes";
 
@@ -166,18 +170,18 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     <div>
       <!-- text 区 -->
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <n-text strong class="flex flex-col gap-2">
+        <n-text class="flex flex-col gap-2" strong>
           <h1 class="text-2xl sm:text-3xl">Bot 实例列表</h1>
           <p class="text-sm text-gray-400 sm:text-base">管理多个 Bot 实例，点击进入详细配置。</p>
         </n-text>
         <div class="flex flex-wrap gap-2 sm:gap-3">
-          <n-button strong size="large" :loading="isLoadingList" @click="handleRefresh"
+          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh"
             >刷新列表
             <template #icon>
               <n-icon :component="RefreshOutline" />
             </template>
           </n-button>
-          <n-button ghost type="primary" size="large" @click="openModal"
+          <n-button ghost size="large" type="primary" @click="openModal"
             >创建新 Bot 实例
             <template #icon>
               <n-icon :component="AddCircleOutline" />
@@ -188,12 +192,12 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     </div>
     <!-- modal 创建区 -->
     <div>
-      <n-modal v-model:show="showModal" class="w-[90vw] max-w-[600px]" title="创建 Bot 实例" preset="card">
+      <n-modal v-model:show="showModal" class="w-[90vw] max-w-[600px]" preset="card" title="创建 Bot 实例">
         <selector-bot ref="botSelectorRef" v-model="botInstanceData" />
         <template #action>
           <div class="flex justify-end gap-2">
             <n-button :disabled="isSubmitting" @click="showModal = false">取消</n-button>
-            <n-button type="primary" ghost :loading="isSubmitting" :disabled="isSubmitting" @click="handleSubmitClick">
+            <n-button :disabled="isSubmitting" :loading="isSubmitting" ghost type="primary" @click="handleSubmitClick">
               确认创建
             </n-button>
           </div>
@@ -202,9 +206,9 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     </div>
     <!-- Content -->
     <div class="flex-1">
-      <n-empty v-if="adapterList.length === 0" description="暂无 Bot 实例，请先创建一个 Bot 实例" class="mt-6 sm:mt-10">
+      <n-empty v-if="adapterList.length === 0" class="mt-6 sm:mt-10" description="暂无 Bot 实例，请先创建一个 Bot 实例">
         <template #extra>
-          <n-button type="primary" size="medium" @click="openModal"
+          <n-button size="medium" type="primary" @click="openModal"
             >创建新 Bot 实例
             <template #icon>
               <n-icon :component="AddCircleOutline" />
@@ -228,8 +232,8 @@ async function handleToggle(adapterID: number, enabled: boolean) {
       <drawer-bot
         v-if="selectedAdapter"
         :adapter="selectedAdapter"
-        @save="handleSave"
         @delete="handleDelete"
+        @save="handleSave"
         @toggle="handleToggle"
       />
     </n-drawer>

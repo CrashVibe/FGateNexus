@@ -1,7 +1,7 @@
-<script setup lang="ts">
-import { AdapterType } from "#shared/schemas/adapter";
+<script lang="ts" setup>
 import type { BotInstanceData } from "#shared/schemas/adapter";
-import { OneBotWSReverseConfigSchema, OneBotWSConfigSchema } from "#shared/schemas/adapter/onebot";
+import { AdapterType } from "#shared/schemas/adapter";
+import { OneBotWSConfigSchema, OneBotWSReverseConfigSchema } from "#shared/schemas/adapter/onebot";
 import type { FormInst } from "naive-ui";
 import { createDynamicZodRules } from "#shared/utils/validation";
 
@@ -73,7 +73,7 @@ defineExpose({
     >
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div class="mb-4 md:col-span-2">
-          <n-form-item label="适配器类型" :show-feedback="false">
+          <n-form-item :show-feedback="false" label="适配器类型">
             <n-select
               v-model:value="selectedType"
               :options="[{ label: 'OneBot', value: AdapterType.Onebot }]"
@@ -112,15 +112,15 @@ defineExpose({
                 v-model:value="wsConfig.timeout"
                 :min="1000"
                 :step="1000"
-                placeholder="5000"
                 class="w-full"
+                placeholder="5000"
               >
                 <template #suffix>毫秒</template>
               </n-input-number>
             </n-form-item>
 
             <n-form-item label="重试次数" path="retryTimes">
-              <n-input-number v-model:value="wsConfig.retryTimes" :min="0" :step="1" placeholder="3" class="w-full" />
+              <n-input-number v-model:value="wsConfig.retryTimes" :min="0" :step="1" class="w-full" placeholder="3" />
             </n-form-item>
 
             <n-form-item label="重试间隔" path="retryInterval">
@@ -128,8 +128,8 @@ defineExpose({
                 v-model:value="wsConfig.retryInterval"
                 :min="1000"
                 :step="100"
-                placeholder="3000"
                 class="w-full"
+                placeholder="3000"
               >
                 <template #suffix>毫秒</template>
               </n-input-number>
@@ -140,8 +140,8 @@ defineExpose({
                 v-model:value="wsConfig.retryLazy"
                 :min="1000"
                 :step="100"
-                placeholder="1000"
                 class="w-full"
+                placeholder="1000"
               >
                 <template #suffix>毫秒</template>
               </n-input-number>

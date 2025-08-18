@@ -1,26 +1,14 @@
 <template>
   <div>
-    <HeaderServer
-      :title="found.label"
-      :server-name="dataState.data.serverData?.name || ''"
-      back-button-text="服务器列表"
-      back-path="/"
-      :desc="found.desc"
-      class="mb-4"
-    />
+    <HeaderServer :desc="found.desc" :server-name="dataState.data.serverData?.name || ''" :title="found.label"
+      back-button-text="服务器列表" back-path="/" class="mb-4" />
     <n-form :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '600:2 1600:3'">
         <n-gi>
-          <n-card title="Bot 实例" size="small" class="h-full cursor-pointer" hoverable embedded>
+          <n-card class="h-full cursor-pointer" embedded hoverable size="small" title="Bot 实例">
             <n-form-item label="Bot 实例" path="adapterId">
-              <n-select
-                v-model:value="formData.adapterId"
-                :options="adapterOptions"
-                placeholder="请选择 Bot 实例"
-                filterable
-                clearable
-                style="width: 100%"
-              />
+              <n-select v-model:value="formData.adapterId" :options="adapterOptions" clearable filterable
+                placeholder="请选择 Bot 实例" style="width: 100%" />
             </n-form-item>
           </n-card>
         </n-gi>
@@ -28,15 +16,20 @@
     </n-form>
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :loading="isAnyLoading" :disabled="isAnyLoading || !isDirty" @click="cancelChanges">取消</n-button>
-      <n-button ghost type="primary" :loading="isAnyLoading" :disabled="isAnyLoading || !isDirty" @click="handleSubmit"
-        >保存设置</n-button
-      >
+      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
+      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+        <template #icon>
+          <n-icon><svg viewBox="0 0 24 24">
+              <path fill="currentColor"
+                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z" />
+            </svg></n-icon>
+        </template>
+        保存设置</n-button>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
 import type { SelectMixedOption } from "naive-ui/es/select/src/interface";

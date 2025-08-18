@@ -1,27 +1,27 @@
 <template>
   <div>
     <HeaderServer
-      :title="found.label"
+      :desc="found.desc"
       :server-name="serverData?.name || ''"
+      :title="found.label"
       back-button-text="服务器列表"
       back-path="/"
-      :desc="found.desc"
       class="mb-6"
     />
 
     <n-grid
       v-if="configMenuItems.length > 0"
       :cols="isMobile ? 1 : '600:2 1100:3 1600:4'"
+      :item-responsive="true"
       x-gap="20"
       y-gap="20"
-      :item-responsive="true"
     >
       <n-gi v-for="menuItem in configMenuItems" :key="menuItem.key" :span="getCardSpan(String(menuItem.label))">
         <n-card
           :title="String(menuItem.label)"
-          hoverable
-          embedded
           class="config-card"
+          embedded
+          hoverable
           @click="navigateToMenuItem(menuItem.key!)"
         >
           <template v-if="menuItem.icon" #header-extra>
@@ -34,13 +34,13 @@
 
     <n-empty v-else description="暂无可用的配置选项">
       <template #extra>
-        <n-button type="primary" size="medium" @click="$router.push('/')"> 返回服务器列表 </n-button>
+        <n-button size="medium" type="primary" @click="$router.push('/')"> 返回服务器列表 </n-button>
       </template>
     </n-empty>
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import type { MenuItem } from "~/layouts/serverEdit.vue";
 
 definePageMeta({

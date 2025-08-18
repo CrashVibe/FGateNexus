@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
 
-        const connectionData = pluginBridge.getConnectionData(result.id);
+        const connectionData = pluginBridge.connectionManager.getConnectionData(result.id);
         const serversWithStatus: ServerWithStatus = {
             ...result,
             isOnline: !!connectionData,

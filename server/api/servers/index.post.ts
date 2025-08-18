@@ -5,7 +5,8 @@ import { createApiResponse } from "#shared/types";
 import { ApiError, createErrorResponse } from "#shared/error";
 import { StatusCodes } from "http-status-codes";
 import { serverSchemaRequset } from "#shared/schemas/server/servers";
-import { getDefaultServerConfig } from "~~/shared/schemas/server/config";
+import { getDefaultBindingConfig } from "~~/shared/utils/binding";
+import { getDefaultChatSyncConfig } from "~~/shared/utils/chatSync";
 
 export default defineEventHandler(async (event) => {
     try {
@@ -25,7 +26,8 @@ export default defineEventHandler(async (event) => {
         await database.insert(servers).values({
             name: serverData.name,
             token: serverData.token,
-            bindingConfig: getDefaultServerConfig()
+            bindingConfig: getDefaultBindingConfig(),
+            chatSyncConfig: getDefaultChatSyncConfig()
         });
         return createApiResponse("添加服务器成功", StatusCodes.CREATED);
     } catch (err) {

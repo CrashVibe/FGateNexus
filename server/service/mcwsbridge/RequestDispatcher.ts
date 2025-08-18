@@ -3,6 +3,7 @@ import type { JsonRpcRequest } from "./types";
 import type { AdapterInternal, Peer } from "crossws";
 import { pluginBridge } from "./MCWSBridge";
 import { PlayerJoinHandler } from "./impl/PlayerJoin";
+import { ChatMessageHandler } from "./impl/ChatMessage";
 
 class RequestDispatcher {
     static instance: RequestDispatcher | null = null;
@@ -10,6 +11,7 @@ class RequestDispatcher {
     private handlers = new Map<string, RequestHandler>();
     private constructor() {
         this.registerHandler(new PlayerJoinHandler());
+        this.registerHandler(new ChatMessageHandler());
     }
 
     public static getInstance(): RequestDispatcher {
@@ -38,7 +40,7 @@ class RequestDispatcher {
         const handler = this.handlers.get(request.method);
         if (!handler) {
             console.warn(`[DISPATCH] 未找到处理器: ${request.method}`);
-            pluginBridge.sendError(peer, request.id, -32601, "Method not found");
+            pluginBridge.messageHandler.sendError(peer, request.id, -32601, "Method not found");
             return;
         }
 
@@ -46,7 +48,7 @@ class RequestDispatcher {
             await handler.handleRequest(request, peer);
         } catch (error) {
             console.error(`[DISPATCH] 处理请求失败: ${request.method}`, error);
-            pluginBridge.sendError(peer, request.id, -32603, "Internal error", error);
+            pluginBridge.messageHandler.sendError(peer, request.id, -32603, "Internal error", error);
         }
     }
 }

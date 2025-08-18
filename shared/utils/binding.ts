@@ -1,4 +1,4 @@
-import { CODE_MODES } from "../schemas/server/config";
+import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "../schemas/server/binding";
 
 // 生成验证码
 export function generateVerificationCode(code_mode: CODE_MODES, length: number): string {
@@ -61,3 +61,8 @@ export function replaceUnbindSuccessMsgPlaceholders(msg: string, playerName: str
 export function replaceUnbindFailMsgPlaceholders(msg: string, playerName: string, why: string): string {
     return msg.replace(/#user/g, playerName).replace(/#why/g, why);
 }
+
+// 获取默认的绑定配置
+export const getDefaultBindingConfig = (): BindingConfig => {
+    return BindingConfigSchema.parse({});
+};

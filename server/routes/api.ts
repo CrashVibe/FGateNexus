@@ -35,7 +35,7 @@ export default defineWebSocketHandler({
             return;
         }
 
-        if (pluginBridge.hasConnection(undefined, server.id)) {
+        if (pluginBridge.connectionManager.hasConnection(undefined, server.id)) {
             peer.close(1008, "Unauthorized: Connection already exists");
             console.warn("WebSocket 接受的对应连接连接已存在：", {
                 serverId: server.id
@@ -43,7 +43,7 @@ export default defineWebSocketHandler({
             return;
         }
 
-        pluginBridge.addConnection(peer as unknown as Peer<AdapterInternal>, server.id);
+        pluginBridge.connectionManager.addConnection(peer as unknown as Peer<AdapterInternal>, server.id);
 
         peer.send(
             JSON.stringify({
@@ -60,8 +60,8 @@ export default defineWebSocketHandler({
     },
 
     async close(peer) {
-        if (pluginBridge.hasConnection(peer as unknown as Peer<AdapterInternal>)) {
-            const data = pluginBridge.removeConnection(peer as unknown as Peer<AdapterInternal>);
+        if (pluginBridge.connectionManager.hasConnection(peer as unknown as Peer<AdapterInternal>)) {
+            const data = pluginBridge.connectionManager.removeConnection(peer as unknown as Peer<AdapterInternal>);
             console.info("WebSocket 连接已移除：", {
                 peerId: peer.id,
                 serverId: data.serverId
@@ -73,9 +73,9 @@ export default defineWebSocketHandler({
         });
     },
     async message(peer, message) {
-        if (!pluginBridge.hasConnection(peer as unknown as Peer<AdapterInternal>)) {
+        if (!pluginBridge.connectionManager.hasConnection(peer as unknown as Peer<AdapterInternal>)) {
             throw new Error("Unauthorized: 该连接未授权或不存在");
         }
-        await pluginBridge.handleMessage(peer as unknown as Peer<AdapterInternal>, message.text());
+        await pluginBridge.messageHandler.handleMessage(peer as unknown as Peer<AdapterInternal>, message.text());
     }
 });

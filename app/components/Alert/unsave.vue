@@ -1,14 +1,14 @@
 <template>
-  <Transition name="alert-slide" mode="out-in">
-    <n-alert v-if="show" type="warning" title="你有未保存到更改" closable @close="handleClose" class="rounded-lg">
+  <Transition mode="out-in" name="alert-slide">
+    <n-alert v-if="show" class="rounded-lg" closable title="你有未保存到更改" type="warning" @close="handleClose">
       <template #default>
         <div class="flex items-center justify-between">
           <n-text strong>请选择保存或丢弃您的更改</n-text>
           <div class="flex gap-2">
-            <n-button size="small" ghost type="primary" :loading="saving" :disabled="saving" @click="handleSave">
+            <n-button :disabled="saving" :loading="saving" ghost size="small" type="primary" @click="handleSave">
               {{ saveText }}
             </n-button>
-            <n-button size="small" :loading="saving" :disabled="saving" @click="handleDiscard">
+            <n-button :disabled="saving" :loading="saving" size="small" @click="handleDiscard">
               {{ discardText }}
             </n-button>
           </div>
@@ -18,7 +18,7 @@
   </Transition>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 interface Props {
   show: boolean;
   saving?: boolean;

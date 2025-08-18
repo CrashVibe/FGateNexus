@@ -134,35 +134,42 @@ class BindingService {
     /**
      * 处理消息
      */
-    public async processMessage(connection: BotConnection, ctx: Session): Promise<void> {
+    public async processMessage(connection: BotConnection, ctx: Session): Promise<boolean> {
         this.cleanUpExpiredBindings();
 
-        for (const binding of this.pendingBindings.get(connection.adapterID) || []) {
-            if (binding.message === ctx.content) {
-                if (Object.values(AdapterType).find((key) => key === ctx.platform) && ctx.userId) {
-                    const bindingConfig = await getConfig(binding.serverID);
-                    try {
-                        await this.performBinding(binding, ctx.platform as AdapterType, ctx.userId, ctx.username);
-                        this.pendingBindings.get(connection.adapterID)?.delete(binding);
-                        await ctx.send(
-                            replaceBindSuccessMsgPlaceholders(bindingConfig.bindSuccessMsg, binding.playerNickname)
-                        );
-                    } catch (error: unknown) {
-                        const errorMessage = error instanceof Error ? error.message : String(error);
-                        console.error("无法处理绑定:", errorMessage);
-                        await ctx.send(
-                            replaceBindFailMsgPlaceholders(
-                                bindingConfig.bindFailMsg,
-                                binding.playerNickname,
-                                errorMessage
-                            )
-                        );
-                    }
+        const bindings = this.pendingBindings.get(connection.adapterID);
+        let hit = false;
+        if (bindings) {
+            // TODO 目标群
+            for (const binding of bindings) {
+                // 不匹配则继续
+                if (binding.message !== ctx.content) continue;
+
+                if (!Object.values(AdapterType).includes(ctx.platform as AdapterType) || !ctx.userId) {
+                    continue;
                 }
+
+                const bindingConfig = await getConfig(binding.serverID);
+                try {
+                    await this.performBinding(binding, ctx.platform as AdapterType, ctx.userId, ctx.username);
+                    // 删除已处理的 pending binding
+                    bindings.delete(binding);
+                    await ctx.send(
+                        replaceBindSuccessMsgPlaceholders(bindingConfig.bindSuccessMsg, binding.playerNickname)
+                    );
+                } catch (error: unknown) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    console.error("无法处理绑定:", errorMessage);
+                    await ctx.send(
+                        replaceBindFailMsgPlaceholders(bindingConfig.bindFailMsg, binding.playerNickname, errorMessage)
+                    );
+                }
+
+                hit = true;
             }
         }
-
-        await this.processUnbindMessage(connection, ctx);
+        if (await this.processUnbindMessage(connection, ctx)) return true;
+        return hit;
     }
 
     public async performBinding(
@@ -211,9 +218,9 @@ class BindingService {
         }
     }
 
-    private async processUnbindMessage(connection: BotConnection, ctx: Session): Promise<void> {
+    private async processUnbindMessage(connection: BotConnection, ctx: Session): Promise<boolean> {
         if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId) {
-            return;
+            return false;
         }
 
         const database = await getDatabase();
@@ -226,7 +233,7 @@ class BindingService {
         );
 
         if (matchingServers.length === 0) {
-            return;
+            return false;
         }
 
         const unbindPromises = matchingServers.map(async (server) => {
@@ -262,6 +269,7 @@ class BindingService {
         });
 
         await Promise.all(unbindPromises);
+        return true;
     }
 
     private async performUnbind(

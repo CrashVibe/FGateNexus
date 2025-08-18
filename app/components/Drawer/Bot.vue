@@ -1,7 +1,7 @@
-<script setup lang="ts">
-import { AdapterType } from "#shared/schemas/adapter";
+<script lang="ts" setup>
 import type { AdapterWithStatus, BotInstanceData } from "#shared/schemas/adapter";
-import { OneBotWSReverseConfigSchema, OneBotWSConfigSchema } from "#shared/schemas/adapter/onebot";
+import { AdapterType } from "#shared/schemas/adapter";
+import { OneBotWSConfigSchema, OneBotWSReverseConfigSchema } from "#shared/schemas/adapter/onebot";
 import type { FormInst } from "naive-ui";
 import { createDynamicZodRules } from "#shared/utils/validation";
 
@@ -114,7 +114,7 @@ onMounted(() => {
 });
 </script>
 <template>
-  <n-drawer-content title="配置修改" closable>
+  <n-drawer-content closable title="配置修改">
     <div class="flex flex-col gap-6">
       <n-form
         ref="formRef"
@@ -126,7 +126,7 @@ onMounted(() => {
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
             <n-form-item label="适配器类型">
-              <n-select :value="adapter.type" :options="[{ label: 'OneBot', value: AdapterType.Onebot }]" disabled />
+              <n-select :options="[{ label: 'OneBot', value: AdapterType.Onebot }]" :value="adapter.type" disabled />
             </n-form-item>
           </div>
           <template v-if="selectedType === AdapterType.Onebot && formData.config">
@@ -158,22 +158,22 @@ onMounted(() => {
                   v-model:value="wsConfig.timeout"
                   :min="1000"
                   :step="1000"
-                  placeholder="5000"
                   class="w-full"
+                  placeholder="5000"
                 >
                   <template #suffix>毫秒</template>
                 </n-input-number>
               </n-form-item>
               <n-form-item label="重试次数" path="retryTimes">
-                <n-input-number v-model:value="wsConfig.retryTimes" :min="0" :step="1" placeholder="3" class="w-full" />
+                <n-input-number v-model:value="wsConfig.retryTimes" :min="0" :step="1" class="w-full" placeholder="3" />
               </n-form-item>
               <n-form-item label="重试间隔" path="retryInterval">
                 <n-input-number
                   v-model:value="wsConfig.retryInterval"
                   :min="1000"
                   :step="100"
-                  placeholder="3000"
                   class="w-full"
+                  placeholder="3000"
                 />
               </n-form-item>
               <n-form-item label="重试延迟" path="retryLazy">
@@ -181,8 +181,8 @@ onMounted(() => {
                   v-model:value="wsConfig.retryLazy"
                   :min="1000"
                   :step="100"
-                  placeholder="1000"
                   class="w-full"
+                  placeholder="1000"
                 >
                   <template #suffix>毫秒</template>
                 </n-input-number>
@@ -194,11 +194,11 @@ onMounted(() => {
     </div>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <n-button type="error" :loading="loading" :disabled="loading" ghost @click="handleDelete"> 删除 </n-button>
-        <n-button type="default" :loading="loading" :disabled="loading" @click="handleToggle">
+        <n-button :disabled="loading" :loading="loading" ghost type="error" @click="handleDelete"> 删除 </n-button>
+        <n-button :disabled="loading" :loading="loading" type="default" @click="handleToggle">
           {{ props.adapter.enabled ? "禁用" : "启用" }}
         </n-button>
-        <n-button type="primary" :loading="loading" :disabled="loading" @click="handleSave"> 保存 </n-button>
+        <n-button :disabled="loading" :loading="loading" type="primary" @click="handleSave"> 保存 </n-button>
       </div>
     </template>
   </n-drawer-content>

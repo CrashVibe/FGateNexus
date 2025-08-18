@@ -1,6 +1,5 @@
 import { getDatabase } from "~~/server/db/client";
 import { RequestHandler } from "../RequestHandler";
-import type { JsonRpcRequest } from "../types";
 import type { AdapterInternal, Peer } from "crossws";
 import { eq, sql } from "drizzle-orm";
 import { pluginBridge } from "../MCWSBridge";
@@ -9,6 +8,7 @@ import { getConfig } from "../../bindingManger/config";
 import { bindingService } from "../../bindingManger";
 import { replaceBindKickMsgPlaceholders } from "~~/shared/utils/binding";
 import moment from "moment-timezone";
+import type { JsonRpcRequest } from "../types";
 
 export class PlayerJoinHandler extends RequestHandler {
     getMethod(): string {
@@ -29,7 +29,7 @@ export class PlayerJoinHandler extends RequestHandler {
         }
         const database = await getDatabase();
 
-        const serverID = pluginBridge.getServerId(peer);
+        const serverID = pluginBridge.connectionManager.getServerId(peer);
 
         const server = await database.query.servers.findFirst({
             where: eq(servers.id, serverID)

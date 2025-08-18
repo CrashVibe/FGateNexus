@@ -42,26 +42,6 @@ export class MessageHandler {
     }
 
     /**
-     * 处理响应消息
-     *
-     * @param response - JSON-RPC 响应
-     */
-    private handleResponse(response: JsonRpcResponse): void {
-        if (response.id && this.pendingRequests.has(response.id.toString())) {
-            const pendingRequest = this.pendingRequests.get(response.id.toString())!;
-            clearTimeout(pendingRequest.timeout);
-            this.pendingRequests.delete(response.id.toString());
-
-            if (response.error) {
-                pendingRequest.reject(new Error(response.error.message));
-            } else {
-                pendingRequest.resolve(response.result);
-                console.debug(`[RESPONSE] 响应已处理: ${pendingRequest.peerId} - ID: ${response.id}`);
-            }
-        }
-    }
-
-    /**
      * 发送请求并等待响应
      *
      * @param peer - WebSocket 连接
@@ -108,6 +88,28 @@ export class MessageHandler {
                 reject(error);
             }
         });
+    }
+
+    /**
+     * 发送通知消息
+     *
+     * @param peer - WebSocket 连接
+     * @param method - 通知方法
+     * @param params - 通知参数
+     */
+    public sendNotification<P = unknown>(peer: Peer<AdapterInternal>, method: string, params?: P): void {
+        const notification: JsonRpcRequest<P> = {
+            jsonrpc: "2.0",
+            method,
+            params,
+            id: null
+        };
+        try {
+            peer.send(JSON.stringify(notification));
+            console.debug(`[NOTIFY] 通知已发送: ${peer.id} - ${method}`);
+        } catch (error) {
+            console.error(`[FAILED] 发送通知失败: ${peer.id} - ${method}`, error);
+        }
     }
 
     /**
@@ -206,5 +208,25 @@ export class MessageHandler {
      */
     public getPendingRequestCount(): number {
         return this.pendingRequests.size;
+    }
+
+    /**
+     * 处理响应消息
+     *
+     * @param response - JSON-RPC 响应
+     */
+    private handleResponse(response: JsonRpcResponse): void {
+        if (response.id && this.pendingRequests.has(response.id.toString())) {
+            const pendingRequest = this.pendingRequests.get(response.id.toString())!;
+            clearTimeout(pendingRequest.timeout);
+            this.pendingRequests.delete(response.id.toString());
+
+            if (response.error) {
+                pendingRequest.reject(new Error(response.error.message));
+            } else {
+                pendingRequest.resolve(response.result);
+                console.debug(`[RESPONSE] 响应已处理: ${pendingRequest.peerId} - ID: ${response.id}`);
+            }
+        }
     }
 }

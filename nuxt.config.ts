@@ -12,26 +12,7 @@ export default defineNuxtConfig({
         strict: true,
         tsConfig: {
             compilerOptions: {
-                target: "ESNext",
-                module: "ESNext",
-                moduleDetection: "force",
                 types: ["bun-types"],
-                // Bundler mode
-                moduleResolution: "bundler",
-                allowImportingTsExtensions: true,
-                verbatimModuleSyntax: true,
-                noEmit: true,
-                incremental: true,
-                sourceMap: true,
-
-                // Best practices
-                skipLibCheck: true,
-                noFallthroughCasesInSwitch: true,
-
-                // Some stricter flags
-                noUnusedLocals: true,
-                noUnusedParameters: true,
-                noPropertyAccessFromIndexSignature: true,
                 // 支持解析json文件
                 resolveJsonModule: true
             }

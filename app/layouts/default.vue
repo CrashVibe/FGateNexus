@@ -1,7 +1,8 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import { LinkOutline, MenuOutline, PeopleOutline, PersonCircleOutline } from "@vicons/ionicons5";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
+
 const router = useRouter();
 const route = useRoute();
 
@@ -70,34 +71,34 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
     <n-layout-header bordered class="h-[var(--header-height)] p-4">
       <n-space justify="space-between">
         <n-space align="center" size="large">
-          <n-image src="/favicon.ico" class="align-middle size-8" preview-disabled />
-          <n-text strong class="text-base align-middle">FGATE</n-text>
+          <n-image class="align-middle size-8" preview-disabled src="/favicon.ico" />
+          <n-text class="text-base align-middle" strong>FGATE</n-text>
         </n-space>
         <n-space align="center" size="large">
           <ThemeToggle />
         </n-space>
       </n-space>
     </n-layout-header>
-    <n-layout has-sider bordered position="absolute" style="top: var(--header-height)">
+    <n-layout bordered has-sider position="absolute" style="top: var(--header-height)">
       <n-layout-sider
-        bordered
-        show-trigger
-        :native-scrollbar="false"
-        collapse-mode="width"
-        :width="200"
-        :position="isMobile ? 'absolute' : 'static'"
-        :collapsed-width="isMobile ? 0 : 64"
         :collapsed="collapsed"
+        :collapsed-width="isMobile ? 0 : 64"
+        :native-scrollbar="false"
+        :position="isMobile ? 'absolute' : 'static'"
+        :width="200"
+        bordered
+        collapse-mode="width"
+        show-trigger
         @collapse="handleCollapse"
         @expand="handleExpand"
       >
         <n-menu
           :key="selectedKey"
+          :collapsed="collapsed"
+          :collapsed-icon-size="isMobile ? 0 : 22"
+          :collapsed-width="isMobile ? 0 : 64"
           :options="menuOptions"
           :value="selectedKey"
-          :collapsed="collapsed"
-          :collapsed-width="isMobile ? 0 : 64"
-          :collapsed-icon-size="isMobile ? 0 : 22"
           @update:value="handleMenuSelect"
         />
       </n-layout-sider>

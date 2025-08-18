@@ -1,4 +1,4 @@
-import { OneBotConfigSchema, type OneBotConfig } from "./onebot";
+import { type OneBotConfig, OneBotConfigSchema } from "./onebot";
 import type { adapters } from "~~/server/db/schema";
 
 export const AdapterConfigSchema = OneBotConfigSchema;

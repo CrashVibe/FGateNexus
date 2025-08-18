@@ -1,5 +1,5 @@
 import type { ZodError } from "zod";
-import { setResponseStatus, type EventHandlerRequest, type H3Event } from "h3";
+import { type EventHandlerRequest, type H3Event, setResponseStatus } from "h3";
 
 /**
  * API 错误响应模型，用于 OpenAPI 文档
@@ -47,50 +47,6 @@ export class ApiError extends Error {
     }
 
     /**
-     * 根据错误类型获取对应的 HTTP 状态码
-     */
-    private getStatusCode(): number {
-        const statusMap: Record<ApiErrorType, number> = {
-            [ApiErrorType.Database]: 500,
-            [ApiErrorType.Validation]: 400,
-            [ApiErrorType.Authentication]: 401,
-            [ApiErrorType.Authorization]: 403,
-            [ApiErrorType.NotFound]: 404,
-            [ApiErrorType.Conflict]: 409,
-            [ApiErrorType.Internal]: 500,
-            [ApiErrorType.BadRequest]: 400,
-            [ApiErrorType.Unauthorized]: 401,
-            [ApiErrorType.Forbidden]: 403,
-            [ApiErrorType.InternalServerError]: 500
-        };
-
-        return statusMap[this.type] || 500;
-    }
-
-    /**
-     * 转换为响应对象
-     */
-    toResponse(): ApiErrorResponse {
-        let errorMessage = this.message;
-
-        // 对于内部错误，不暴露具体错误信息
-        if (
-            this.type === ApiErrorType.Database ||
-            this.type === ApiErrorType.Internal ||
-            this.type === ApiErrorType.InternalServerError
-        ) {
-            console.error(`${this.type} error:`, this.message);
-            errorMessage = this.type === ApiErrorType.Database ? "Database error" : "Internal server error";
-        }
-
-        return {
-            message: errorMessage,
-            code: this.status,
-            errors: this.errors // 可选
-        };
-    }
-
-    /**
      * 静态工厂方法
      */
     static database(message: string): ApiError {
@@ -135,6 +91,50 @@ export class ApiError extends Error {
 
     static internalServerError(message: string): ApiError {
         return new ApiError(ApiErrorType.InternalServerError, `Internal server error: ${message}`);
+    }
+
+    /**
+     * 转换为响应对象
+     */
+    toResponse(): ApiErrorResponse {
+        let errorMessage = this.message;
+
+        // 对于内部错误，不暴露具体错误信息
+        if (
+            this.type === ApiErrorType.Database ||
+            this.type === ApiErrorType.Internal ||
+            this.type === ApiErrorType.InternalServerError
+        ) {
+            console.error(`${this.type} error:`, this.message);
+            errorMessage = this.type === ApiErrorType.Database ? "Database error" : "Internal server error";
+        }
+
+        return {
+            message: errorMessage,
+            code: this.status,
+            errors: this.errors // 可选
+        };
+    }
+
+    /**
+     * 根据错误类型获取对应的 HTTP 状态码
+     */
+    private getStatusCode(): number {
+        const statusMap: Record<ApiErrorType, number> = {
+            [ApiErrorType.Database]: 500,
+            [ApiErrorType.Validation]: 400,
+            [ApiErrorType.Authentication]: 401,
+            [ApiErrorType.Authorization]: 403,
+            [ApiErrorType.NotFound]: 404,
+            [ApiErrorType.Conflict]: 409,
+            [ApiErrorType.Internal]: 500,
+            [ApiErrorType.BadRequest]: 400,
+            [ApiErrorType.Unauthorized]: 401,
+            [ApiErrorType.Forbidden]: 403,
+            [ApiErrorType.InternalServerError]: 500
+        };
+
+        return statusMap[this.type] || 500;
     }
 }
 

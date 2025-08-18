@@ -10,6 +10,7 @@ import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import { bindingService } from "../bindingManger";
+import { messageRouter } from "../messageRouter";
 
 /**
  * Bot 连接信息
@@ -150,7 +151,7 @@ export class ChatBridge {
     /**
      * 查找 Bot 实例
      */
-    private findBot(adapterID: number): Bot {
+    public findBot(adapterID: number): Bot {
         const connection = this.connectionMap.get(adapterID);
         if (!connection) {
             throw new Error(`找不到 Bot 连接: ${adapterID}`);
@@ -186,7 +187,32 @@ export class ChatBridge {
      * 接收消息
      */
     public async receiveMessage(connection: BotConnection, session: Session): Promise<void> {
-        await Promise.all([bindingService.processMessage(connection, session)]);
+        if (await bindingService.processMessage(connection, session)) {
+            return; // 绑定服务已经处理它了，这条消息已经没有它的利用价值了哈哈
+        }
+        await Promise.all([messageRouter.handlePlatformMessage(connection, session)]);
+    }
+
+    /**
+     * 发送消息到指定目标
+     */
+    public async sendToTarget(
+        botConnection: BotConnection,
+        targetId: string,
+        targetType: "group" | "private",
+        message: string
+    ): Promise<void> {
+        try {
+            const bot = this.findBot(botConnection.adapterID);
+
+            if (targetType === "group") {
+                await bot.sendMessage(targetId, message);
+            } else if (targetType === "private") {
+                await bot.sendPrivateMessage(targetId, message);
+            }
+        } catch (error) {
+            console.error(`[MessageRouter] Failed to send message to ${targetType} ${targetId}:`, error);
+        }
     }
 }
 

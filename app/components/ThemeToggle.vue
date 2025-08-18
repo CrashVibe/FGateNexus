@@ -1,6 +1,6 @@
 <template>
   <n-dropdown :options="themeOptions" trigger="click" @select="handleThemeSelect">
-    <n-button quaternary circle>
+    <n-button circle quaternary>
       <template #icon>
         <n-icon :component="currentThemeIcon" />
       </template>
@@ -8,21 +8,21 @@
   </n-dropdown>
 
   <Transition
-    name="theme-fade"
     enter-active-class="transition-opacity ease-out duration-800"
-    leave-active-class="transition-opacity ease-out duration-800"
     enter-from-class="opacity-0"
     enter-to-class="opacity-100"
+    leave-active-class="transition-opacity ease-out duration-800"
     leave-from-class="opacity-100"
     leave-to-class="opacity-0"
+    name="theme-fade"
   >
-    <div v-if="isTransitioning" class="fixed inset-0 z-[2] pointer-events-none" :class="transitionBgColor" />
+    <div v-if="isTransitioning" :class="transitionBgColor" class="fixed inset-0 z-[2] pointer-events-none" />
   </Transition>
 </template>
 
-<script setup lang="ts">
-import { useDark, usePreferredDark, useLocalStorage } from "@vueuse/core";
-import { SunnyOutline, MoonOutline, TvOutline } from "@vicons/ionicons5";
+<script lang="ts" setup>
+import { useDark, useLocalStorage, usePreferredDark } from "@vueuse/core";
+import { MoonOutline, SunnyOutline, TvOutline } from "@vicons/ionicons5";
 import { NButton, NDropdown, NIcon } from "naive-ui";
 
 const isDark = useDark({
