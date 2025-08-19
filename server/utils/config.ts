@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { z } from "zod";
-import { applyDefaults } from "../utils/zod";
+import { applyDefaults } from "./zod";
 
 /**
  * 合并用户配置与默认配置
@@ -47,32 +47,16 @@ class AppConfigManager {
         let config: AppConfig;
 
         if (!fs.existsSync(configPath)) {
-            console.info("配置文件不存在，正在创建默认配置文件...");
-            const defaultConfig = mergeWithDefaults({});
-
-            try {
-                if (!fs.existsSync(configDir)) {
-                    fs.mkdirSync(configDir, { recursive: true });
-                }
-                fs.writeFileSync(configPath, JSON.stringify(defaultConfig, null, 4), "utf-8");
-                console.info("默认配置文件已创建:", configPath);
-
-                config = defaultConfig;
-            } catch (writeError) {
-                console.error("创建配置文件失败:", writeError);
-                process.exit(1);
-            }
+            console.info("配置文件不存在，创建默认配置...");
+            if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
+            config = mergeWithDefaults({});
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 4), "utf-8");
         } else {
             try {
-                const fileContent = fs.readFileSync(configPath, "utf-8");
-                const parsedConfig = JSON.parse(fileContent);
+                const parsedConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
                 config = mergeWithDefaults(parsedConfig);
             } catch (error) {
-                if (error instanceof z.ZodError) {
-                    console.error("配置文件校验失败:", error.issues);
-                } else {
-                    console.error("读取配置文件失败:", error);
-                }
+                console.error("配置文件读取或校验失败:", error);
                 process.exit(1);
             }
         }
@@ -129,4 +113,4 @@ class AppConfigManager {
 }
 
 export const configManager = AppConfigManager.getInstance();
-export { applyDefaults, mergeWithDefaults };
+export { mergeWithDefaults };

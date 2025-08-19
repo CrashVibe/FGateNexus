@@ -5,6 +5,10 @@ import Components from "unplugin-vue-components/vite";
 export default defineNuxtConfig({
     compatibilityDate: "latest",
     devtools: { enabled: true },
+    sourcemap: {
+        server: true,
+        client: true
+    },
     ssr: false,
     css: ["~/assets/css/main.less"],
     typescript: {

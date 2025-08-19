@@ -37,8 +37,7 @@ async function initDatabase() {
 async function startApplication() {
     try {
         await initDatabase();
-        const _chatBridge = await import("./server/service/chatbridge/chatbridge");
-        const config = (await import("./shared/config")).configManager.getConfig();
+        const config = (await import("./server/utils/config")).configManager.getConfig();
         // 设置环境变量
         process.env.NITRO_HOST = config.nitro.host;
         process.env.NITRO_PORT = String(config.nitro.port);

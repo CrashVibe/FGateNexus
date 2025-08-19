@@ -9,6 +9,6 @@ export async function getConfig(serverId: number): Promise<BindingConfig> {
         where: eq(servers.id, serverId)
     });
     if (!result) throw new Error("Server not found");
-    const bindingConfig = result.bindingConfig;
-    return bindingConfig;
+
+    return result.bindingConfig;
 }

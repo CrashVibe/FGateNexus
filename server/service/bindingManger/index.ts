@@ -78,7 +78,7 @@ class BindingService {
         });
         if (!serversWithAdapters) {
             throw new Error("服务器未找到");
-        } else if (!!!serversWithAdapters.adapter) {
+        } else if (!serversWithAdapters.adapter) {
             throw new Error("服务器适配器配置未找到");
         }
 

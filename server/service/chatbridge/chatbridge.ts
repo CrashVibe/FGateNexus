@@ -5,7 +5,7 @@ import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { HTTP } from "@koishijs/plugin-http";
 import type { AdapterConfig } from "#shared/schemas/adapter";
 import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
-import { configManager } from "../config";
+import { configManager } from "~~/server/utils/config";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { AdapterType } from "~~/shared/schemas/adapter";
@@ -44,7 +44,7 @@ export class ChatBridge {
 
     private constructor() {
         this.app = new Context();
-        this.init();
+        this.init().then();
     }
 
     public static getInstance(): ChatBridge {
