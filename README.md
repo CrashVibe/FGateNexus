@@ -20,6 +20,7 @@
 > - 如果你发现了 bug 或问题，请在仓库的 issue 中提交反馈。
 
 - 本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Naïve UI](https://www.naiveui.com/) 开发
+- 需要配合 [FGATE Client](https://github.com/CrashVibe/FGateClient) 一起使用
 - 跨平台支持，适用于 Windows、Linux、macOS 等操作系统
 - 仅对移动端做了基础适配，不保证功能全部可用
     > 所以说，建议在 PC 上使用，但如果你想在手机上使用，还是可以的
