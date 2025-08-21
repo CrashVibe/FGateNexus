@@ -26,6 +26,7 @@
           <n-input v-model:value="searchName" placeholder="搜索玩家名..." clearable></n-input>
           <n-input v-model:value="searchUUID" placeholder="搜索UUID..." clearable />
           <n-input v-model:value="searchIP" placeholder="搜索IP..." clearable />
+          <n-input v-model:value="searchSocial" placeholder="搜索社交账号UID..." clearable />
         </div>
       </div>
       <n-data-table
@@ -74,6 +75,7 @@ onMounted(() => {
 const searchName = ref("");
 const searchUUID = ref("");
 const searchIP = ref("");
+const searchSocial = ref("");
 
 const data = computed(() =>
   playerList.value
@@ -89,7 +91,9 @@ const data = computed(() =>
         player.name.toLowerCase().includes(searchName.value.toLowerCase()) &&
         player.uuid.toLowerCase().includes(searchUUID.value.toLowerCase()) &&
         player.ip &&
-        player.ip.toLowerCase().includes(searchIP.value.toLowerCase())
+        player.ip.toLowerCase().includes(searchIP.value.toLowerCase()) &&
+        player.socialAccount &&
+        player.socialAccount.uid.includes(searchSocial.value.toLowerCase())
       );
     })
 );
