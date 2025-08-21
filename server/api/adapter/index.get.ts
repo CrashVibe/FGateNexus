@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
             };
         });
 
-        return createApiResponse("获取适配器列表成功", StatusCodes.OK, adaptersWithStatus);
+        return createApiResponse(event, "获取适配器列表成功", StatusCodes.OK, adaptersWithStatus);
     } catch (err) {
         console.error("Database error:", err);
         return createErrorResponse(event, ApiError.database("获取适配器列表失败"));

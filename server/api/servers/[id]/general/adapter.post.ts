@@ -32,11 +32,11 @@ export default defineEventHandler(async (event) => {
             .where(eq(servers.id, serverId))
             .returning();
 
-        if (!!!result[0]) {
+        if (!result[0]) {
             const apiError = ApiError.database("更新服务器对应适配器失败: 未能找到服务器");
             return createErrorResponse(event, apiError);
         }
-        return createApiResponse("更新服务器对应适配器成功", StatusCodes.OK);
+        return createApiResponse(event, "更新服务器对应适配器成功", StatusCodes.OK);
     } catch (err) {
         console.error("更新服务器对应适配器失败：", err);
         const apiError = ApiError.internal("更新服务器对应适配器失败");

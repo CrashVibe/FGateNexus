@@ -35,12 +35,13 @@ export default defineEventHandler(async (event) => {
             } else {
                 chatBridge.removeBot(adapterID);
             }
-            return createApiResponse("开关适配器成功", StatusCodes.OK);
+            return createApiResponse(event, "开关适配器成功", StatusCodes.OK);
         } else {
             const apiError = ApiError.database("开关适配器失败: 未能找到适配器");
             return createErrorResponse(event, apiError);
         }
     } catch (err) {
+        console.error("开关适配器失败：", err);
         const apiError = ApiError.internal("开关适配器失败");
         return createErrorResponse(event, apiError);
     }

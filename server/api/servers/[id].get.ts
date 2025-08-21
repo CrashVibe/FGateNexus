@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
             supports_command: connectionData?.supports_command ?? null,
             player_count: connectionData?.player_count ?? null
         };
-        return createApiResponse("获取服务器列表成功", StatusCodes.OK, serversWithStatus);
+        return createApiResponse(event, "获取服务器列表成功", StatusCodes.OK, serversWithStatus);
     } catch (err) {
         console.error("Database error:", err);
         return createErrorResponse(event, ApiError.database("获取服务器列表失败"));

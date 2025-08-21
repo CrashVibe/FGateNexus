@@ -11,7 +11,9 @@
       <!-- button -->
       <n-button quaternary @click="goBack">
         <template #icon>
-          <n-icon :component="ArrowBackOutline" />
+          <n-icon>
+            <ArrowBackOutline />
+          </n-icon>
         </template>
         {{ isMobile ? "返回" : backButtonText || "返回配置总览" }}
       </n-button>

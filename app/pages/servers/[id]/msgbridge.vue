@@ -1,11 +1,17 @@
 <template>
   <div>
-    <HeaderServer :desc="found.desc" :server-name="serverData?.name || ''" :title="found.label" back-button-text="服务器列表"
-      back-path="/servers" class="mb-4" />
+    <HeaderServer
+      :desc="found.desc"
+      :server-name="serverData?.name || ''"
+      :title="found.label"
+      back-button-text="服务器列表"
+      back-path="/servers"
+      class="mb-4"
+    />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <!-- 基础配置区域 -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-6">
+      <div class="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
         <!-- 基础设置 -->
         <n-card class="h-fit" size="small" title="基础设置">
           <template #header-extra>
@@ -32,26 +38,39 @@
               </div>
             </n-form-item>
           </div>
-
         </n-card>
 
         <!-- 消息过滤配置 -->
         <n-card class="h-full" size="small" title="消息过滤">
-
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <n-form-item label="最小长度" path="filters.minMessageLength">
-              <n-input-number v-model:value="formData.filters.minMessageLength" :min="0" :max="1000" class="w-full"
-                placeholder="最小消息字符数" />
+              <n-input-number
+                v-model:value="formData.filters.minMessageLength"
+                :min="0"
+                :max="1000"
+                class="w-full"
+                placeholder="最小消息字符数"
+              />
             </n-form-item>
 
             <n-form-item label="最大长度" path="filters.maxMessageLength">
-              <n-input-number v-model:value="formData.filters.maxMessageLength" :min="1" :max="5000" class="w-full"
-                placeholder="最大消息字符数" />
+              <n-input-number
+                v-model:value="formData.filters.maxMessageLength"
+                :min="1"
+                :max="5000"
+                class="w-full"
+                placeholder="最大消息字符数"
+              />
             </n-form-item>
           </div>
 
           <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
-            <n-input v-model:value="keywordsText" placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾" show-count :maxlength="200" />
+            <n-input
+              v-model:value="keywordsText"
+              placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
+              show-count
+              :maxlength="200"
+            />
             <template #feedback>
               <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
             </template>
@@ -74,16 +93,25 @@
 
               <div class="space-y-4">
                 <n-form-item label="模板内容" label-placement="top" path="mcToPlatformTemplate">
-                  <n-input v-model:value="formData.mcToPlatformTemplate" type="textarea" :rows="3"
-                    placeholder="MC 消息发送到平台的格式模板" :maxlength="200" show-count />
+                  <n-input
+                    v-model:value="formData.mcToPlatformTemplate"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="MC 消息发送到平台的格式模板"
+                    :maxlength="200"
+                    show-count
+                  />
                   <template #feedback>
                     <div class="mt-2 space-y-2">
                       <div class="flex flex-wrap gap-1">
                         <n-tooltip v-for="tag in mcToPlatformVariables" :key="tag.value" trigger="hover">
                           <template #trigger>
-                            <n-tag size="tiny"
+                            <n-tag
+                              size="tiny"
                               :type="formData.mcToPlatformTemplate.includes(tag.value) ? 'primary' : 'default'"
-                              @click="insertPlaceholder('mcToPlatformTemplate', tag.value)" class="cursor-pointer">
+                              class="cursor-pointer"
+                              @click="insertPlaceholder('mcToPlatformTemplate', tag.value)"
+                            >
                               {{ tag.value }}
                             </n-tag>
                           </template>
@@ -113,16 +141,25 @@
 
               <div class="space-y-4">
                 <n-form-item label="模板内容" label-placement="top" path="platformToMcTemplate">
-                  <n-input v-model:value="formData.platformToMcTemplate" type="textarea" :rows="3"
-                    placeholder="平台消息发送到 MC 的格式模板" :maxlength="200" show-count />
+                  <n-input
+                    v-model:value="formData.platformToMcTemplate"
+                    type="textarea"
+                    :rows="3"
+                    placeholder="平台消息发送到 MC 的格式模板"
+                    :maxlength="200"
+                    show-count
+                  />
                   <template #feedback>
                     <div class="mt-2 space-y-2">
                       <div class="flex flex-wrap gap-1">
                         <n-tooltip v-for="tag in platformToMcVariables" :key="tag.value" trigger="hover">
                           <template #trigger>
-                            <n-tag size="tiny"
+                            <n-tag
+                              size="tiny"
                               :type="formData.platformToMcTemplate.includes(tag.value) ? 'success' : 'default'"
-                              @click="insertPlaceholder('platformToMcTemplate', tag.value)" class="cursor-pointer">
+                              class="cursor-pointer"
+                              @click="insertPlaceholder('platformToMcTemplate', tag.value)"
+                            >
                               {{ tag.value }}
                             </n-tag>
                           </template>
@@ -152,19 +189,25 @@
           <n-button size="small" type="primary" @click="addTarget">添加目标</n-button>
         </template>
         <div class="mb-4">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <n-input v-model:value="searchText" placeholder="搜索目标ID..." clearable> </n-input>
+          <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <n-input v-model:value="searchText" placeholder="搜索目标ID..." clearable></n-input>
             <n-select v-model:value="typeFilter" :options="targetTypeOptions" placeholder="类型筛选" clearable />
             <n-select v-model:value="statusFilter" :options="statusFilterOptions" placeholder="状态筛选" clearable />
           </div>
         </div>
 
-        <n-data-table :columns="columns" :pagination="{ pageSize: 5 }" :data="data">
+        <n-data-table
+          :columns="columns"
+          :pagination="{
+            pageSizes: pageSizes,
+            showSizePicker: true
+          }"
+          :data="data"
+        >
           <template #empty>
             <n-empty description="暂无目标配置，请添加目标">
               <template #extra>
-                <n-button size="medium" type="primary" @click="addTarget">添加目标
-                </n-button>
+                <n-button size="medium" type="primary" @click="addTarget">添加目标</n-button>
               </template>
             </n-empty>
           </template>
@@ -172,19 +215,20 @@
       </n-card>
     </div>
 
-
     <!-- 操作按钮区 -->
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">
-        取消更改
-      </n-button>
+      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
       <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" type="primary" ghost @click="handleSubmit">
         <template #icon>
-          <n-icon><svg viewBox="0 0 24 24">
-              <path fill="currentColor"
-                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z" />
-            </svg></n-icon>
+          <n-icon>
+            <svg viewBox="0 0 24 24">
+              <path
+                fill="currentColor"
+                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
+              />
+            </svg>
+          </n-icon>
         </template>
         保存配置
       </n-button>
@@ -198,7 +242,7 @@ import { StatusCodes } from "http-status-codes";
 import type { MenuItem } from "~/layouts/serverEdit.vue";
 import { NButton, NInput, NSelect, type FormInst } from "naive-ui";
 import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
-import type { ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
+import type { ChatSyncConfig, ChatSyncTarget } from "~~/shared/schemas/server/chatSync";
 import {
   getDefaultChatSyncConfig,
   formatPlatformToMCMessage,
@@ -207,6 +251,7 @@ import {
 import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
 import type { PageState } from "~~/app/composables/usePageState";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
 // ==================== 页面配置 ====================
 definePageMeta({
@@ -240,7 +285,7 @@ const isAnyLoading = computed(() => dataState.isLoading);
 
 // ==================== 类型定义 ====================
 interface DataState {
-  data: { serverData: any };
+  data: { serverData: ServerWithStatus | null };
   isLoading: boolean;
   isSubmitting: boolean;
   original: { chatSyncConfig: ChatSyncConfig | null };
@@ -278,34 +323,52 @@ const targetTypeOptions = [
   { label: "私聊", value: "private" }
 ];
 
-
 const statusFilterOptions = [
   { label: "已启用", value: "enable" },
   { label: "已禁用", value: "disable" }
 ];
 
+const pageSizes = [
+  {
+    label: "10 每页",
+    value: 10
+  },
+  {
+    label: "20 每页",
+    value: 20
+  },
+  {
+    label: "30 每页",
+    value: 30
+  },
+  {
+    label: "40 每页",
+    value: 40
+  }
+];
+
 const columns = [
   {
-    title: '目标ID',
-    key: 'ID',
-    width: '40%',
-    render(row: any, index: number) {
+    title: "目标ID",
+    key: "ID",
+    width: "40%",
+    render(row: ChatSyncTarget, index: number) {
       return h(NInput, {
-        placeholder: '请输入目标ID',
+        placeholder: "请输入目标ID",
         value: row.groupId,
         onUpdateValue(v) {
           if (filteredTargets.value && filteredTargets.value[index]) {
             filteredTargets.value[index].groupId = v;
           }
         }
-      })
+      });
     }
   },
   {
-    title: '类型',
-    key: 'type',
-    width: '20%',
-    render(row: any, index: number) {
+    title: "类型",
+    key: "type",
+    width: "20%",
+    render(row: ChatSyncTarget, index: number) {
       return h(NSelect, {
         value: row.type,
         options: targetTypeOptions,
@@ -314,41 +377,41 @@ const columns = [
             filteredTargets.value[index].type = v;
           }
         }
-      })
+      });
     }
   },
   {
-    title: '状态',
-    key: 'enabled',
-    width: '20%',
-    render(row: any, index: number) {
+    title: "状态",
+    key: "enabled",
+    width: "20%",
+    render(row: { enabled: string }, index: number) {
       return h(NSelect, {
         value: row.enabled === "已启用" ? "enable" : "disable",
         options: statusFilterOptions,
         onUpdateValue(v: string) {
           console.log(row);
           if (filteredTargets.value && filteredTargets.value[index]) {
-            filteredTargets.value[index].enabled = (v === 'enable');
+            filteredTargets.value[index].enabled = v === "enable";
           }
         }
-      })
+      });
     }
   },
   {
-    title: '操作',
-    key: 'actions',
-    render(row: any) {
+    title: "操作",
+    key: "actions",
+    render(row: ChatSyncTarget) {
       return h(
         NButton,
         {
-          size: 'small',
-          onClick: () => removeTarget(getOriginalIndex(row)),
+          size: "small",
+          onClick: () => removeTarget(getOriginalIndex(row))
         },
-        { default: () => '删除' }
-      )
+        { default: () => "删除" }
+      );
     }
   }
-]
+];
 
 // ==================== 搜索和筛选状态 ====================
 const searchText = ref("");
@@ -382,14 +445,14 @@ const filteredTargets = computed(() => {
 function addTarget() {
   // 检查最后一个 target 的 groupId 是否为空
   const targets = formData.value.targets;
-  if (targets.length > 0 && !(targets[targets.length - 1]?.groupId?.trim())) {
+  if (targets.length > 0 && !targets[targets.length - 1]?.groupId?.trim()) {
     message.warning("你？是不是忘了填上一个点目标 ID？");
     return;
   }
   const newTarget = {
     groupId: "",
     type: "group" as const,
-    enabled: true,
+    enabled: true
   };
   formData.value.targets.push(newTarget);
 }
@@ -398,7 +461,7 @@ function removeTarget(idx: number) {
   formData.value.targets.splice(idx, 1);
 }
 
-function getOriginalIndex(target: any) {
+function getOriginalIndex(target: ChatSyncTarget) {
   return formData.value.targets.findIndex((t) => t.groupId === target.groupId && t.type === target.type);
 }
 
@@ -416,7 +479,11 @@ const mcToPlatformVariables = [
   { label: "玩家名", value: "{playerName}", example: "Steve" },
   { label: "玩家UUID", value: "{playerUUID}", example: "12345678-1234-1234..." },
   { label: "消息内容", value: "{message}", example: "Hello world!" },
-  { label: "服务器名", value: "{serverName}", example: serverData && serverData.value ? serverData.value.name : "MyServer" },
+  {
+    label: "服务器名",
+    value: "{serverName}",
+    example: serverData && serverData.value ? serverData.value.name : "MyServer"
+  },
   { label: "时间戳", value: "{timestamp}", example: "2024-01-01 12:00:00" }
 ];
 
@@ -463,7 +530,7 @@ class DataManager {
   async refreshServerData(): Promise<void> {
     if (!route.params?.["id"]) return;
     try {
-      const response = await $fetch<ApiResponse<any>>(`/api/servers/${route.params["id"]}`);
+      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
       if (response.code === StatusCodes.OK && response.data) {
         dataState.data.serverData = response.data;
         dataState.original.chatSyncConfig = response.data.chatSyncConfig;

@@ -80,3 +80,4 @@ export const chatSyncConfigSchema = z.object({
 });
 
 export type ChatSyncConfig = z.infer<typeof chatSyncConfigSchema>;
+export type ChatSyncTarget = ChatSyncConfig["targets"][number];

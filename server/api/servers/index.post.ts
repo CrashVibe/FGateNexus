@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
             bindingConfig: getDefaultBindingConfig(),
             chatSyncConfig: getDefaultChatSyncConfig()
         });
-        return createApiResponse("添加服务器成功", StatusCodes.CREATED);
+        return createApiResponse(event, "添加服务器成功", StatusCodes.CREATED);
     } catch (err) {
         console.error("Database error:", err);
         const apiError = ApiError.database("添加服务器失败");

@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
         if (result[0]) {
             chatBridge.removeBot(adapterID);
-            return createApiResponse("删除适配器成功", StatusCodes.OK);
+            return createApiResponse(event, "删除适配器成功", StatusCodes.OK);
         } else {
             const apiError = ApiError.database("未能找到适配器");
             return createErrorResponse(event, apiError);

@@ -42,12 +42,13 @@ export default defineEventHandler(async (event) => {
             if (chatBridge.getConnectionData(result[0].id)) {
                 await chatBridge.updateConfig(body.adapterID, config.data);
             }
-            return createApiResponse("更新适配器成功", StatusCodes.OK);
+            return createApiResponse(event, "更新适配器成功", StatusCodes.OK);
         } else {
             const apiError = ApiError.database("更新适配器失败: 未能更新适配器");
             return createErrorResponse(event, apiError);
         }
     } catch (err) {
+        console.error("更新适配器失败：", err);
         const apiError = ApiError.internal("更新适配器失败");
         return createErrorResponse(event, apiError);
     }

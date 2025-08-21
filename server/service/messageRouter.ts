@@ -148,7 +148,7 @@ class MessageRouter {
      * 检查消息是否应该被转发
      */
     private shouldForwardMessage(message: string, config: ChatSyncConfig): boolean {
-        const { filters, platformToMcEnabled } = config;
+        const { filters } = config;
 
         // 消息长度
         if (message.length < filters.minMessageLength || message.length > filters.maxMessageLength) {
