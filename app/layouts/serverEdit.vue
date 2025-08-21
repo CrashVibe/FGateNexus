@@ -1,12 +1,5 @@
 <script lang="ts" setup>
-import {
-  ArrowBackOutline,
-  BuildOutline,
-  ChatbubbleOutline,
-  LinkOutline,
-  MenuOutline,
-  SettingsOutline
-} from "@vicons/ionicons5";
+import { ArrowBackOutline, ChatbubbleOutline, LinkOutline, MenuOutline, SettingsOutline } from "@vicons/ionicons5";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
@@ -34,15 +27,15 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
       negativeText: "放弃更改",
       onPositiveClick: async () => {
         await savePage();
-        router.push(targetPath).catch(() => { });
+        router.push(targetPath).catch(() => {});
       },
       onNegativeClick: () => {
-        router.push(targetPath).catch(() => { });
+        router.push(targetPath).catch(() => {});
       }
     });
     return;
   }
-  router.push(targetPath).catch(() => { });
+  router.push(targetPath).catch(() => {});
 };
 
 onMounted(() => {
@@ -148,15 +141,30 @@ const selectedKey = computed(() => route.path);
       </n-space>
     </n-layout-header>
     <n-layout bordered has-sider position="absolute" style="top: var(--header-height)">
-      <n-layout-sider :collapsed="collapsed" :collapsed-width="isMobile ? 0 : 64" :native-scrollbar="false"
-        :position="isMobile ? 'absolute' : 'static'" :show-trigger="true" :width="200" bordered collapse-mode="width"
-        @collapse="handleCollapse" @expand="handleExpand">
-        <n-menu :key="selectedKey" :collapsed="collapsed" :collapsed-icon-size="isMobile ? 0 : 22"
-          :collapsed-width="isMobile ? 0 : 64" :options="menuOptions" :value="selectedKey"
-          @update:value="handleMenuSelect" />
+      <n-layout-sider
+        :collapsed="collapsed"
+        :collapsed-width="isMobile ? 0 : 64"
+        :native-scrollbar="false"
+        :position="isMobile ? 'absolute' : 'static'"
+        :show-trigger="true"
+        :width="200"
+        bordered
+        collapse-mode="width"
+        @collapse="handleCollapse"
+        @expand="handleExpand"
+      >
+        <n-menu
+          :key="selectedKey"
+          :collapsed="collapsed"
+          :collapsed-icon-size="isMobile ? 0 : 22"
+          :collapsed-width="isMobile ? 0 : 64"
+          :options="menuOptions"
+          :value="selectedKey"
+          @update:value="handleMenuSelect"
+        />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
-        <div class="h-full p-8 max-w-screen-xl mx-auto">
+        <div class="h-full max-w-screen-xl p-8 mx-auto">
           <slot />
         </div>
       </n-layout-content>

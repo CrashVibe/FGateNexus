@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { LinkOutline, MenuOutline, PeopleOutline, PersonCircleOutline } from "@vicons/ionicons5";
+import { LinkOutline, MenuOutline, PeopleOutline } from "@vicons/ionicons5";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
 
@@ -52,8 +52,7 @@ const renderIcon = (icon: Component) => () => h(icon);
 const menuOptions = [
   { label: "服务器管理", key: "/", icon: renderIcon(MenuOutline) },
   { label: "Bot 实例", key: "/adapters", icon: renderIcon(LinkOutline) },
-  { label: "玩家列表", key: "/players", icon: renderIcon(PeopleOutline) },
-  { label: "社交账号", key: "/accounts", icon: renderIcon(PersonCircleOutline) }
+  { label: "玩家列表", key: "/players", icon: renderIcon(PeopleOutline) }
 ];
 
 const selectedKey = computed(() => route.path);
