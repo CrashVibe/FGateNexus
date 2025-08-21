@@ -175,14 +175,14 @@ async function handleToggle(adapterID: number, enabled: boolean) {
           <p class="text-sm text-gray-400 sm:text-base">管理多个 Bot 实例，点击进入详细配置。</p>
         </n-text>
         <div class="flex flex-wrap gap-2 sm:gap-3">
-          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh"
-            >刷新列表
+          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
+            刷新列表
             <template #icon>
               <n-icon :component="RefreshOutline" />
             </template>
           </n-button>
-          <n-button ghost size="large" type="primary" @click="openModal"
-            >创建新 Bot 实例
+          <n-button ghost size="large" type="primary" @click="openModal">
+            创建新 Bot 实例
             <template #icon>
               <n-icon :component="AddCircleOutline" />
             </template>
@@ -208,8 +208,8 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     <div class="flex-1">
       <n-empty v-if="adapterList.length === 0" class="mt-6 sm:mt-10" description="暂无 Bot 实例，请先创建一个 Bot 实例">
         <template #extra>
-          <n-button size="medium" type="primary" @click="openModal"
-            >创建新 Bot 实例
+          <n-button size="medium" type="primary" @click="openModal">
+            创建新 Bot 实例
             <template #icon>
               <n-icon :component="AddCircleOutline" />
             </template>

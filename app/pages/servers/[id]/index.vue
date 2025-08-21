@@ -34,7 +34,7 @@
 
     <n-empty v-else description="暂无可用的配置选项">
       <template #extra>
-        <n-button size="medium" type="primary" @click="$router.push('/')"> 返回服务器列表 </n-button>
+        <n-button size="medium" type="primary" @click="$router.push('/')">返回服务器列表</n-button>
       </template>
     </n-empty>
   </div>

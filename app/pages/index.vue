@@ -103,14 +103,14 @@ onMounted(() => {
           <p class="text-sm text-gray-400 sm:text-base">管理你的服务器，点击卡片进入详细配置</p>
         </n-text>
         <div class="flex flex-wrap gap-2 sm:gap-3">
-          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh"
-            >刷新列表
+          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
+            刷新列表
             <template #icon>
               <n-icon :component="RefreshOutline" />
             </template>
           </n-button>
-          <n-button ghost size="large" type="primary" @click="openModal"
-            >创建服务器
+          <n-button ghost size="large" type="primary" @click="openModal">
+            创建服务器
             <template #icon>
               <n-icon :component="AddCircleOutline" />
             </template>
@@ -129,15 +129,15 @@ onMounted(() => {
             <n-input-group>
               <n-tooltip show-arrow trigger="focus">
                 <template #trigger>
-                  <n-input v-model:value="formData.token" placeholder="请输入服务器の秘密 Token"> </n-input>
+                  <n-input v-model:value="formData.token" placeholder="请输入服务器の秘密 Token"></n-input>
                 </template>
                 这是用于区分不同服务器的密钥，用来识别和验证服务器身份。
                 <br />
                 请妥善保管，不要泄露给他人。
                 <br />
-                <n-text class="text-gray-400" delete size="small"> 泄漏服务器就等着艾草吧（逃 </n-text>
+                <n-text class="text-gray-400" delete size="small">泄漏服务器就等着艾草吧（逃</n-text>
               </n-tooltip>
-              <n-button @click="generateToken()"> 随机生成 </n-button>
+              <n-button @click="generateToken()">随机生成</n-button>
             </n-input-group>
           </n-form-item>
         </n-form>
@@ -155,8 +155,8 @@ onMounted(() => {
     <div class="flex-1">
       <n-empty v-if="serverList.length === 0" class="mt-6 sm:mt-10" description="暂无服务器，请先创建一个服务器">
         <template #extra>
-          <n-button size="medium" type="primary" @click="openModal"
-            >创建服务器
+          <n-button size="medium" type="primary" @click="openModal">
+            创建服务器
             <template #icon>
               <n-icon :component="AddCircleOutline" />
             </template>

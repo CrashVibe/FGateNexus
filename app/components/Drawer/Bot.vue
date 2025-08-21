@@ -194,11 +194,11 @@ onMounted(() => {
     </div>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <n-button :disabled="loading" :loading="loading" ghost type="error" @click="handleDelete"> 删除 </n-button>
+        <n-button :disabled="loading" :loading="loading" ghost type="error" @click="handleDelete">删除</n-button>
         <n-button :disabled="loading" :loading="loading" type="default" @click="handleToggle">
           {{ props.adapter.enabled ? "禁用" : "启用" }}
         </n-button>
-        <n-button :disabled="loading" :loading="loading" type="primary" @click="handleSave"> 保存 </n-button>
+        <n-button :disabled="loading" :loading="loading" type="primary" @click="handleSave">保存</n-button>
       </div>
     </template>
   </n-drawer-content>
