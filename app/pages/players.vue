@@ -22,7 +22,7 @@
     </div>
     <div>
       <div class="mb-4">
-        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
           <n-input v-model:value="searchName" placeholder="搜索玩家名..." clearable></n-input>
           <n-input v-model:value="searchUUID" placeholder="搜索UUID..." clearable />
           <n-input v-model:value="searchIP" placeholder="搜索IP..." clearable />
