@@ -2,16 +2,22 @@ import type { RequestHandler } from "./RequestHandler";
 import type { JsonRpcRequest } from "./types";
 import type { AdapterInternal, Peer } from "crossws";
 import { pluginBridge } from "./MCWSBridge";
-import { PlayerJoinHandler } from "./impl/PlayerJoin";
+import { PlayerLoginHandler } from "./impl/PlayerLogin";
 import { ChatMessageHandler } from "./impl/ChatMessage";
+import { PlayerLeaveHandler } from "./impl/PlayerLeave";
+import { PlayerJoinHandler } from "./impl/PlayerJoin";
+import { PlayerDeathHandler } from "./impl/PlayerDeath";
 
 class RequestDispatcher {
     static instance: RequestDispatcher | null = null;
 
     private handlers = new Map<string, RequestHandler>();
     private constructor() {
-        this.registerHandler(new PlayerJoinHandler());
+        this.registerHandler(new PlayerLoginHandler());
         this.registerHandler(new ChatMessageHandler());
+        this.registerHandler(new PlayerLeaveHandler());
+        this.registerHandler(new PlayerJoinHandler());
+        this.registerHandler(new PlayerDeathHandler());
     }
 
     public static getInstance(): RequestDispatcher {

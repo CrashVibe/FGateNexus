@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "f48f97a1-7dae-4aa2-a22f-a80d652f48cf",
+  "id": "59e21d8b-e874-4cd3-a6dc-521f0c1bd09f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "adapters": {
@@ -245,6 +245,13 @@
         },
         "command_config": {
           "name": "command_config",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "notify_config": {
+          "name": "notify_config",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

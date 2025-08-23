@@ -5,7 +5,8 @@ import {
   LinkOutline,
   MenuOutline,
   SettingsOutline,
-  CodeSlashOutline
+  CodeSlashOutline,
+  NotificationsOutline
 } from "@vicons/ionicons5";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
@@ -120,16 +121,22 @@ const menuOptions = computed(() => {
       desc: "设置社交账号与游戏账号的绑定规则。"
     });
     menu.push({
+      label: "远程指令",
+      key: `/servers/${serverId}/command`,
+      icon: renderIcon(CodeSlashOutline),
+      desc: "配置服务器的远程指令。"
+    });
+    menu.push({
       label: "消息互通",
       key: `/servers/${serverId}/msgbridge`,
       icon: renderIcon(ChatbubbleOutline),
       desc: "Minecraft 与 QQ 群消息双向同步配置。"
     });
     menu.push({
-      label: "远程指令",
-      key: `/servers/${serverId}/command`,
-      icon: renderIcon(CodeSlashOutline),
-      desc: "配置服务器的远程指令。"
+      label: "事件通知",
+      key: `/servers/${serverId}/notify`,
+      icon: renderIcon(NotificationsOutline),
+      desc: "配置服务器的事件通知。"
     });
   }
   return menu;

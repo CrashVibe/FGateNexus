@@ -8,6 +8,7 @@ import { serverSchemaRequset } from "#shared/schemas/server/servers";
 import { getDefaultBindingConfig } from "~~/shared/utils/binding";
 import { getDefaultChatSyncConfig } from "~~/shared/utils/chatSync";
 import { getDefaultCommandConfig } from "~~/shared/utils/command";
+import { getDefaultNotifyConfig } from "~~/shared/utils/notify";
 
 export default defineEventHandler(async (event) => {
     try {
@@ -29,7 +30,8 @@ export default defineEventHandler(async (event) => {
             token: serverData.token,
             bindingConfig: getDefaultBindingConfig(),
             chatSyncConfig: getDefaultChatSyncConfig(),
-            commandConfig: getDefaultCommandConfig()
+            commandConfig: getDefaultCommandConfig(),
+            notifyConfig: getDefaultNotifyConfig()
         });
         return createApiResponse(event, "添加服务器成功", StatusCodes.CREATED);
     } catch (err) {

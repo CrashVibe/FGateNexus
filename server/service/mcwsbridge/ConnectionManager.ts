@@ -1,5 +1,5 @@
 import type { AdapterInternal, Peer } from "crossws";
-import { MCWSBridge } from "./MCWSBridge";
+import type { MCWSBridge } from "./MCWSBridge";
 
 /**
  * 服务器连接信息
@@ -163,7 +163,7 @@ export class ConnectionManager {
      * 根据 Peer 获取服务器 ID
      *
      * @param peer - WebSocket 连接
-     * @returns 对应的服务器 ID，如果不存在则返回 undefined
+     * @returns 对应的服务器 ID
      */
     public getServerId(peer: Peer<AdapterInternal>): number {
         for (const [serverId, connection] of this.connectionMap.entries()) {

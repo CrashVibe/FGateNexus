@@ -35,6 +35,7 @@ CREATE TABLE `servers` (
 	`binding_config` text NOT NULL,
 	`chat_sync_config` text NOT NULL,
 	`command_config` text NOT NULL,
+	`notify_config` text NOT NULL,
 	FOREIGN KEY (`adapter_id`) REFERENCES `adapters`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint

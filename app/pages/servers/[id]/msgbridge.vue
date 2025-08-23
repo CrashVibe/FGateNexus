@@ -14,21 +14,15 @@
           </template>
 
           <n-form-item label="启用聊天同步" path="enabled">
-            <div class="switch-wrapper">
-              <n-switch v-model:value="formData.enabled" />
-            </div>
+            <n-switch v-model:value="formData.enabled" />
           </n-form-item>
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <n-form-item label="MC → 平台" path="mcToPlatformEnabled">
-              <div class="switch-wrapper">
-                <n-switch v-model:value="formData.mcToPlatformEnabled" :disabled="!formData.enabled" />
-              </div>
+              <n-switch v-model:value="formData.mcToPlatformEnabled" :disabled="!formData.enabled" />
             </n-form-item>
 
             <n-form-item label="平台 → MC" path="platformToMcEnabled">
-              <div class="switch-wrapper">
-                <n-switch v-model:value="formData.platformToMcEnabled" :disabled="!formData.enabled" />
-              </div>
+              <n-switch v-model:value="formData.platformToMcEnabled" :disabled="!formData.enabled" />
             </n-form-item>
           </div>
         </n-card>

@@ -6,16 +6,18 @@ import { getDatabase } from "~~/server/db/client";
 import { eq } from "drizzle-orm";
 import { servers } from "~~/server/db/schema";
 import { chatBridge } from "../../chatbridge/chatbridge";
-import { renderJoinMessage } from "~~/shared/utils/template/notify";
+import { renderDeathMessage } from "~~/shared/utils/template/notify";
 
-
-export class PlayerJoinHandler extends RequestHandler {
+export class PlayerDeathHandler extends RequestHandler {
     getMethod(): string {
-        return "player.join";
+        return "player.death";
     }
 
-    async handleRequest(request: JsonRpcRequest<{ playerName: string }>, peer: Peer<AdapterInternal>): Promise<void> {
-        const { playerName } = request.params || {};
+    async handleRequest(
+        request: JsonRpcRequest<{ playerName: string; deathMessage?: string }>,
+        peer: Peer<AdapterInternal>
+    ): Promise<void> {
+        const { playerName, deathMessage } = request.params || {};
 
         if (typeof playerName !== "string") {
             console.warn("Invalid player leave params:", request.params);
@@ -32,10 +34,14 @@ export class PlayerJoinHandler extends RequestHandler {
             console.warn("Server not found for player leave:", serverID);
             return;
         }
-        if (server.notifyConfig.player_notify && server.adapterId) {
+        if (server.notifyConfig.player_disappoint_notify && server.adapterId) {
             const botConnection = chatBridge.getConnectionData(server.adapterId);
             if (!botConnection) return;
-            const formattedMessage = renderJoinMessage(server.notifyConfig.join_notify_message, playerName);
+            const formattedMessage = renderDeathMessage(
+                server.notifyConfig.death_notify_message,
+                playerName,
+                deathMessage ? deathMessage : "未知原因"
+            );
             for (const target of server.notifyConfig.targets) {
                 chatBridge.sendToTarget(botConnection, target.groupId, target.type, formattedMessage);
             }

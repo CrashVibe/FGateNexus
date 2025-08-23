@@ -28,19 +28,19 @@ export const BindingConfigSchema = z.object({
         .string()
         .max(500, "踢出消息长度不能超过 500 个字符")
         .default(
-            "你好，&a#name&r！\n你还没有完成账号绑定，&c无法进入服务器！\n请在群里发送：&b#message\n该验证码将在 &c#time &r后失效，请尽快绑定。"
+            "你好，&a{name}&r！\n你还没有完成账号绑定，&c无法进入服务器！\n请在群里发送：&b{message}\n该验证码将在 &c{time} &r后失效，请尽快绑定。"
         ),
     unbindkickMsg: z
         .string()
         .max(500, "解绑踢出消息长度不能超过 500 个字符")
-        .default("&l&k123456&a&l社交帐号被解绑&f&l&k123456\n您的社交账号&c #social_account &f已在社交平台解绑。"),
+        .default("&l&k123456&a&l社交帐号被解绑&f&l&k123456\n您的社交账号&c {social_account} &f已在社交平台解绑。"),
     bindSuccessMsg: z
         .string()
         .max(200, "绑定成功消息长度不能超过 200 个字符")
-        .default("绑定 #user 成功! 你可以进入服务器了!"),
-    bindFailMsg: z.string().max(200, "绑定失败消息长度不能超过 200 个字符").default("绑定 #user 失败! #why"),
-    unbindSuccessMsg: z.string().max(200, "解绑成功消息长度不能超过 200 个字符").default("解除绑定 #user 成功!"),
-    unbindFailMsg: z.string().max(200, "解绑失败消息长度不能超过 200 个字符").default("解除绑定 #user 失败! #why")
+        .default("绑定 {user} 成功! 你可以进入服务器了!"),
+    bindFailMsg: z.string().max(200, "绑定失败消息长度不能超过 200 个字符").default("绑定 {user} 失败! {why}"),
+    unbindSuccessMsg: z.string().max(200, "解绑成功消息长度不能超过 200 个字符").default("解除绑定 {user} 成功!"),
+    unbindFailMsg: z.string().max(200, "解绑失败消息长度不能超过 200 个字符").default("解除绑定 {user} 失败! {why}")
 });
 
 export type BindingConfig = z.infer<typeof BindingConfigSchema>;

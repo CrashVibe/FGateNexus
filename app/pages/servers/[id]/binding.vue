@@ -95,23 +95,30 @@
               <n-input
                 v-model:value="formData.bindSuccessMsg"
                 maxlength="200"
-                placeholder="绑定成功时的反馈消息，支持#user占位符"
+                placeholder="绑定成功时的反馈消息"
                 show-count
               />
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip trigger="hover">
+                    <n-tooltip v-for="tag in bindSuccessVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
-                        <n-tag size="tiny">#user</n-tag>
+                        <n-tag
+                          size="tiny"
+                          :type="formData.bindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
+                          class="cursor-pointer"
+                          @click="insertPlaceholder('bindSuccessMsg', tag.value)"
+                        >
+                          {{ tag.value }}
+                        </n-tag>
                       </template>
-                      用户名 · [Steve]
+                      {{ tag.label }} · [{{ tag.example }}]
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
                     <n-text type="success">
-                      {{ replaceBindSuccessMsgPlaceholders(formData.bindSuccessMsg, "Steve") }}
+                      {{ renderBindSuccess(formData.bindSuccessMsg, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -128,23 +135,24 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip trigger="hover">
+                    <n-tooltip v-for="tag in bindFailVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
-                        <n-tag size="tiny">#user</n-tag>
+                        <n-tag
+                          size="tiny"
+                          :type="formData.bindFailMsg.includes(tag.value) ? 'primary' : 'default'"
+                          class="cursor-pointer"
+                          @click="insertPlaceholder('bindFailMsg', tag.value)"
+                        >
+                          {{ tag.value }}
+                        </n-tag>
                       </template>
-                      用户名 · [Steve]
-                    </n-tooltip>
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <n-tag size="tiny">#why</n-tag>
-                      </template>
-                      失败原因 · [因为某种奇妙の原因]
+                      {{ tag.label }} · [{{ tag.example }}]
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
                     <n-text type="error">
-                      {{ replaceBindFailMsgPlaceholders(formData.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
+                      {{ renderBindFail(formData.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
                   </div>
                 </div>
@@ -161,17 +169,24 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip trigger="hover">
+                    <n-tooltip v-for="tag in unbindSuccessVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
-                        <n-tag size="tiny">#user</n-tag>
+                        <n-tag
+                          size="tiny"
+                          :type="formData.unbindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
+                          class="cursor-pointer"
+                          @click="insertPlaceholder('unbindSuccessMsg', tag.value)"
+                        >
+                          {{ tag.value }}
+                        </n-tag>
                       </template>
-                      用户名 · [Steve]
+                      {{ tag.label }} · [{{ tag.example }}]
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
                     <n-text type="success">
-                      {{ replaceBindSuccessMsgPlaceholders(formData.unbindSuccessMsg, "Steve") }}
+                      {{ renderUnbindSuccess(formData.unbindSuccessMsg, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -188,23 +203,24 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip trigger="hover">
+                    <n-tooltip v-for="tag in unbindFailVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
-                        <n-tag size="tiny">#user</n-tag>
+                        <n-tag
+                          size="tiny"
+                          :type="formData.unbindFailMsg.includes(tag.value) ? 'primary' : 'default'"
+                          class="cursor-pointer"
+                          @click="insertPlaceholder('unbindFailMsg', tag.value)"
+                        >
+                          {{ tag.value }}
+                        </n-tag>
                       </template>
-                      用户名 · [Steve]
-                    </n-tooltip>
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <n-tag size="tiny">#why</n-tag>
-                      </template>
-                      失败原因 · [因为某种奇妙の原因]
+                      {{ tag.label }} · [{{ tag.example }}]
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
                     <n-text type="error">
-                      {{ replaceBindFailMsgPlaceholders(formData.unbindFailMsg, "Steve", "因为某种奇妙の原因") }}
+                      {{ renderUnbindFail(formData.unbindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
                   </div>
                 </div>
@@ -229,23 +245,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip trigger="hover">
+                    <n-tooltip v-for="tag in noBindKickVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
-                        <n-tag size="tiny">#name</n-tag>
+                        <n-tag
+                          size="tiny"
+                          :type="formData.nobindkickMsg.includes(tag.value) ? 'primary' : 'default'"
+                          class="cursor-pointer"
+                          @click="insertPlaceholder('nobindkickMsg', tag.value)"
+                        >
+                          {{ tag.value }}
+                        </n-tag>
                       </template>
-                      玩家名 · [Steve]
-                    </n-tooltip>
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <n-tag size="tiny">#message</n-tag>
-                      </template>
-                      {{ "绑定指令 · [" + bindCommandExample + "]" }}
-                    </n-tooltip>
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <n-tag size="tiny">#time</n-tag>
-                      </template>
-                      {{ "时间 · [" + bindExpireTimeExample + "]" }}
+                      {{ tag.label }} · [{{ tag.example }}]
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
@@ -270,11 +281,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip trigger="hover">
+                    <n-tooltip v-for="tag in unbindKickVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
-                        <n-tag size="tiny">#social_account</n-tag>
+                        <n-tag
+                          size="tiny"
+                          :type="formData.unbindkickMsg.includes(tag.value) ? 'primary' : 'default'"
+                          class="cursor-pointer"
+                          @click="insertPlaceholder('unbindkickMsg', tag.value)"
+                        >
+                          {{ tag.value }}
+                        </n-tag>
                       </template>
-                      社交账号 · [114514]
+                      {{ tag.label }} · [{{ tag.example }}]
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
@@ -318,6 +336,14 @@ import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "~~/shared/s
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
 import moment from "moment-timezone";
+import {
+  renderNoBindKick,
+  renderUnbindKick,
+  renderBindSuccess,
+  renderBindFail,
+  renderUnbindSuccess,
+  renderUnbindFail
+} from "~~/shared/utils/template/binding";
 
 // ==================== 页面配置 ====================
 definePageMeta({
@@ -430,6 +456,19 @@ class DataManager {
     });
   }
 }
+
+// ==================== 模板插入函数 ====================
+function insertPlaceholder(
+  field: keyof Pick<
+    BindingConfig,
+    "nobindkickMsg" | "unbindkickMsg" | "bindSuccessMsg" | "bindFailMsg" | "unbindSuccessMsg" | "unbindFailMsg"
+  >,
+  placeholder: string
+) {
+  const current = formData.value[field] || "";
+  formData.value[field] = current + placeholder;
+}
+
 // ==================== 表单数据和验证 ====================
 
 const formRef = ref<FormInst>();
@@ -456,7 +495,7 @@ const bindExpireTimeExample = computed(() => {
 });
 
 const noBindKickMsgPreview = computed(() => {
-  const replaced = replaceNoBindKickMsgPlaceholders(
+  const replaced = renderNoBindKick(
     formData.value.nobindkickMsg,
     "Steve",
     bindCommandExample.value,
@@ -466,7 +505,7 @@ const noBindKickMsgPreview = computed(() => {
 });
 
 const unbindKickMsgPreview = computed(() => {
-  const replaced = replaceUnbindKickMsgPlaceholders(formData.value.unbindkickMsg, "114514");
+  const replaced = renderUnbindKick(formData.value.unbindkickMsg, "114514");
   return minecraftToHtml(replaced);
 });
 
@@ -516,4 +555,33 @@ watch(
     });
   }
 );
+
+// ==================== 模板变量定义 ====================
+// 踢出未绑定账号消息变量
+const noBindKickVariables = [
+  { label: "玩家名", value: "{name}", example: "Steve" },
+  { label: "消息", value: "{message}", example: bindCommandExample.value },
+  { label: "过期时间", value: "{time}", example: bindExpireTimeExample.value }
+];
+
+// 踢出已解绑账号消息变量
+const unbindKickVariables = [{ label: "社交账号", value: "{social_account}", example: "114514" }];
+
+// 绑定成功消息变量
+const bindSuccessVariables = [{ label: "玩家名", value: "{user}", example: "Steve" }];
+
+// 绑定失败消息变量
+const bindFailVariables = [
+  { label: "玩家名", value: "{user}", example: "Steve" },
+  { label: "原因", value: "{why}", example: "因为某种奇妙の原因" }
+];
+
+// 解绑成功消息变量
+const unbindSuccessVariables = [{ label: "玩家名", value: "{user}", example: "Steve" }];
+
+// 解绑失败消息变量
+const unbindFailVariables = [
+  { label: "玩家名", value: "{user}", example: "Steve" },
+  { label: "原因", value: "{why}", example: "因为某种奇妙の原因" }
+];
 </script>

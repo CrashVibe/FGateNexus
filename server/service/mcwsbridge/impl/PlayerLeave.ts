@@ -6,12 +6,12 @@ import { getDatabase } from "~~/server/db/client";
 import { eq } from "drizzle-orm";
 import { servers } from "~~/server/db/schema";
 import { chatBridge } from "../../chatbridge/chatbridge";
-import { renderJoinMessage } from "~~/shared/utils/template/notify";
+import { renderLeaveMessage } from "~~/shared/utils/template/notify";
 
 
-export class PlayerJoinHandler extends RequestHandler {
+export class PlayerLeaveHandler extends RequestHandler {
     getMethod(): string {
-        return "player.join";
+        return "player.leave";
     }
 
     async handleRequest(request: JsonRpcRequest<{ playerName: string }>, peer: Peer<AdapterInternal>): Promise<void> {
@@ -35,7 +35,7 @@ export class PlayerJoinHandler extends RequestHandler {
         if (server.notifyConfig.player_notify && server.adapterId) {
             const botConnection = chatBridge.getConnectionData(server.adapterId);
             if (!botConnection) return;
-            const formattedMessage = renderJoinMessage(server.notifyConfig.join_notify_message, playerName);
+            const formattedMessage = renderLeaveMessage(server.notifyConfig.leave_notify_message, playerName);
             for (const target of server.notifyConfig.targets) {
                 chatBridge.sendToTarget(botConnection, target.groupId, target.type, formattedMessage);
             }

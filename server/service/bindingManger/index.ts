@@ -2,19 +2,18 @@ import { getConfig } from "./config";
 import { getDatabase } from "~~/server/db/client";
 import { players, servers, socialAccounts } from "~~/server/db/schema";
 import { and, eq, sql } from "drizzle-orm";
-import {
-    generateVerificationCode,
-    replaceBindFailMsgPlaceholders,
-    replaceBindSuccessMsgPlaceholders,
-    replaceUnbindFailMsgPlaceholders,
-    replaceUnbindKickMsgPlaceholders,
-    replaceUnbindSuccessMsgPlaceholders
-} from "#shared/utils/binding";
+import { generateVerificationCode } from "#shared/utils/binding";
 import type { BotConnection } from "../chatbridge/chatbridge";
 import type { Session } from "koishi";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import { pluginBridge } from "../mcwsbridge/MCWSBridge";
-
+import {
+    renderUnbindKick,
+    renderBindSuccess,
+    renderBindFail,
+    renderUnbindSuccess,
+    renderUnbindFail
+} from "~~/shared/utils/template/binding";
 interface PendingBinding {
     /**
      * 服务器 ID
@@ -154,15 +153,11 @@ class BindingService {
                     await this.performBinding(binding, ctx.platform as AdapterType, ctx.userId, ctx.username);
                     // 删除已处理的 pending binding
                     bindings.delete(binding);
-                    await ctx.send(
-                        replaceBindSuccessMsgPlaceholders(bindingConfig.bindSuccessMsg, binding.playerNickname)
-                    );
+                    await ctx.send(renderBindSuccess(bindingConfig.bindSuccessMsg, binding.playerNickname));
                 } catch (error: unknown) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
                     console.error("无法处理绑定:", errorMessage);
-                    await ctx.send(
-                        replaceBindFailMsgPlaceholders(bindingConfig.bindFailMsg, binding.playerNickname, errorMessage)
-                    );
+                    await ctx.send(renderBindFail(bindingConfig.bindFailMsg, binding.playerNickname, errorMessage));
                 }
 
                 hit = true;
@@ -255,16 +250,14 @@ class BindingService {
                 await pluginBridge.kickPlayer(
                     server.id,
                     playerUUID,
-                    replaceUnbindKickMsgPlaceholders(server.bindingConfig.unbindkickMsg, socialUID)
+                    renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID)
                 );
-                await ctx.send(replaceUnbindSuccessMsgPlaceholders(server.bindingConfig.unbindSuccessMsg, playerName));
+                await ctx.send(renderUnbindSuccess(server.bindingConfig.unbindSuccessMsg, playerName));
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 console.error("无法处理解绑:", errorMessage);
                 const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
-                await ctx.send(
-                    replaceUnbindFailMsgPlaceholders(server.bindingConfig.unbindFailMsg, playerName, errorMessage)
-                );
+                await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, playerName, errorMessage));
             }
         });
 
