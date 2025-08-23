@@ -75,13 +75,11 @@ export class ChatBridge {
             this.addBot(adapter.id, adapter.type, adapter.config);
         }
         this.app.on("message", async (session) => {
-            if (session.platform === AdapterType.Onebot) {
-                const connection = Array.from(this.connectionMap.values()).find(
-                    (conn) => conn.config.selfId === session.bot.selfId
-                );
-                if (connection && session.content) {
-                    await this.receiveMessage(connection, session);
-                }
+            const connection = Array.from(this.connectionMap.values()).find(
+                (conn) => conn.config.selfId === session.bot.selfId
+            );
+            if (connection && session.content) {
+                this.receiveMessage(connection, session);
             }
         });
     }

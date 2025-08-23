@@ -1,9 +1,6 @@
 <template>
   <div>
     <HeaderServer
-      :desc="found.desc"
-      :server-name="serverData?.name || ''"
-      :title="found.label"
       back-button-text="服务器列表"
       back-path="/"
       class="mb-6"
@@ -54,12 +51,6 @@ const menuOptions: Ref<MenuItem[]> = inject(
   computed(() => [])
 );
 
-const found = computed(() => {
-  const found = menuOptions.value.find((item) => item.key === route.path);
-  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
-  return found;
-});
-
 const configMenuItems = computed(() => {
   const serverId = route.params?.["id"];
   if (!serverId) return [];
@@ -80,7 +71,6 @@ const navigateToMenuItem = (key: string | number) => {
   }
 };
 
-const { serverData: serverData } = getServerData.value;
 </script>
 
 <style scoped>

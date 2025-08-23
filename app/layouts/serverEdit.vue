@@ -1,5 +1,12 @@
 <script lang="ts" setup>
-import { ArrowBackOutline, ChatbubbleOutline, LinkOutline, MenuOutline, SettingsOutline } from "@vicons/ionicons5";
+import {
+  ArrowBackOutline,
+  ChatbubbleOutline,
+  LinkOutline,
+  MenuOutline,
+  SettingsOutline,
+  CodeSlashOutline
+} from "@vicons/ionicons5";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
@@ -117,6 +124,12 @@ const menuOptions = computed(() => {
       key: `/servers/${serverId}/msgbridge`,
       icon: renderIcon(ChatbubbleOutline),
       desc: "Minecraft 与 QQ 群消息双向同步配置。"
+    });
+    menu.push({
+      label: "远程指令",
+      key: `/servers/${serverId}/command`,
+      icon: renderIcon(CodeSlashOutline),
+      desc: "配置服务器的远程指令。"
     });
   }
   return menu;

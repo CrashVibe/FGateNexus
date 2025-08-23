@@ -4,6 +4,7 @@ import type { AdapterConfig } from "~~/shared/schemas/adapter";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import type { BindingConfig } from "~~/shared/schemas/server/binding";
 import type { ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
+import type { CommandConfig } from "~~/shared/schemas/server/command";
 
 export const adapters = sqliteTable("adapters", {
     id: integer("id").primaryKey({ autoIncrement: true }),
@@ -22,7 +23,8 @@ export const servers = sqliteTable("servers", {
     minecraft_software: text("version"),
     adapterId: integer("adapter_id").references(() => adapters.id, { onDelete: "set null" }),
     bindingConfig: text("binding_config", { mode: "json" }).notNull().$type<BindingConfig>(),
-    chatSyncConfig: text("chat_sync_config", { mode: "json" }).notNull().$type<ChatSyncConfig>()
+    chatSyncConfig: text("chat_sync_config", { mode: "json" }).notNull().$type<ChatSyncConfig>(),
+    commandConfig: text("command_config", { mode: "json" }).notNull().$type<CommandConfig>()
 });
 
 export const socialAccounts = sqliteTable("social_accounts", {

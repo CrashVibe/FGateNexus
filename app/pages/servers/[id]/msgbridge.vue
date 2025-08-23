@@ -1,13 +1,6 @@
 <template>
   <div>
-    <HeaderServer
-      :desc="found.desc"
-      :server-name="serverData?.name || ''"
-      :title="found.label"
-      back-button-text="服务器列表"
-      back-path="/servers"
-      class="mb-4"
-    />
+    <HeaderServer back-button-text="服务器列表" back-path="/servers" class="mb-4" />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <!-- 基础配置区域 -->
@@ -239,7 +232,6 @@
 <script lang="ts" setup>
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
-import type { MenuItem } from "~/layouts/serverEdit.vue";
 import { NButton, NInput, NSelect, type FormInst } from "naive-ui";
 import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
 import type { ChatSyncConfig, ChatSyncTarget } from "~~/shared/schemas/server/chatSync";
@@ -252,6 +244,7 @@ import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
 import type { PageState } from "~~/app/composables/usePageState";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { v4 as uuidv4 } from "uuid";
 
 // ==================== 页面配置 ====================
 definePageMeta({
@@ -259,27 +252,16 @@ definePageMeta({
 });
 
 // ==================== 组合式函数和依赖注入 ====================
-const { serverData: serverData } = getServerData.value;
-const menuOptions: Ref<MenuItem[]> = inject(
-  "menuOptions",
-  computed(() => [])
-);
 const registerPageState = inject<(state: PageState) => void>("registerPageState");
 const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
 
 // ==================== 计算属性 ====================
-const found = computed(() => {
-  const found = menuOptions.value.find((item) => item.key === route.path);
-  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
-  return found;
-});
-
 const isDirty = computed(
   () =>
     dataState.isSubmitting ||
-    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.chatSyncConfig))
+    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.ChatSyncConfig))
 );
 const isAnyLoading = computed(() => dataState.isLoading);
 
@@ -288,7 +270,7 @@ interface DataState {
   data: { serverData: ServerWithStatus | null };
   isLoading: boolean;
   isSubmitting: boolean;
-  original: { chatSyncConfig: ChatSyncConfig | null };
+  original: { ChatSyncConfig: ChatSyncConfig | null };
 }
 
 // ==================== 数据状态 ====================
@@ -296,7 +278,7 @@ const dataState = reactive<DataState>({
   data: { serverData: null },
   isLoading: true,
   isSubmitting: false,
-  original: { chatSyncConfig: null }
+  original: { ChatSyncConfig: null }
 });
 
 // ==================== 表单数据和验证 ====================
@@ -384,9 +366,9 @@ const columns = [
     title: "状态",
     key: "enabled",
     width: "20%",
-    render(row: { enabled: string }, index: number) {
+    render(row: ChatSyncTarget, index: number) {
       return h(NSelect, {
-        value: row.enabled === "已启用" ? "enable" : "disable",
+        value: row.enabled ? "enable" : "disable",
         options: statusFilterOptions,
         onUpdateValue(v: string) {
           console.log(row);
@@ -401,11 +383,12 @@ const columns = [
     title: "操作",
     key: "actions",
     render(row: ChatSyncTarget) {
+      console.log(row);
       return h(
         NButton,
         {
           size: "small",
-          onClick: () => removeTarget(getOriginalIndex(row))
+          onClick: () => removeTarget(row.id!)
         },
         { default: () => "删除" }
       );
@@ -452,29 +435,25 @@ function addTarget() {
   const newTarget = {
     groupId: "",
     type: "group" as const,
-    enabled: true
+    enabled: true,
+    id: uuidv4()
   };
   formData.value.targets.push(newTarget);
 }
 
-function removeTarget(idx: number) {
-  formData.value.targets.splice(idx, 1);
-}
-
-function getOriginalIndex(target: ChatSyncTarget) {
-  return formData.value.targets.findIndex((t) => t.groupId === target.groupId && t.type === target.type);
+function removeTarget(id: string) {
+  const index = formData.value.targets.findIndex((target) => target.id === id);
+  if (index !== -1) {
+    formData.value.targets.splice(index, 1);
+  }
 }
 
 const data = computed(() => {
-  return filteredTargets.value.map((target) => ({
-    groupId: target.groupId,
-    type: target.type === "group" ? "群聊" : "私聊",
-    enabled: target.enabled ? "已启用" : "已禁用",
-    actions: target
-  }));
+  return filteredTargets.value;
 });
 
 // ==================== 模板变量定义 ====================
+const serverData = await getServerData();
 const mcToPlatformVariables = [
   { label: "玩家名", value: "{playerName}", example: "Steve" },
   { label: "玩家UUID", value: "{playerUUID}", example: "12345678-1234-1234..." },
@@ -482,7 +461,7 @@ const mcToPlatformVariables = [
   {
     label: "服务器名",
     value: "{serverName}",
-    example: serverData && serverData.value ? serverData.value.name : "MyServer"
+    example: serverData.name
   },
   { label: "时间戳", value: "{timestamp}", example: "2024-01-01 12:00:00" }
 ];
@@ -501,7 +480,7 @@ const mcToPlatformPreview = computed(() => {
     playerName: "Steve",
     playerUUID: "12345678-1234-1234-1234-123456789abc",
     message: "Hello world!",
-    serverName: serverData && serverData.value ? serverData.value.name : "MyServer",
+    serverName: serverData.name,
     timestamp: Date.now()
   });
 });
@@ -533,10 +512,8 @@ class DataManager {
       const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
       if (response.code === StatusCodes.OK && response.data) {
         dataState.data.serverData = response.data;
-        dataState.original.chatSyncConfig = response.data.chatSyncConfig;
-        formData.value = response.data.chatSyncConfig
-          ? JSON.parse(JSON.stringify(response.data.chatSyncConfig))
-          : getDefaultChatSyncConfig();
+        dataState.original.ChatSyncConfig = response.data.chatSyncConfig;
+        formData.value = JSON.parse(JSON.stringify(response.data.chatSyncConfig));
       }
     } catch (error) {
       console.error("Failed to refresh server data:", error);
@@ -544,15 +521,15 @@ class DataManager {
     }
   }
 
-  async updateServerChatSyncConfig(serverId: number, chatSyncConfig: ChatSyncConfig): Promise<void> {
+  async updateServerChatSyncConfig(serverId: number, ChatSyncConfig: ChatSyncConfig): Promise<void> {
     try {
       dataState.isSubmitting = true;
       await $fetch<ApiResponse<ChatSyncConfig>>(`/api/servers/${serverId}/chatSync`, {
         method: "POST",
-        body: chatSyncConfig
+        body: ChatSyncConfig
       });
-      dataState.original.chatSyncConfig = JSON.parse(JSON.stringify(chatSyncConfig));
-      if (dataState.data.serverData) Object.assign(dataState.data.serverData, { chatSyncConfig });
+      dataState.original.ChatSyncConfig = JSON.parse(JSON.stringify(ChatSyncConfig));
+      if (dataState.data.serverData) Object.assign(dataState.data.serverData, { ChatSyncConfig });
       message.success("消息同步配置已保存");
     } catch (error) {
       console.error("Submit failed:", error);
@@ -580,7 +557,7 @@ async function handleSubmit() {
     message.error("服务器数据未加载或无效");
     return;
   }
-  const hasChanges = JSON.stringify(formData.value) !== JSON.stringify(dataState.original.chatSyncConfig);
+  const hasChanges = JSON.stringify(formData.value) !== JSON.stringify(dataState.original.ChatSyncConfig);
   if (!hasChanges) {
     message.info("没有需要保存的更改");
     return;
@@ -589,8 +566,8 @@ async function handleSubmit() {
 }
 
 function cancelChanges() {
-  if (dataState.original.chatSyncConfig) {
-    formData.value = JSON.parse(JSON.stringify(dataState.original.chatSyncConfig));
+  if (dataState.original.ChatSyncConfig) {
+    formData.value = JSON.parse(JSON.stringify(dataState.original.ChatSyncConfig));
   } else {
     formData.value = getDefaultChatSyncConfig();
   }

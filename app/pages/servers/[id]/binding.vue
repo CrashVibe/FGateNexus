@@ -1,13 +1,6 @@
 <template>
   <div>
-    <HeaderServer
-      :desc="found.desc"
-      :server-name="serverData?.name || ''"
-      :title="found.label"
-      back-button-text="服务器列表"
-      back-path="/"
-      class="mb-4"
-    />
+    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-4" />
     <n-form ref="formRef" :model="formData" :rules="rules">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="space-y-6">
@@ -321,7 +314,6 @@
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
 import type { FormInst } from "naive-ui";
-import type { MenuItem } from "~/layouts/serverEdit.vue";
 import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "~~/shared/schemas/server/binding";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
@@ -334,22 +326,12 @@ definePageMeta({
 
 // ==================== 组合式函数和依赖注入 ====================
 const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();
-const menuOptions: Ref<MenuItem[]> = inject(
-  "menuOptions",
-  computed(() => [])
-);
 const registerPageState = inject<(state: PageState) => void>("registerPageState");
 const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
-const { serverData: serverData } = getServerData.value;
 
 // ==================== 计算属性 ====================
-const found = computed(() => {
-  const found = menuOptions.value.find((item) => item.key === route.path);
-  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
-  return found;
-});
 
 const isDirty = computed(
   () =>

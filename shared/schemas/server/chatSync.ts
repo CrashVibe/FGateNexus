@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * 聊天同步配置
@@ -37,7 +38,12 @@ export const chatSyncConfigSchema = z.object({
                 /**
                  * 是否启用此目标
                  */
-                enabled: z.boolean().default(true)
+                enabled: z.boolean().default(true),
+
+                /**
+                 * 本地 ID
+                 */
+                id: z.uuid().default(() => uuidv4())
             })
         )
         .default([]),

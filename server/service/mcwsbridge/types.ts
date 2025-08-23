@@ -22,3 +22,8 @@ export interface PendingRequest<T = unknown> {
     timeout: NodeJS.Timeout;
     peerId: string;
 }
+
+export interface CommandResult {
+    success: boolean;
+    message: string;
+}

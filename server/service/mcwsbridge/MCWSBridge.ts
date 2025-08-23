@@ -4,6 +4,7 @@ import { MessageHandler } from "./MessageHandler";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { eq } from "drizzle-orm";
+import type { CommandResult } from "./types";
 
 /**
  * Minecraft WebSocket 桥接器
@@ -75,7 +76,7 @@ export class MCWSBridge {
      * @param reason - 踢出原因
      * @returns 操作结果
      */
-    public async kickPlayerByServerId(
+    public async kickPlayer(
         serverId: number,
         playerUUID: string,
         reason: string = "You have been kicked"
@@ -95,6 +96,17 @@ export class MCWSBridge {
         this.messageHandler.sendNotification(this.connectionManager.getConnection(serverId).peer, "chat.broadcast", {
             message
         });
+    }
+
+    /**
+     * 执行指令
+     */
+    public async executeCommand(serverId: number, command: string): Promise<CommandResult> {
+        return this.messageHandler.sendRequest<CommandResult>(
+            this.connectionManager.getConnection(serverId).peer,
+            "execute.command",
+            { command }
+        );
     }
 }
 

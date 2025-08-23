@@ -4,8 +4,8 @@
       <!-- info -->
       <div>
         <n-text strong>
-          <h1 class="text-2xl">{{ title }}</h1>
-          <p class="text-gray-500">{{ serverName }}</p>
+          <h1 class="text-2xl">{{ found.label }}</h1>
+          <p class="text-gray-500">{{ serverData?.name }}</p>
         </n-text>
       </div>
       <!-- button -->
@@ -19,22 +19,38 @@
       </n-button>
     </div>
     <slot name="other" />
-    <n-card v-if="desc" size="small">
-      <n-text depth="3">{{ desc }}</n-text>
+    <n-card v-if="found.desc" size="small">
+      <n-text depth="3">{{ found.desc }}</n-text>
     </n-card>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ArrowBackOutline } from "@vicons/ionicons5";
+import type { MenuItem } from "~/layouts/serverEdit.vue";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
+const route = useRoute();
 interface Props {
-  title: string;
-  serverName: string;
-  desc: string;
   backButtonText?: string;
   backPath?: string;
 }
+
+const serverData = ref<ServerWithStatus | null>(null);
+
+onMounted(async () => {
+  serverData.value = await getServerData();
+});
+
+const menuOptions: Ref<MenuItem[]> = inject(
+  "menuOptions",
+  computed(() => [])
+);
+const found = computed(() => {
+  const found = menuOptions.value.find((item) => item.key === route.path);
+  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
+  return found;
+});
 
 const props = withDefaults(defineProps<Props>(), {
   backButtonText: "返回配置总览",

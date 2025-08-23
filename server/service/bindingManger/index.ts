@@ -252,7 +252,7 @@ class BindingService {
                     playerUUID,
                     socialUID
                 });
-                await pluginBridge.kickPlayerByServerId(
+                await pluginBridge.kickPlayer(
                     server.id,
                     playerUUID,
                     replaceUnbindKickMsgPlaceholders(server.bindingConfig.unbindkickMsg, socialUID)

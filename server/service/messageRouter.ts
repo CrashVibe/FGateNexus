@@ -100,29 +100,45 @@ class MessageRouter {
             const serversWithConfig = await database.query.servers.findMany({
                 where: eq(servers.adapterId, connection.adapterID)
             });
+            if (session.content === undefined) {
+                return;
+            }
+            const tasks: Promise<unknown>[] = [];
 
             for (const server of serversWithConfig) {
+                const command = server.commandConfig;
+                for (const target of command.targets) {
+                    if (!target.enabled) continue;
+                    if (target.groupId !== session.channelId) continue;
+                    if (!session.content.startsWith(target.prefix)) continue;
+                    if (session.onebot) {
+                        const role = session.onebot.sender?.role;
+                        if (!role || !target.permissions.includes(role)) continue;
+                    }
+
+                    const cmd = pluginBridge
+                        .executeCommand(server.id, session.content.slice(target.prefix.length))
+                        .then(({ success, message }) =>
+                            chatBridge.sendToTarget(
+                                connection,
+                                session.channelId || "",
+                                target.type,
+                                success ? `指令执行成功: ${message}` : `指令执行失败: ${message}` // TODO: 图片渲染
+                            )
+                        );
+                    tasks.push(cmd);
+                    return; // 阻断
+                }
+
+                // chatSync 转发
                 const chatSyncConfig = server.chatSyncConfig;
-                if (!chatSyncConfig.enabled) {
-                    continue;
-                }
+                if (!chatSyncConfig?.enabled) continue;
 
-                // 检查消息是否来自配置的目标群组
-                const isTargetGroup = chatSyncConfig.targets.some(
-                    (target) => target.enabled && target.groupId === session.channelId
-                );
+                const isTargetGroup = chatSyncConfig.targets?.some((t) => t.enabled && t.groupId === session.channelId);
+                if (!isTargetGroup) continue;
 
-                if (!isTargetGroup) {
-                    continue;
-                }
-
-                // 过滤
-                if (!chatSyncConfig.platformToMcEnabled) {
-                    continue;
-                }
-                if (!this.shouldForwardMessage(session.content || "", chatSyncConfig)) {
-                    continue;
-                }
+                if (!chatSyncConfig.platformToMcEnabled) continue;
+                if (!this.shouldForwardMessage(session.content || "", chatSyncConfig)) continue;
 
                 const formattedMessage = formatPlatformToMCMessage(chatSyncConfig.platformToMcTemplate, {
                     platform: session.platform,
@@ -135,9 +151,15 @@ class MessageRouter {
                     timestamp: session.timestamp || Date.now()
                 });
 
-                await pluginBridge.broadcastMessageToServer(server.id, formattedMessage);
+                tasks.push(
+                    pluginBridge
+                        .broadcastMessageToServer(server.id, formattedMessage)
+                        .then(() => console.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`))
+                );
+            }
 
-                console.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`);
+            if (tasks.length) {
+                await Promise.allSettled(tasks);
             }
         } catch (error) {
             console.error(`[消息路由] 处理平台消息时出错：`, error);
