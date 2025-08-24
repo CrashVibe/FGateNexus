@@ -1,3 +1,13 @@
+import { useDark } from "@vueuse/core";
+
+const isDark = useDark({
+    storageKey: "vueuse-color-scheme",
+    selector: "html",
+    attribute: "class",
+    valueDark: "dark",
+    valueLight: "light"
+});
+
 // Minecraft颜色代码
 const MINECRAFT_COLORS: Record<string, string> = {
     "0": "#000000",
@@ -15,7 +25,7 @@ const MINECRAFT_COLORS: Record<string, string> = {
     c: "#FF5555",
     d: "#FF55FF",
     e: "#FFFF55",
-    f: "#FFFFFF"
+    f: isDark.value ? "#F0F8FF" : "#808080"
 };
 
 // 生成混淆文本
@@ -35,7 +45,7 @@ function minecraftToHtml(text: string): string {
 
     let html = "";
     let currentStyles: string[] = [];
-    let currentColor = "#FFFFFF";
+    let currentColor = isDark.value ? "#F0F8FF" : "#808080";
     let inObfuscated = false;
 
     const closeSpan = () => {
@@ -89,7 +99,7 @@ function minecraftToHtml(text: string): string {
                 if (code === "r") {
                     closeSpan();
                     currentStyles = [];
-                    currentColor = "#FFFFFF";
+                    currentColor = isDark.value ? "#F0F8FF" : "#808080";
                     inObfuscated = false;
                     openSpan();
                 } else if (MINECRAFT_COLORS[code]) {

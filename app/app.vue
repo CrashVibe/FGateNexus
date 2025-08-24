@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { darkTheme, lightTheme } from "naive-ui";
+import { darkTheme, lightTheme, type GlobalThemeOverrides } from "naive-ui";
 import { computed, onMounted, ref } from "vue";
 import { useDark } from "@vueuse/core";
 
@@ -18,14 +18,7 @@ const isDark = useDark({
 
 const theme = computed(() => (isDark.value ? darkTheme : lightTheme));
 
-const themeOverrides = {
-  Card: {
-    borderRadius: "12px"
-  },
-  Button: {
-    borderRadius: "8px"
-  }
-};
+const themeOverrides: GlobalThemeOverrides = {};
 
 const loadingBarRef = ref();
 
@@ -84,14 +77,16 @@ onMounted(() => {
 
 <template>
   <n-config-provider :hljs="hljs" :theme="theme" :theme-overrides="themeOverrides">
-    <n-loading-bar-provider ref="loadingBarRef">
-      <n-message-provider>
-        <n-dialog-provider>
-          <NuxtLayout>
-            <NuxtPage />
-          </NuxtLayout>
-        </n-dialog-provider>
-      </n-message-provider>
-    </n-loading-bar-provider>
+    <n-theme-editor>
+      <n-loading-bar-provider ref="loadingBarRef">
+        <n-message-provider>
+          <n-dialog-provider>
+            <NuxtLayout>
+              <NuxtPage />
+            </NuxtLayout>
+          </n-dialog-provider>
+        </n-message-provider>
+      </n-loading-bar-provider>
+    </n-theme-editor>
   </n-config-provider>
 </template>
