@@ -20,8 +20,7 @@
 > - 在 Alpha 版本中，我们不会对数据进行版本更新的迁移，请谨慎使用。
 > - 如果你发现了 bug 或问题，请在仓库的 issue 中提交反馈。
 
--
-本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Naïve UI](https://www.naiveui.com/)
+- 本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Naïve UI](https://www.naiveui.com/)
 开发
 - 需要配合 [FGATE Client](https://github.com/CrashVibe/FGateClient) 一起使用
 - 跨平台支持，适用于 Windows、Linux、macOS 等操作系统

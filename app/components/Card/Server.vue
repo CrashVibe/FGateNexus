@@ -2,7 +2,7 @@
   <transition appear name="card-appear">
     <n-card
       :class="{ 'grayscale-[0.6]': !server.isOnline }"
-      class="transition-all duration-300 ease-in-out rounded-lg cursor-pointer hover:-translate-y-1 hover:shadow-xl"
+      class="transition-all duration-300 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl"
       hoverable
       @click="router.push(`/servers/${props.server.id}`)"
     >
