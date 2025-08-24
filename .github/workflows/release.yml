@@ -1,87 +1,87 @@
 name: Build and Release
 
 on:
-    push:
-        branches: [main]
-    workflow_dispatch:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Set up Node.js 22
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "22"
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
 
-            - name: Set up Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version: latest
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            - name: Install dependencies
-              run: bun install --frozen-lockfile
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
-            - name: Build project
-              run: bun run build
+      - name: Build project
+        run: bun run build
 
-            - name: Get version
-              id: package_version
-              run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
+      - name: Get version
+        id: package_version
+        run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
 
-            - name: Build for All Platforms
-              run: bun run build:all
+      - name: Build for All Platforms
+        run: bun run build:all
 
-            - name: Archive artifacts with version
-              run: |
-                  ls dist
-                  VERSION=${{ steps.package_version.outputs.version }}
-                  chmod +r dist/*
-                  tar -czf FGateNexus-v${VERSION}-linux-x64.tar.gz dist/FGateNexus-linux-x64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-linux-arm64.tar.gz dist/FGateNexus-linux-arm64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-mac-x64.tar.gz dist/FGateNexus-mac-x64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-mac-arm64.tar.gz dist/FGateNexus-mac-arm64 dist/migrations
-                  zip -r FGateNexus-v${VERSION}-win.zip dist/FGateNexus-win-x64.exe dist/migrations
+      - name: Archive artifacts with version
+        run: |
+          ls dist
+          VERSION=${{ steps.package_version.outputs.version }}
+          chmod +r dist/*
+          tar -czf FGateNexus-v${VERSION}-linux-x64.tar.gz dist/FGateNexus-linux-x64 dist/migrations
+          tar -czf FGateNexus-v${VERSION}-linux-arm64.tar.gz dist/FGateNexus-linux-arm64 dist/migrations
+          tar -czf FGateNexus-v${VERSION}-mac-x64.tar.gz dist/FGateNexus-mac-x64 dist/migrations
+          tar -czf FGateNexus-v${VERSION}-mac-arm64.tar.gz dist/FGateNexus-mac-arm64 dist/migrations
+          zip -r FGateNexus-v${VERSION}-win.zip dist/FGateNexus-win-x64.exe dist/migrations
 
-            - name: Upload Linux x64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64
-                  path: |
-                      dist/FGateNexus-linux-x64
-                      dist/migrations
+      - name: Upload Linux x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64
+          path: |
+            dist/FGateNexus-linux-x64
+            dist/migrations
 
-            - name: Upload Linux arm64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64
-                  path: |
-                      dist/FGateNexus-linux-arm64
-                      dist/migrations
+      - name: Upload Linux arm64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64
+          path: |
+            dist/FGateNexus-linux-arm64
+            dist/migrations
 
-            - name: Upload macOS x64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64
-                  path: |
-                      dist/FGateNexus-mac-x64
-                      dist/migrations
+      - name: Upload macOS x64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64
+          path: |
+            dist/FGateNexus-mac-x64
+            dist/migrations
 
-            - name: Upload macOS arm64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64
-                  path: |
-                      dist/FGateNexus-mac-arm64
-                      dist/migrations
+      - name: Upload macOS arm64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64
+          path: |
+            dist/FGateNexus-mac-arm64
+            dist/migrations
 
-            - name: Upload Windows artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-win
-                  path: |
-                      dist/FGateNexus-win-x64.exe
-                      dist/migrations
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FGateNexus-v${{ steps.package_version.outputs.version }}-win
+          path: |
+            dist/FGateNexus-win-x64.exe
+            dist/migrations

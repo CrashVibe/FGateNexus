@@ -21,9 +21,9 @@
                     <n-tooltip v-for="tag in joinVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.join_notify_message.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('join_notify_message', tag.value)"
                         >
                           {{ tag.value }}
@@ -54,9 +54,9 @@
                     <n-tooltip v-for="tag in leaveVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.leave_notify_message.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('leave_notify_message', tag.value)"
                         >
                           {{ tag.value }}
@@ -94,9 +94,9 @@
                     <n-tooltip v-for="tag in deathVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.death_notify_message.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('death_notify_message', tag.value)"
                         >
                           {{ tag.value }}
@@ -147,8 +147,8 @@
           <n-icon>
             <svg viewBox="0 0 24 24">
               <path
-                fill="currentColor"
                 d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
+                fill="currentColor"
               />
             </svg>
           </n-icon>
@@ -159,13 +159,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { StatusCodes } from "http-status-codes";
-import { NButton, NInput, NSelect, type FormInst } from "naive-ui";
-import { NotifyConfigSchema, type NotifyConfig, type NotifyTarget } from "~~/shared/schemas/server/notify";
+import { type FormInst, NButton, NInput, NSelect } from "naive-ui";
+import { type NotifyConfig, NotifyConfigSchema, type NotifyTarget } from "~~/shared/schemas/server/notify";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
-import { renderJoinMessage, renderLeaveMessage, renderDeathMessage } from "~~/shared/utils/template/notify";
+import { renderDeathMessage, renderJoinMessage, renderLeaveMessage } from "~~/shared/utils/template/notify";
 import { v4 as uuidv4 } from "uuid";
 
 // ==================== 页面配置 ====================

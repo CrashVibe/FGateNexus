@@ -1,108 +1,107 @@
 html,
 body,
 #app {
-    height: 100%;
-    padding: 0;
-    margin: 0;
-    --header-height: 64px;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  --header-height: 64px;
 }
 
 html {
-    transition:
-        background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+  color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html:not(.dark) {
-    background-color: white;
+  background-color: white;
 }
 
 html.dark {
-    background-color: black;
+  background-color: black;
 }
 
 /* Loading Bar 自定义样式 */
 .n-loading-bar {
-    z-index: 9999 !important;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    height: 4px !important;
+  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 4px !important;
 }
 
 /* 滚动条美化 */
 ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    transition: background 0.2s ease;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.3);
 }
 
 /* 提升文字渲染质量 */
 * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* 页面过渡动画 */
 .page-enter-active {
-    transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
-    transform-origin: center center;
+  transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
+  transform-origin: center center;
 }
 
 .page-leave-active {
-    transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
-    transform-origin: center center;
+  transition: all 0.4s cubic-bezier(0.55, 0, 0.1, 1);
+  transform-origin: center center;
 }
 
 .page-enter-from {
-    opacity: 0;
-    transform: scale(0.9) translateY(50px);
+  opacity: 0;
+  transform: scale(0.9) translateY(50px);
 }
 
 .page-leave-to {
-    opacity: 0;
-    transform: scale(1.1) translateY(-30px);
+  opacity: 0;
+  transform: scale(1.1) translateY(-30px);
 }
 
 .layout-enter-active {
-    transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
-    transform-origin: center center;
+  transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
+  transform-origin: center center;
 }
 
 .layout-leave-active {
-    transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
-    transform-origin: center center;
+  transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
+  transform-origin: center center;
 }
 
 .layout-enter-from {
-    opacity: 0;
-    transform: scale(1.05);
+  opacity: 0;
+  transform: scale(1.05);
 }
 
 .layout-leave-to {
-    opacity: 0;
-    transform: scale(0.95);
+  opacity: 0;
+  transform: scale(0.95);
 }
 
 .layout-enter-to,
 .layout-leave-from {
-    opacity: 1;
-    transform: scale(1);
+  opacity: 1;
+  transform: scale(1);
 }
 
 /* 确保过渡期间的层级 */
@@ -110,6 +109,6 @@ html.dark {
 .page-leave-active,
 .layout-enter-active,
 .layout-leave-active {
-    position: relative;
-    z-index: 1;
+  position: relative;
+  z-index: 1;
 }

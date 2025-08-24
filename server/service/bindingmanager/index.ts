@@ -1,4 +1,3 @@
-import { getConfig } from "./config";
 import { getDatabase } from "~~/server/db/client";
 import { players, servers, socialAccounts } from "~~/server/db/schema";
 import { and, eq, sql } from "drizzle-orm";
@@ -8,12 +7,14 @@ import type { Session } from "koishi";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 import {
-    renderUnbindKick,
-    renderBindSuccess,
     renderBindFail,
-    renderUnbindSuccess,
-    renderUnbindFail
+    renderBindSuccess,
+    renderUnbindFail,
+    renderUnbindKick,
+    renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
+import { getConfig } from "./config";
+
 interface PendingBinding {
     /**
      * 服务器 ID

@@ -69,9 +69,9 @@
               <n-text strong>指令示例预览</n-text>
             </div>
             <div class="mb-2">
-              <n-text class="mb-2" round type="primary">
+              <n-text class="mb-2" round type="success">
                 <h1>绑定指令</h1>
-                <p class="text-gray-500">用户在QQ群或其他社交平台聊天中发送此指令来绑定游戏账号</p>
+                <p class="text-gray-500">用户在社交平台聊天中发送此指令来绑定游戏账号</p>
               </n-text>
               <div class="mb-2 p-2">
                 <n-code :code="bindCommandExample" language="text" />
@@ -104,9 +104,9 @@
                     <n-tooltip v-for="tag in bindSuccessVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.bindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('bindSuccessMsg', tag.value)"
                         >
                           {{ tag.value }}
@@ -138,9 +138,9 @@
                     <n-tooltip v-for="tag in bindFailVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.bindFailMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('bindFailMsg', tag.value)"
                         >
                           {{ tag.value }}
@@ -172,9 +172,9 @@
                     <n-tooltip v-for="tag in unbindSuccessVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.unbindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('unbindSuccessMsg', tag.value)"
                         >
                           {{ tag.value }}
@@ -206,9 +206,9 @@
                     <n-tooltip v-for="tag in unbindFailVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.unbindFailMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('unbindFailMsg', tag.value)"
                         >
                           {{ tag.value }}
@@ -248,9 +248,9 @@
                     <n-tooltip v-for="tag in noBindKickVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.nobindkickMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('nobindkickMsg', tag.value)"
                         >
                           {{ tag.value }}
@@ -284,9 +284,9 @@
                     <n-tooltip v-for="tag in unbindKickVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          size="tiny"
                           :type="formData.unbindkickMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
+                          size="small"
                           @click="insertPlaceholder('unbindkickMsg', tag.value)"
                         >
                           {{ tag.value }}
@@ -316,8 +316,8 @@
           <n-icon>
             <svg viewBox="0 0 24 24">
               <path
-                fill="currentColor"
                 d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
+                fill="currentColor"
               />
             </svg>
           </n-icon>
@@ -337,12 +337,12 @@ import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
 import moment from "moment-timezone";
 import {
-  renderNoBindKick,
-  renderUnbindKick,
-  renderBindSuccess,
   renderBindFail,
-  renderUnbindSuccess,
-  renderUnbindFail
+  renderBindSuccess,
+  renderNoBindKick,
+  renderUnbindFail,
+  renderUnbindKick,
+  renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
 
 // ==================== 页面配置 ====================

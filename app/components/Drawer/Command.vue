@@ -7,7 +7,7 @@
       <n-form-item v-if="props.target.type === 'group'" label="权限">
         <n-tooltip show-arrow trigger="focus">
           <template #trigger>
-            <n-select v-model:value="selectedTarget.permissions" multiple placeholder="请选择权限" :options="options" />
+            <n-select v-model:value="selectedTarget.permissions" :options="options" multiple placeholder="请选择权限" />
           </template>
           Tip: 权限相互独立，不存在继承关系
         </n-tooltip>
@@ -24,7 +24,7 @@
   </n-drawer-content>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { AdapterType } from "~~/shared/schemas/adapter";
 import type { CommandTarget } from "~~/shared/schemas/server/command";
 

@@ -1,10 +1,11 @@
 import { defineEventHandler } from "h3";
 import { getDatabase } from "~~/server/db/client";
-import { players, socialAccounts, servers, playerServers } from "~~/server/db/schema";
+import { players, playerServers, servers, socialAccounts } from "~~/server/db/schema";
 import { createApiResponse } from "#shared/types";
 import { ApiError, createErrorResponse } from "#shared/error";
 import type { PlayerWithRelations } from "#shared/schemas/player";
 import { StatusCodes } from "http-status-codes";
+
 export default defineEventHandler(async (event) => {
     try {
         const database = await getDatabase();

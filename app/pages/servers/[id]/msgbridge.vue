@@ -8,7 +8,7 @@
         <!-- 基础设置 -->
         <n-card class="h-fit" size="small" title="基础设置">
           <template #header-extra>
-            <n-tag :type="formData.enabled ? 'success' : 'default'" size="small" round>
+            <n-tag :type="formData.enabled ? 'success' : 'default'" round size="small">
               {{ formData.enabled ? "已启用" : "未启用" }}
             </n-tag>
           </template>
@@ -33,8 +33,8 @@
             <n-form-item label="最小长度" path="filters.minMessageLength">
               <n-input-number
                 v-model:value="formData.filters.minMessageLength"
-                :min="0"
                 :max="1000"
+                :min="0"
                 class="w-full"
                 placeholder="最小消息字符数"
               />
@@ -43,8 +43,8 @@
             <n-form-item label="最大长度" path="filters.maxMessageLength">
               <n-input-number
                 v-model:value="formData.filters.maxMessageLength"
-                :min="1"
                 :max="5000"
+                :min="1"
                 class="w-full"
                 placeholder="最大消息字符数"
               />
@@ -54,9 +54,9 @@
           <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
             <n-input
               v-model:value="keywordsText"
+              :maxlength="200"
               placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
               show-count
-              :maxlength="200"
             />
             <template #feedback>
               <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
@@ -70,11 +70,11 @@
         <n-card size="small" title="消息模板配置">
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- MC → 平台模板 -->
-            <n-card size="small" embedded>
+            <n-card embedded size="small">
               <template #header>
                 <div class="flex items-center gap-2">
                   <span>MC → 平台模板</span>
-                  <n-tag size="tiny" type="primary">游戏到平台</n-tag>
+                  <n-tag size="small" type="primary">游戏到平台</n-tag>
                 </div>
               </template>
 
@@ -82,11 +82,11 @@
                 <n-form-item label="模板内容" label-placement="top" path="mcToPlatformTemplate">
                   <n-input
                     v-model:value="formData.mcToPlatformTemplate"
-                    type="textarea"
+                    :maxlength="200"
                     :rows="3"
                     placeholder="MC 消息发送到平台的格式模板"
-                    :maxlength="200"
                     show-count
+                    type="textarea"
                   />
                   <template #feedback>
                     <div class="mt-2 space-y-2">
@@ -94,9 +94,9 @@
                         <n-tooltip v-for="tag in mcToPlatformVariables" :key="tag.value" trigger="hover">
                           <template #trigger>
                             <n-tag
-                              size="tiny"
                               :type="formData.mcToPlatformTemplate.includes(tag.value) ? 'primary' : 'default'"
                               class="cursor-pointer"
+                              size="small"
                               @click="insertPlaceholder('mcToPlatformTemplate', tag.value)"
                             >
                               {{ tag.value }}
@@ -118,11 +118,11 @@
             </n-card>
 
             <!-- 平台 → MC模板 -->
-            <n-card size="small" embedded>
+            <n-card embedded size="small">
               <template #header>
                 <div class="flex items-center gap-2">
                   <span>平台 → MC模板</span>
-                  <n-tag size="tiny" type="success">平台到游戏</n-tag>
+                  <n-tag size="small" type="success">平台到游戏</n-tag>
                 </div>
               </template>
 
@@ -130,11 +130,11 @@
                 <n-form-item label="模板内容" label-placement="top" path="platformToMcTemplate">
                   <n-input
                     v-model:value="formData.platformToMcTemplate"
-                    type="textarea"
+                    :maxlength="200"
                     :rows="3"
                     placeholder="平台消息发送到 MC 的格式模板"
-                    :maxlength="200"
                     show-count
+                    type="textarea"
                   />
                   <template #feedback>
                     <div class="mt-2 space-y-2">
@@ -142,9 +142,9 @@
                         <n-tooltip v-for="tag in platformToMcVariables" :key="tag.value" trigger="hover">
                           <template #trigger>
                             <n-tag
-                              size="tiny"
                               :type="formData.platformToMcTemplate.includes(tag.value) ? 'success' : 'default'"
                               class="cursor-pointer"
+                              size="small"
                               @click="insertPlaceholder('platformToMcTemplate', tag.value)"
                             >
                               {{ tag.value }}
@@ -177,19 +177,19 @@
         </template>
         <div class="mb-4">
           <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <n-input v-model:value="searchText" placeholder="搜索目标ID..." clearable></n-input>
-            <n-select v-model:value="typeFilter" :options="targetTypeOptions" placeholder="类型筛选" clearable />
-            <n-select v-model:value="statusFilter" :options="statusFilterOptions" placeholder="状态筛选" clearable />
+            <n-input v-model:value="searchText" clearable placeholder="搜索目标ID..."></n-input>
+            <n-select v-model:value="typeFilter" :options="targetTypeOptions" clearable placeholder="类型筛选" />
+            <n-select v-model:value="statusFilter" :options="statusFilterOptions" clearable placeholder="状态筛选" />
           </div>
         </div>
 
         <n-data-table
           :columns="columns"
+          :data="data"
           :pagination="{
             pageSizes: pageSizes,
             showSizePicker: true
           }"
-          :data="data"
         >
           <template #empty>
             <n-empty description="暂无目标配置，请添加目标">
@@ -206,13 +206,13 @@
     <n-divider />
     <div class="flex justify-end gap-2">
       <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" type="primary" ghost @click="handleSubmit">
+      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
               <path
-                fill="currentColor"
                 d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
+                fill="currentColor"
               />
             </svg>
           </n-icon>
@@ -226,13 +226,13 @@
 <script lang="ts" setup>
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
-import { NButton, NInput, NSelect, type FormInst } from "naive-ui";
-import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
+import { type FormInst, NButton, NInput, NSelect } from "naive-ui";
 import type { ChatSyncConfig, ChatSyncTarget } from "~~/shared/schemas/server/chatSync";
+import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
 import {
-  getDefaultChatSyncConfig,
+  formatMCToPlatformMessage,
   formatPlatformToMCMessage,
-  formatMCToPlatformMessage
+  getDefaultChatSyncConfig
 } from "~~/shared/utils/chatSync";
 import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";

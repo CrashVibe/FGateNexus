@@ -9,7 +9,7 @@ import { configManager } from "~~/server/utils/config";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { AdapterType } from "~~/shared/schemas/adapter";
-import { bindingService } from "../bindingManger";
+import { bindingService } from "../bindingmanager";
 import { messageRouter } from "../messageRouter";
 
 /**

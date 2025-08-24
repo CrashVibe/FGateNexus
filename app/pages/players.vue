@@ -23,15 +23,15 @@
     <div>
       <div class="mb-4">
         <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
-          <n-input v-model:value="searchName" placeholder="搜索玩家名..." clearable></n-input>
-          <n-input v-model:value="searchUUID" placeholder="搜索UUID..." clearable />
-          <n-input v-model:value="searchIP" placeholder="搜索IP..." clearable />
-          <n-input v-model:value="searchSocial" placeholder="搜索社交账号UID..." clearable />
+          <n-input v-model:value="searchName" clearable placeholder="搜索玩家名..."></n-input>
+          <n-input v-model:value="searchUUID" clearable placeholder="搜索UUID..." />
+          <n-input v-model:value="searchIP" clearable placeholder="搜索IP..." />
+          <n-input v-model:value="searchSocial" clearable placeholder="搜索社交账号UID..." />
         </div>
       </div>
       <n-data-table
-        :data="data"
         :columns="columns"
+        :data="data"
         :pagination="{
           pageSizes: pageSizes,
           showSizePicker: true
@@ -41,12 +41,13 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import { RefreshOutline } from "@vicons/ionicons5";
 import { StatusCodes } from "http-status-codes";
 import { NTag, NText } from "naive-ui";
 import type { PlayerWithRelations } from "~~/shared/schemas/player";
 import type { ApiResponse } from "~~/shared/types";
+
 const message = useMessage();
 const playerList = ref<PlayerWithRelations[]>([]);
 const isLoadingList = ref(false);

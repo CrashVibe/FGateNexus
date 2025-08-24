@@ -2,11 +2,11 @@
 import {
   ArrowBackOutline,
   ChatbubbleOutline,
+  CodeSlashOutline,
   LinkOutline,
   MenuOutline,
-  SettingsOutline,
-  CodeSlashOutline,
-  NotificationsOutline
+  NotificationsOutline,
+  SettingsOutline
 } from "@vicons/ionicons5";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";

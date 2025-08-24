@@ -8,11 +8,11 @@
       </template>
       <n-data-table
         :columns="columns"
+        :data="data"
         :pagination="{
           pageSizes: pageSizes,
           showSizePicker: true
         }"
-        :data="data"
       >
         <template #empty>
           <n-empty description="暂无目标配置，请添加目标">
@@ -27,8 +27,8 @@
       <n-drawer v-model:show="drawerVisible" width="500">
         <drawer-command
           v-if="selectedTarget"
-          :target="selectedTarget"
           :adapter-type="dataState.data.adapterData?.type"
+          :target="selectedTarget"
           @save="handleTargetSave"
         />
       </n-drawer>
@@ -38,13 +38,13 @@
     <n-divider />
     <div class="flex justify-end gap-2">
       <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" type="primary" ghost @click="handleSubmit">
+      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
               <path
-                fill="currentColor"
                 d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
+                fill="currentColor"
               />
             </svg>
           </n-icon>

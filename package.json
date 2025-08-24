@@ -1,65 +1,65 @@
 {
-    "name": "fgatenexus",
-    "private": true,
-    "version": "0.0.1",
-    "type": "module",
-    "scripts": {
-        "build": "nuxt build",
-        "dev": "nuxt dev",
-        "generate": "nuxt generate",
-        "preview": "nuxt preview",
-        "postinstall": "nuxt prepare",
-        "db:generate": "drizzle-kit generate",
-        "db:migrate": "drizzle-kit migrate",
-        "build:all": "bun run build && bun run build:mac && bun run build:linux && bun run build:win && bun run copy:migrations",
-        "build:mac": "bun build --compile --target=bun-darwin-arm64 ./entry.ts --outfile ./dist/FGateNexus-mac-arm64 && bun build --compile --target=bun-darwin-x64 ./entry.ts --outfile ./dist/FGateNexus-mac-x64",
-        "build:linux": "bun build --compile --target=bun-linux-arm64 ./entry.ts --outfile ./dist/FGateNexus-linux-arm64 && bun build --compile --target=bun-linux-x64 ./entry.ts --outfile ./dist/FGateNexus-linux-x64",
-        "build:win": "bun build --compile --target=bun-windows-x64 ./entry.ts --outfile ./dist/FGateNexus-win-x64.exe",
-        "copy:migrations": "node -e \"const fs=require('fs'); if(fs.existsSync('./migrations')) { fs.cpSync('./migrations', './dist/migrations', {recursive: true}); }\""
-    },
-    "overrides": {
-        "@koishijs/loader": "npm:@mrlingxd/loader@^4.6.8-fix.1"
-    },
-    "dependencies": {
-        "@koishijs/plugin-http": "^0.6.3",
-        "@koishijs/plugin-server": "^3.2.7",
-        "@nuxt/eslint": "^1.8.0",
-        "@nuxtjs/tailwindcss": "6.14.0",
-        "@vicons/ionicons5": "^0.13.0",
-        "@vueuse/core": "^13.6.0",
-        "better-sqlite3": "^12.2.0",
-        "crossws": "0.4.1",
-        "drizzle-kit": "^0.31.4",
-        "drizzle-orm": "^0.44.4",
-        "highlight.js": "^11.11.1",
-        "http-status-codes": "^2.3.0",
-        "koishi": "^4.18.8",
-        "koishi-plugin-adapter-onebot": "npm:@mrlingxd/koishi-plugin-adapter-onebot@^6.8.0-fix.5",
-        "moment-timezone": "^0.6.0",
-        "naive-ui": "^2.42.0",
-        "nuxt": "^4.0.3",
-        "nuxtjs-naive-ui": "1.0.2",
-        "uuid": "^11.1.0",
-        "vooks": "^0.2.12",
-        "vue": "^3.5.18",
-        "vue-router": "^4.5.1",
-        "zod": "^4.0.17"
-    },
-    "devDependencies": {
-        "@types/better-sqlite3": "^7.6.13",
-        "@types/bun": "^1.2.19",
-        "@types/less": "~3.0.8",
-        "@types/node": "^24.2.1",
-        "eslint": "^9.33.0",
-        "less": "^4.4.0",
-        "prettier": "^3.6.2",
-        "typescript": "^5.9.2",
-        "unplugin-auto-import": "^20.0.0",
-        "unplugin-vue-components": "^29.0.0",
-        "vue-tsc": "^3.0.5"
-    },
-    "trustedDependencies": [
-        "@parcel/watcher",
-        "unrs-resolver"
-    ]
+  "name": "fgatenexus",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "build:all": "bun run build && bun run build:mac && bun run build:linux && bun run build:win && bun run copy:migrations",
+    "build:mac": "bun build --compile --target=bun-darwin-arm64 ./entry.ts --outfile ./dist/FGateNexus-mac-arm64 && bun build --compile --target=bun-darwin-x64 ./entry.ts --outfile ./dist/FGateNexus-mac-x64",
+    "build:linux": "bun build --compile --target=bun-linux-arm64 ./entry.ts --outfile ./dist/FGateNexus-linux-arm64 && bun build --compile --target=bun-linux-x64 ./entry.ts --outfile ./dist/FGateNexus-linux-x64",
+    "build:win": "bun build --compile --target=bun-windows-x64 ./entry.ts --outfile ./dist/FGateNexus-win-x64.exe",
+    "copy:migrations": "node -e \"const fs=require('fs'); if(fs.existsSync('./migrations')) { fs.cpSync('./migrations', './dist/migrations', {recursive: true}); }\""
+  },
+  "overrides": {
+    "@koishijs/loader": "npm:@mrlingxd/loader@^4.6.8-fix.1"
+  },
+  "dependencies": {
+    "@koishijs/plugin-http": "^0.6.3",
+    "@koishijs/plugin-server": "^3.2.7",
+    "@nuxt/eslint": "^1.8.0",
+    "@nuxtjs/tailwindcss": "6.14.0",
+    "@vicons/ionicons5": "^0.13.0",
+    "@vueuse/core": "^13.6.0",
+    "better-sqlite3": "^12.2.0",
+    "crossws": "0.4.1",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.4",
+    "highlight.js": "^11.11.1",
+    "http-status-codes": "^2.3.0",
+    "koishi": "^4.18.8",
+    "koishi-plugin-adapter-onebot": "npm:@mrlingxd/koishi-plugin-adapter-onebot@^6.8.0-fix.5",
+    "moment-timezone": "^0.6.0",
+    "naive-ui": "^2.42.0",
+    "nuxt": "^4.0.3",
+    "nuxtjs-naive-ui": "1.0.2",
+    "uuid": "^11.1.0",
+    "vooks": "^0.2.12",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/bun": "^1.2.19",
+    "@types/less": "~3.0.8",
+    "@types/node": "^24.2.1",
+    "eslint": "^9.33.0",
+    "less": "^4.4.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2",
+    "unplugin-auto-import": "^20.0.0",
+    "unplugin-vue-components": "^29.0.0",
+    "vue-tsc": "^3.0.5"
+  },
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "unrs-resolver"
+  ]
 }
