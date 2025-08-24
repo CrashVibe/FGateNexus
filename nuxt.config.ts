@@ -37,22 +37,7 @@ export default defineNuxtConfig({
     },
     modules: ["nuxtjs-naive-ui", "@nuxt/eslint", "@nuxtjs/tailwindcss"],
     vite: {
-        cacheDir: "node_modules/.vite_cache",
-        optimizeDeps: {
-            include: ["naive-ui", "vue", "vue-router"],
-            exclude: ["@prisma/client"],
-            esbuildOptions: {
-                target: "esnext",
-                keepNames: true
-            }
-        },
-        server: {
-            hmr: false
-        },
         build: {
-            rollupOptions: {
-                external: ["@prisma/client", ".prisma/client"]
-            },
             target: "esnext",
             minify: "terser",
             terserOptions: {
