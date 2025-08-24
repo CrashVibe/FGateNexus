@@ -8,7 +8,6 @@ import { servers } from "~~/server/db/schema";
 import { chatBridge } from "../../chatbridge/chatbridge";
 import { renderLeaveMessage } from "~~/shared/utils/template/notify";
 
-
 export class PlayerLeaveHandler extends RequestHandler {
     getMethod(): string {
         return "player.leave";

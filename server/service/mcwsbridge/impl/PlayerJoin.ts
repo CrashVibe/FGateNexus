@@ -8,7 +8,6 @@ import { servers } from "~~/server/db/schema";
 import { chatBridge } from "../../chatbridge/chatbridge";
 import { renderJoinMessage } from "~~/shared/utils/template/notify";
 
-
 export class PlayerJoinHandler extends RequestHandler {
     getMethod(): string {
         return "player.join";

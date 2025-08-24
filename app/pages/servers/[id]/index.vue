@@ -1,10 +1,6 @@
 <template>
   <div>
-    <HeaderServer
-      back-button-text="服务器列表"
-      back-path="/"
-      class="mb-6"
-    />
+    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-6" />
 
     <n-grid
       v-if="configMenuItems.length > 0"
@@ -70,7 +66,6 @@ const navigateToMenuItem = (key: string | number) => {
     router.push(key);
   }
 };
-
 </script>
 
 <style scoped>
