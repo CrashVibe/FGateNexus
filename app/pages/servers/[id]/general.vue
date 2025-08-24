@@ -1,15 +1,14 @@
 <template>
   <div>
-    <HeaderServer
-      :desc="found.desc"
-      :server-name="dataState.data.serverData?.name || ''"
-      :title="found.label"
-      back-button-text="服务器列表"
-      back-path="/"
-      class="mb-4"
-    />
+    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-4" />
     <n-form :model="formData" :rules="rules">
-      <n-grid :cols="isMobile ? 1 : '600:2 1600:3'">
+      <n-grid :cols="isMobile ? 1 : '600:2 1600:3'" x-gap="16" y-gap="16">
+        <n-gi>
+          <n-card class="h-full cursor-pointer" embedded hoverable size="small" title="基础操作">
+            <!-- 删除 -->
+            <n-button type="error" @click="handleDelete">删除</n-button>
+          </n-card>
+        </n-gi>
         <n-gi>
           <n-card class="h-full cursor-pointer" embedded hoverable size="small" title="Bot 实例">
             <n-form-item label="Bot 实例" path="adapterId">
@@ -50,7 +49,6 @@
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
 import type { SelectMixedOption } from "naive-ui/es/select/src/interface";
-import type { MenuItem } from "~/layouts/serverEdit.vue";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { type ChooseAdapter, chooseAdapterSchema, type ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
@@ -62,15 +60,11 @@ definePageMeta({
 });
 
 // ==================== 组合式函数和依赖注入 ====================
-const menuOptions: Ref<MenuItem[]> = inject(
-  "menuOptions",
-  computed(() => [])
-);
 const registerPageState = inject<(state: PageState) => void>("registerPageState");
 const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
-
+const router = useRouter();
 // ==================== 类型定义 ====================
 interface DataState {
   data: {
@@ -97,6 +91,25 @@ const dataState = reactive<DataState>({
 
 // ==================== 数据管理类 ====================
 class DataManager {
+  async handleDelete() {
+    if (!dataState.data.serverData) {
+      message.error("服务器数据未加载或无效");
+      return;
+    }
+
+    try {
+      await $fetch<ApiResponse<void>>(`/api/servers/${dataState.data.serverData.id}`, {
+        method: "DELETE"
+      });
+      message.success("服务器已删除");
+      dataState.data.serverData = null;
+      router.push("/");
+    } catch (error) {
+      console.error("Delete failed:", error);
+      message.error("删除服务器失败");
+    }
+  }
+
   async fetchAdapterList(): Promise<void> {
     try {
       const response = await $fetch<ApiResponse<AdapterWithStatus[]>>("/api/adapter");
@@ -194,12 +207,6 @@ onUnmounted(() => {
 });
 
 // ==================== 计算属性 ====================
-const found = computed(() => {
-  const found = menuOptions.value.find((item) => item.key === route.path);
-  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
-  return found;
-});
-
 const adapterOptions = computed<SelectMixedOption[]>(() =>
   dataState.data.adapterList.map((adapter) => ({
     label: `#${adapter.id} - ${adapter.type} [${adapter.isOnline ? "在线" : "离线"}${adapter.enabled ? "" : " · 已禁用"}]`,
@@ -224,6 +231,10 @@ async function handleSubmit() {
 
 function cancelChanges() {
   formData.value = { ...dataState.original };
+}
+
+async function handleDelete() {
+  await dataManager.handleDelete();
 }
 
 // ==================== 监听器 ====================
