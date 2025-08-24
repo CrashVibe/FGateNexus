@@ -77,16 +77,14 @@ onMounted(() => {
 
 <template>
   <n-config-provider :hljs="hljs" :theme="theme" :theme-overrides="themeOverrides">
-    <n-theme-editor>
-      <n-loading-bar-provider ref="loadingBarRef">
-        <n-message-provider>
-          <n-dialog-provider>
-            <NuxtLayout>
-              <NuxtPage />
-            </NuxtLayout>
-          </n-dialog-provider>
-        </n-message-provider>
-      </n-loading-bar-provider>
-    </n-theme-editor>
+    <n-loading-bar-provider ref="loadingBarRef">
+      <n-message-provider>
+        <n-dialog-provider>
+          <NuxtLayout>
+            <NuxtPage />
+          </NuxtLayout>
+        </n-dialog-provider>
+      </n-message-provider>
+    </n-loading-bar-provider>
   </n-config-provider>
 </template>
