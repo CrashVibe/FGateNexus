@@ -8,6 +8,8 @@
 [![Build Release](https://github.com/CrashVibe/FGateNexus/actions/workflows/release.yml/badge.svg)](https://github.com/CrashVibe/FGateNexus/actions/workflows/release.yml)
 ![License](https://img.shields.io/github/license/CrashVibe/FGateNexus)
 
+![Screenshot](/.github/screenshots/FGate.png)
+
 ## 说明
 
 > [!IMPORTANT]
