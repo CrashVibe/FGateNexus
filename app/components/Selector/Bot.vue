@@ -84,7 +84,7 @@ defineExpose({
 
         <template v-if="selectedType === AdapterType.Onebot && modelValue.config">
           <n-form-item label="Bot ID" path="selfId">
-            <n-input v-model:value="modelValue.config.selfId" placeholder="请输入 Bot ID" />
+            <n-input v-model:value="modelValue.config.selfId" placeholder="请输入机器人的账号" />
           </n-form-item>
 
           <n-form-item label="连接协议" path="protocol">
