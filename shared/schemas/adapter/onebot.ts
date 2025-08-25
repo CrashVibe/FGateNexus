@@ -4,17 +4,17 @@ import { z } from "zod";
 export const OneBotWSReverseConfigSchema = z.object({
     selfId: z.string().min(1, "selfId 不能为空"),
     protocol: z.literal("ws-reverse"),
-    path: z.string().min(1, "path 不能为空")
+    path: z.string().min(1, "路径不能为空")
 });
 
 export const OneBotWSConfigSchema = z.object({
     selfId: z.string().min(1, "selfId 不能为空"),
     protocol: z.literal("ws"),
-    endpoint: z.url("endpoint 必须是有效的 URL"),
-    timeout: z.number().int().positive("timeout 必须是正整数"),
-    retryTimes: z.number().int().nonnegative("retryTimes 不能为负数"),
-    retryInterval: z.number().int().positive("retryInterval 必须是正整数"),
-    retryLazy: z.number().int().nonnegative("retryLazy 不能为负数")
+    endpoint: z.url("连接地址必须是有效的 URL"),
+    timeout: z.number().int("超时时间必须是整数").positive("超时时间必须是正整数"),
+    retryTimes: z.number().int("重试次数必须是整数").nonnegative("重试次数不能为负数"),
+    retryInterval: z.number().int("重试间隔必须是整数").positive("重试间隔必须是正整数"),
+    retryLazy: z.number().int("重试延迟必须是整数").nonnegative("重试延迟不能为负数")
 });
 
 export const OneBotConfigSchema = z.union([OneBotWSReverseConfigSchema, OneBotWSConfigSchema]);
