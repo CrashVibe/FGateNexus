@@ -190,6 +190,7 @@
             pageSizes: pageSizes,
             showSizePicker: true
           }"
+          :scroll-x="600"
         >
           <template #empty>
             <n-empty description="暂无目标配置，请添加目标">

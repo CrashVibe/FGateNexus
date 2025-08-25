@@ -36,6 +36,7 @@
           pageSizes: pageSizes,
           showSizePicker: true
         }"
+        :scroll-x="600"
       ></n-data-table>
     </div>
   </div>
