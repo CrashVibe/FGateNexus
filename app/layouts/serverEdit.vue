@@ -131,7 +131,7 @@ const menuOptions = computed(() => {
       label: "消息互通",
       key: `/servers/${serverId}/msgbridge`,
       icon: renderIcon(ChatbubbleOutline),
-      desc: "Minecraft 与 QQ 群消息双向同步配置。"
+      desc: "Minecraft 与 聊天平台消息双向同步配置。"
     });
     menu.push({
       label: "事件通知",

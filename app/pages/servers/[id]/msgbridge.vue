@@ -461,7 +461,7 @@ const mcToPlatformVariables = [
 ];
 
 const platformToMcVariables = [
-  { label: "平台名", value: "{platform}", example: "QQ" },
+  { label: "平台名", value: "{platform}", example: "Onebot" },
   { label: "昵称", value: "{nickname}", example: "Alice" },
   { label: "用户ID", value: "{userId}", example: "123456789" },
   { label: "消息内容", value: "{message}", example: "Hi everyone!" },
@@ -481,7 +481,7 @@ const mcToPlatformPreview = computed(() => {
 
 const platformToMcPreview = computed(() => {
   return formatPlatformToMCMessage(formData.value.platformToMcTemplate, {
-    platform: "QQ",
+    platform: "Onebot",
     nickname: "Alice",
     userId: "123456789",
     message: "Hi everyone!",
