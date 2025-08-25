@@ -98,18 +98,18 @@ defineExpose({
 
           <template v-if="modelValue.config.protocol === 'ws-reverse'">
             <n-form-item label="路径" path="path">
-              <n-input v-model:value="modelValue.config.path" placeholder="请输入路径，如 /onebot" />
+              <n-input v-model:value="modelValue.config.path" placeholder="如 /onebot" />
             </n-form-item>
           </template>
 
           <template v-if="modelValue.config.protocol === 'ws'">
             <n-form-item label="连接地址" path="endpoint">
-              <n-input v-model:value="wsConfig.endpoint" placeholder="请输入 WebSocket 地址，如 ws://localhost:8080" />
+              <n-input v-model:value="modelValue.config.endpoint" placeholder="ws://localhost:2333" />
             </n-form-item>
 
             <n-form-item label="超时时间" path="timeout">
               <n-input-number
-                v-model:value="wsConfig.timeout"
+                v-model:value="modelValue.config.timeout"
                 :min="1000"
                 :step="1000"
                 class="w-full"
@@ -120,12 +120,18 @@ defineExpose({
             </n-form-item>
 
             <n-form-item label="重试次数" path="retryTimes">
-              <n-input-number v-model:value="wsConfig.retryTimes" :min="0" :step="1" class="w-full" placeholder="3" />
+              <n-input-number
+                v-model:value="modelValue.config.retryTimes"
+                :min="0"
+                :step="1"
+                class="w-full"
+                placeholder="3"
+              />
             </n-form-item>
 
             <n-form-item label="重试间隔" path="retryInterval">
               <n-input-number
-                v-model:value="wsConfig.retryInterval"
+                v-model:value="modelValue.config.retryInterval"
                 :min="1000"
                 :step="100"
                 class="w-full"
@@ -137,7 +143,7 @@ defineExpose({
 
             <n-form-item label="重试延迟" path="retryLazy">
               <n-input-number
-                v-model:value="wsConfig.retryLazy"
+                v-model:value="modelValue.config.retryLazy"
                 :min="1000"
                 :step="100"
                 class="w-full"
