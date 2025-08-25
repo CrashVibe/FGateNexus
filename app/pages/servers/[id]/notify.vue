@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-4" />
+    <HeaderServer class="mb-4" />
     <n-form ref="formRef" :model="formData" :rules="rules" class="mb-4">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="space-y-6">

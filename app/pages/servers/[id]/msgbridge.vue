@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer back-button-text="服务器列表" back-path="/servers" class="mb-4" />
+    <HeaderServer class="mb-4" />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <!-- 基础配置区域 -->

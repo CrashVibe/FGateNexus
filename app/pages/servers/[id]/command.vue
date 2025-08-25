@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer back-button-text="服务器列表" back-path="/servers" class="mb-4" />
+    <HeaderServer class="mb-4" />
 
     <n-card size="small" title="目标配置">
       <template #header-extra>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-4" />
+    <HeaderServer class="mb-4" />
     <n-form :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '600:2 1600:3'" x-gap="16" y-gap="16">
         <n-gi>
