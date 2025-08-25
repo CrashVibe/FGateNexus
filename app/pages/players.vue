@@ -41,7 +41,7 @@
   </div>
 </template>
 
-<script lang="ts" setup>
+<script lang="tsx" setup>
 import { RefreshOutline } from "@vicons/ionicons5";
 import { StatusCodes } from "http-status-codes";
 import { NTag, NText } from "naive-ui";
@@ -91,10 +91,8 @@ const data = computed(() =>
       return (
         player.name.toLowerCase().includes(searchName.value.toLowerCase()) &&
         player.uuid.toLowerCase().includes(searchUUID.value.toLowerCase()) &&
-        player.ip &&
-        player.ip.toLowerCase().includes(searchIP.value.toLowerCase()) &&
-        player.socialAccount &&
-        player.socialAccount.uid.includes(searchSocial.value.toLowerCase())
+        (player.ip ?? "").toLowerCase().includes(searchIP.value.toLowerCase()) &&
+        (player.socialAccount?.uid ?? "").toLowerCase().includes(searchSocial.value.toLowerCase())
       );
     })
 );
@@ -139,27 +137,18 @@ const columns = [
     key: "socialAccount",
     width: "20%",
     render(row: PlayerWithRelations) {
-      return [
-        h(
-          NTag,
-          {
-            type: "info",
-            size: "small"
-          },
-          {
-            default: () => (row.socialAccount ? `${row.socialAccount.adapterType}` : undefined)
-          }
-        ),
-        h(NText, null, {
-          default: () => {
-            if (row.socialAccount && row.socialAccount.nickname) {
-              return ` ${row.socialAccount.nickname} (${row.socialAccount.uid})`;
-            } else {
-              return "未绑定";
-            }
-          }
-        })
-      ];
+      return row.socialAccount ? (
+        <>
+          <NTag type="info" size="small">
+            {row.socialAccount.adapterType}
+          </NTag>
+          <NText depth={3}>{` ${row.socialAccount.nickname} (${row.socialAccount.uid})`}</NText>
+        </>
+      ) : (
+        <NTag type="error" size="small">
+          未绑定
+        </NTag>
+      );
     }
   },
   {
