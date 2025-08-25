@@ -97,7 +97,7 @@ const menuOptions = computed(() => {
   const serverId = route.params?.["id"];
   const menu: MenuMixedOption[] = [];
   menu.push({
-    label: "返回服务器管理",
+    label: "返回",
     key: "/",
     icon: renderIcon(ArrowBackOutline),
     desc: "返回服务器列表主页。"
