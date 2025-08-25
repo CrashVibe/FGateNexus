@@ -33,7 +33,7 @@ export default defineNuxtConfig({
     },
     devServer: {
         host: "0.0.0.0",
-        port: 3001
+        port: 3000
     },
     modules: ["nuxtjs-naive-ui", "@nuxt/eslint", "@nuxtjs/tailwindcss"],
     vite: {
@@ -91,7 +91,7 @@ export default defineNuxtConfig({
         experimental: {
             websocket: true
         },
-        preset: "node-server",
+        preset: "bun",
         serveStatic: "inline",
         minify: true,
         compressPublicAssets: true,
@@ -109,11 +109,6 @@ export default defineNuxtConfig({
                 "@vue/compiler-sfc",
                 "source-map-js"
             ]
-        },
-        esbuild: {
-            options: {
-                target: "es2022"
-            }
         }
     }
 });
