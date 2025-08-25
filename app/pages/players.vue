@@ -9,7 +9,7 @@
           <p class="text-sm text-gray-400 sm:text-base">查看你的玩家，查看玩家的社交账号绑定情况及所在服务器。</p>
         </n-text>
         <div class="flex flex-wrap gap-2 sm:gap-3">
-          <n-button size="large" strong>
+          <n-button size="large" strong :loading="isLoadingList" @click="fetchServerList">
             刷新列表
             <template #icon>
               <n-icon>
