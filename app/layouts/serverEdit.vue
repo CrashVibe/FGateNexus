@@ -2,6 +2,8 @@
 import {
   ArrowBackOutline,
   ChatbubbleOutline,
+  CodeSlashOutline,
+  LinkOutline,
   MenuOutline,
   NotificationsOutline,
   SettingsOutline
@@ -102,65 +104,77 @@ const menuOptions = computed(() => {
     desc: "返回服务器列表主页。"
   });
   if (serverId) {
-    menu.push({
-      label: "配置概览",
-      key: `/servers/${serverId}`,
-      icon: renderIcon(MenuOutline),
-      desc: "查看所有可用的配置选项。"
-    });
-    menu.push({
-      label: "服务器管理",
-      key: `server_manager`,
-      icon: renderIcon(SettingsOutline),
-      // icon: renderIcon(MenuOutline),
-      // desc: "查看所有可用的配置选项。"
-      children: [
-        {
-          label: "基础设置",
-          key: `/servers/${serverId}/general`,
-          desc: "配置服务器的基础运行参数和常规设置。"
-        },
-        {
-          label: "账号绑定",
-          key: `/servers/${serverId}/binding`,
-          desc: "设置社交账号与游戏账号的绑定规则。"
-        },
-        {
-          label: "远程指令",
-          key: `/servers/${serverId}/command`,
-          desc: "配置服务器的远程指令。"
-        }
-      ]
-    });
-    menu.push({
-      label: "聊天与消息",
-      key: `server_bot`,
-      icon: renderIcon(ChatbubbleOutline),
-      children: [
-        {
-          label: "消息互通",
-          key: `/servers/${serverId}/msgbridge`,
-          desc: "Minecraft 与 聊天平台消息双向同步配置。"
-        }
-      ]
-    });
-    menu.push({
-      label: "事件与通知",
-      key: `server_event`,
-      icon: renderIcon(NotificationsOutline),
-      children: [
-        {
-          label: "事件通知",
-          key: `/servers/${serverId}/notify`,
-          desc: "配置服务器的事件通知。"
-        }
-      ]
-    });
+    menu.push(
+      {
+        label: "配置概览",
+        key: `/servers/${serverId}`,
+        icon: renderIcon(MenuOutline),
+        desc: "查看所有可用的配置选项。"
+      },
+      {
+        type: "divider"
+      },
+      {
+        type: "group",
+        label: "基础配置",
+        children: [
+          {
+            label: "基础设置",
+            key: `/servers/${serverId}/general`,
+            icon: renderIcon(SettingsOutline),
+            desc: "配置服务器的基础运行参数和常规设置。"
+          }
+        ]
+      },
+      {
+        type: "group",
+        label: "服务器管理",
+        key: `server_manager`,
+        children: [
+          {
+            label: "账号绑定",
+            key: `/servers/${serverId}/binding`,
+            icon: renderIcon(LinkOutline),
+            desc: "设置社交账号与游戏账号的绑定规则。"
+          },
+          {
+            label: "远程指令",
+            key: `/servers/${serverId}/command`,
+            icon: renderIcon(CodeSlashOutline),
+            desc: "配置服务器的远程指令。"
+          }
+        ]
+      },
+      {
+        type: "group",
+        label: "聊天与消息",
+        key: `server_bot`,
+        children: [
+          {
+            label: "消息互通",
+            key: `/servers/${serverId}/msgbridge`,
+            icon: renderIcon(ChatbubbleOutline),
+            desc: "Minecraft 与 聊天平台消息双向同步配置。"
+          }
+        ]
+      },
+      {
+        type: "group",
+        label: "事件与通知",
+        key: `server_event`,
+        children: [
+          {
+            label: "事件通知",
+            key: `/servers/${serverId}/notify`,
+            icon: renderIcon(NotificationsOutline),
+            desc: "配置服务器的事件通知。"
+          }
+        ]
+      }
+    );
   }
   return menu;
 });
-
-const defaultExpandedKeys = [`server_manager`, `server_bot`, `server_event`];
 
 provide("menuOptions", menuOptions);
 
@@ -195,7 +209,6 @@ const selectedKey = computed(() => route.path);
       >
         <n-menu
           :key="selectedKey"
-          :default-expanded-keys="defaultExpandedKeys"
           :collapsed="collapsed"
           :collapsed-icon-size="isMobile ? 0 : 22"
           :collapsed-width="isMobile ? 0 : 64"
@@ -205,7 +218,7 @@ const selectedKey = computed(() => route.path);
         />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
-        <div class="h-full max-w-screen-xl pt-12 p-8 pb-24 mx-auto">
+        <div class="h-full max-w-screen-xl p-8 pt-12 pb-24 mx-auto">
           <slot />
         </div>
       </n-layout-content>
