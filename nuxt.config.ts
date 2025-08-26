@@ -29,7 +29,7 @@ export default defineNuxtConfig({
     },
     experimental: {
         asyncEntry: true,
-        writeEarlyHints: true
+        asyncContext: true
     },
     devServer: {
         host: "0.0.0.0",
