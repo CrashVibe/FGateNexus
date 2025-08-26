@@ -10,6 +10,7 @@ import {
 } from "~~/shared/schemas/adapter";
 import { CardAdapter } from "#components";
 import { StatusCodes } from "http-status-codes";
+import { isMobile } from "#imports";
 
 // 选取适配器组件
 const adapterComponentMap: Record<AdapterType, Component> = {

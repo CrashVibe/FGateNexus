@@ -2,6 +2,7 @@
 import { LinkOutline, MenuOutline, PeopleOutline } from "@vicons/ionicons5";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
+import { isMobile } from "#imports";
 
 const router = useRouter();
 const route = useRoute();

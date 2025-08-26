@@ -10,6 +10,7 @@ import {
 import type { FormInst } from "naive-ui";
 import type { ApiResponse, ApiResponseType } from "~~/shared/types";
 import { StatusCodes } from "http-status-codes";
+import { isMobile } from "#imports";
 
 const formRef = ref<FormInst>();
 const formData = ref<serverSchemaRequsetType>({

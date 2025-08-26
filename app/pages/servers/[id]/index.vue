@@ -27,7 +27,7 @@
 
     <n-empty v-else description="暂无可用的配置选项">
       <template #extra>
-        <n-button size="medium" type="primary" @click="$router.push('/')">返回服务器列表</n-button>
+        <n-button size="medium" type="primary" @click="router.push('/')">返回服务器列表</n-button>
       </template>
     </n-empty>
   </div>
@@ -35,6 +35,7 @@
 
 <script lang="ts" setup>
 import type { MenuItem } from "~/layouts/serverEdit.vue";
+import { isMobile } from "#imports";
 
 definePageMeta({
   layout: "server-edit"
@@ -42,7 +43,7 @@ definePageMeta({
 
 const router = useRouter();
 const route = useRoute();
-const menuOptions: Ref<MenuItem[]> = inject(
+const menuOptions = inject<Ref<MenuItem[]>>(
   "menuOptions",
   computed(() => [])
 );
@@ -50,11 +51,13 @@ const menuOptions: Ref<MenuItem[]> = inject(
 const configMenuItems = computed(() => {
   const serverId = route.params?.["id"];
   if (!serverId) return [];
-  return menuOptions.value.filter((item) => {
-    const key = item.key;
-    if (!key) return false;
-    return key !== "/" && key !== route.path;
-  });
+  return menuOptions.value
+    .flatMap((item) => (item.children) || [])
+    .filter((item) => {
+      const key = item.key;
+      if (!key) return false;
+      return key !== "/" && key !== route.path;
+    });
 });
 
 const getCardSpan = (title: string) => {

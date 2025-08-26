@@ -2,15 +2,13 @@
 import {
   ArrowBackOutline,
   ChatbubbleOutline,
-  CodeSlashOutline,
-  LinkOutline,
   MenuOutline,
   NotificationsOutline,
   SettingsOutline
 } from "@vicons/ionicons5";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
-import type { RouteLocationAsPathGeneric } from "vue-router";
+import { isMobile } from "#imports";
 
 const router = useRouter();
 const route = useRoute();
@@ -23,7 +21,7 @@ const { setPageState, clearPageState, isPageDirty, savePage } = usePageStateProv
 provide("registerPageState", setPageState);
 provide("clearPageState", clearPageState);
 
-const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
+const handleMenuSelect = (key: string) => {
   const targetPath = String(key);
   if (!targetPath || targetPath === "undefined" || targetPath === route.path) return;
 
@@ -90,6 +88,7 @@ const renderIcon = (icon: Component) => () => h(icon);
 export type MenuItem = MenuMixedOption & {
   label: string;
   desc: string;
+  children: MenuItem[];
 };
 
 const menuOptions = computed(() => {
@@ -110,38 +109,58 @@ const menuOptions = computed(() => {
       desc: "查看所有可用的配置选项。"
     });
     menu.push({
-      label: "基础设置",
-      key: `/servers/${serverId}/general`,
+      label: "服务器管理",
+      key: `server_manager`,
       icon: renderIcon(SettingsOutline),
-      desc: "配置服务器的基础运行参数和常规设置。"
+      // icon: renderIcon(MenuOutline),
+      // desc: "查看所有可用的配置选项。"
+      children: [
+        {
+          label: "基础设置",
+          key: `/servers/${serverId}/general`,
+          desc: "配置服务器的基础运行参数和常规设置。"
+        },
+        {
+          label: "账号绑定",
+          key: `/servers/${serverId}/binding`,
+          desc: "设置社交账号与游戏账号的绑定规则。"
+        },
+        {
+          label: "远程指令",
+          key: `/servers/${serverId}/command`,
+          desc: "配置服务器的远程指令。"
+        }
+      ]
     });
     menu.push({
-      label: "账号绑定",
-      key: `/servers/${serverId}/binding`,
-      icon: renderIcon(LinkOutline),
-      desc: "设置社交账号与游戏账号的绑定规则。"
-    });
-    menu.push({
-      label: "远程指令",
-      key: `/servers/${serverId}/command`,
-      icon: renderIcon(CodeSlashOutline),
-      desc: "配置服务器的远程指令。"
-    });
-    menu.push({
-      label: "消息互通",
-      key: `/servers/${serverId}/msgbridge`,
+      label: "聊天与消息",
+      key: `server_bot`,
       icon: renderIcon(ChatbubbleOutline),
-      desc: "Minecraft 与 聊天平台消息双向同步配置。"
+      children: [
+        {
+          label: "消息互通",
+          key: `/servers/${serverId}/msgbridge`,
+          desc: "Minecraft 与 聊天平台消息双向同步配置。"
+        }
+      ]
     });
     menu.push({
-      label: "事件通知",
-      key: `/servers/${serverId}/notify`,
+      label: "事件与通知",
+      key: `server_event`,
       icon: renderIcon(NotificationsOutline),
-      desc: "配置服务器的事件通知。"
+      children: [
+        {
+          label: "事件通知",
+          key: `/servers/${serverId}/notify`,
+          desc: "配置服务器的事件通知。"
+        }
+      ]
     });
   }
   return menu;
 });
+
+const defaultExpandedKeys = [`server_manager`, `server_bot`, `server_event`];
 
 provide("menuOptions", menuOptions);
 
@@ -176,6 +195,7 @@ const selectedKey = computed(() => route.path);
       >
         <n-menu
           :key="selectedKey"
+          :default-expanded-keys="defaultExpandedKeys"
           :collapsed="collapsed"
           :collapsed-icon-size="isMobile ? 0 : 22"
           :collapsed-width="isMobile ? 0 : 64"

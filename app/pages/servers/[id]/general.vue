@@ -53,6 +53,7 @@ import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { type ChooseAdapter, chooseAdapterSchema, type ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
+import { isMobile } from "#imports";
 
 // ==================== 页面配置 ====================
 definePageMeta({

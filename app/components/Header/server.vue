@@ -29,6 +29,8 @@
 import { ArrowBackOutline } from "@vicons/ionicons5";
 import type { MenuItem } from "~/layouts/serverEdit.vue";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { isMobile } from "#imports";
+import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 
 const route = useRoute();
 interface Props {
@@ -46,8 +48,20 @@ const menuOptions: Ref<MenuItem[]> = inject(
   "menuOptions",
   computed(() => [])
 );
+
+function findMenuItem(menu: MenuMixedOption[], key: string): MenuMixedOption | null {
+  for (const item of menu) {
+    if (item.key === key) return item;
+    if (item.children) {
+      const child = findMenuItem(item.children as MenuMixedOption[], key);
+      if (child) return child;
+    }
+  }
+  return null;
+}
+
 const found = computed(() => {
-  const found = menuOptions.value.find((item) => item.key === route.path);
+  const found = findMenuItem(menuOptions.value, route.path);
   if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
   return found;
 });
