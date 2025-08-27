@@ -15,6 +15,8 @@ import { isMobile } from "#imports";
 const router = useRouter();
 const route = useRoute();
 const SIDEBAR_STORAGE_KEY = "sidebar-collapsed";
+const MOBILE_WIDTH = 768;
+
 const collapsed = ref(isMobile.value);
 const dialog = useDialog();
 const { setPageState, clearPageState, isPageDirty, savePage } = usePageStateProvider();
@@ -22,6 +24,23 @@ const { setPageState, clearPageState, isPageDirty, savePage } = usePageStateProv
 // 页面状态注册函数给子组件
 provide("registerPageState", setPageState);
 provide("clearPageState", clearPageState);
+
+// 本地存储避免重复字符串与分支
+const readStoredCollapsed = (): boolean | null => {
+  if (isMobile.value) return null;
+  const v = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+  return v === null ? null : v === "true";
+};
+const writeStoredCollapsed = (v: boolean) => {
+  if (!isMobile.value) localStorage.setItem(SIDEBAR_STORAGE_KEY, v ? "true" : "false");
+};
+
+// 持久化
+const setCollapsed = (v: boolean, persist = true) => {
+  if (collapsed.value === v) return;
+  collapsed.value = v;
+  if (persist) writeStoredCollapsed(v);
+};
 
 const handleMenuSelect = (key: string) => {
   const targetPath = String(key);
@@ -47,41 +66,38 @@ const handleMenuSelect = (key: string) => {
   router.push(targetPath).catch(() => {});
 };
 
+const handleResize = () => {
+  // 窗口大小变化
+  if (window.innerWidth <= MOBILE_WIDTH) {
+    // 移动端强制折叠（不持久化）
+    setCollapsed(true, false);
+  } else {
+    const stored = readStoredCollapsed();
+    setCollapsed(stored ?? false, false);
+  }
+};
+
 onMounted(() => {
   if (!isMobile.value) {
-    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    if (stored !== null) {
-      collapsed.value = stored === "true";
-    }
+    const stored = readStoredCollapsed();
+    if (stored !== null) collapsed.value = stored;
+  } else {
+    collapsed.value = true; // 移动端强制折叠
   }
-
-  // 窗口大小变化
-  const handleResize = () => {
-    if (window.innerWidth <= 768) {
-      collapsed.value = true; // 移动端强制折叠
-    } else {
-      const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-      collapsed.value = stored === "true";
-    }
-  };
-
   window.addEventListener("resize", handleResize);
-  onUnmounted(() => window.removeEventListener("resize", handleResize));
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", handleResize);
 });
 
 // 侧边栏折叠/展开处理
 const handleCollapse = () => {
-  collapsed.value = true;
-  if (!isMobile.value) {
-    localStorage.setItem(SIDEBAR_STORAGE_KEY, "true");
-  }
+  setCollapsed(true); // 默认持久化桌面端
 };
 
 const handleExpand = () => {
-  collapsed.value = false;
-  if (!isMobile.value) {
-    localStorage.setItem(SIDEBAR_STORAGE_KEY, "false");
-  }
+  setCollapsed(false); // 默认持久化桌面端
 };
 
 // 菜单配置
@@ -93,9 +109,9 @@ export type MenuItem = MenuMixedOption & {
   children: MenuItem[];
 };
 
+const serverId = computed(() => route.params?.["id"] as string | undefined);
+
 const menuOptions = computed(() => {
-  const route = useRoute();
-  const serverId = route.params?.["id"];
   const menu: MenuMixedOption[] = [];
   menu.push({
     label: "返回",
@@ -103,11 +119,12 @@ const menuOptions = computed(() => {
     icon: renderIcon(ArrowBackOutline),
     desc: "返回服务器列表主页。"
   });
-  if (serverId) {
+  if (serverId.value) {
+    const sid = serverId.value;
     menu.push(
       {
         label: "配置概览",
-        key: `/servers/${serverId}`,
+        key: `/servers/${sid}`,
         icon: renderIcon(MenuOutline),
         desc: "查看所有可用的配置选项。"
       },
@@ -120,7 +137,7 @@ const menuOptions = computed(() => {
         children: [
           {
             label: "基础设置",
-            key: `/servers/${serverId}/general`,
+            key: `/servers/${sid}/general`,
             icon: renderIcon(SettingsOutline),
             desc: "配置服务器的基础运行参数和常规设置。"
           }
@@ -133,13 +150,13 @@ const menuOptions = computed(() => {
         children: [
           {
             label: "账号绑定",
-            key: `/servers/${serverId}/binding`,
+            key: `/servers/${sid}/binding`,
             icon: renderIcon(LinkOutline),
             desc: "设置社交账号与游戏账号的绑定规则。"
           },
           {
             label: "远程指令",
-            key: `/servers/${serverId}/command`,
+            key: `/servers/${sid}/command`,
             icon: renderIcon(CodeSlashOutline),
             desc: "配置服务器的远程指令。"
           }
@@ -152,7 +169,7 @@ const menuOptions = computed(() => {
         children: [
           {
             label: "消息互通",
-            key: `/servers/${serverId}/msgbridge`,
+            key: `/servers/${sid}/msgbridge`,
             icon: renderIcon(ChatbubbleOutline),
             desc: "Minecraft 与 聊天平台消息双向同步配置。"
           }
@@ -165,7 +182,7 @@ const menuOptions = computed(() => {
         children: [
           {
             label: "事件通知",
-            key: `/servers/${serverId}/notify`,
+            key: `/servers/${sid}/notify`,
             icon: renderIcon(NotificationsOutline),
             desc: "配置服务器的事件通知。"
           }
@@ -180,6 +197,7 @@ provide("menuOptions", menuOptions);
 
 const selectedKey = computed(() => route.path);
 </script>
+
 
 <template>
   <n-layout bordered position="absolute">
@@ -202,6 +220,7 @@ const selectedKey = computed(() => route.path);
         :position="isMobile ? 'absolute' : 'static'"
         :show-trigger="true"
         :width="200"
+        inverted
         bordered
         collapse-mode="width"
         @collapse="handleCollapse"
@@ -214,6 +233,7 @@ const selectedKey = computed(() => route.path);
           :collapsed-width="isMobile ? 0 : 64"
           :options="menuOptions"
           :value="selectedKey"
+          inverted
           @update:value="handleMenuSelect"
         />
       </n-layout-sider>
