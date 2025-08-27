@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "a4fa6582-2389-425c-80e3-a4d98bfd92d8",
+  "id": "7b78ed09-b817-450c-95a5-5523ced6ae99",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "adapters": {
@@ -40,88 +40,6 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "player_servers": {
-      "name": "player_servers",
-      "columns": {
-        "player_id": {
-          "name": "player_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "server_id": {
-          "name": "server_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(unixepoch())"
-        }
-      },
-      "indexes": {
-        "idx_player_servers_player": {
-          "name": "idx_player_servers_player",
-          "columns": [
-            "player_id"
-          ],
-          "isUnique": false
-        },
-        "idx_player_servers_server": {
-          "name": "idx_player_servers_server",
-          "columns": [
-            "server_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "player_servers_player_id_players_id_fk": {
-          "name": "player_servers_player_id_players_id_fk",
-          "tableFrom": "player_servers",
-          "tableTo": "players",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "player_servers_server_id_servers_id_fk": {
-          "name": "player_servers_server_id_servers_id_fk",
-          "tableFrom": "player_servers",
-          "tableTo": "servers",
-          "columnsFrom": [
-            "server_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "pk_player_servers": {
-          "columns": [
-            "player_id",
-            "server_id"
-          ],
-          "name": "pk_player_servers"
-        }
-      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -205,6 +123,88 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "player_servers": {
+      "name": "player_servers",
+      "columns": {
+        "player_id": {
+          "name": "player_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "server_id": {
+          "name": "server_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "idx_player_servers_player": {
+          "name": "idx_player_servers_player",
+          "columns": [
+            "player_id"
+          ],
+          "isUnique": false
+        },
+        "idx_player_servers_server": {
+          "name": "idx_player_servers_server",
+          "columns": [
+            "server_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "player_servers_player_id_players_id_fk": {
+          "name": "player_servers_player_id_players_id_fk",
+          "tableFrom": "player_servers",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "player_servers_server_id_servers_id_fk": {
+          "name": "player_servers_server_id_servers_id_fk",
+          "tableFrom": "player_servers",
+          "tableTo": "servers",
+          "columnsFrom": [
+            "server_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pk_player_servers": {
+          "columns": [
+            "player_id",
+            "server_id"
+          ],
+          "name": "pk_player_servers"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -383,6 +383,107 @@
         }
       },
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "targets": {
+      "name": "targets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "server_id": {
+          "name": "server_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'group'"
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
+        }
+      },
+      "indexes": {
+        "uniq_target_in_server": {
+          "name": "uniq_target_in_server",
+          "columns": [
+            "server_id",
+            "target_id",
+            "type"
+          ],
+          "isUnique": true
+        },
+        "idx_targets_server": {
+          "name": "idx_targets_server",
+          "columns": [
+            "server_id"
+          ],
+          "isUnique": false
+        },
+        "idx_targets_group": {
+          "name": "idx_targets_group",
+          "columns": [
+            "target_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "targets_server_id_servers_id_fk": {
+          "name": "targets_server_id_servers_id_fk",
+          "tableFrom": "targets",
+          "tableTo": "servers",
+          "columnsFrom": [
+            "server_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

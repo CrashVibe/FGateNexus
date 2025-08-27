@@ -5,17 +5,6 @@ CREATE TABLE `adapters` (
 	`config` text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `player_servers` (
-	`player_id` integer NOT NULL,
-	`server_id` integer NOT NULL,
-	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
-	PRIMARY KEY(`player_id`, `server_id`),
-	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON UPDATE no action ON DELETE cascade,
-	FOREIGN KEY (`server_id`) REFERENCES `servers`(`id`) ON UPDATE no action ON DELETE cascade
-);
---> statement-breakpoint
-CREATE INDEX `idx_player_servers_player` ON `player_servers` (`player_id`);--> statement-breakpoint
-CREATE INDEX `idx_player_servers_server` ON `player_servers` (`server_id`);--> statement-breakpoint
 CREATE TABLE `players` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`uuid` text NOT NULL,
@@ -28,6 +17,17 @@ CREATE TABLE `players` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `uuid_idx` ON `players` (`uuid`);--> statement-breakpoint
+CREATE TABLE `player_servers` (
+	`player_id` integer NOT NULL,
+	`server_id` integer NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	PRIMARY KEY(`player_id`, `server_id`),
+	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`server_id`) REFERENCES `servers`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `idx_player_servers_player` ON `player_servers` (`player_id`);--> statement-breakpoint
+CREATE INDEX `idx_player_servers_server` ON `player_servers` (`server_id`);--> statement-breakpoint
 CREATE TABLE `servers` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
@@ -54,4 +54,18 @@ CREATE TABLE `social_accounts` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `uniq_social_uid_per_adapter` ON `social_accounts` (`adapter_type`,`uid`);--> statement-breakpoint
-CREATE INDEX `idx_social_adapter` ON `social_accounts` (`adapter_type`);
+CREATE INDEX `idx_social_adapter` ON `social_accounts` (`adapter_type`);--> statement-breakpoint
+CREATE TABLE `targets` (
+	`id` text PRIMARY KEY NOT NULL,
+	`server_id` integer NOT NULL,
+	`target_id` text NOT NULL,
+	`type` text DEFAULT 'group' NOT NULL,
+	`enabled` integer DEFAULT true NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
+	FOREIGN KEY (`server_id`) REFERENCES `servers`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `uniq_target_in_server` ON `targets` (`server_id`,`target_id`,`type`);--> statement-breakpoint
+CREATE INDEX `idx_targets_server` ON `targets` (`server_id`);--> statement-breakpoint
+CREATE INDEX `idx_targets_group` ON `targets` (`target_id`);
