@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "59e21d8b-e874-4cd3-a6dc-521f0c1bd09f",
+  "id": "a4fa6582-2389-425c-80e3-a4d98bfd92d8",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "adapters": {
@@ -46,13 +46,6 @@
     "player_servers": {
       "name": "player_servers",
       "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
         "player_id": {
           "name": "player_id",
           "type": "integer",
@@ -66,9 +59,32 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch())"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "idx_player_servers_player": {
+          "name": "idx_player_servers_player",
+          "columns": [
+            "player_id"
+          ],
+          "isUnique": false
+        },
+        "idx_player_servers_server": {
+          "name": "idx_player_servers_server",
+          "columns": [
+            "server_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "player_servers_player_id_players_id_fk": {
           "name": "player_servers_player_id_players_id_fk",
@@ -97,7 +113,15 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
+      "compositePrimaryKeys": {
+        "pk_player_servers": {
+          "columns": [
+            "player_id",
+            "server_id"
+          ],
+          "name": "pk_player_servers"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
@@ -208,15 +232,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "software": {
-          "name": "software",
+        "version": {
+          "name": "version",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "version": {
-          "name": "version",
+        "software": {
+          "name": "software",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -342,12 +366,20 @@
         }
       },
       "indexes": {
-        "uid_idx": {
-          "name": "uid_idx",
+        "uniq_social_uid_per_adapter": {
+          "name": "uniq_social_uid_per_adapter",
           "columns": [
+            "adapter_type",
             "uid"
           ],
           "isUnique": true
+        },
+        "idx_social_adapter": {
+          "name": "idx_social_adapter",
+          "columns": [
+            "adapter_type"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {},

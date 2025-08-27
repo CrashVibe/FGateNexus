@@ -1,5 +1,5 @@
 import { relations, sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import type { AdapterConfig } from "~~/shared/schemas/adapter";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import type { BindingConfig } from "~~/shared/schemas/server/binding";
@@ -20,8 +20,8 @@ export const servers = sqliteTable("servers", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name").notNull().unique("name_idx"),
     token: text("token").notNull().unique("token_idx"),
-    minecraft_version: text("software"),
-    minecraft_software: text("version"),
+    minecraft_version: text("version"),
+    minecraft_software: text("software"),
     adapterId: integer("adapter_id").references(() => adapters.id, { onDelete: "set null" }),
     bindingConfig: text("binding_config", { mode: "json" }).notNull().$type<BindingConfig>(),
     chatSyncConfig: text("chat_sync_config", { mode: "json" }).notNull().$type<ChatSyncConfig>(),
@@ -29,20 +29,25 @@ export const servers = sqliteTable("servers", {
     notifyConfig: text("notify_config", { mode: "json" }).notNull().$type<NotifyConfig>()
 });
 
-export const socialAccounts = sqliteTable("social_accounts", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    nickname: text("nickname"),
-    uid: text("uid").notNull().unique("uid_idx"),
-    adapterType: text("adapter_type", {
-        enum: [AdapterType.Onebot]
-    }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp" })
-        .notNull()
-        .default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" })
-        .notNull()
-        .default(sql`(unixepoch())`)
-});
+export const socialAccounts = sqliteTable(
+    "social_accounts",
+    {
+        id: integer("id").primaryKey({ autoIncrement: true }),
+        nickname: text("nickname"),
+        uid: text("uid").notNull(),
+        adapterType: text("adapter_type", { enum: [AdapterType.Onebot] }).notNull(),
+        createdAt: integer("created_at", { mode: "timestamp" })
+            .notNull()
+            .default(sql`(unixepoch())`),
+        updatedAt: integer("updated_at", { mode: "timestamp" })
+            .notNull()
+            .default(sql`(unixepoch())`)
+    },
+    (t) => [
+        uniqueIndex("uniq_social_uid_per_adapter").on(t.adapterType, t.uid),
+        index("idx_social_adapter").on(t.adapterType)
+    ]
+);
 
 export const players = sqliteTable("players", {
     id: integer("id").primaryKey({ autoIncrement: true }),
@@ -58,15 +63,25 @@ export const players = sqliteTable("players", {
         .default(sql`(unixepoch())`)
 });
 
-export const playerServers = sqliteTable("player_servers", {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    playerId: integer("player_id")
-        .references(() => players.id, { onDelete: "cascade" })
-        .notNull(),
-    serverId: integer("server_id")
-        .references(() => servers.id, { onDelete: "cascade" })
-        .notNull()
-});
+export const playerServers = sqliteTable(
+    "player_servers",
+    {
+        playerId: integer("player_id")
+            .references(() => players.id, { onDelete: "cascade" })
+            .notNull(),
+        serverId: integer("server_id")
+            .references(() => servers.id, { onDelete: "cascade" })
+            .notNull(),
+        createdAt: integer("created_at", { mode: "timestamp" })
+            .notNull()
+            .default(sql`(unixepoch())`)
+    },
+    (t) => [
+        primaryKey({ columns: [t.playerId, t.serverId], name: "pk_player_servers" }),
+        index("idx_player_servers_player").on(t.playerId),
+        index("idx_player_servers_server").on(t.serverId)
+    ]
+);
 
 export const adaptersRelations = relations(adapters, ({ many }) => ({
     servers: many(servers)
