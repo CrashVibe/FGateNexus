@@ -1,8 +1,8 @@
 <script lang="ts" setup>
+import { isMobile } from "#imports";
 import { LinkOutline, MenuOutline, PeopleOutline } from "@vicons/ionicons5";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
-import { isMobile } from "#imports";
 
 const router = useRouter();
 const route = useRoute();
@@ -89,24 +89,20 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
     <n-layout bordered has-sider position="absolute" style="top: var(--header-height)">
       <n-layout-sider
         :collapsed="collapsed"
-        :collapsed-width="isMobile ? 0 : 64"
+        :collapsed-width="0"
         :native-scrollbar="false"
         :position="isMobile ? 'absolute' : 'static'"
+        :show-trigger="true"
         :width="200"
         inverted
         bordered
-        collapse-mode="width"
-        show-trigger
         @collapse="handleCollapse"
         @expand="handleExpand"
       >
         <n-menu
-          :key="selectedKey"
-          :collapsed="collapsed"
-          :collapsed-icon-size="isMobile ? 0 : 22"
-          :collapsed-width="isMobile ? 0 : 64"
-          :options="menuOptions"
           :value="selectedKey"
+          :collapsed="collapsed"
+          :options="menuOptions"
           inverted
           @update:value="handleMenuSelect"
         />

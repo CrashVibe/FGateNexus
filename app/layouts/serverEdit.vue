@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import { isMobile } from "#imports";
 import {
   ArrowBackOutline,
   ChatbubbleOutline,
@@ -10,7 +11,6 @@ import {
 } from "@vicons/ionicons5";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
-import { isMobile } from "#imports";
 
 const router = useRouter();
 const route = useRoute();
@@ -198,7 +198,6 @@ provide("menuOptions", menuOptions);
 const selectedKey = computed(() => route.path);
 </script>
 
-
 <template>
   <n-layout bordered position="absolute">
     <n-layout-header bordered class="h-[var(--header-height)] p-4">
@@ -215,24 +214,20 @@ const selectedKey = computed(() => route.path);
     <n-layout bordered has-sider position="absolute" style="top: var(--header-height)">
       <n-layout-sider
         :collapsed="collapsed"
-        :collapsed-width="isMobile ? 0 : 64"
+        :collapsed-width="0"
         :native-scrollbar="false"
         :position="isMobile ? 'absolute' : 'static'"
         :show-trigger="true"
         :width="200"
         inverted
         bordered
-        collapse-mode="width"
         @collapse="handleCollapse"
         @expand="handleExpand"
       >
         <n-menu
-          :key="selectedKey"
-          :collapsed="collapsed"
-          :collapsed-icon-size="isMobile ? 0 : 22"
-          :collapsed-width="isMobile ? 0 : 64"
-          :options="menuOptions"
           :value="selectedKey"
+          :collapsed="collapsed"
+          :options="menuOptions"
           inverted
           @update:value="handleMenuSelect"
         />
