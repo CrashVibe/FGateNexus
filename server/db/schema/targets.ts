@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { v4 as uuidv4 } from "uuid";
+import type { TargetConfig } from "~~/shared/schemas/server/target";
 import { servers } from "./servers";
 
 export const targets = sqliteTable(
@@ -7,7 +9,7 @@ export const targets = sqliteTable(
     {
         id: text("id")
             .primaryKey()
-            .$defaultFn(() => crypto.randomUUID()), // UUID
+            .$defaultFn(() => uuidv4()), // UUID
         serverId: integer("server_id")
             .notNull()
             .references(() => servers.id, { onDelete: "cascade" }),
@@ -17,7 +19,7 @@ export const targets = sqliteTable(
             .notNull()
             .default("group"),
         enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
-
+        config: text("config", { mode: "json" }).notNull().$type<TargetConfig>(),
         createdAt: integer("created_at", { mode: "timestamp" })
             .notNull()
             .default(sql`(unixepoch())`),

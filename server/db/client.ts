@@ -1,10 +1,10 @@
-import * as schema from "./schema";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
+import * as schema from "./schema";
 
 type DatabaseInstance = BetterSQLite3Database<typeof schema> | BunSQLiteDatabase<typeof schema>;
 
-let _db: DatabaseInstance | null = null;
+let db: DatabaseInstance | null = null;
 
 async function createDatabaseInstance(): Promise<DatabaseInstance> {
     if (typeof Bun !== "undefined") {
@@ -23,10 +23,10 @@ async function createDatabaseInstance(): Promise<DatabaseInstance> {
 }
 
 async function getDatabase(): Promise<DatabaseInstance> {
-    if (!_db) {
-        _db = await createDatabaseInstance();
+    if (!db) {
+        db = await createDatabaseInstance();
     }
-    return _db;
+    return db;
 }
 
 export { getDatabase };

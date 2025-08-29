@@ -2,40 +2,33 @@
   <div>
     <HeaderServer class="mb-4" />
 
-    <n-card size="small" title="目标配置">
-      <template #header-extra>
-        <n-button size="small" type="primary" @click="addTarget">添加目标</n-button>
-      </template>
-      <n-data-table
-        :columns="columns"
-        :data="data"
-        :pagination="{
-          pageSizes: pageSizes,
-          showSizePicker: true
-        }"
-        :scroll-x="600"
-      >
-        <template #empty>
-          <n-empty description="暂无目标配置，请添加目标">
-            <template #extra>
-              <n-button size="medium" type="primary" @click="addTarget">添加目标</n-button>
-            </template>
-          </n-empty>
-        </template>
-      </n-data-table>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div class="space-y-6">
+        <n-card class="h-full" size="small" title="配置群聊">
+          单独对目标进行配置
+          <template #footer>
+            <n-dropdown v-if="options.length" trigger="hover" :options="options" @select="handleSelect">
+              <n-button>配置目标</n-button>
+            </n-dropdown>
+            <n-alert v-else type="warning">
+              <n-button text dashed @click="router.push(`/servers/${route.params.id}/target`)">
+                你还没有创建目标哦（去创建）
+              </n-button>
+            </n-alert>
+          </template>
+        </n-card>
+      </div>
+    </div>
 
-      <!-- 抽屉 -->
-      <n-drawer v-model:show="drawerVisible" width="500">
-        <drawer-command
-          v-if="selectedTarget"
-          :adapter-type="dataState.data.adapterData?.type"
-          :target="selectedTarget"
-          @save="handleTargetSave"
-        />
-      </n-drawer>
-    </n-card>
+    <n-drawer v-model:show="drawerVisible" :width="502">
+      <drawer-command
+        v-if="selectTarget"
+        :adapter-type="dataState.data.adapterData?.type"
+        :target="selectTarget"
+        @save="handleTargetSave"
+      />
+    </n-drawer>
 
-    <!-- 操作按钮区 -->
     <n-divider />
     <div class="flex justify-end gap-2">
       <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
@@ -56,212 +49,92 @@
   </div>
 </template>
 
-<script lang="tsx" setup>
-// ==================== 导入 ====================
+<script lang="ts" setup>
 import { StatusCodes } from "http-status-codes";
-import { NButton, NInput, NSelect } from "naive-ui";
-import type { CommandConfig, CommandTarget } from "~~/shared/schemas/server/command";
-import { getDefaultCommandConfig } from "~~/shared/utils/command";
-import type { ApiResponse } from "~~/shared/types";
+import type { z } from "zod";
 import type { PageState } from "~~/app/composables/usePageState";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import { v4 as uuidv4 } from "uuid";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
+import type { CommandConfig, commandPatchBodySchema } from "~~/shared/schemas/server/command";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import type { targetSchema } from "~~/shared/schemas/server/target";
+import type { ApiResponse } from "~~/shared/types";
+import { getDefaultCommandConfig } from "~~/shared/utils/command";
 
-// ==================== 页面配置 ====================
-definePageMeta({
-  layout: "server-edit"
-});
+export type CommandPatchBody = z.infer<typeof commandPatchBodySchema>;
 
-// ==================== 组合式函数和依赖注入 ====================
+definePageMeta({ layout: "server-edit" });
+
 const registerPageState = inject<(state: PageState) => void>("registerPageState");
 const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
+const router = useRouter();
 const message = useMessage();
 
-// ==================== 计算属性 ====================
+const formRef = ref();
+const formData = ref<CommandConfig>(getDefaultCommandConfig());
 
-const data = computed(() => {
-  return formData.value.targets;
-});
+const editedTargets = ref(new Map<string, targetSchema>());
+const selectTarget = ref<targetSchema | null>(null);
+const drawerVisible = ref(false);
 
-const isDirty = computed(
-  () =>
-    dataState.isSubmitting ||
-    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.commandConfig))
-);
-const isAnyLoading = computed(() => dataState.isLoading);
-
-// ==================== 类型定义 ====================
-interface DataState {
+const dataState = reactive({
   data: {
-    serverData: ServerWithStatus | null;
-    adapterData: AdapterWithStatus | null;
-  };
-  isLoading: boolean;
-  isSubmitting: boolean;
-  original: { commandConfig: CommandConfig | null };
-}
-
-// ==================== 数据状态 ====================
-const dataState = reactive<DataState>({
-  data: {
-    serverData: null,
-    adapterData: null
+    serverData: null as ServerWithStatus | null,
+    adapterData: null as AdapterWithStatus | null
   },
   isLoading: true,
   isSubmitting: false,
-  original: { commandConfig: null }
+  original: { commandConfig: null as CommandConfig | null }
 });
 
-const formData = ref<CommandConfig>(getDefaultCommandConfig());
+const options = computed(
+  () =>
+    dataState.data.serverData?.targets?.map((t) => ({
+      label: t.targetId ?? t.id,
+      key: String(t.id)
+    })) || []
+);
 
-// ==================== 选项定义 ====================
-const targetTypeOptions = [
-  { label: "群聊", value: "group" },
-  { label: "私聊", value: "private" }
-];
+function getOriginalTargetById(id: string): targetSchema | null {
+  return (dataState.data.serverData?.targets || []).find((t) => String(t.id) === String(id)) || null;
+}
 
-const statusFilterOptions = [
-  { label: "已启用", value: "enable" },
-  { label: "已禁用", value: "disable" }
-];
-
-const pageSizes = [
-  {
-    label: "10 每页",
-    value: 10
-  },
-  {
-    label: "20 每页",
-    value: 20
-  },
-  {
-    label: "30 每页",
-    value: 30
-  },
-  {
-    label: "40 每页",
-    value: 40
+function pickEditableTarget(raw: targetSchema): targetSchema {
+  const id = String(raw.id);
+  if (!editedTargets.value.has(id)) {
+    editedTargets.value.set(id, JSON.parse(JSON.stringify(raw)));
   }
-];
-
-const columns = [
-  {
-    title: "目标ID",
-    key: "ID",
-    width: "40%",
-    render(row: CommandTarget, index: number) {
-      return h(NInput, {
-        placeholder: "请输入目标ID",
-        value: row.groupId,
-        onUpdateValue(v) {
-          if (formData.value && formData.value.targets[index]) {
-            formData.value.targets[index].groupId = v;
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "类型",
-    key: "type",
-    width: "20%",
-    render(row: CommandTarget, index: number) {
-      return h(NSelect, {
-        value: row.type,
-        options: targetTypeOptions,
-        onUpdateValue(v) {
-          if (formData.value && formData.value.targets[index]) {
-            formData.value.targets[index].type = v;
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "状态",
-    key: "enabled",
-    width: "20%",
-    render(row: CommandTarget, index: number) {
-      return h(NSelect, {
-        value: row.enabled ? "enable" : "disable",
-        options: statusFilterOptions,
-        onUpdateValue(v: string) {
-          console.log(row);
-          if (formData.value && formData.value.targets[index]) {
-            formData.value.targets[index].enabled = v === "enable";
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "操作",
-    key: "actions",
-    render(row: CommandTarget) {
-      const id = row.id;
-      return (
-        <div class={"flex gap-2"}>
-          <NButton size="small" onClick={() => editTarget(row)}>
-            编辑
-          </NButton>
-          <NButton size="small" onClick={() => id && removeTargetById(id)}>
-            删除
-          </NButton>
-        </div>
-      );
-    }
-  }
-];
-
-// ==================== 目标管理 ====================
-function addTarget() {
-  // 检查最后一个 target 的 groupId 是否为空
-  const targets = formData.value.targets;
-  if (targets.length > 0 && !targets[targets.length - 1]?.groupId?.trim()) {
-    message.warning("你？是不是忘了填上一个点目标 ID？");
-    return;
-  }
-  const newTarget: CommandTarget = {
-    groupId: "",
-    type: "group",
-    enabled: true,
-    permissions: [],
-    prefix: "/",
-    id: uuidv4()
-  };
-  formData.value.targets.push(newTarget);
+  return editedTargets.value.get(id)!;
 }
 
-function handleTargetSave(data: CommandTarget) {
-  formData.value.targets[formData.value.targets.findIndex((t) => t.id === data.id)] = data;
-  drawerVisible.value = false;
-}
+const modifiedTargets = computed(() => {
+  const list = Array.from(editedTargets.value.values());
+  return list.filter((t) => {
+    const original = getOriginalTargetById(String(t.id));
+    if (!original) return true;
+    return JSON.stringify(t.config) !== JSON.stringify(original.config);
+  });
+});
 
-const selectedTarget = ref<CommandTarget | null>(null);
-const drawerVisible = ref(false);
+const isDirty = computed(() => {
+  const formChanged =
+    !dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.commandConfig);
+  const targetsChanged = modifiedTargets.value.length > 0;
+  return formChanged || targetsChanged;
+});
 
-function editTarget(target: CommandTarget) {
-  selectedTarget.value = target;
-  drawerVisible.value = true;
-}
+const isAnyLoading = computed(() => dataState.isLoading || dataState.isSubmitting);
 
-function removeTargetById(id: string) {
-  const idx = formData.value.targets.findIndex((t) => t.id === id);
-  if (idx !== -1) formData.value.targets.splice(idx, 1);
-}
-
-// ==================== 数据管理类 ====================
+// 数据管理
 class DataManager {
   async refreshServerData(): Promise<void> {
-    if (!route.params?.["id"]) return;
+    if (!route.params?.id) return;
     try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
+      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params.id}`);
       if (response.code === StatusCodes.OK && response.data) {
         dataState.data.serverData = response.data;
-        dataState.original.commandConfig = response.data.commandConfig;
-        formData.value = JSON.parse(JSON.stringify(response.data.commandConfig));
+        dataState.original.commandConfig = response.data.commandConfig as CommandConfig;
+        formData.value = JSON.parse(JSON.stringify(response.data.commandConfig || getDefaultCommandConfig()));
         if (response.data.adapterId) {
           const adapterResponse = await $fetch<ApiResponse<AdapterWithStatus>>(
             `/api/adapter/${response.data.adapterId}`
@@ -277,68 +150,81 @@ class DataManager {
     }
   }
 
-  async updateServerCommandConfig(serverId: number, commandConfig: CommandConfig): Promise<void> {
-    // 检查 groupId 与 type 组合是否有重复
-    const comboMap = new Map<string, number[]>();
-    commandConfig.targets.forEach((t, idx) => {
-      const key = `${(t.groupId || "").trim()}::${t.type || ""}`;
-      const arr = comboMap.get(key) ?? [];
-      arr.push(idx);
-      comboMap.set(key, arr);
+  async updateServer(serverId: number, body: CommandPatchBody): Promise<void> {
+    await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${serverId}/command`, {
+      method: "PATCH",
+      body
     });
-    const duplicates = [...comboMap.entries()].filter(([, idxs]) => idxs.length > 1);
-    if (duplicates.length > 0) {
-      const dupMsg = duplicates
-        .map(([key, idxs]) => {
-          const [groupId, type] = key.split("::");
-          return `目标ID "${groupId}" 与 类型 "${type === "group" ? "群聊" : "私聊"}" 重复 ${idxs.length} 次`;
-        })
-        .join("； ");
-      message.warning(`发现重复目标配置：${dupMsg}`);
-      return;
-    }
-
-    try {
-      dataState.isSubmitting = true;
-      await $fetch<ApiResponse<CommandConfig>>(`/api/servers/${serverId}/command`, {
-        method: "POST",
-        body: commandConfig
-      });
-      dataState.original.commandConfig = JSON.parse(JSON.stringify(commandConfig));
-      if (dataState.data.serverData) Object.assign(dataState.data.serverData, { chatSyncConfig: commandConfig });
-      message.success("远程指令配置已保存");
-    } catch (error) {
-      console.error("Submit failed:", error);
-      message.error("远程指令配置保存失败");
-      throw error;
-    } finally {
-      dataState.isSubmitting = false;
-    }
+    dataState.original.commandConfig = JSON.parse(JSON.stringify(body.command));
   }
 
   async refreshAll(): Promise<void> {
     dataState.isLoading = true;
-    await Promise.all([this.refreshServerData()]).finally(() => {
+    await this.refreshServerData().finally(() => {
       dataState.isLoading = false;
     });
   }
 }
 
-// ==================== 数据管理器实例 ====================
 const dataManager = new DataManager();
 
-// ==================== 事件处理函数 ====================
+function handleSelect(key: string) {
+  const raw = (dataState.data.serverData?.targets || []).find((t) => String(t.id) === String(key));
+  if (!raw) return;
+  const editable = pickEditableTarget(raw);
+  selectTarget.value = editable;
+  drawerVisible.value = true;
+}
+
+function handleTargetSave(updated: targetSchema) {
+  const id = String(updated?.id);
+  if (!id) return;
+  const original = getOriginalTargetById(id);
+  if (!original) return;
+  editedTargets.value.set(id, JSON.parse(JSON.stringify(updated)));
+  drawerVisible.value = false;
+}
+
 async function handleSubmit() {
   if (!dataState.data.serverData) {
     message.error("服务器数据未加载或无效");
     return;
   }
-  const hasChanges = JSON.stringify(formData.value) !== JSON.stringify(dataState.original.commandConfig);
-  if (!hasChanges) {
+  if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
   }
-  await dataManager.updateServerCommandConfig(dataState.data.serverData.id, formData.value);
+
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
+
+  const targetsPayload: CommandPatchBody["targets"] = modifiedTargets.value.map((t) => ({
+    id: t.id,
+    config: t.config
+  }));
+
+  if (!targetsPayload.length && selectTarget.value) {
+    const t = selectTarget.value;
+    targetsPayload.push({ id: t.id, config: t.config });
+  }
+
+  const payload: CommandPatchBody = { command: formData.value, targets: targetsPayload };
+
+  try {
+    dataState.isSubmitting = true;
+    await dataManager.updateServer(dataState.data.serverData.id, payload);
+    message.success("远程指令配置已保存");
+    editedTargets.value.clear();
+    selectTarget.value = null;
+    dataState.isSubmitting = false;
+    await dataManager.refreshAll();
+  } catch (error) {
+    console.error("Submit failed:", error);
+    dataState.isSubmitting = false;
+  }
 }
 
 function cancelChanges() {
@@ -347,9 +233,10 @@ function cancelChanges() {
   } else {
     formData.value = getDefaultCommandConfig();
   }
+  editedTargets.value.clear();
+  selectTarget.value = null;
 }
 
-// ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
   if (registerPageState) {
@@ -361,8 +248,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  if (clearPageState) {
-    clearPageState();
-  }
+  if (clearPageState) clearPageState();
 });
 </script>

@@ -1,16 +1,19 @@
-import { defineEventHandler } from "h3";
-import { getDatabase } from "~~/server/db/client";
-import { servers } from "~~/server/db/schema";
-import { createApiResponse } from "#shared/types";
 import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
+import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { getDatabase } from "~~/server/db/client";
 import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
 export default defineEventHandler(async (event) => {
     try {
         const database = await getDatabase();
-        const result = await database.select().from(servers);
+        const result = await database.query.servers.findMany({
+            with: {
+                targets: true
+            }
+        });
 
         // 为每个服务器获取状态信息
         const serversWithStatus: ServerWithStatus[] = result.map((server) => {

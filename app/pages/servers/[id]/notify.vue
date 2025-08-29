@@ -34,9 +34,7 @@
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
-                    <n-text type="success">
-                      {{ renderJoinMessage(formData.join_notify_message, "Steve") }}
-                    </n-text>
+                    <n-text type="success">{{ renderJoinMessage(formData.join_notify_message, "Steve") }}</n-text>
                   </div>
                 </div>
               </template>
@@ -67,9 +65,7 @@
                   </div>
                   <div class="text-sm text-gray-500">
                     预览:
-                    <n-text type="success">
-                      {{ renderLeaveMessage(formData.leave_notify_message, "Steve") }}
-                    </n-text>
+                    <n-text type="success">{{ renderLeaveMessage(formData.leave_notify_message, "Steve") }}</n-text>
                   </div>
                 </div>
               </template>
@@ -118,28 +114,35 @@
         </div>
       </div>
     </n-form>
-    <n-card size="small" title="目标配置">
-      <template #header-extra>
-        <n-button size="small" type="primary" @click="addTarget">添加目标</n-button>
-      </template>
-      <n-data-table
-        :columns="columns"
-        :data="data"
-        :pagination="{
-          pageSizes: pageSizes,
-          showSizePicker: true
-        }"
-        :scroll-x="600"
-      >
-        <template #empty>
-          <n-empty description="暂无目标配置，请添加目标">
-            <template #extra>
-              <n-button size="medium" type="primary" @click="addTarget">添加目标</n-button>
-            </template>
-          </n-empty>
-        </template>
-      </n-data-table>
-    </n-card>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div class="space-y-6">
+        <n-card class="h-full" size="small" title="配置群聊">
+          单独对目标进行配置
+          <template #footer>
+            <n-dropdown v-if="options.length" trigger="hover" :options="options" @select="handleSelect">
+              <n-button>配置目标</n-button>
+            </n-dropdown>
+            <n-alert v-else type="warning">
+              <n-button text dashed @click="router.push(`/servers/${route.params.id}/target`)">
+                你还没有创建目标哦（去创建）
+              </n-button>
+            </n-alert>
+          </template>
+        </n-card>
+      </div>
+    </div>
+
+    <n-drawer v-model:show="drawerVisible" :width="502">
+      <n-drawer-content v-if="selectTarget" closable :title="`目标配置 · ${selectTarget.targetId || selectTarget.id}`">
+        <n-form :model="selectTarget">
+          <n-form-item label="是否开启此目标的通知" required>
+            <n-switch v-model:value="selectTarget.config.NotifyConfigSchema.enabled" />
+          </n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
+
     <n-divider />
     <div class="flex justify-end gap-2">
       <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
@@ -162,66 +165,38 @@
 
 <script lang="ts" setup>
 import { StatusCodes } from "http-status-codes";
-import { type FormInst, NButton, NInput, NSelect } from "naive-ui";
-import { type NotifyConfig, NotifyConfigSchema, type NotifyTarget } from "~~/shared/schemas/server/notify";
+import type { FormInst } from "naive-ui";
+import type { z } from "zod";
+import { NotifyConfigSchema, type NotifyConfig, type notifyPatchBodySchema } from "~~/shared/schemas/server/notify";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import type { targetSchema } from "~~/shared/schemas/server/target";
 import type { ApiResponse } from "~~/shared/types";
 import { renderDeathMessage, renderJoinMessage, renderLeaveMessage } from "~~/shared/utils/template/notify";
-import { v4 as uuidv4 } from "uuid";
 
-// ==================== 页面配置 ====================
-definePageMeta({
-  layout: "server-edit"
-});
+export type NotifyPatchBody = z.infer<typeof notifyPatchBodySchema>;
 
-// ==================== 组合式函数和依赖注入 ====================
+definePageMeta({ layout: "server-edit" });
+
 const registerPageState = inject<(state: PageState) => void>("registerPageState");
 const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
-
-// ==================== 表单数据和验证 ====================
-
+const router = useRouter();
 const formRef = ref<FormInst>();
 const formData = ref<NotifyConfig>(getDefaultNotifyConfig());
 const rules = zodToNaiveRules(NotifyConfigSchema);
 
-// ==================== 计算属性 ====================
+const editedTargets = ref(new Map<string, targetSchema>());
+const selectTarget = ref<targetSchema | null>(null);
+const drawerVisible = ref(false);
 
-const isDirty = computed(
-  () =>
-    dataState.isSubmitting ||
-    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.NotifyConfig))
-);
-const isAnyLoading = computed(() => dataState.isLoading);
-
-const data = computed(() => {
-  return formData.value.targets;
-});
-
-// ==================== 类型定义 ====================
-interface DataState {
-  data: {
-    serverData: ServerWithStatus | null;
-  };
-  isLoading: boolean;
-  isSubmitting: boolean;
-  original: {
-    NotifyConfig: NotifyConfig | null;
-  };
-}
-
-// ==================== 数据状态 ====================
-const dataState = reactive<DataState>({
-  data: {
-    serverData: null
-  },
+const dataState = reactive({
+  data: { serverData: null as ServerWithStatus | null },
   isLoading: true,
   isSubmitting: false,
-  original: { NotifyConfig: null }
+  original: { NotifyConfig: null as NotifyConfig | null }
 });
 
-// ==================== 模板插入函数 ====================
 function insertPlaceholder(
   field: keyof Pick<NotifyConfig, "join_notify_message" | "leave_notify_message" | "death_notify_message">,
   placeholder: string
@@ -232,19 +207,16 @@ function insertPlaceholder(
 
 const joinVariables = [{ label: "玩家名称", value: "{playerName}", example: "Steve" }];
 const leaveVariables = [{ label: "玩家名称", value: "{playerName}", example: "Steve" }];
-
 const deathVariables = [
   { label: "玩家名称", value: "{playerName}", example: "Steve" },
   { label: "死亡原因", value: "{deathMessage}", example: "掉落" }
 ];
 
-// ==================== 数据管理类 ====================
-
 class DataManager {
   async refreshServerData(): Promise<void> {
-    if (!route.params?.["id"]) return;
+    if (!route.params?.id) return;
     try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
+      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params.id}`);
       if (response.code === StatusCodes.OK && response.data) {
         dataState.data.serverData = response.data;
         dataState.original = { NotifyConfig: response.data.notifyConfig };
@@ -256,64 +228,82 @@ class DataManager {
     }
   }
 
-  async updateServerNotifyConfig(serverId: number, notifyConfig: NotifyConfig): Promise<void> {
-    try {
-      dataState.isSubmitting = true;
-      await $fetch<ApiResponse<NotifyConfig>>(`/api/servers/${serverId}/notify`, {
-        method: "POST",
-        body: notifyConfig
-      });
-      message.success("适配器设置已保存");
-      dataState.original.NotifyConfig = notifyConfig;
-    } catch (error) {
-      console.error("Submit failed:", error);
-      message.error("适配器设置保存失败");
-      throw error;
-    } finally {
-      dataState.isSubmitting = false;
-    }
-  }
-
-  async handleSubmit(): Promise<void> {
-    if (!dataState.data.serverData) {
-      message.error("服务器数据未加载或无效");
-      return;
-    }
-
-    if (!formData.value) {
-      message.error("表单数据无效");
-      return;
-    }
-
-    const hasChanges = JSON.stringify(formData.value) !== JSON.stringify(dataState.original.NotifyConfig);
-    if (!hasChanges) {
-      message.info("没有需要保存的更改");
-      return;
-    }
-
-    try {
-      await this.updateServerNotifyConfig(dataState.data.serverData.id, formData.value);
-      Object.assign(dataState.data.serverData, { notifyConfig: formData.value });
-      await this.refreshAll();
-    } catch (error) {
-      console.error("Submit failed:", error);
-    }
+  async updateServer(serverId: number, body: NotifyPatchBody): Promise<void> {
+    await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${serverId}/notify`, { method: "PATCH", body });
+    dataState.original.NotifyConfig = JSON.parse(JSON.stringify(body.notify));
   }
 
   async refreshAll(): Promise<void> {
     dataState.isLoading = true;
-    await Promise.all([this.refreshServerData()]).finally(() => {
+    await this.refreshServerData().finally(() => {
       dataState.isLoading = false;
     });
   }
 }
 
-// ==================== 数据管理器实例 ====================
 const dataManager = new DataManager();
 
-// ==================== 事件处理函数 ====================
+function getOriginalTargetById(id: string): targetSchema | null {
+  return dataState.data.serverData?.targets.find((t) => t.id === id) || null;
+}
+
+const modifiedTargets = computed(() => {
+  const list = Array.from(editedTargets.value.values());
+  return list.filter((t) => {
+    const original = getOriginalTargetById(t.id);
+    if (!original) return true;
+    return JSON.stringify(t.config) !== JSON.stringify(original.config);
+  });
+});
+
+const isDirty = computed(() => {
+  const formChanged =
+    !dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.NotifyConfig);
+  const targetsChanged = modifiedTargets.value.length > 0;
+  return formChanged || targetsChanged;
+});
+
+const isAnyLoading = computed(() => dataState.isLoading || dataState.isSubmitting);
+
 async function handleSubmit() {
-  await dataManager.handleSubmit();
+  if (!dataState.data.serverData) {
+    message.error("服务器数据未加载或无效");
+    return;
+  }
+  if (!isDirty.value) {
+    message.info("没有需要保存的更改");
+    return;
+  }
+
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
+
+  const targetsPayload: NotifyPatchBody["targets"] = modifiedTargets.value.map((t) => ({
+    id: t.id,
+    config: t.config
+  }));
+  if (!targetsPayload.length && selectTarget.value) {
+    const t = selectTarget.value;
+    targetsPayload.push({ id: t.id, config: t.config });
+  }
+
+  const payload: NotifyPatchBody = { notify: formData.value, targets: targetsPayload };
+
+  try {
+    dataState.isSubmitting = true;
+    await dataManager.updateServer(dataState.data.serverData.id, payload);
+    message.success("事件通知设置已保存");
+    dataState.isSubmitting = false;
+    editedTargets.value.clear();
+    selectTarget.value = null;
+    await dataManager.refreshAll();
+  } catch (error) {
+    console.error("Submit failed:", error);
+    dataState.isSubmitting = false;
+  }
 }
 
 function cancelChanges() {
@@ -322,140 +312,39 @@ function cancelChanges() {
   } else {
     formData.value = getDefaultNotifyConfig();
   }
+  editedTargets.value.clear();
+  selectTarget.value = null;
 }
 
-function removeTarget(id: string) {
-  const index = formData.value.targets.findIndex((target) => target.id === id);
-  if (index !== -1) {
-    formData.value.targets.splice(index, 1);
-  }
-}
-function addTarget() {
-  // 检查最后一个 target 的 groupId 是否为空
-  const targets = formData.value.targets;
-  if (targets.length > 0 && !targets[targets.length - 1]?.groupId?.trim()) {
-    message.warning("你？是不是忘了填上一个点目标 ID？");
-    return;
-  }
-  const newTarget: NotifyTarget = {
-    groupId: "",
-    type: "group",
-    enabled: true,
-    id: uuidv4()
-  };
-  formData.value.targets.push(newTarget);
-}
-
-// ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
   if (registerPageState) {
-    registerPageState({
-      isDirty: () => isDirty.value,
-      save: handleSubmit
-    });
+    registerPageState({ isDirty: () => isDirty.value, save: handleSubmit });
   }
 });
 
 onUnmounted(() => {
-  if (clearPageState) {
-    clearPageState();
-  }
+  if (clearPageState) clearPageState();
 });
-// ==================== 定义 ====================
-const targetTypeOptions = [
-  { label: "群聊", value: "group" },
-  { label: "私聊", value: "private" }
-];
 
-const statusFilterOptions = [
-  { label: "已启用", value: "enable" },
-  { label: "已禁用", value: "disable" }
-];
+const options = computed(
+  () => dataState.data.serverData?.targets?.map((target) => ({ label: target.targetId, key: target.id })) || []
+);
 
-const pageSizes = [
-  {
-    label: "10 每页",
-    value: 10
-  },
-  {
-    label: "20 每页",
-    value: 20
-  },
-  {
-    label: "30 每页",
-    value: 30
-  },
-  {
-    label: "40 每页",
-    value: 40
+function pickEditableTarget(raw: targetSchema): targetSchema {
+  const id = raw.id;
+  if (!editedTargets.value.has(id)) {
+    editedTargets.value.set(id, JSON.parse(JSON.stringify(raw)));
   }
-];
+  return editedTargets.value.get(id) as targetSchema;
+}
 
-const columns = [
-  {
-    title: "目标ID",
-    key: "ID",
-    width: "40%",
-    render(row: NotifyTarget, index: number) {
-      return h(NInput, {
-        placeholder: "请输入目标ID",
-        value: row.groupId,
-        onUpdateValue(v) {
-          if (formData.value.targets[index]) {
-            formData.value.targets[index].groupId = v;
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "类型",
-    key: "type",
-    width: "20%",
-    render(row: NotifyTarget, index: number) {
-      return h(NSelect, {
-        value: row.type,
-        options: targetTypeOptions,
-        onUpdateValue(v) {
-          if (formData.value.targets[index]) {
-            formData.value.targets[index].type = v;
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "状态",
-    key: "enabled",
-    width: "20%",
-    render(row: NotifyTarget, index: number) {
-      return h(NSelect, {
-        value: row.enabled ? "enable" : "disable",
-        options: statusFilterOptions,
-        onUpdateValue(v: string) {
-          console.log(row);
-          if (formData.value.targets[index]) {
-            formData.value.targets[index].enabled = v === "enable";
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "操作",
-    key: "actions",
-    render(row: NotifyTarget) {
-      console.log(row);
-      return h(
-        NButton,
-        {
-          size: "small",
-          onClick: () => removeTarget(row.id!)
-        },
-        { default: () => "删除" }
-      );
-    }
+function handleSelect(key: string) {
+  drawerVisible.value = true;
+  const selected = dataState.data.serverData?.targets.find((t) => t.id.toString() === key) || null;
+  if (selected) {
+    const editable = pickEditableTarget(selected);
+    selectTarget.value = editable;
   }
-];
+}
 </script>

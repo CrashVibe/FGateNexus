@@ -1,12 +1,12 @@
+import type { AdapterInternal, Peer } from "crossws";
+import { eq } from "drizzle-orm";
+import { getDatabase } from "~~/server/db/client";
+import { servers } from "~~/server/db/schema";
+import { renderJoinMessage } from "~~/shared/utils/template/notify";
+import { chatBridge } from "../../chatbridge/chatbridge";
+import { pluginBridge } from "../MCWSBridge";
 import { RequestHandler } from "../RequestHandler";
 import type { JsonRpcRequest } from "../types";
-import type { AdapterInternal, Peer } from "crossws";
-import { pluginBridge } from "../MCWSBridge";
-import { getDatabase } from "~~/server/db/client";
-import { eq } from "drizzle-orm";
-import { servers } from "~~/server/db/schema";
-import { chatBridge } from "../../chatbridge/chatbridge";
-import { renderJoinMessage } from "~~/shared/utils/template/notify";
 
 export class PlayerJoinHandler extends RequestHandler {
     getMethod(): string {
@@ -25,7 +25,10 @@ export class PlayerJoinHandler extends RequestHandler {
 
         const serverID = pluginBridge.connectionManager.getServerId(peer);
         const server = await db.query.servers.findFirst({
-            where: eq(servers.id, serverID)
+            where: eq(servers.id, serverID),
+            with: {
+                targets: true
+            }
         });
         if (!server) {
             console.warn("Server not found for player leave:", serverID);
@@ -35,8 +38,8 @@ export class PlayerJoinHandler extends RequestHandler {
             const botConnection = chatBridge.getConnectionData(server.adapterId);
             if (!botConnection) return;
             const formattedMessage = renderJoinMessage(server.notifyConfig.join_notify_message, playerName);
-            for (const target of server.notifyConfig.targets) {
-                chatBridge.sendToTarget(botConnection, target.groupId, target.type, formattedMessage);
+            for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
+                chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
             }
         }
     }

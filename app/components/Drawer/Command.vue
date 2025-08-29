@@ -2,12 +2,20 @@
   <n-drawer-content closable title="远程指令配置">
     <n-form :model="selectedTarget" label-width="100">
       <n-form-item label="指令前缀">
-        <n-input v-model:value="selectedTarget.prefix" placeholder="请输入指令前缀（可空）" />
+        <n-input
+          v-model:value="selectedTarget.config.CommandConfigSchema.prefix"
+          placeholder="请输入指令前缀（可空）"
+        />
       </n-form-item>
       <n-form-item v-if="props.target.type === 'group'" label="权限">
         <n-tooltip show-arrow trigger="focus">
           <template #trigger>
-            <n-select v-model:value="selectedTarget.permissions" :options="options" multiple placeholder="请选择权限" />
+            <n-select
+              v-model:value="selectedTarget.config.CommandConfigSchema.permissions"
+              :options="options"
+              multiple
+              placeholder="请选择权限"
+            />
           </template>
           Tip: 权限相互独立，不存在继承关系
         </n-tooltip>
@@ -26,12 +34,12 @@
 
 <script lang="ts" setup>
 import { AdapterType } from "~~/shared/schemas/adapter";
-import type { CommandTarget } from "~~/shared/schemas/server/command";
+import type { targetSchema } from "~~/shared/schemas/server/target";
 
 const loading = ref(false);
 
 const props = defineProps<{
-  target: CommandTarget;
+  target: targetSchema;
   adapterType?: AdapterType;
 }>();
 
@@ -51,7 +59,7 @@ const selectedTarget = computed(() => {
 });
 
 const emit = defineEmits<{
-  save: [data: CommandTarget];
+  save: [data: targetSchema];
 }>();
 
 const handleSave = async () => {

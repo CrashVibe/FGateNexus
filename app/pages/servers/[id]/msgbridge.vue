@@ -107,9 +107,7 @@
                       </div>
                       <div class="text-sm text-gray-500">
                         预览:
-                        <n-text type="info">
-                          {{ mcToPlatformPreview }}
-                        </n-text>
+                        <n-text type="info">{{ mcToPlatformPreview }}</n-text>
                       </div>
                     </div>
                   </template>
@@ -155,9 +153,7 @@
                       </div>
                       <div class="text-sm text-gray-500">
                         预览:
-                        <n-text type="success">
-                          {{ platformToMcPreview }}
-                        </n-text>
+                        <n-text type="success">{{ platformToMcPreview }}</n-text>
                       </div>
                     </div>
                   </template>
@@ -169,39 +165,35 @@
       </div>
     </n-form>
 
-    <!-- 目标配置区域 -->
     <div class="mt-6">
-      <n-card size="small" title="目标配置">
-        <template #header-extra>
-          <n-button size="small" type="primary" @click="addTarget">添加目标</n-button>
-        </template>
-        <div class="mb-4">
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <n-input v-model:value="searchText" clearable placeholder="搜索目标ID..."></n-input>
-            <n-select v-model:value="typeFilter" :options="targetTypeOptions" clearable placeholder="类型筛选" />
-            <n-select v-model:value="statusFilter" :options="statusFilterOptions" clearable placeholder="状态筛选" />
-          </div>
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div class="space-y-6">
+          <n-card class="h-full" size="small" title="配置群聊">
+            单独对目标进行配置
+            <template #footer>
+              <n-dropdown v-if="options.length" trigger="hover" :options="options" @select="handleSelect">
+                <n-button>配置目标</n-button>
+              </n-dropdown>
+              <n-alert v-else type="warning">
+                <n-button text dashed @click="router.push(`/servers/${route.params.id}/target`)">
+                  你还没有创建目标哦（去创建）
+                </n-button>
+              </n-alert>
+            </template>
+          </n-card>
         </div>
-
-        <n-data-table
-          :columns="columns"
-          :data="data"
-          :pagination="{
-            pageSizes: pageSizes,
-            showSizePicker: true
-          }"
-          :scroll-x="600"
-        >
-          <template #empty>
-            <n-empty description="暂无目标配置，请添加目标">
-              <template #extra>
-                <n-button size="medium" type="primary" @click="addTarget">添加目标</n-button>
-              </template>
-            </n-empty>
-          </template>
-        </n-data-table>
-      </n-card>
+      </div>
     </div>
+
+    <n-drawer v-model:show="drawerVisible" :width="502">
+      <n-drawer-content v-if="selectTarget" closable :title="`目标配置 · ${selectTarget.targetId || selectTarget.id}`">
+        <n-form :model="selectTarget">
+          <n-form-item label="是否开启此目标的聊天同步">
+            <n-switch v-model:value="selectTarget.config.chatSyncConfigSchema.enabled" />
+          </n-form-item>
+        </n-form>
+      </n-drawer-content>
+    </n-drawer>
 
     <!-- 操作按钮区 -->
     <n-divider />
@@ -227,54 +219,36 @@
 <script lang="ts" setup>
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
-import { type FormInst, NButton, NInput, NSelect } from "naive-ui";
-import type { ChatSyncConfig, ChatSyncTarget } from "~~/shared/schemas/server/chatSync";
-import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
+import type { FormInst } from "naive-ui";
+import type { z } from "zod";
+import type { PageState } from "~~/app/composables/usePageState";
+import {
+  chatSyncConfigSchema,
+  type ChatSyncConfig,
+  type chatSyncPatchBodySchema
+} from "~~/shared/schemas/server/chatSync";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import type { targetSchema } from "~~/shared/schemas/server/target";
+import type { ApiResponse } from "~~/shared/types";
 import {
   formatMCToPlatformMessage,
   formatPlatformToMCMessage,
   getDefaultChatSyncConfig
 } from "~~/shared/utils/chatSync";
-import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
-import type { PageState } from "~~/app/composables/usePageState";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import { v4 as uuidv4 } from "uuid";
+
+// ==================== 类型 ====================
+export type ChatSyncPatchBody = z.infer<typeof chatSyncPatchBodySchema>;
 
 // ==================== 页面配置 ====================
-definePageMeta({
-  layout: "server-edit"
-});
+definePageMeta({ layout: "server-edit" });
 
-// ==================== 组合式函数和依赖注入 ====================
+// ==================== 依赖注入 / 工具 ====================
 const registerPageState = inject<(state: PageState) => void>("registerPageState");
 const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
+const router = useRouter();
 const message = useMessage();
-
-// ==================== 计算属性 ====================
-const isDirty = computed(
-  () =>
-    dataState.isSubmitting ||
-    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.ChatSyncConfig))
-);
-const isAnyLoading = computed(() => dataState.isLoading);
-
-// ==================== 类型定义 ====================
-interface DataState {
-  data: { serverData: ServerWithStatus | null };
-  isLoading: boolean;
-  isSubmitting: boolean;
-  original: { ChatSyncConfig: ChatSyncConfig | null };
-}
-
-// ==================== 数据状态 ====================
-const dataState = reactive<DataState>({
-  data: { serverData: null },
-  isLoading: true,
-  isSubmitting: false,
-  original: { ChatSyncConfig: null }
-});
 
 // ==================== 表单数据和验证 ====================
 const formRef = ref<FormInst>();
@@ -294,170 +268,70 @@ const keywordsText = computed({
   }
 });
 
-// ==================== 选项定义 ====================
-const targetTypeOptions = [
-  { label: "群聊", value: "group" },
-  { label: "私聊", value: "private" }
-];
+// ==================== 目标编辑缓存 ====================
+const editedTargets = ref(new Map<string, targetSchema>());
+const selectTarget = ref<targetSchema | null>(null);
+const drawerVisible = ref(false);
 
-const statusFilterOptions = [
-  { label: "已启用", value: "enable" },
-  { label: "已禁用", value: "disable" }
-];
-
-const pageSizes = [
-  {
-    label: "10 每页",
-    value: 10
-  },
-  {
-    label: "20 每页",
-    value: 20
-  },
-  {
-    label: "30 每页",
-    value: 30
-  },
-  {
-    label: "40 每页",
-    value: 40
-  }
-];
-
-const columns = [
-  {
-    title: "目标ID",
-    key: "ID",
-    width: "40%",
-    render(row: ChatSyncTarget, index: number) {
-      return h(NInput, {
-        placeholder: "请输入目标ID",
-        value: row.groupId,
-        onUpdateValue(v) {
-          if (filteredTargets.value && filteredTargets.value[index]) {
-            filteredTargets.value[index].groupId = v;
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "类型",
-    key: "type",
-    width: "20%",
-    render(row: ChatSyncTarget, index: number) {
-      return h(NSelect, {
-        value: row.type,
-        options: targetTypeOptions,
-        onUpdateValue(v) {
-          if (filteredTargets.value && filteredTargets.value[index]) {
-            filteredTargets.value[index].type = v;
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "状态",
-    key: "enabled",
-    width: "20%",
-    render(row: ChatSyncTarget, index: number) {
-      return h(NSelect, {
-        value: row.enabled ? "enable" : "disable",
-        options: statusFilterOptions,
-        onUpdateValue(v: string) {
-          console.log(row);
-          if (filteredTargets.value && filteredTargets.value[index]) {
-            filteredTargets.value[index].enabled = v === "enable";
-          }
-        }
-      });
-    }
-  },
-  {
-    title: "操作",
-    key: "actions",
-    render(row: ChatSyncTarget) {
-      console.log(row);
-      return h(
-        NButton,
-        {
-          size: "small",
-          onClick: () => removeTarget(row.id!)
-        },
-        { default: () => "删除" }
-      );
-    }
-  }
-];
-
-// ==================== 搜索和筛选状态 ====================
-const searchText = ref("");
-const typeFilter = ref<string | null>(null);
-const statusFilter = ref<string | null>(null);
-
-// ==================== 过滤后的目标列表 ====================
-const filteredTargets = computed(() => {
-  let filtered = formData.value.targets;
-
-  if (searchText.value.trim()) {
-    filtered = filtered.filter((target) => target.groupId.toLowerCase().includes(searchText.value.toLowerCase()));
-  }
-
-  if (typeFilter.value !== null) {
-    filtered = filtered.filter((target) => target.type === typeFilter.value);
-  }
-
-  if (statusFilter.value !== null) {
-    filtered = filtered.filter((target) => {
-      if (statusFilter.value === "enable") return target.enabled === true;
-      if (statusFilter.value === "disable") return target.enabled === false;
-      return true;
-    });
-  }
-
-  return filtered;
+// ==================== 数据状态 ====================
+const dataState = reactive({
+  data: { serverData: null as ServerWithStatus | null },
+  isLoading: true,
+  isSubmitting: false,
+  original: { ChatSyncConfig: null as ChatSyncConfig | null }
 });
 
-// ==================== 目标管理 ====================
-function addTarget() {
-  // 检查最后一个 target 的 groupId 是否为空
-  const targets = formData.value.targets;
-  if (targets.length > 0 && !targets[targets.length - 1]?.groupId?.trim()) {
-    message.warning("你？是不是忘了填上一个点目标 ID？");
-    return;
-  }
-  const newTarget = {
-    groupId: "",
-    type: "group" as const,
-    enabled: true,
-    id: uuidv4()
-  };
-  formData.value.targets.push(newTarget);
+// ==================== 计算属性 ====================
+function getOriginalTargetById(id: string): targetSchema | null {
+  return dataState.data.serverData?.targets.find((t) => t.id === id) || null;
 }
 
-function removeTarget(id: string) {
-  const index = formData.value.targets.findIndex((target) => target.id === id);
-  if (index !== -1) {
-    formData.value.targets.splice(index, 1);
+const modifiedTargets = computed(() => {
+  const list = Array.from(editedTargets.value.values());
+  return list.filter((t) => {
+    const original = getOriginalTargetById(t.id);
+    if (!original) return true;
+    return JSON.stringify(t.config) !== JSON.stringify(original.config);
+  });
+});
+
+const isDirty = computed(() => {
+  const formChanged =
+    !dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.ChatSyncConfig);
+  const targetsChanged = modifiedTargets.value.length > 0;
+  return formChanged || targetsChanged;
+});
+
+const isAnyLoading = computed(() => dataState.isLoading || dataState.isSubmitting);
+
+const options = computed(
+  () => dataState.data.serverData?.targets?.map((target) => ({ label: target.targetId, key: target.id })) || []
+);
+
+function pickEditableTarget(raw: targetSchema): targetSchema {
+  const id = raw.id;
+  if (!editedTargets.value.has(id)) {
+    editedTargets.value.set(id, JSON.parse(JSON.stringify(raw)));
+  }
+  return editedTargets.value.get(id) as targetSchema;
+}
+
+function handleSelect(key: string) {
+  drawerVisible.value = true;
+  const selected = dataState.data.serverData?.targets.find((t) => t.id.toString() === key) || null;
+  if (selected) {
+    const editable = pickEditableTarget(selected);
+    selectTarget.value = editable;
   }
 }
 
-const data = computed(() => {
-  return filteredTargets.value;
-});
-
-// ==================== 模板变量定义 ====================
+// ==================== 模板变量定义（预览） ====================
 const serverData = await getServerData();
 const mcToPlatformVariables = [
   { label: "玩家名", value: "{playerName}", example: "Steve" },
   { label: "玩家UUID", value: "{playerUUID}", example: "12345678-1234-1234..." },
   { label: "消息内容", value: "{message}", example: "Hello world!" },
-  {
-    label: "服务器名",
-    value: "{serverName}",
-    example: serverData.name
-  },
+  { label: "服务器名", value: "{serverName}", example: serverData.name },
   { label: "时间戳", value: "{timestamp}", example: "2024-01-01 12:00:00" }
 ];
 
@@ -469,7 +343,6 @@ const platformToMcVariables = [
   { label: "时间戳", value: "{timestamp}", example: "2024-01-01 12:00:00" }
 ];
 
-// ==================== 模板预览 ====================
 const mcToPlatformPreview = computed(() => {
   return formatMCToPlatformMessage(formData.value.mcToPlatformTemplate, {
     playerName: "Steve",
@@ -502,9 +375,9 @@ function insertPlaceholder(
 // ==================== 数据管理类 ====================
 class DataManager {
   async refreshServerData(): Promise<void> {
-    if (!route.params?.["id"]) return;
+    if (!route.params?.id) return;
     try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
+      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params.id}`);
       if (response.code === StatusCodes.OK && response.data) {
         dataState.data.serverData = response.data;
         dataState.original.ChatSyncConfig = response.data.chatSyncConfig;
@@ -516,34 +389,19 @@ class DataManager {
     }
   }
 
-  async updateServerChatSyncConfig(serverId: number, ChatSyncConfig: ChatSyncConfig): Promise<void> {
-    try {
-      dataState.isSubmitting = true;
-      await $fetch<ApiResponse<ChatSyncConfig>>(`/api/servers/${serverId}/chatSync`, {
-        method: "POST",
-        body: ChatSyncConfig
-      });
-      dataState.original.ChatSyncConfig = JSON.parse(JSON.stringify(ChatSyncConfig));
-      if (dataState.data.serverData) Object.assign(dataState.data.serverData, { ChatSyncConfig });
-      message.success("消息同步配置已保存");
-    } catch (error) {
-      console.error("Submit failed:", error);
-      message.error("消息同步配置保存失败");
-      throw error;
-    } finally {
-      dataState.isSubmitting = false;
-    }
+  async updateServer(serverId: number, body: ChatSyncPatchBody): Promise<void> {
+    await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${serverId}/chatSync`, { method: "PATCH", body });
+    dataState.original.ChatSyncConfig = JSON.parse(JSON.stringify(body.chatsync));
   }
 
   async refreshAll(): Promise<void> {
     dataState.isLoading = true;
-    await Promise.all([this.refreshServerData()]).finally(() => {
+    await this.refreshServerData().finally(() => {
       dataState.isLoading = false;
     });
   }
 }
 
-// ==================== 数据管理器实例 ====================
 const dataManager = new DataManager();
 
 // ==================== 事件处理函数 ====================
@@ -552,12 +410,40 @@ async function handleSubmit() {
     message.error("服务器数据未加载或无效");
     return;
   }
-  const hasChanges = JSON.stringify(formData.value) !== JSON.stringify(dataState.original.ChatSyncConfig);
-  if (!hasChanges) {
+  if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
   }
-  await dataManager.updateServerChatSyncConfig(dataState.data.serverData.id, formData.value);
+
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
+
+  const targetsPayload: ChatSyncPatchBody["targets"] = modifiedTargets.value.map((t) => ({
+    id: t.id,
+    config: t.config
+  }));
+  if (!targetsPayload.length && selectTarget.value) {
+    const t = selectTarget.value;
+    targetsPayload.push({ id: t.id, config: t.config });
+  }
+
+  const payload: ChatSyncPatchBody = { chatsync: formData.value, targets: targetsPayload };
+
+  try {
+    dataState.isSubmitting = true;
+    await dataManager.updateServer(dataState.data.serverData.id, payload);
+    message.success("消息同步配置已保存");
+    dataState.isSubmitting = false;
+    editedTargets.value.clear();
+    selectTarget.value = null;
+    await dataManager.refreshAll();
+  } catch (error) {
+    console.error("Submit failed:", error);
+    dataState.isSubmitting = false;
+  }
 }
 
 function cancelChanges() {
@@ -566,22 +452,19 @@ function cancelChanges() {
   } else {
     formData.value = getDefaultChatSyncConfig();
   }
+  editedTargets.value.clear();
+  selectTarget.value = null;
 }
 
 // ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
   if (registerPageState) {
-    registerPageState({
-      isDirty: () => isDirty.value,
-      save: handleSubmit
-    });
+    registerPageState({ isDirty: () => isDirty.value, save: handleSubmit });
   }
 });
 
 onUnmounted(() => {
-  if (clearPageState) {
-    clearPageState();
-  }
+  if (clearPageState) clearPageState();
 });
 </script>
