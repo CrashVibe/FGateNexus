@@ -8,19 +8,17 @@ import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
 
 export default defineEventHandler(async (event) => {
     try {
-        const idParam = event.context.params?.["id"];
-        if (!idParam) {
-            const apiError = ApiError.validation("缺少服务器ID");
-            return createErrorResponse(event, apiError);
-        }
-        const serverID = parseInt(idParam, 10);
+        const serverID = Number(getRouterParam(event, "id"));
         if (isNaN(serverID)) {
             const apiError = ApiError.validation("无效服务器ID");
             return createErrorResponse(event, apiError);
         }
         const database = await getDatabase();
         const result = await database.query.servers.findFirst({
-            where: (server, { eq }) => eq(server.id, serverID)
+            where: (server, { eq }) => eq(server.id, serverID),
+            with: {
+                targets: true
+            }
         });
         if (!result) {
             const apiError = ApiError.notFound("服务器不存在");

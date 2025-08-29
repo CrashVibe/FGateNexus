@@ -94,18 +94,11 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
         :position="isMobile ? 'absolute' : 'static'"
         :show-trigger="true"
         :width="200"
-        inverted
         bordered
         @collapse="handleCollapse"
         @expand="handleExpand"
       >
-        <n-menu
-          :value="selectedKey"
-          :collapsed="collapsed"
-          :options="menuOptions"
-          inverted
-          @update:value="handleMenuSelect"
-        />
+        <n-menu :value="selectedKey" :collapsed="collapsed" :options="menuOptions" @update:value="handleMenuSelect" />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
         <div class="h-full p-8 pt-12 pb-24 mx-auto">

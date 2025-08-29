@@ -4,6 +4,7 @@ import {
   ArrowBackOutline,
   ChatbubbleOutline,
   CodeSlashOutline,
+  CubeOutline,
   LinkOutline,
   MenuOutline,
   NotificationsOutline,
@@ -140,6 +141,12 @@ const menuOptions = computed(() => {
             key: `/servers/${sid}/general`,
             icon: renderIcon(SettingsOutline),
             desc: "配置服务器的基础运行参数和常规设置。"
+          },
+          {
+            label: "目标配置",
+            key: `/servers/${sid}/target`,
+            icon: renderIcon(CubeOutline),
+            desc: "配置聊天平台的消息目标。"
           }
         ]
       },
@@ -219,18 +226,11 @@ const selectedKey = computed(() => route.path);
         :position="isMobile ? 'absolute' : 'static'"
         :show-trigger="true"
         :width="200"
-        inverted
         bordered
         @collapse="handleCollapse"
         @expand="handleExpand"
       >
-        <n-menu
-          :value="selectedKey"
-          :collapsed="collapsed"
-          :options="menuOptions"
-          inverted
-          @update:value="handleMenuSelect"
-        />
+        <n-menu :value="selectedKey" :collapsed="collapsed" :options="menuOptions" @update:value="handleMenuSelect" />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
         <div class="h-full max-w-screen-xl p-8 pt-12 pb-24 mx-auto">

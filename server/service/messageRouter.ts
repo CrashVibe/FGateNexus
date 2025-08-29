@@ -1,12 +1,12 @@
-import type { ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
-import type { BotConnection } from "./chatbridge/chatbridge";
-import { chatBridge } from "./chatbridge/chatbridge";
+import { eq } from "drizzle-orm";
 import type { Session } from "koishi";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { eq } from "drizzle-orm";
-import { pluginBridge } from "./mcwsbridge/MCWSBridge";
+import type { ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
 import { formatMCToPlatformMessage, formatPlatformToMCMessage } from "~~/shared/utils/chatSync";
+import type { BotConnection } from "./chatbridge/chatbridge";
+import { chatBridge } from "./chatbridge/chatbridge";
+import { pluginBridge } from "./mcwsbridge/MCWSBridge";
 
 /**
  * MC聊天消息数据
@@ -43,7 +43,8 @@ class MessageRouter {
             const server = await database.query.servers.findFirst({
                 where: eq(servers.id, serverId),
                 with: {
-                    adapter: true
+                    adapter: true,
+                    targets: true
                 }
             });
 
@@ -53,7 +54,7 @@ class MessageRouter {
             }
 
             const chatSyncConfig = server.chatSyncConfig;
-            if (!chatSyncConfig.enabled || chatSyncConfig.targets.length === 0) {
+            if (!chatSyncConfig.enabled || server.targets.length === 0) {
                 return;
             }
 
@@ -79,13 +80,15 @@ class MessageRouter {
                 return;
             }
 
-            const sendPromises = chatSyncConfig.targets
-                .filter((target) => target.enabled)
-                .map((target) => chatBridge.sendToTarget(botConnection, target.groupId, target.type, formattedMessage));
+            const sendPromises = server.targets
+                .filter((target) => target.config.chatSyncConfigSchema.enabled)
+                .map((target) =>
+                    chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage)
+                );
 
             await Promise.allSettled(sendPromises);
 
-            console.info(`[消息路由] 已将 MC 消息从服务器 ${serverId} 转发到 ${chatSyncConfig.targets.length} 个目标`);
+            console.info(`[消息路由] 已将 MC 消息从服务器 ${serverId} 转发到 ${sendPromises.length} 个目标`);
         } catch (error) {
             console.error(`[消息路由] 处理来自服务器 ${serverId} 的 MC 消息时出错：`, error);
         }
@@ -98,7 +101,10 @@ class MessageRouter {
         try {
             const database = await getDatabase();
             const serversWithConfig = await database.query.servers.findMany({
-                where: eq(servers.adapterId, connection.adapterID)
+                where: eq(servers.adapterId, connection.adapterID),
+                with: {
+                    targets: true
+                }
             });
             if (session.content === undefined) {
                 return;
@@ -106,18 +112,20 @@ class MessageRouter {
             const tasks: Promise<unknown>[] = [];
 
             for (const server of serversWithConfig) {
-                const command = server.commandConfig;
-                for (const target of command.targets) {
-                    if (!target.enabled) continue;
-                    if (target.groupId !== session.channelId) continue;
-                    if (!session.content.startsWith(target.prefix)) continue;
+                for (const target of server.targets) {
+                    if (!target.config.CommandConfigSchema.enabled) continue;
+                    if (target.targetId !== session.channelId) continue;
+                    if (!session.content.startsWith(target.config.CommandConfigSchema.prefix)) continue;
                     if (session.onebot) {
                         const role = session.onebot.sender?.role;
-                        if (!role || !target.permissions.includes(role)) continue;
+                        if (!role || !target.config.CommandConfigSchema.permissions.includes(role)) continue;
                     }
 
                     const cmd = pluginBridge
-                        .executeCommand(server.id, session.content.slice(target.prefix.length))
+                        .executeCommand(
+                            server.id,
+                            session.content.slice(target.config.CommandConfigSchema.prefix.length)
+                        )
                         .then(({ success, message }) =>
                             chatBridge.sendToTarget(
                                 connection,
@@ -134,7 +142,7 @@ class MessageRouter {
                 const chatSyncConfig = server.chatSyncConfig;
                 if (!chatSyncConfig?.enabled) continue;
 
-                const isTargetGroup = chatSyncConfig.targets?.some((t) => t.enabled && t.groupId === session.channelId);
+                const isTargetGroup = server.targets?.some((t) => t.config.chatSyncConfigSchema.enabled && t.targetId === session.channelId);
                 if (!isTargetGroup) continue;
 
                 if (!chatSyncConfig.platformToMcEnabled) continue;

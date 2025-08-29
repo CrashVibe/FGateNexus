@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
+import { TargetConfigSchema } from "./target";
 
 /**
  * 聊天同步配置
@@ -18,35 +18,6 @@ export const chatSyncConfigSchema = z.object({
      * 是否启用从 平台 到 Minecraft 的转发
      */
     platformToMcEnabled: z.boolean().default(true),
-
-    /**
-     * 目标群组配置列表
-     */
-    targets: z
-        .array(
-            z.object({
-                /**
-                 * 目标群组/频道ID
-                 */
-                groupId: z.string(),
-
-                /**
-                 * 目标类型 (group: 群组, private: 私聊)
-                 */
-                type: z.enum(["group", "private"]).default("group"),
-
-                /**
-                 * 是否启用此目标
-                 */
-                enabled: z.boolean().default(true),
-
-                /**
-                 * 本地 ID
-                 */
-                id: z.uuid().default(() => uuidv4())
-            })
-        )
-        .default([]),
 
     /**
      * MC到平台的消息格式模板
@@ -86,4 +57,13 @@ export const chatSyncConfigSchema = z.object({
 });
 
 export type ChatSyncConfig = z.infer<typeof chatSyncConfigSchema>;
-export type ChatSyncTarget = ChatSyncConfig["targets"][number];
+
+export const chatSyncPatchBodySchema = z.object({
+    chatsync: chatSyncConfigSchema,
+    targets: z.array(
+        z.object({
+            id: z.uuidv4(),
+            config: TargetConfigSchema
+        })
+    )
+});

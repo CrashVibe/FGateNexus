@@ -28,7 +28,10 @@ export class PlayerDeathHandler extends RequestHandler {
 
         const serverID = pluginBridge.connectionManager.getServerId(peer);
         const server = await db.query.servers.findFirst({
-            where: eq(servers.id, serverID)
+            where: eq(servers.id, serverID),
+            with: {
+                targets: true
+            }
         });
         if (!server) {
             console.warn("Server not found for player leave:", serverID);
@@ -42,8 +45,8 @@ export class PlayerDeathHandler extends RequestHandler {
                 playerName,
                 deathMessage ? deathMessage : "未知原因"
             );
-            for (const target of server.notifyConfig.targets) {
-                chatBridge.sendToTarget(botConnection, target.groupId, target.type, formattedMessage);
+            for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
+                chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
             }
         }
     }

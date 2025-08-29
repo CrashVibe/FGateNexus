@@ -61,6 +61,7 @@ CREATE TABLE `targets` (
 	`target_id` text NOT NULL,
 	`type` text DEFAULT 'group' NOT NULL,
 	`enabled` integer DEFAULT true NOT NULL,
+	`config` text NOT NULL,
 	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`server_id`) REFERENCES `servers`(`id`) ON UPDATE no action ON DELETE cascade

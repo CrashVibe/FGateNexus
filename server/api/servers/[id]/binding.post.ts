@@ -9,11 +9,11 @@ import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
 
 export default defineEventHandler(async (event) => {
     try {
-        const serverId = Number(getRouterParam(event, "id"));
+        const serverID = Number(getRouterParam(event, "id"));
         const body = await readBody(event);
         const parsed = BindingConfigSchema.safeParse(body);
 
-        if (isNaN(serverId)) {
+        if (isNaN(serverID)) {
             const apiError = ApiError.validation("参数错误: 无效的服务器ID");
             return createErrorResponse(event, apiError);
         }
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
             .set({
                 bindingConfig: parsed.data
             })
-            .where(eq(servers.id, serverId))
+            .where(eq(servers.id, serverID))
             .returning();
 
         if (!result[0]) {

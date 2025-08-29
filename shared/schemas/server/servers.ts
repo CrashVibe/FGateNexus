@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { servers } from "~~/server/db/schema";
 import type { GetClientInfoResult } from "~~/server/service/mcwsbridge/ConnectionManager";
+import type { targetSchema } from "./target";
 
 export const serverSchemaRequset = z.object({
     servername: z.string().min(2, "长度至少为 2 个字符").max(24, "长度最多为 24 个字符"),
@@ -11,8 +12,7 @@ export type serverSchemaRequsetType = z.infer<typeof serverSchemaRequset>;
 
 export type serverSchema = typeof servers.$inferSelect;
 
-export type ServerWithStatus = serverSchema &
-    GetClientInfoResult & {
+export type ServerWithStatus = serverSchema & { targets: targetSchema[] } & GetClientInfoResult & {
         isOnline: boolean;
     };
 

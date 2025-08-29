@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { v4 as uuidv4 } from "uuid";
+import { TargetConfigSchema } from "./target";
 
 /**
  * 系统通知配置
@@ -28,34 +28,17 @@ export const NotifyConfigSchema = z.object({
     /**
      * 玩家死亡时发送的消息
      */
-    death_notify_message: z.string().default("[死亡] {playerName} 因 {deathMessage} 死亡了"),
-
-    targets: z
-        .array(
-            z.object({
-                /**
-                 * 目标群组/频道ID
-                 */
-                groupId: z.string(),
-
-                /**
-                 * 目标类型 (group: 群组, private: 私聊)
-                 */
-                type: z.enum(["group", "private"]).default("group"),
-
-                /**
-                 * 是否启用此目标
-                 */
-                enabled: z.boolean().default(true),
-
-                /**
-                 * 本地 ID
-                 */
-                id: z.uuid().default(() => uuidv4())
-            })
-        )
-        .default([])
+    death_notify_message: z.string().default("[死亡] {playerName} 因 {deathMessage} 死亡了")
 });
 
 export type NotifyConfig = z.infer<typeof NotifyConfigSchema>;
-export type NotifyTarget = NotifyConfig["targets"][number];
+
+export const notifyPatchBodySchema = z.object({
+    notify: NotifyConfigSchema,
+    targets: z.array(
+        z.object({
+            id: z.uuidv4(),
+            config: TargetConfigSchema
+        })
+    )
+});
