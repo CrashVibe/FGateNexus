@@ -1,8 +1,8 @@
 <template>
   <div>
-    <HeaderServer class="mb-4" />
+    <HeaderServer class="mb-3" />
     <n-form :model="formData" :rules="rules">
-      <n-grid :cols="isMobile ? 1 : '600:2 1600:3'" x-gap="16" y-gap="16">
+      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
         <n-gi>
           <n-card class="h-full cursor-pointer" embedded hoverable size="small" title="基础操作">
             <!-- 删除 -->
@@ -47,13 +47,13 @@
 
 <script lang="ts" setup>
 // ==================== 导入 ====================
+import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import type { SelectMixedOption } from "naive-ui/es/select/src/interface";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { type ChooseAdapter, chooseAdapterSchema, type ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
-import { isMobile } from "#imports";
 
 // ==================== 页面配置 ====================
 definePageMeta({

@@ -1,9 +1,9 @@
 <template>
   <div>
-    <HeaderServer class="mb-4" />
+    <HeaderServer class="mb-3" />
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div class="space-y-6">
+    <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
+      <n-grid-item>
         <n-card class="h-full" size="small" title="配置群聊">
           单独对目标进行配置
           <template #footer>
@@ -17,8 +17,8 @@
             </n-alert>
           </template>
         </n-card>
-      </div>
-    </div>
+      </n-grid-item>
+    </n-grid>
 
     <n-drawer v-model:show="drawerVisible" :width="502">
       <drawer-command
@@ -50,6 +50,7 @@
 </template>
 
 <script lang="ts" setup>
+import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import type { z } from "zod";
 import type { PageState } from "~~/app/composables/usePageState";

@@ -1,14 +1,8 @@
 <template>
   <div>
-    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-6" />
+    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-3" />
 
-    <n-grid
-      v-if="configMenuItems.length > 0"
-      :cols="isMobile ? 1 : '600:2 1100:3 1600:4'"
-      :item-responsive="true"
-      x-gap="20"
-      y-gap="20"
-    >
+    <n-grid v-if="configMenuItems.length > 0" :cols="isMobile ? 1 : '3'" :item-responsive="true" x-gap="12" y-gap="12">
       <n-gi v-for="menuItem in configMenuItems" :key="menuItem.key" :span="getCardSpan(String(menuItem.label))">
         <n-card
           :title="String(menuItem.label)"
@@ -34,8 +28,8 @@
 </template>
 
 <script lang="ts" setup>
-import type { MenuItem } from "~/layouts/serverEdit.vue";
 import { isMobile } from "#imports";
+import type { MenuItem } from "~/layouts/serverEdit.vue";
 
 definePageMeta({
   layout: "server-edit"
@@ -52,7 +46,7 @@ const configMenuItems = computed(() => {
   const serverId = route.params?.["id"];
   if (!serverId) return [];
   return menuOptions.value
-    .flatMap((item) => (item.children) || [])
+    .flatMap((item) => item.children || [])
     .filter((item) => {
       const key = item.key;
       if (!key) return false;

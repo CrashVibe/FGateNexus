@@ -1,9 +1,9 @@
 <template>
   <div>
-    <HeaderServer class="mb-4" />
-    <n-form ref="formRef" :model="formData" :rules="rules" class="mb-4">
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div class="space-y-6">
+    <HeaderServer class="mb-3" />
+    <n-form ref="formRef" :model="formData" :rules="rules">
+      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12" class="mb-3">
+        <n-grid-item>
           <n-card class="h-full" size="small" title="玩家进出事件">
             <n-form-item label="是否启用" path="player_notify">
               <n-switch v-model:value="formData.player_notify" />
@@ -71,8 +71,8 @@
               </template>
             </n-form-item>
           </n-card>
-        </div>
-        <div class="space-y-6">
+        </n-grid-item>
+        <n-grid-item>
           <n-card class="h-full" size="small" title="死亡事件">
             <n-form-item label="是否启用" path="player_disappoint_notify">
               <n-switch v-model:value="formData.player_disappoint_notify" />
@@ -111,12 +111,12 @@
               </template>
             </n-form-item>
           </n-card>
-        </div>
-      </div>
+        </n-grid-item>
+      </n-grid>
     </n-form>
 
-    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <div class="space-y-6">
+    <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
+      <n-grid-item>
         <n-card class="h-full" size="small" title="配置群聊">
           单独对目标进行配置
           <template #footer>
@@ -130,8 +130,8 @@
             </n-alert>
           </template>
         </n-card>
-      </div>
-    </div>
+      </n-grid-item>
+    </n-grid>
 
     <n-drawer v-model:show="drawerVisible" :width="502">
       <n-drawer-content v-if="selectTarget" closable :title="`目标配置 · ${selectTarget.targetId || selectTarget.id}`">
@@ -164,6 +164,7 @@
 </template>
 
 <script lang="ts" setup>
+import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import type { FormInst } from "naive-ui";
 import type { z } from "zod";

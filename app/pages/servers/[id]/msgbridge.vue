@@ -1,146 +1,152 @@
 <template>
   <div>
-    <HeaderServer class="mb-4" />
+    <HeaderServer class="mb-3" />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <!-- 基础配置区域 -->
-      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <!-- 基础设置 -->
-        <n-card class="h-full" size="small" title="基础设置">
-          <template #header-extra>
-            <n-tag :type="formData.enabled ? 'success' : 'default'" round size="small">
-              {{ formData.enabled ? "已启用" : "未启用" }}
-            </n-tag>
-          </template>
-
-          <n-form-item label="启用聊天同步" path="enabled">
-            <n-switch v-model:value="formData.enabled" />
-          </n-form-item>
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <n-form-item label="MC → 平台" path="mcToPlatformEnabled">
-              <n-switch v-model:value="formData.mcToPlatformEnabled" :disabled="!formData.enabled" />
-            </n-form-item>
-
-            <n-form-item label="平台 → MC" path="platformToMcEnabled">
-              <n-switch v-model:value="formData.platformToMcEnabled" :disabled="!formData.enabled" />
-            </n-form-item>
-          </div>
-        </n-card>
-
-        <!-- 消息过滤配置 -->
-        <n-card class="h-full" size="small" title="消息过滤">
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <n-form-item label="最小长度" path="filters.minMessageLength">
-              <n-input-number
-                v-model:value="formData.filters.minMessageLength"
-                :max="1000"
-                :min="0"
-                class="w-full"
-                placeholder="最小消息字符数"
-              />
-            </n-form-item>
-
-            <n-form-item label="最大长度" path="filters.maxMessageLength">
-              <n-input-number
-                v-model:value="formData.filters.maxMessageLength"
-                :max="5000"
-                :min="1"
-                class="w-full"
-                placeholder="最大消息字符数"
-              />
-            </n-form-item>
-          </div>
-
-          <n-form-item label="过滤模式" path="filters.filterMode">
-            <n-radio-group v-model:value="formData.filters.filterMode">
-              <n-space>
-                <n-radio value="blacklist">黑名单模式</n-radio>
-                <n-radio value="whitelist">白名单模式</n-radio>
-              </n-space>
-            </n-radio-group>
-            <template #feedback>
-              <div class="text-sm text-gray-500">
-                黑名单模式：转发全部消息但屏蔽指定内容
-                <br />
-                白名单模式：仅转发匹配的消息
-              </div>
+      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
+        <n-grid-item>
+          <!-- 基础设置 -->
+          <n-card class="h-full" size="small" title="基础设置">
+            <template #header-extra>
+              <n-tag :type="formData.enabled ? 'success' : 'default'" round size="small">
+                {{ formData.enabled ? "已启用" : "未启用" }}
+              </n-tag>
             </template>
-          </n-form-item>
 
-          <!-- 黑名单模式配置 -->
-          <template v-if="formData.filters.filterMode === 'blacklist'">
-            <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
-              <n-input
-                v-model:value="blacklistKeywordsText"
-                :maxlength="200"
-                placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
-                show-count
-              />
+            <n-form-item label="启用聊天同步" path="enabled">
+              <n-switch v-model:value="formData.enabled" />
+            </n-form-item>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <n-form-item label="MC → 平台" path="mcToPlatformEnabled">
+                <n-switch v-model:value="formData.mcToPlatformEnabled" :disabled="!formData.enabled" />
+              </n-form-item>
+
+              <n-form-item label="平台 → MC" path="platformToMcEnabled">
+                <n-switch v-model:value="formData.platformToMcEnabled" :disabled="!formData.enabled" />
+              </n-form-item>
+            </div>
+          </n-card>
+        </n-grid-item>
+        <n-grid-item>
+          <!-- 消息过滤配置 -->
+          <n-card class="h-full" size="small" title="消息过滤">
+            <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
+              <n-grid-item>
+                <n-form-item label="最小长度" path="filters.minMessageLength">
+                  <n-input-number
+                    v-model:value="formData.filters.minMessageLength"
+                    :max="1000"
+                    :min="0"
+                    class="w-full"
+                    placeholder="最小消息字符数"
+                  />
+                </n-form-item>
+              </n-grid-item>
+              <n-grid-item>
+                <n-form-item label="最大长度" path="filters.maxMessageLength">
+                  <n-input-number
+                    v-model:value="formData.filters.maxMessageLength"
+                    :max="5000"
+                    :min="1"
+                    class="w-full"
+                    placeholder="最大消息字符数"
+                  />
+                </n-form-item>
+              </n-grid-item>
+            </n-grid>
+
+            <n-form-item label="过滤模式" path="filters.filterMode">
+              <n-radio-group v-model:value="formData.filters.filterMode">
+                <n-space>
+                  <n-radio value="blacklist">黑名单模式</n-radio>
+                  <n-radio value="whitelist">白名单模式</n-radio>
+                </n-space>
+              </n-radio-group>
               <template #feedback>
-                <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
+                <div class="text-sm text-gray-500">
+                  黑名单模式：转发全部消息但屏蔽指定内容
+                  <br />
+                  白名单模式：仅转发匹配的消息
+                </div>
               </template>
             </n-form-item>
 
-            <n-form-item label="屏蔽正则表达式" path="filters.blacklistRegex">
-              <n-input
-                v-model:value="blacklistRegexText"
-                :maxlength="500"
-                placeholder="用逗号分隔多个正则表达式，如：^/.*,#spam.*"
-                show-count
-                type="textarea"
-                :rows="2"
-              />
-              <template #feedback>
-                <div class="text-sm text-gray-500">匹配这些正则表达式的消息将被过滤，不会转发</div>
-              </template>
-            </n-form-item>
-          </template>
+            <!-- 黑名单模式配置 -->
+            <template v-if="formData.filters.filterMode === 'blacklist'">
+              <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
+                <n-input
+                  v-model:value="blacklistKeywordsText"
+                  :maxlength="200"
+                  placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
+                  show-count
+                />
+                <template #feedback>
+                  <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
+                </template>
+              </n-form-item>
 
-          <!-- 白名单模式配置 -->
-          <template v-else>
-            <n-form-item label="允许前缀" path="filters.whitelistPrefixes">
-              <n-input
-                v-model:value="whitelistPrefixesText"
-                :maxlength="200"
-                placeholder="用逗号分隔多个前缀，如：#,!,?"
-                show-count
-              />
-              <template #feedback>
-                <div class="text-sm text-gray-500">仅转发以这些前缀开头的消息</div>
-              </template>
-            </n-form-item>
+              <n-form-item label="屏蔽正则表达式" path="filters.blacklistRegex">
+                <n-input
+                  v-model:value="blacklistRegexText"
+                  :maxlength="500"
+                  placeholder="用逗号分隔多个正则表达式，如：^/.*,#spam.*"
+                  show-count
+                  type="textarea"
+                  :rows="2"
+                />
+                <template #feedback>
+                  <div class="text-sm text-gray-500">匹配这些正则表达式的消息将被过滤，不会转发</div>
+                </template>
+              </n-form-item>
+            </template>
 
-            <n-form-item label="允许正则表达式" path="filters.whitelistRegex">
-              <n-input
-                v-model:value="whitelistRegexText"
-                :maxlength="500"
-                placeholder="用逗号分隔多个正则表达式，如：^#.*,#help.*"
-                show-count
-                type="textarea"
-                :rows="2"
-              />
-              <template #feedback>
-                <div class="text-sm text-gray-500">仅转发匹配这些正则表达式的消息</div>
-              </template>
-            </n-form-item>
-          </template>
-        </n-card>
-      </div>
+            <!-- 白名单模式配置 -->
+            <template v-else>
+              <n-form-item label="允许前缀" path="filters.whitelistPrefixes">
+                <n-input
+                  v-model:value="whitelistPrefixesText"
+                  :maxlength="200"
+                  placeholder="用逗号分隔多个前缀，如：#,!,?"
+                  show-count
+                />
+                <template #feedback>
+                  <div class="text-sm text-gray-500">仅转发以这些前缀开头的消息</div>
+                </template>
+              </n-form-item>
+
+              <n-form-item label="允许正则表达式" path="filters.whitelistRegex">
+                <n-input
+                  v-model:value="whitelistRegexText"
+                  :maxlength="500"
+                  placeholder="用逗号分隔多个正则表达式，如：^#.*,#help.*"
+                  show-count
+                  type="textarea"
+                  :rows="2"
+                />
+                <template #feedback>
+                  <div class="text-sm text-gray-500">仅转发匹配这些正则表达式的消息</div>
+                </template>
+              </n-form-item>
+            </template>
+          </n-card>
+        </n-grid-item>
+      </n-grid>
 
       <!-- 消息模板配置 -->
       <div class="mt-3">
         <n-card size="small" title="消息模板配置">
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <!-- MC → 平台模板 -->
-            <n-card embedded size="small">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <span>MC → 平台模板</span>
-                  <n-tag size="small" type="primary">游戏到平台</n-tag>
-                </div>
-              </template>
+          <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
+            <n-grid-item>
+              <!-- MC → 平台模板 -->
+              <n-card embedded size="small">
+                <template #header>
+                  <div class="flex items-center gap-2">
+                    <span>MC → 平台模板</span>
+                    <n-tag size="small" type="primary">游戏到平台</n-tag>
+                  </div>
+                </template>
 
-              <div class="space-y-4">
                 <n-form-item label="模板内容" label-placement="top" path="mcToPlatformTemplate">
                   <n-input
                     v-model:value="formData.mcToPlatformTemplate"
@@ -174,19 +180,18 @@
                     </div>
                   </template>
                 </n-form-item>
-              </div>
-            </n-card>
+              </n-card>
+            </n-grid-item>
+            <n-grid-item>
+              <!-- 平台 → MC模板 -->
+              <n-card embedded size="small">
+                <template #header>
+                  <div class="flex items-center gap-2">
+                    <span>平台 → MC模板</span>
+                    <n-tag size="small" type="success">平台到游戏</n-tag>
+                  </div>
+                </template>
 
-            <!-- 平台 → MC模板 -->
-            <n-card embedded size="small">
-              <template #header>
-                <div class="flex items-center gap-2">
-                  <span>平台 → MC模板</span>
-                  <n-tag size="small" type="success">平台到游戏</n-tag>
-                </div>
-              </template>
-
-              <div class="space-y-4">
                 <n-form-item label="模板内容" label-placement="top" path="platformToMcTemplate">
                   <n-input
                     v-model:value="formData.platformToMcTemplate"
@@ -220,16 +225,16 @@
                     </div>
                   </template>
                 </n-form-item>
-              </div>
-            </n-card>
-          </div>
+              </n-card>
+            </n-grid-item>
+          </n-grid>
         </n-card>
       </div>
     </n-form>
 
     <div class="mt-3">
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div class="space-y-6">
+      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12" class="mb-3">
+        <n-grid-item>
           <n-card class="h-full" size="small" title="配置群聊">
             单独对目标进行配置
             <template #footer>
@@ -243,8 +248,8 @@
               </n-alert>
             </template>
           </n-card>
-        </div>
-      </div>
+        </n-grid-item>
+      </n-grid>
     </div>
 
     <n-drawer v-model:show="drawerVisible" :width="502">
@@ -280,6 +285,7 @@
 
 <script lang="ts" setup>
 // ==================== 导入 ====================
+import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import type { FormInst } from "naive-ui";
 import type { z } from "zod";

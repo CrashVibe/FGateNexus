@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-4" />
+    <HeaderServer class="mb-3" />
 
     <n-card size="small" title="目标配置">
       <template #header-extra>

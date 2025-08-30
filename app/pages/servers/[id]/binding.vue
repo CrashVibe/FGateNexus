@@ -1,8 +1,8 @@
 <template>
   <div>
-    <HeaderServer class="mb-4" />
+    <HeaderServer class="mb-3" />
     <n-form ref="formRef" :model="formData" :rules="rules">
-      <n-grid :x-gap="12" :y-gap="12" :cols="2">
+      <n-grid :x-gap="12" :y-gap="12" :cols="isMobile ? 1 : '2'">
         <n-grid-item>
           <n-card class="h-fit" size="small" title="基础设置">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -328,6 +328,7 @@
 
 <script lang="ts" setup>
 // ==================== 导入 ====================
+import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import moment from "moment-timezone";
 import type { FormInst } from "naive-ui";
