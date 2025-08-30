@@ -151,13 +151,13 @@ class BindingService {
                     continue;
                 }
 
-                const server_list = await database.query.servers.findFirst({
+                const server_list = await database.query.targets.findFirst({
+                    where: and(eq(targets.serverId, binding.serverID), eq(targets.targetId, ctx.channelId)),
                     with: {
-                        targets: true
-                    },
-                    where: and(eq(servers.id, binding.serverID), eq(targets.targetId, ctx.channelId))
+                        server: true
+                    }
                 });
-                if (!server_list) continue;
+                if (!server_list?.server) continue;
 
                 const bindingConfig = await getConfig(binding.serverID);
                 try {
@@ -227,17 +227,24 @@ class BindingService {
         }
 
         const database = await getDatabase();
-        const serversWithBindingConfig = await database.query.servers.findMany({
+        const serversWithBindingConfig = await database.query.targets.findMany({
+            where: and(eq(targets.targetId, ctx.channelId)),
             with: {
-                playerServers: true,
-                targets: true
-            },
-            where: and(eq(servers.adapterId, connection.adapterID), eq(targets.targetId, ctx.channelId))
+                server: {
+                    with: {
+                        playerServers: true
+                    }
+                }
+            }
         });
 
-        const matchingServers = serversWithBindingConfig.filter(
-            (server) => server.bindingConfig.allowUnbind && ctx.content?.startsWith(server.bindingConfig.unbindPrefix)
-        );
+        const matchingServers = serversWithBindingConfig
+            .filter((target) => target.server && target.server.adapterId === connection.adapterID)
+            .map((target) => target.server!)
+            .filter(
+                (server) =>
+                    server.bindingConfig.allowUnbind && ctx.content?.startsWith(server.bindingConfig.unbindPrefix)
+            );
 
         if (matchingServers.length === 0) {
             return false;
@@ -283,26 +290,37 @@ class BindingService {
         }
 
         const database = await getDatabase();
-        const serversWithBindingConfig = await database.query.servers.findMany({
+        const serversWithBindingConfig = await database.query.targets.findMany({
+            where: and(eq(targets.targetId, ctx.channelId)),
             with: {
-                playerServers: true,
-                targets: true
-            },
-            where: and(eq(servers.adapterId, connection.adapterID), eq(targets.targetId, ctx.channelId))
+                server: {
+                    with: {
+                        playerServers: true
+                    }
+                }
+            }
         });
 
-        const matchingServers = serversWithBindingConfig.filter((server) => server.bindingConfig.allowGroupUnbind);
+        const matchingServers = serversWithBindingConfig
+            .filter((target) => target.server && target.server.adapterId === connection.adapterID)
+            .map((target) => target.server!)
+            .filter((server) => server.bindingConfig.allowGroupUnbind);
 
         if (matchingServers.length === 0) {
             return false;
         }
 
-        const player = await database.query.players.findFirst({
+        const socialAccount = await database.query.socialAccounts.findFirst({
+            where: and(eq(socialAccounts.uid, ctx.userId), eq(socialAccounts.adapterType, ctx.platform as AdapterType)),
             with: {
-                socialAccount: true
-            },
-            where: and(eq(socialAccounts.uid, ctx.userId), eq(socialAccounts.adapterType, ctx.platform as AdapterType))
+                players: true
+            }
         });
+        if (!socialAccount) {
+            return false;
+        }
+
+        const player = socialAccount.players[0];
         if (!player) {
             return false;
         }
