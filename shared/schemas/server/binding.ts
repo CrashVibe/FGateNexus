@@ -21,6 +21,7 @@ export const BindingConfigSchema = z.object({
         .max(60, "验证码过期时间不能超过 60 分钟")
         .default(5),
     allowUnbind: z.boolean().default(true),
+    allowGroupUnbind: z.boolean().default(true),
     prefix: z.string().min(1, "绑定前缀不能为空").max(50, "绑定前缀长度不能超过 50 个字符").default("/绑定 "),
     unbindPrefix: z.string().max(50, "解绑前缀长度不能超过 50 个字符").default("/解绑 "),
     forceBind: z.boolean().default(false),
