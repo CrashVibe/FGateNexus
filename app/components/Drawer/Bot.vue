@@ -2,8 +2,8 @@
 import type { AdapterWithStatus, BotInstanceData } from "#shared/schemas/adapter";
 import { AdapterType } from "#shared/schemas/adapter";
 import { OneBotWSConfigSchema, OneBotWSReverseConfigSchema } from "#shared/schemas/adapter/onebot";
-import type { FormInst } from "naive-ui";
 import { createDynamicZodRules } from "#shared/utils/validation";
+import type { FormInst } from "naive-ui";
 
 const props = defineProps<{
   adapter: AdapterWithStatus;
@@ -132,6 +132,9 @@ onMounted(() => {
           <template v-if="selectedType === AdapterType.Onebot && formData.config">
             <n-form-item label="Bot ID" path="selfId">
               <n-input v-model:value="formData.config.selfId" placeholder="请输入 Bot ID" />
+            </n-form-item>
+            <n-form-item label="Token" path="token">
+              <n-input v-model:value="formData.config.token" placeholder="发送信息时用于验证的字段" />
             </n-form-item>
             <n-form-item label="连接协议" path="protocol">
               <n-select
