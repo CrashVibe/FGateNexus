@@ -2,7 +2,7 @@ import { generateVerificationCode } from "#shared/utils/binding";
 import { and, eq, sql } from "drizzle-orm";
 import type { Session } from "koishi";
 import { getDatabase } from "~~/server/db/client";
-import { players, servers, socialAccounts } from "~~/server/db/schema";
+import { players, servers, socialAccounts, targets } from "~~/server/db/schema";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import {
     renderBindFail,
@@ -140,14 +140,24 @@ class BindingService {
         const bindings = this.pendingBindings.get(connection.adapterID);
         let hit = false;
         if (bindings) {
-            // TODO 目标群
+            const database = await getDatabase();
             for (const binding of bindings) {
-                // 不匹配则继续
                 if (binding.message !== ctx.content) continue;
-
-                if (!Object.values(AdapterType).includes(ctx.platform as AdapterType) || !ctx.userId) {
+                if (
+                    !Object.values(AdapterType).includes(ctx.platform as AdapterType) ||
+                    !ctx.userId ||
+                    !ctx.channelId
+                ) {
                     continue;
                 }
+
+                const server_list = await database.query.servers.findFirst({
+                    with: {
+                        targets: true
+                    },
+                    where: and(eq(servers.id, binding.serverID), eq(targets.targetId, ctx.channelId))
+                });
+                if (!server_list) continue;
 
                 const bindingConfig = await getConfig(binding.serverID);
                 try {
@@ -175,14 +185,11 @@ class BindingService {
         socialNickname: string | null
     ): Promise<void> {
         const database = await getDatabase();
-        let socialAccount = await database
-            .select()
-            .from(socialAccounts)
-            .where(and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType)))
-            .limit(1);
+        let socialAccount = await database.query.socialAccounts.findFirst({
+            where: and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType))
+        });
 
-        if (socialAccount.length === 0) {
-            // 创建新的社交账号
+        if (!socialAccount) {
             const [newAccount] = await database
                 .insert(socialAccounts)
                 .values({
@@ -194,16 +201,16 @@ class BindingService {
             if (!newAccount) {
                 throw new Error(`社交账号 ${socialUid} 创建失败`);
             }
-            socialAccount = [newAccount];
+            socialAccount = newAccount;
         }
-        if (!socialAccount[0]) {
+        if (!socialAccount) {
             throw new Error(`社交账号 ${socialUid} 创建失败`);
         }
 
         const [updatedPlayer] = await database
             .update(players)
             .set({
-                socialAccountId: socialAccount[0].id,
+                socialAccountId: socialAccount.id,
                 updatedAt: sql`(unixepoch())`
             })
             .where(eq(players.uuid, pendingBinding.playerUID))
@@ -215,13 +222,17 @@ class BindingService {
     }
 
     private async processUnbindMessage(connection: BotConnection, ctx: Session): Promise<boolean> {
-        if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId) {
+        if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId || !ctx.channelId) {
             return false;
         }
 
         const database = await getDatabase();
         const serversWithBindingConfig = await database.query.servers.findMany({
-            where: eq(servers.adapterId, connection.adapterID)
+            with: {
+                playerServers: true,
+                targets: true
+            },
+            where: and(eq(servers.adapterId, connection.adapterID), eq(targets.targetId, ctx.channelId))
         });
 
         const matchingServers = serversWithBindingConfig.filter(
@@ -267,16 +278,17 @@ class BindingService {
     }
 
     public async handleGroupLeave(connection: BotConnection, ctx: Session): Promise<boolean> {
-        if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId) {
+        if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId || !ctx.channelId) {
             return false;
         }
 
         const database = await getDatabase();
         const serversWithBindingConfig = await database.query.servers.findMany({
-            where: eq(servers.adapterId, connection.adapterID),
             with: {
-                playerServers: true
-            }
+                playerServers: true,
+                targets: true
+            },
+            where: and(eq(servers.adapterId, connection.adapterID), eq(targets.targetId, ctx.channelId))
         });
 
         const matchingServers = serversWithBindingConfig.filter((server) => server.bindingConfig.allowGroupUnbind);
