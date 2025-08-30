@@ -72,8 +72,13 @@ defineExpose({
       require-mark-placement="left"
     >
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div class="md:col-span-2">
+          <n-form-item label="Bot 实例名称">
+            <n-input v-model:value="modelValue.name" placeholder="请输入 Bot 实例名称" show-count maxlength="12" />
+          </n-form-item>
+        </div>
         <div class="mb-4 md:col-span-2">
-          <n-form-item :show-feedback="false" label="适配器类型">
+          <n-form-item :show-feedback="false" label="适配器类型" required>
             <n-select
               v-model:value="selectedType"
               :options="[{ label: 'OneBot', value: AdapterType.Onebot }]"

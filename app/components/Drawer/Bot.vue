@@ -21,7 +21,8 @@ const loading = ref(false);
 const formData = ref<BotInstanceData>({
   adapterType: props.adapter.type,
   config: props.adapter.config,
-  adapterID: props.adapter.id
+  adapterID: props.adapter.id,
+  name: props.adapter.name
 });
 
 const selectedType = computed({
@@ -125,7 +126,12 @@ onMounted(() => {
       >
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div class="md:col-span-2">
-            <n-form-item label="适配器类型">
+            <n-form-item label="Bot 实例名称">
+              <n-input v-model:value="formData.name" placeholder="请输入 Bot 实例名称" show-count maxlength="12" />
+            </n-form-item>
+          </div>
+          <div class="md:col-span-2">
+            <n-form-item label="适配器类型" required>
               <n-select :options="[{ label: 'OneBot', value: AdapterType.Onebot }]" :value="adapter.type" disabled />
             </n-form-item>
           </div>

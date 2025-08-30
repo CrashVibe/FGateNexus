@@ -4,6 +4,7 @@ import { AdapterType } from "~~/shared/schemas/adapter";
 
 export const adapters = sqliteTable("adapters", {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name").notNull().default(""),
     type: text("type", {
         enum: [AdapterType.Onebot]
     }).notNull(),

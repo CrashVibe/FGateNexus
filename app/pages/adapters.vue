@@ -60,7 +60,8 @@ async function handleSubmitClick(e: MouseEvent) {
         method: "POST",
         body: {
           adapterType: botInstanceData.value.adapterType,
-          config: validatedConfig
+          config: validatedConfig,
+          name: botInstanceData.value.name
         }
       });
 

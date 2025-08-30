@@ -14,11 +14,12 @@
             <n-tag :bordered="false" :type="adapter.isOnline ? 'success' : 'error'" size="small">
               {{ adapter.isOnline ? "在线" : "离线" }}
             </n-tag>
+            <n-text>{{ adapter.type }}</n-text>
           </div>
         </div>
 
         <div class="flex items-center justify-center">
-          <n-text class="text-2xl text-primary" strong>{{ adapter.type }}</n-text>
+          <n-text class="text-2xl text-primary" strong>{{ adapter.name || adapter.type }}</n-text>
         </div>
 
         <div class="flex items-center justify-between text-sm">
