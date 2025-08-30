@@ -1,11 +1,11 @@
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
 import { defineEventHandler, readBody } from "h3";
+import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { createApiResponse } from "#shared/types";
-import { ApiError, createErrorResponse } from "#shared/error";
-import { StatusCodes } from "http-status-codes";
-import { AdapterConfigSchema, AdapterType, type BotInstanceData } from "~~/shared/schemas/adapter";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
+import { AdapterConfigSchema, AdapterType, type BotInstanceData } from "~~/shared/schemas/adapter";
 
 export default defineEventHandler(async (event) => {
     try {
@@ -24,6 +24,7 @@ export default defineEventHandler(async (event) => {
         const result = await database
             .insert(adapters)
             .values({
+                name: body.name || "",
                 type: body.adapterType,
                 config: config.data
             })

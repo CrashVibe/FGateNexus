@@ -1,5 +1,5 @@
-import { type OneBotConfig, OneBotConfigSchema } from "./onebot";
 import type { adapters } from "~~/server/db/schema";
+import { type OneBotConfig, OneBotConfigSchema } from "./onebot";
 
 export const AdapterConfigSchema = OneBotConfigSchema;
 
@@ -14,6 +14,7 @@ export interface BotInstanceData {
     adapterType: AdapterType | null;
     config: AdapterConfig | null;
     adapterID: number | null;
+    name?: string;
 }
 
 export enum AdapterType {
