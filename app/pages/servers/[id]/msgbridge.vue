@@ -4,9 +4,9 @@
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <!-- 基础配置区域 -->
-      <div class="grid grid-cols-1 gap-6 mb-6 lg:grid-cols-2">
+      <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <!-- 基础设置 -->
-        <n-card class="h-fit" size="small" title="基础设置">
+        <n-card class="h-full" size="small" title="基础设置">
           <template #header-extra>
             <n-tag :type="formData.enabled ? 'success' : 'default'" round size="small">
               {{ formData.enabled ? "已启用" : "未启用" }}
@@ -51,22 +51,84 @@
             </n-form-item>
           </div>
 
-          <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
-            <n-input
-              v-model:value="keywordsText"
-              :maxlength="200"
-              placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
-              show-count
-            />
+          <n-form-item label="过滤模式" path="filters.filterMode">
+            <n-radio-group v-model:value="formData.filters.filterMode">
+              <n-space>
+                <n-radio value="blacklist">黑名单模式</n-radio>
+                <n-radio value="whitelist">白名单模式</n-radio>
+              </n-space>
+            </n-radio-group>
             <template #feedback>
-              <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
+              <div class="text-sm text-gray-500">
+                黑名单模式：转发全部消息但屏蔽指定内容
+                <br />
+                白名单模式：仅转发匹配的消息
+              </div>
             </template>
           </n-form-item>
+
+          <!-- 黑名单模式配置 -->
+          <template v-if="formData.filters.filterMode === 'blacklist'">
+            <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
+              <n-input
+                v-model:value="blacklistKeywordsText"
+                :maxlength="200"
+                placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
+                show-count
+              />
+              <template #feedback>
+                <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
+              </template>
+            </n-form-item>
+
+            <n-form-item label="屏蔽正则表达式" path="filters.blacklistRegex">
+              <n-input
+                v-model:value="blacklistRegexText"
+                :maxlength="500"
+                placeholder="用逗号分隔多个正则表达式，如：^/.*,#spam.*"
+                show-count
+                type="textarea"
+                :rows="2"
+              />
+              <template #feedback>
+                <div class="text-sm text-gray-500">匹配这些正则表达式的消息将被过滤，不会转发</div>
+              </template>
+            </n-form-item>
+          </template>
+
+          <!-- 白名单模式配置 -->
+          <template v-else>
+            <n-form-item label="允许前缀" path="filters.whitelistPrefixes">
+              <n-input
+                v-model:value="whitelistPrefixesText"
+                :maxlength="200"
+                placeholder="用逗号分隔多个前缀，如：#,!,?"
+                show-count
+              />
+              <template #feedback>
+                <div class="text-sm text-gray-500">仅转发以这些前缀开头的消息</div>
+              </template>
+            </n-form-item>
+
+            <n-form-item label="允许正则表达式" path="filters.whitelistRegex">
+              <n-input
+                v-model:value="whitelistRegexText"
+                :maxlength="500"
+                placeholder="用逗号分隔多个正则表达式，如：^#.*,#help.*"
+                show-count
+                type="textarea"
+                :rows="2"
+              />
+              <template #feedback>
+                <div class="text-sm text-gray-500">仅转发匹配这些正则表达式的消息</div>
+              </template>
+            </n-form-item>
+          </template>
         </n-card>
       </div>
 
       <!-- 消息模板配置 -->
-      <div class="mt-6">
+      <div class="mt-3">
         <n-card size="small" title="消息模板配置">
           <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- MC → 平台模板 -->
@@ -165,7 +227,7 @@
       </div>
     </n-form>
 
-    <div class="mt-6">
+    <div class="mt-3">
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div class="space-y-6">
           <n-card class="h-full" size="small" title="配置群聊">
@@ -256,12 +318,48 @@ const formData = ref<ChatSyncConfig>(getDefaultChatSyncConfig());
 const rules = zodToNaiveRules(chatSyncConfigSchema);
 
 // ==================== 关键词处理 ====================
-const keywordsText = computed({
+const blacklistKeywordsText = computed({
   get() {
     return (formData.value.filters.blacklistKeywords || []).join(",");
   },
   set(v: string) {
     formData.value.filters.blacklistKeywords = v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+});
+
+const blacklistRegexText = computed({
+  get() {
+    return (formData.value.filters.blacklistRegex || []).join(",");
+  },
+  set(v: string) {
+    formData.value.filters.blacklistRegex = v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+});
+
+const whitelistPrefixesText = computed({
+  get() {
+    return (formData.value.filters.whitelistPrefixes || []).join(",");
+  },
+  set(v: string) {
+    formData.value.filters.whitelistPrefixes = v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+});
+
+const whitelistRegexText = computed({
+  get() {
+    return (formData.value.filters.whitelistRegex || []).join(",");
+  },
+  set(v: string) {
+    formData.value.filters.whitelistRegex = v
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);

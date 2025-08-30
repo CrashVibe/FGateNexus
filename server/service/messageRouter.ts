@@ -142,7 +142,9 @@ class MessageRouter {
                 const chatSyncConfig = server.chatSyncConfig;
                 if (!chatSyncConfig?.enabled) continue;
 
-                const isTargetGroup = server.targets?.some((t) => t.config.chatSyncConfigSchema.enabled && t.targetId === session.channelId);
+                const isTargetGroup = server.targets?.some(
+                    (t) => t.config.chatSyncConfigSchema.enabled && t.targetId === session.channelId
+                );
                 if (!isTargetGroup) continue;
 
                 if (!chatSyncConfig.platformToMcEnabled) continue;
@@ -185,11 +187,37 @@ class MessageRouter {
             return false;
         }
 
-        // 黑名单关键词
-        if (filters.blacklistKeywords.some((keyword) => message.toLowerCase().includes(keyword.toLowerCase()))) {
-            return false;
+        if (filters.filterMode === "blacklist") {
+            // 黑名单模式：检查是否包含黑名单关键词或匹配正则表达式
+            if (filters.blacklistKeywords.some((keyword) => message.toLowerCase().includes(keyword.toLowerCase()))) {
+                return false;
+            }
+            if (
+                filters.blacklistRegex.some((regex) => {
+                    try {
+                        return new RegExp(regex, "i").test(message);
+                    } catch {
+                        return false;
+                    }
+                })
+            ) {
+                return false;
+            }
+            return true;
+        } else if (filters.filterMode === "whitelist") {
+            // 白名单模式：检查是否以指定前缀开头或匹配正则表达式
+            const hasPrefix = filters.whitelistPrefixes.some((prefix) => message.startsWith(prefix));
+            const hasRegexMatch = filters.whitelistRegex.some((regex) => {
+                try {
+                    return new RegExp(regex).test(message);
+                } catch {
+                    return false;
+                }
+            });
+            return hasPrefix || hasRegexMatch;
         }
 
+        // 默认黑名单模式
         return true;
     }
 }

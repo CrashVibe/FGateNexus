@@ -35,6 +35,11 @@ export const chatSyncConfigSchema = z.object({
     filters: z
         .object({
             /**
+             * 过滤模式：blacklist（黑名单模式，转发全部消息但屏蔽指定内容）或 whitelist（白名单模式，仅转发匹配的消息）
+             */
+            filterMode: z.enum(["blacklist", "whitelist"]).default("blacklist"),
+
+            /**
              * 最小消息长度
              */
             minMessageLength: z.number().min(0).default(1),
@@ -45,14 +50,33 @@ export const chatSyncConfigSchema = z.object({
             maxMessageLength: z.number().min(1).default(500),
 
             /**
-             * 黑名单关键词
+             * 黑名单关键词（仅在黑名单模式下使用）
              */
-            blacklistKeywords: z.array(z.string()).default([])
+            blacklistKeywords: z.array(z.string()).default([]),
+
+            /**
+             * 黑名单正则表达式（仅在黑名单模式下使用）
+             */
+            blacklistRegex: z.array(z.string()).default([]),
+
+            /**
+             * 白名单前缀（仅在白名单模式下使用）
+             */
+            whitelistPrefixes: z.array(z.string()).default([]),
+
+            /**
+             * 白名单正则表达式（仅在白名单模式下使用）
+             */
+            whitelistRegex: z.array(z.string()).default([])
         })
         .default({
+            filterMode: "blacklist",
             minMessageLength: 1,
             maxMessageLength: 500,
-            blacklistKeywords: []
+            blacklistKeywords: [],
+            blacklistRegex: [],
+            whitelistPrefixes: [],
+            whitelistRegex: []
         })
 });
 
