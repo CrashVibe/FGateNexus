@@ -1,11 +1,9 @@
+import { generateVerificationCode } from "#shared/utils/binding";
+import { and, eq, sql } from "drizzle-orm";
+import type { Session } from "koishi";
 import { getDatabase } from "~~/server/db/client";
 import { players, servers, socialAccounts } from "~~/server/db/schema";
-import { and, eq, sql } from "drizzle-orm";
-import { generateVerificationCode } from "#shared/utils/binding";
-import type { BotConnection } from "../chatbridge/chatbridge";
-import type { Session } from "koishi";
 import { AdapterType } from "~~/shared/schemas/adapter";
-import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 import {
     renderBindFail,
     renderBindSuccess,
@@ -13,6 +11,8 @@ import {
     renderUnbindKick,
     renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
+import type { BotConnection } from "../chatbridge/chatbridge";
+import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 import { getConfig } from "./config";
 
 interface PendingBinding {
@@ -259,6 +259,63 @@ class BindingService {
                 console.error("无法处理解绑:", errorMessage);
                 const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
                 await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, playerName, errorMessage));
+            }
+        });
+
+        await Promise.all(unbindPromises);
+        return true;
+    }
+
+    public async handleGroupLeave(connection: BotConnection, ctx: Session): Promise<boolean> {
+        if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId) {
+            return false;
+        }
+
+        const database = await getDatabase();
+        const serversWithBindingConfig = await database.query.servers.findMany({
+            where: eq(servers.adapterId, connection.adapterID),
+            with: {
+                playerServers: true
+            }
+        });
+
+        const matchingServers = serversWithBindingConfig.filter((server) => server.bindingConfig.allowGroupUnbind);
+
+        if (matchingServers.length === 0) {
+            return false;
+        }
+
+        const player = await database.query.players.findFirst({
+            with: {
+                socialAccount: true
+            },
+            where: and(eq(socialAccounts.uid, ctx.userId), eq(socialAccounts.adapterType, ctx.platform as AdapterType))
+        });
+        if (!player) {
+            return false;
+        }
+
+        const unbindPromises = matchingServers.map(async (server) => {
+            try {
+                const { playerUUID, socialUID } = await this.performUnbind(
+                    ctx.platform as AdapterType,
+                    ctx.userId!,
+                    player.name
+                );
+                console.info("玩家解绑成功：", {
+                    playerUUID,
+                    socialUID
+                });
+                await pluginBridge.kickPlayer(
+                    server.id,
+                    playerUUID,
+                    renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID)
+                );
+                await ctx.send(renderUnbindSuccess(server.bindingConfig.unbindSuccessMsg, player.name));
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error("无法处理解绑:", errorMessage);
+                await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, player.name, errorMessage));
             }
         });
 

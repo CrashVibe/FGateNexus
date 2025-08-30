@@ -1,13 +1,13 @@
-import type { Bot, ForkScope, Session } from "koishi";
-import { Context } from "koishi";
-import { Server } from "@koishijs/plugin-server";
-import { OneBotBot } from "koishi-plugin-adapter-onebot";
-import { HTTP } from "@koishijs/plugin-http";
 import type { AdapterConfig } from "#shared/schemas/adapter";
 import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
-import { configManager } from "~~/server/utils/config";
+import { HTTP } from "@koishijs/plugin-http";
+import { Server } from "@koishijs/plugin-server";
+import type { Bot, ForkScope, Session } from "koishi";
+import { Context } from "koishi";
+import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
+import { configManager } from "~~/server/utils/config";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import { bindingService } from "../bindingmanager";
 import { messageRouter } from "../messageRouter";
@@ -80,6 +80,14 @@ export class ChatBridge {
             );
             if (connection && session.content) {
                 this.receiveMessage(connection, session);
+            }
+        });
+        this.app.on("guild-member-removed", async (session) => {
+            const connection = Array.from(this.connectionMap.values()).find(
+                (conn) => conn.config.selfId === session.bot.selfId
+            );
+            if (connection) {
+                this.handleGroupLeave(connection, session);
             }
         });
     }
@@ -189,6 +197,15 @@ export class ChatBridge {
             return; // 绑定服务已经处理它了，这条消息已经没有它的利用价值了哈哈
         }
         await Promise.all([messageRouter.handlePlatformMessage(connection, session)]);
+    }
+
+    /**
+     * 处理离群事件
+     */
+    private async handleGroupLeave(connection: BotConnection, ctx: Session): Promise<void> {
+        if (await bindingService.handleGroupLeave(connection, ctx)) {
+            return;
+        }
     }
 
     /**

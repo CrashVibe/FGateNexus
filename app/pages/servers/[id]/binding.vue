@@ -2,8 +2,8 @@
   <div>
     <HeaderServer class="mb-4" />
     <n-form ref="formRef" :model="formData" :rules="rules">
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div class="space-y-6">
+      <n-grid :x-gap="12" :y-gap="12" :cols="2">
+        <n-grid-item>
           <n-card class="h-fit" size="small" title="基础设置">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <n-form-item label="绑定数量" path="maxBindCount">
@@ -57,17 +57,15 @@
                 show-count
               />
             </n-form-item>
-            <n-form-item label="允许解绑">
-              <div class="switch-wrapper">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <n-form-item label="允许解绑" :show-feedback="false" path="allowUnbind">
                 <n-switch v-model:value="formData.allowUnbind" />
-              </div>
-            </n-form-item>
-          </n-card>
-
-          <n-card class="h-fit" size="small" title="指令与反馈示例">
-            <div class="mb-2">
-              <n-text strong>指令示例预览</n-text>
+              </n-form-item>
+              <n-form-item label="离群自动解绑" :show-feedback="false" path="allowGroupUnbind">
+                <n-switch v-model:value="formData.allowGroupUnbind" />
+              </n-form-item>
             </div>
+            <n-divider title-placement="left">指令示例预览</n-divider>
             <div class="mb-2">
               <n-text class="mb-2" round type="success">
                 <h1>绑定指令</h1>
@@ -87,10 +85,9 @@
               </div>
             </n-collapse-transition>
           </n-card>
-        </div>
-
-        <div class="space-y-6">
-          <n-card class="h-fit" size="small" title="反馈消息配置">
+        </n-grid-item>
+        <n-grid-item>
+          <n-card class="h-full" size="small" title="反馈消息配置">
             <n-form-item class="mb-2" label="绑定成功" path="bindSuccessMsg">
               <n-input
                 v-model:value="formData.bindSuccessMsg"
@@ -227,9 +224,10 @@
               </template>
             </n-form-item>
           </n-card>
-
+        </n-grid-item>
+        <n-grid-item>
           <n-card class="h-fit" size="small" title="绑定提示">
-            <n-form-item label="强制绑定">
+            <n-form-item label="强制绑定" path="forceBind">
               <n-switch v-model:value="formData.forceBind" />
             </n-form-item>
 
@@ -305,8 +303,8 @@
               </template>
             </n-form-item>
           </n-card>
-        </div>
-      </div>
+        </n-grid-item>
+      </n-grid>
     </n-form>
     <n-divider />
     <div class="flex justify-end gap-2">
@@ -331,11 +329,11 @@
 <script lang="ts" setup>
 // ==================== 导入 ====================
 import { StatusCodes } from "http-status-codes";
+import moment from "moment-timezone";
 import type { FormInst } from "naive-ui";
 import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "~~/shared/schemas/server/binding";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { ApiResponse } from "~~/shared/types";
-import moment from "moment-timezone";
 import {
   renderBindFail,
   renderBindSuccess,
