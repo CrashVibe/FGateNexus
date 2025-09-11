@@ -7,7 +7,7 @@ import { Context } from "koishi";
 import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { configManager } from "~~/server/utils/config";
+import { getConfigManager } from "~~/server/utils/config";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import { bindingService } from "../bindingmanager";
 import { messageRouter } from "../messageRouter";
@@ -55,7 +55,7 @@ export class ChatBridge {
     }
 
     public async init(): Promise<void> {
-        const config = configManager.getConfig();
+        const config = (await getConfigManager()).getConfig();
         this.app.plugin(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Server as any,

@@ -1,8 +1,9 @@
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import * as fs from "node:fs";
+import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { getConfigManager } from "./server/utils/config";
 
 const execDir = path.dirname(path.resolve(process.execPath));
 process.chdir(execDir);
@@ -10,7 +11,10 @@ console.info("工作目录在 ", process.cwd());
 
 async function initDatabase() {
     const dbFilePath = path.resolve("./sqlite.db");
-    const isNewDatabase = !fs.existsSync(dbFilePath);
+    const isNewDatabase = !(await fs
+        .access(dbFilePath)
+        .then(() => false)
+        .catch(() => true));
 
     const client = new Database(dbFilePath);
 
@@ -37,8 +41,8 @@ async function initDatabase() {
 async function startApplication() {
     try {
         await initDatabase();
-        const config = (await import("./server/utils/config")).configManager.getConfig();
-        // 设置环境变量
+        const configManager = await getConfigManager();
+        const config = configManager.getConfig();
         process.env.NITRO_HOST = config.nitro.host;
         process.env.NITRO_PORT = String(config.nitro.port);
         await import("./.output/server/index.mjs");

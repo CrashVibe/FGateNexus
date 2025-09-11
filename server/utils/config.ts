@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs/promises";
 import * as path from "path";
 import { z } from "zod";
 import { applyDefaults } from "./zod";
@@ -39,36 +39,45 @@ class AppConfigManager {
     private static instance: AppConfigManager | null = null;
     private config: AppConfig;
 
-    private constructor() {
+    private constructor(config: AppConfig) {
+        this.config = config;
+    }
+
+    public static async getInstance(): Promise<AppConfigManager> {
+        if (!AppConfigManager.instance) {
+            const config = await AppConfigManager.loadConfig();
+            AppConfigManager.instance = new AppConfigManager(config);
+        }
+        return AppConfigManager.instance;
+    }
+
+    private static async loadConfig(): Promise<AppConfig> {
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
         const configDir = path.dirname(configPath);
         console.info("配置文件路径:", configPath);
 
         let config: AppConfig;
 
-        if (!fs.existsSync(configPath)) {
-            console.info("配置文件不存在，创建默认配置...");
-            if (!fs.existsSync(configDir)) fs.mkdirSync(configDir, { recursive: true });
-            config = mergeWithDefaults({});
-            fs.writeFileSync(configPath, JSON.stringify(config, null, 4), "utf-8");
-        } else {
+        try {
+            await fs.access(configPath);
+            // 文件存在，读取配置
             try {
-                const parsedConfig = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+                const fileContent = await fs.readFile(configPath, "utf-8");
+                const parsedConfig = JSON.parse(fileContent);
                 config = mergeWithDefaults(parsedConfig);
             } catch (error) {
                 console.error("配置文件读取或校验失败:", error);
                 process.exit(1);
             }
+        } catch {
+            // 文件不存在，创建默认配置
+            console.info("配置文件不存在，创建默认配置...");
+            await fs.mkdir(configDir, { recursive: true });
+            config = mergeWithDefaults({});
+            await fs.writeFile(configPath, JSON.stringify(config, null, 4), "utf-8");
         }
 
-        this.config = config;
-    }
-
-    public static getInstance(): AppConfigManager {
-        if (!AppConfigManager.instance) {
-            AppConfigManager.instance = new AppConfigManager();
-        }
-        return AppConfigManager.instance;
+        return config;
     }
 
     getConfig(): AppConfig {
@@ -79,13 +88,13 @@ class AppConfigManager {
      * 更新配置并保存到文件
      * @param updates 要更新的配置项
      */
-    updateConfig(updates: Partial<AppConfig>): void {
+    async updateConfig(updates: Partial<AppConfig>): Promise<void> {
         const mergedConfig = mergeWithDefaults({ ...this.config, ...updates });
         this.config = mergedConfig;
 
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
         try {
-            fs.writeFileSync(configPath, JSON.stringify(mergedConfig, null, 4), "utf-8");
+            await fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 4), "utf-8");
             console.info("配置已更新并保存");
         } catch (error) {
             console.error("保存配置失败:", error);
@@ -96,21 +105,20 @@ class AppConfigManager {
     /**
      * 重新加载配置文件
      */
-    reloadConfig(): void {
+    async reloadConfig(): Promise<void> {
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
-        if (fs.existsSync(configPath)) {
-            try {
-                const fileContent = fs.readFileSync(configPath, "utf-8");
-                const parsedConfig = JSON.parse(fileContent);
-                this.config = mergeWithDefaults(parsedConfig);
-                console.info("配置已重新加载");
-            } catch (error) {
-                console.error("重新加载配置失败:", error);
-                throw error;
-            }
+        try {
+            await fs.access(configPath);
+            const fileContent = await fs.readFile(configPath, "utf-8");
+            const parsedConfig = JSON.parse(fileContent);
+            this.config = mergeWithDefaults(parsedConfig);
+            console.info("配置已重新加载");
+        } catch (error) {
+            console.error("重新加载配置失败:", error);
+            throw error;
         }
     }
 }
 
-export const configManager = AppConfigManager.getInstance();
+export const getConfigManager = AppConfigManager.getInstance;
 export { mergeWithDefaults };
