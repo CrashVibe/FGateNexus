@@ -1,7 +1,7 @@
 <script lang="ts" setup>
+import { useDark } from "@vueuse/core";
 import { darkTheme, lightTheme, type GlobalThemeOverrides } from "naive-ui";
 import { computed, onMounted, ref } from "vue";
-import { useDark } from "@vueuse/core";
 
 import hljs from "highlight.js/lib/core";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -21,6 +21,34 @@ const theme = computed(() => (isDark.value ? darkTheme : lightTheme));
 const themeOverrides: GlobalThemeOverrides = {};
 
 const loadingBarRef = ref();
+
+// 全局认证状态管理
+const { checkAuthStatus } = useAuth();
+const route = useRoute();
+
+// 全局认证状态
+const authStore = reactive({
+  isAuthenticated: false,
+  isLoading: false
+});
+
+// 检查认证状态
+const checkAuth = async () => {
+  authStore.isLoading = true;
+  try {
+    const status = await checkAuthStatus();
+    authStore.isAuthenticated = status.isAuthenticated;
+  } catch (error) {
+    console.error("Auth check failed:", error);
+    authStore.isAuthenticated = false;
+  } finally {
+    authStore.isLoading = false;
+  }
+};
+
+// 全局认证状态
+const nuxtApp = useNuxtApp();
+nuxtApp.provide("authStore", authStore);
 
 onMounted(() => {
   const router = useRouter();
@@ -72,7 +100,19 @@ onMounted(() => {
       }, 2000);
     }, 300);
   });
+
+  // 初始检查认证状态
+  checkAuth();
 });
+
+// 更新认证状态
+watch(
+  () => route.path,
+  () => {
+    checkAuth();
+  },
+  { immediate: true }
+);
 </script>
 
 <template>

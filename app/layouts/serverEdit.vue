@@ -207,17 +207,7 @@ const selectedKey = computed(() => route.path);
 
 <template>
   <n-layout bordered position="absolute">
-    <n-layout-header bordered class="h-[var(--header-height)] p-4">
-      <n-space justify="space-between">
-        <n-space align="center" size="large">
-          <n-image class="align-middle size-8" preview-disabled src="/favicon.ico" />
-          <n-text class="text-base align-middle" strong>FGATE</n-text>
-        </n-space>
-        <n-space align="center" size="large">
-          <ThemeToggle />
-        </n-space>
-      </n-space>
-    </n-layout-header>
+    <AppHeader />
     <n-layout bordered has-sider position="absolute" style="top: var(--header-height)">
       <n-layout-sider
         :collapsed="collapsed"

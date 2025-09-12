@@ -1,10 +1,10 @@
+import { ApiError, createErrorResponse } from "#shared/error";
+import { serverSchemaRequset } from "#shared/schemas/server/servers";
+import { createApiResponse } from "#shared/types";
 import { defineEventHandler, readBody } from "h3";
+import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { createApiResponse } from "#shared/types";
-import { ApiError, createErrorResponse } from "#shared/error";
-import { StatusCodes } from "http-status-codes";
-import { serverSchemaRequset } from "#shared/schemas/server/servers";
 import { getDefaultBindingConfig } from "~~/shared/utils/binding";
 import { getDefaultChatSyncConfig } from "~~/shared/utils/chatSync";
 import { getDefaultCommandConfig } from "~~/shared/utils/command";
