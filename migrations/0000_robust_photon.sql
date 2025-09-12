@@ -6,6 +6,28 @@ CREATE TABLE `adapters` (
 	`config` text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE `user_sessions` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`user_id` integer NOT NULL,
+	`session_token` text NOT NULL,
+	`expires_at` integer NOT NULL,
+	`created_at` integer NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `session_token_idx` ON `user_sessions` (`session_token`);--> statement-breakpoint
+CREATE TABLE `users` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`username` text NOT NULL,
+	`password_hash` text,
+	`salt` text,
+	`two_factor_secret` text,
+	`two_factor_enabled` integer DEFAULT false NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX `username_idx` ON `users` (`username`);--> statement-breakpoint
 CREATE TABLE `players` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`uuid` text NOT NULL,
