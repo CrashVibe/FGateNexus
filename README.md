@@ -12,16 +12,6 @@
 
 ## 说明
 
-> [!IMPORTANT]
->
-> ### 注意
->
-> - 请务必遵守 [GNU General Public License v3 (GPLv3)](https://www.gnu.org/licenses/gpl-3.0.html) 许可协议
-> - 请勿在生产环境中使用，建议在测试服务器或本地环境中运行。
-> - 项目仍在 Alpha 阶段，可能存在未发现的 bug 或问题。
-> - 在 Alpha 版本中，我们不会对数据进行版本更新的迁移，请谨慎使用。
-> - 如果你发现了 bug 或问题，请在仓库的 issue 中提交反馈。
-
 - 本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Naïve UI](https://www.naiveui.com/)
 开发
 - 需要配合 [FGATE Client](https://github.com/CrashVibe/FGateClient) 一起使用
@@ -36,7 +26,9 @@
 
 ## 快速开始
 
-目前还没发正式版，可以去 [Github Action](https://github.com/CrashVibe/FGateNexus/actions/workflows/release.yml) 下最新的构建产物。
+[Github Release](https://github.com/CrashVibe/FGateNexus/releases/latest) 下最新的版本直接使用
+
+如要更新，直接覆盖即可
 
 ## 🎉 功能
 
