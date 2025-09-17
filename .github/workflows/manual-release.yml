@@ -30,10 +30,6 @@ jobs:
               id: package_version
               run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
 
-            - name: Get current date
-              id: date
-              run: echo "date=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
-
             - name: Build for All Platforms
               run: bun run build:all
 
