@@ -1,0 +1,89 @@
+name: Manual Release
+
+on:
+    workflow_dispatch:
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js 22
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "22"
+
+            - name: Set up Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Get version from package.json
+              id: package_version
+              run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
+
+            - name: Get current date
+              id: date
+              run: echo "date=$(date +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_OUTPUT
+
+            - name: Build for All Platforms
+              run: bun run build:all
+
+            - name: Archive artifacts with version
+              run: |
+                  ls dist
+                  VERSION=${{ steps.package_version.outputs.version }}
+                  chmod +r dist/*
+                  tar -czf FGateNexus-v${VERSION}-linux-x64.tar.gz dist/FGateNexus-linux-x64 dist/migrations
+                  tar -czf FGateNexus-v${VERSION}-linux-arm64.tar.gz dist/FGateNexus-linux-arm64 dist/migrations
+                  tar -czf FGateNexus-v${VERSION}-mac-x64.tar.gz dist/FGateNexus-mac-x64 dist/migrations
+                  tar -czf FGateNexus-v${VERSION}-mac-arm64.tar.gz dist/FGateNexus-mac-arm64 dist/migrations
+                  zip -r FGateNexus-v${VERSION}-win.zip dist/FGateNexus-win-x64.exe dist/migrations
+
+            - name: Delete existing tag if exists
+              run: |
+                  VERSION=${{ steps.package_version.outputs.version }}
+                  git tag -d "v${VERSION}" 2>/dev/null || true
+                  git push origin ":refs/tags/v${VERSION}" 2>/dev/null || true
+              continue-on-error: true
+
+            - name: Create and push tag
+              run: |
+                  VERSION=${{ steps.package_version.outputs.version }}
+                  git config --local user.email "action@github.com"
+                  git config --local user.name "GitHub Action"
+                  git tag "v${VERSION}"
+                  git push origin "v${VERSION}"
+
+            - name: Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ steps.package_version.outputs.version }}
+                  name: v${{ steps.package_version.outputs.version }}
+                  draft: false
+                  generate_release_notes: true
+                  prerelease: false
+                  files: |
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip
+                  body: |
+                      ### 下载说明
+
+                      | 平台 | 架构 | 文件名 |
+                      |------|------|--------|
+                      | Linux | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64.tar.gz` |
+                      | Linux | ARM64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64.tar.gz` |
+                      | macOS | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64.tar.gz` |
+                      | macOS | ARM64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz` |
+                      | Windows | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip` |
