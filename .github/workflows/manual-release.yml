@@ -38,11 +38,12 @@ jobs:
                   ls dist
                   VERSION=${{ steps.package_version.outputs.version }}
                   chmod +r dist/*
-                  tar -czf FGateNexus-v${VERSION}-linux-x64.tar.gz dist/FGateNexus-linux-x64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-linux-arm64.tar.gz dist/FGateNexus-linux-arm64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-mac-x64.tar.gz dist/FGateNexus-mac-x64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-mac-arm64.tar.gz dist/FGateNexus-mac-arm64 dist/migrations
-                  zip -r FGateNexus-v${VERSION}-win.zip dist/FGateNexus-win-x64.exe dist/migrations
+                  cd dist
+                  tar -czf ../FGateNexus-v${VERSION}-linux-x64.tar.gz FGateNexus-linux-x64 migrations
+                  tar -czf ../FGateNexus-v${VERSION}-linux-arm64.tar.gz FGateNexus-linux-arm64 migrations
+                  tar -czf ../FGateNexus-v${VERSION}-mac-x64.tar.gz FGateNexus-mac-x64 migrations
+                  tar -czf ../FGateNexus-v${VERSION}-mac-arm64.tar.gz FGateNexus-mac-arm64 migrations
+                  zip -r ../FGateNexus-v${VERSION}-win.zip FGateNexus-win-x64.exe migrations
 
             - name: Delete existing tag if exists
               run: |
