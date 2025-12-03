@@ -34,7 +34,7 @@ export const BindingConfigSchema = z.object({
     unbindkickMsg: z
         .string()
         .max(500, "解绑踢出消息长度不能超过 500 个字符")
-        .default("&l&k123456&a&l社交帐号被解绑&f&l&k123456\n您的社交账号&c {social_account} &f已在社交平台解绑。"),
+        .default("&l&k123456&a&l社交帐号被解绑&r&l&k123456\n您的社交账号&c {social_account} &r已在社交平台解绑。"),
     bindSuccessMsg: z
         .string()
         .max(200, "绑定成功消息长度不能超过 200 个字符")
