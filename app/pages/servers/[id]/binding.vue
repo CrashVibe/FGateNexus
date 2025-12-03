@@ -33,7 +33,7 @@
                   :min="1"
                   :step="1"
                   class="w-full"
-                  placeholder="验证码过期时间（秒）"
+                  placeholder="验证码过期时间（分钟）"
                 >
                   <template #suffix>分钟</template>
                 </n-input-number>
@@ -490,7 +490,7 @@ const unbindCommandExample = computed(() => {
 // 时间 + 过期时间
 const bindExpireTimeExample = computed(() => {
   const expireTime = formData.value.codeExpire;
-  return moment().add(expireTime, "seconds").format("YYYY-MM-DD HH:mm:ss");
+  return moment().add(expireTime, "minutes").format("YYYY-MM-DD HH:mm:ss");
 });
 
 const noBindKickMsgPreview = computed(() => {
