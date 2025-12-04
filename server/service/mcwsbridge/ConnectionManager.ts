@@ -65,12 +65,12 @@ export class ConnectionManager {
         try {
             await this.bridge.updateClientInfo(peer, serverId);
         } catch (error) {
-            console.error(`[ERROR] 更新客户端信息失败: ${peer.id}`, error);
+            logger.error({ error }, `[ERROR] 更新客户端信息失败: ${peer.id}`);
             this.bridge.connectionManager.removeConnection(undefined, serverId);
             peer.close(1000, "Connection closed due to error");
             throw new Error(`更新客户端信息失败(已关闭连接): ${peer.id}`);
         }
-        console.info(`[CONNECTION] 连接已添加: 服务器 ID ${serverId}`);
+        logger.info(`[CONNECTION] 连接已添加: 服务器 ID ${serverId}`);
     }
 
     /**
@@ -122,7 +122,7 @@ export class ConnectionManager {
                 }
                 connection.peer.close(1000, "Connection closed by server");
                 this.connectionMap.delete(serverID);
-                console.info(`[CONNECTION] 连接已移除: 服务器 ID ${serverID}`);
+                logger.info(`[CONNECTION] 连接已移除: 服务器 ID ${serverID}`);
                 this.bridge.messageHandler.cleanupByPeer(connection.peer.id);
                 return { peer: connection.peer, serverId: serverID };
             }
@@ -134,7 +134,7 @@ export class ConnectionManager {
                 if (connection.peer === peer) {
                     connection.peer.close(1000, "Connection closed by server");
                     this.connectionMap.delete(serverId);
-                    console.info(`[CONNECTION] 连接已移除: 服务器 ID ${serverId}`);
+                    logger.info(`[CONNECTION] 连接已移除: 服务器 ID ${serverId}`);
                     this.bridge.messageHandler.cleanupByPeer(peer.id);
                     return { peer: connection.peer, serverId: serverId };
                 }
@@ -196,6 +196,6 @@ export class ConnectionManager {
             throw new Error(`无法找到对应的连接，服务器 ID: ${serverId}`);
         }
         this.connectionMap.set(serverId, data);
-        console.info(`[CONNECTION] 连接数据已更新: 服务器 ID ${serverId}`);
+        logger.info(`[CONNECTION] 连接数据已更新: 服务器 ID ${serverId}`);
     }
 }

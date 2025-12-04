@@ -1,12 +1,12 @@
+import type { AdapterInternal, Peer } from "crossws";
+import { eq } from "drizzle-orm";
+import { getDatabase } from "~~/server/db/client";
+import { servers } from "~~/server/db/schema";
+import { renderDeathMessage } from "~~/shared/utils/template/notify";
+import { chatBridge } from "../../chatbridge/chatbridge";
+import { pluginBridge } from "../MCWSBridge";
 import { RequestHandler } from "../RequestHandler";
 import type { JsonRpcRequest } from "../types";
-import type { AdapterInternal, Peer } from "crossws";
-import { pluginBridge } from "../MCWSBridge";
-import { getDatabase } from "~~/server/db/client";
-import { eq } from "drizzle-orm";
-import { servers } from "~~/server/db/schema";
-import { chatBridge } from "../../chatbridge/chatbridge";
-import { renderDeathMessage } from "~~/shared/utils/template/notify";
 
 export class PlayerDeathHandler extends RequestHandler {
     getMethod(): string {
@@ -20,7 +20,7 @@ export class PlayerDeathHandler extends RequestHandler {
         const { playerName, deathMessage } = request.params || {};
 
         if (typeof playerName !== "string") {
-            console.warn("Invalid player leave params:", request.params);
+            logger.warn({ requestParams: request.params }, "玩家死亡时参数无效");
             return;
         }
 
@@ -34,7 +34,7 @@ export class PlayerDeathHandler extends RequestHandler {
             }
         });
         if (!server) {
-            console.warn("Server not found for player leave:", serverID);
+            logger.warn("玩家离开时未找到服务器：" + serverID);
             return;
         }
         if (server.notifyConfig.player_disappoint_notify && server.adapterId) {

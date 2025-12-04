@@ -16,6 +16,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
             return navigateTo("/login");
         }
     } catch (error) {
-        console.error("Auth check failed:", error);
+        logger.error({ error }, "Auth check failed");
     }
 });

@@ -3,7 +3,7 @@ import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
 import type { Bot, ForkScope, Session } from "koishi";
-import { Context } from "koishi";
+import { Context, Logger as klog } from "koishi";
 import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
@@ -41,7 +41,6 @@ export class ChatBridge {
     static instance: ChatBridge | null = null;
     private connectionMap = new Map<number, BotConnection>(); // Bot ID -> Bot Connection
     private app: Context;
-
     private constructor() {
         this.app = new Context();
         this.init().then();
@@ -56,6 +55,7 @@ export class ChatBridge {
 
     public async init(): Promise<void> {
         const config = (await getConfigManager()).getConfig();
+        klog.targets = [];
         this.app.plugin(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Server as any,
@@ -64,6 +64,7 @@ export class ChatBridge {
                 port: config.koishi.port
             })
         );
+        logger.info(`Koishi 服务启动 http://${config.koishi.host}:${config.koishi.port}`);
         this.app.plugin(HTTP);
         await this.app.start();
         const database = await getDatabase();
@@ -96,7 +97,7 @@ export class ChatBridge {
      * 创建 Onebot Bot 实例
      */
     public createOnebot(config: OneBotConfig): ForkScope {
-        console.info("创建 Onebot Bot 实例:", config);
+        logger.debug({ config }, "创建 Onebot Bot 实例");
         if (config.protocol === "ws-reverse") {
             return this.app.plugin(OneBotBot, {
                 ...config,
@@ -117,7 +118,7 @@ export class ChatBridge {
         if (connection) {
             connection.pluginInstance.dispose();
             this.connectionMap.delete(adapterID);
-            console.info(`已移除 Bot 连接: ${adapterID}`);
+            logger.info(`已移除 Bot 连接: ${adapterID}`);
             return;
         }
         throw new Error(`找不到 Bot 连接: ${adapterID}`);
@@ -133,7 +134,7 @@ export class ChatBridge {
         if (adapterType === AdapterType.Onebot) {
             const bot = this.createOnebot(config);
             this.connectionMap.set(adapterID, { pluginInstance: bot, adapterID: adapterID, adapterType, config });
-            console.info(`已添加 Bot 连接: ${adapterID}`);
+            logger.info(`已添加 Bot 连接: ${adapterID}`);
         } else {
             throw new Error(`不支持的适配器类型(可能版本太低了吧?): ${adapterType}`);
         }
@@ -226,7 +227,7 @@ export class ChatBridge {
                 await bot.sendPrivateMessage(targetId, message);
             }
         } catch (error) {
-            console.error(`[MessageRouter] Failed to send message to ${targetType} ${targetId}:`, error);
+            logger.error({ error, targetType, targetId }, `[MessageRouter] 发送消息失败`);
         }
     }
 }

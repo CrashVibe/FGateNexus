@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "批量更新成功", StatusCodes.OK, updatedRows);
     } catch (err) {
-        console.error("Database error:", err);
+        logger.error({ err }, "Database error");
         return createErrorResponse(event, ApiError.database("批量更新失败"));
     }
 });

@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "批量创建目标成功", StatusCodes.CREATED, inserted);
     } catch (err) {
-        console.error("Database error:", err);
+        logger.error({ err }, "Database error");
         return createErrorResponse(event, ApiError.database("批量创建目标失败"));
     }
 });

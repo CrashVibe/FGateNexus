@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "认证状态查询成功", StatusCodes.OK, authStatus);
     } catch (error) {
-        console.error("获取认证状态失败:", error);
+        logger.error({ error }, "获取认证状态失败");
         return createApiResponse(event, "获取认证状态失败", StatusCodes.INTERNAL_SERVER_ERROR);
     }
 });

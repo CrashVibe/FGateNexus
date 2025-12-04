@@ -167,7 +167,7 @@ class BindingService {
                     await ctx.send(renderBindSuccess(bindingConfig.bindSuccessMsg, binding.playerNickname));
                 } catch (error: unknown) {
                     const errorMessage = error instanceof Error ? error.message : String(error);
-                    console.error("无法处理绑定:", errorMessage);
+                    logger.error({ errorMessage }, "无法处理绑定");
                     await ctx.send(renderBindFail(bindingConfig.bindFailMsg, binding.playerNickname, errorMessage));
                 }
 
@@ -262,10 +262,13 @@ class BindingService {
                     ctx.userId!,
                     playerName
                 );
-                console.info("玩家解绑成功：", {
-                    playerUUID,
-                    socialUID
-                });
+                logger.info(
+                    {
+                        playerUUID,
+                        socialUID
+                    },
+                    "玩家解绑成功"
+                );
                 await pluginBridge.kickPlayer(
                     server.id,
                     playerUUID,
@@ -274,7 +277,7 @@ class BindingService {
                 await ctx.send(renderUnbindSuccess(server.bindingConfig.unbindSuccessMsg, playerName));
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                console.error("无法处理解绑:", errorMessage);
+                logger.error({ errorMessage }, "无法处理解绑");
                 const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
                 await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, playerName, errorMessage));
             }
@@ -332,10 +335,13 @@ class BindingService {
                     ctx.userId!,
                     player.name
                 );
-                console.info("玩家解绑成功：", {
-                    playerUUID,
-                    socialUID
-                });
+                logger.info(
+                    {
+                        playerUUID,
+                        socialUID
+                    },
+                    "玩家解绑成功"
+                );
                 await pluginBridge.kickPlayer(
                     server.id,
                     playerUUID,
@@ -344,7 +350,7 @@ class BindingService {
                 await ctx.send(renderUnbindSuccess(server.bindingConfig.unbindSuccessMsg, player.name));
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                console.error("无法处理解绑:", errorMessage);
+                logger.error({ errorMessage }, "无法处理解绑");
                 await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, player.name, errorMessage));
             }
         });

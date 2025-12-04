@@ -1,8 +1,8 @@
 import type { AdapterInternal, Peer } from "crossws";
-import type { JsonRpcRequest, JsonRpcResponse, PendingRequest } from "./types";
 import { v4 as uuidv4 } from "uuid";
-import { isValidJsonRpcResponse } from "./utils";
 import { requestDispatcher } from "./RequestDispatcher";
+import type { JsonRpcRequest, JsonRpcResponse, PendingRequest } from "./types";
+import { isValidJsonRpcResponse } from "./utils";
 
 /**
  * 消息处理器
@@ -36,7 +36,7 @@ export class MessageHandler {
             // 分发请求到对应的处理器
             await requestDispatcher.dispatch(data, peer);
         } catch (error) {
-            console.error(`[ERROR] 处理消息失败: ${peer.id}`, error);
+            logger.error({ error }, `[ERROR] 处理消息失败: ${peer.id}`);
             this.sendError(peer, null, -32700, "Parse error");
         }
     }
@@ -81,7 +81,7 @@ export class MessageHandler {
 
             try {
                 peer.send(JSON.stringify(request));
-                console.debug(`[SEND] 请求已发送: ${peer.id} - ${method} (ID: ${id})`);
+                logger.debug(`[SEND] 请求已发送: ${peer.id} - ${method} (ID: ${id})`);
             } catch (error) {
                 clearTimeout(timeoutHandle);
                 this.pendingRequests.delete(id);
@@ -106,9 +106,9 @@ export class MessageHandler {
         };
         try {
             peer.send(JSON.stringify(notification));
-            console.debug(`[NOTIFY] 通知已发送: ${peer.id} - ${method}`);
+            logger.debug(`[NOTIFY] 通知已发送: ${peer.id} - ${method}`);
         } catch (error) {
-            console.error(`[FAILED] 发送通知失败: ${peer.id} - ${method}`, error);
+            logger.error({ error }, `[FAILED] 发送通知失败: ${peer.id} - ${method}`);
         }
     }
 
@@ -128,9 +128,9 @@ export class MessageHandler {
 
         try {
             peer.send(JSON.stringify(response));
-            console.debug(`[SUCCESS] 响应已发送: ${peer.id} - ID: ${id}`);
+            logger.debug(`[SUCCESS] 响应已发送: ${peer.id} - ID: ${id}`);
         } catch (error) {
-            console.error(`[FAILED] 发送响应失败: ${peer.id}`, error);
+            logger.error({ error }, `[FAILED] 发送响应失败: ${peer.id}`);
         }
     }
 
@@ -158,9 +158,9 @@ export class MessageHandler {
 
         try {
             peer.send(JSON.stringify(response));
-            console.warn(`[ERROR] 错误响应已发送: ${peer.id} - ${code}: ${message} (ID: ${id})`);
+            logger.warn(`[ERROR] 错误响应已发送: ${peer.id} - ${code}: ${message} (ID: ${id})`);
         } catch (error) {
-            console.error(`[FAILED] 发送错误响应失败: ${peer.id}`, error);
+            logger.error({ error }, `[FAILED] 发送错误响应失败: ${peer.id}`);
         }
     }
 
@@ -185,7 +185,7 @@ export class MessageHandler {
         }
 
         if (keysToDelete.length > 0) {
-            console.info(`[CLEANUP] 已清理连接 ${peerId} 的 ${keysToDelete.length} 个待处理请求`);
+            logger.info(`[CLEANUP] 已清理连接 ${peerId} 的 ${keysToDelete.length} 个待处理请求`);
         }
     }
 
@@ -198,7 +198,7 @@ export class MessageHandler {
             request.reject(new Error("Connection closed"));
         }
         this.pendingRequests.clear();
-        console.info(`[CLEANUP] 已清理所有待处理的请求`);
+        logger.info(`[CLEANUP] 已清理所有待处理的请求`);
     }
 
     /**
@@ -225,7 +225,7 @@ export class MessageHandler {
                 pendingRequest.reject(new Error(response.error.message));
             } else {
                 pendingRequest.resolve(response.result);
-                console.debug(`[RESPONSE] 响应已处理: ${pendingRequest.peerId} - ID: ${response.id}`);
+                logger.debug(`[RESPONSE] 响应已处理: ${pendingRequest.peerId} - ID: ${response.id}`);
             }
         }
     }

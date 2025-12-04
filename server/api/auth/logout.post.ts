@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "登出成功", StatusCodes.OK);
     } catch (error) {
-        console.error("登出失败:", error);
+        logger.error({ error }, "登出失败");
         // 即使失败也清除cookie
         setCookie(event, "session-token", "", { maxAge: 0 });
         return createApiResponse(event, "登出成功", StatusCodes.OK);

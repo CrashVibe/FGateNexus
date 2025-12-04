@@ -1,7 +1,7 @@
+import type { AdapterInternal, Peer } from "crossws";
+import { eq } from "drizzle-orm";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "../db/schema";
-import { eq } from "drizzle-orm";
-import type { AdapterInternal, Peer } from "crossws";
 import { pluginBridge } from "../service/mcwsbridge/MCWSBridge";
 
 export default defineWebSocketHandler({
@@ -11,10 +11,13 @@ export default defineWebSocketHandler({
 
         if (!token || !clientVersion) {
             peer.close(1008, "Unauthorized: Missing authorization token");
-            console.warn("WebSocket 请求缺失 Token 或 版本号：", {
-                token,
-                clientVersion
-            });
+            logger.warn(
+                {
+                    token,
+                    clientVersion
+                },
+                "WebSocket 请求缺失 Token 或 版本号"
+            );
             return;
         }
 
@@ -22,24 +25,25 @@ export default defineWebSocketHandler({
         const db_token = await database.select().from(servers).where(eq(servers.token, token)).limit(1);
         if (db_token.length === 0) {
             peer.close(1008, "Unauthorized: Invalid authorization token");
-            console.warn("WebSocket 请求 Token 无效：", {
-                token
-            });
+            logger.warn({ token }, "WebSocket 请求 Token 无效");
             return;
         }
 
         const server = db_token[0];
         if (!server) {
             peer.close(1008, "Unauthorized: Invalid server data");
-            console.warn("WebSocket 请求服务器数据无效");
+            logger.warn("WebSocket 请求服务器数据无效");
             return;
         }
 
         if (pluginBridge.connectionManager.hasConnection(undefined, server.id)) {
             peer.close(1008, "Unauthorized: Connection already exists");
-            console.warn("WebSocket 接受的对应连接连接已存在：", {
-                serverId: server.id
-            });
+            console.warn(
+                {
+                    serverId: server.id
+                },
+                "WebSocket 接受的对应连接连接已存在"
+            );
             return;
         }
 
@@ -53,24 +57,33 @@ export default defineWebSocketHandler({
             })
         );
 
-        console.info("WebSocket 接受请求成功：", {
-            serverId: server.id,
-            clientVersion
-        });
+        logger.info(
+            {
+                serverId: server.id,
+                clientVersion
+            },
+            "WebSocket 接受请求成功："
+        );
     },
 
     async close(peer) {
         if (pluginBridge.connectionManager.hasConnection(peer as unknown as Peer<AdapterInternal>)) {
             const data = pluginBridge.connectionManager.removeConnection(peer as unknown as Peer<AdapterInternal>);
-            console.info("WebSocket 连接已移除：", {
-                peerId: peer.id,
-                serverId: data.serverId
-            });
+            logger.info(
+                {
+                    peerId: peer.id,
+                    serverId: data.serverId
+                },
+                "WebSocket 连接已移除"
+            );
             return;
         }
-        console.info("WebSocket 连接已关闭：", {
-            peerId: peer.id
-        });
+        logger.info(
+            {
+                peerId: peer.id
+            },
+            "WebSocket 连接已关闭"
+        );
     },
     async message(peer, message) {
         if (!pluginBridge.connectionManager.hasConnection(peer as unknown as Peer<AdapterInternal>)) {

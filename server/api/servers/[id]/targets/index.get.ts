@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
         }
         return createApiResponse(event, "获取服务器列表成功", StatusCodes.OK, result);
     } catch (err) {
-        console.error("Database error:", err);
+        logger.error({ err }, "Database error");
         return createErrorResponse(event, ApiError.database("获取服务器列表失败"));
     }
 });
