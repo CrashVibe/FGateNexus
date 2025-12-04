@@ -38,7 +38,7 @@ export default defineWebSocketHandler({
 
         if (pluginBridge.connectionManager.hasConnection(undefined, server.id)) {
             peer.close(1008, "Unauthorized: Connection already exists");
-            console.warn(
+            logger.warn(
                 {
                     serverId: server.id
                 },

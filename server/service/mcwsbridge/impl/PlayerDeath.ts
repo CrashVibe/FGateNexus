@@ -34,7 +34,7 @@ export class PlayerDeathHandler extends RequestHandler {
             }
         });
         if (!server) {
-            logger.warn("玩家离开时未找到服务器：" + serverID);
+            logger.warn({ serverID }, "玩家死亡时未找到服务器");
             return;
         }
         if (server.notifyConfig.player_disappoint_notify && server.adapterId) {

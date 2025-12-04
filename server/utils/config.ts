@@ -108,11 +108,16 @@ class AppConfigManager {
      */
     async reloadConfig(): Promise<void> {
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
-        await fs.access(configPath);
-        const fileContent = await fs.readFile(configPath, "utf-8");
-        const parsedConfig = JSON.parse(fileContent);
-        this.config = mergeWithDefaults(parsedConfig);
-        logger.info("配置已重新加载");
+        try {
+            await fs.access(configPath);
+            const fileContent = await fs.readFile(configPath, "utf-8");
+            const parsedConfig = JSON.parse(fileContent);
+            this.config = mergeWithDefaults(parsedConfig);
+            logger.info("配置已重新加载");
+        } catch (error) {
+            logger.error({ error }, "重新加载配置文件失败");
+            throw error;
+        }
     }
 }
 

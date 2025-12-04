@@ -55,7 +55,7 @@ export class ChatBridge {
 
     public async init(): Promise<void> {
         const config = (await getConfigManager()).getConfig();
-        klog.targets = [];
+        klog.levels.base = 1;
         this.app.plugin(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             Server as any,

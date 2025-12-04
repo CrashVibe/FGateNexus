@@ -31,7 +31,7 @@ export class PlayerJoinHandler extends RequestHandler {
             }
         });
         if (!server) {
-            logger.warn("玩家加入时未找到服务器：" + serverID);
+            logger.warn({ serverID }, "玩家加入时未找到服务器");
             return;
         }
         if (server.notifyConfig.player_notify && server.adapterId) {
