@@ -22,10 +22,12 @@ export default defineEventHandler(async (event) => {
         const db = await getDatabase();
         const { items } = parsed.data;
 
-        const updatedRows: targetSchema[] = [];
-        db.transaction((tx) => {
-            for (const { id, data } of items) {
-                const rows = tx
+        if (items.length === 0) {
+            return createErrorResponse(event, ApiError.validation("更新项不能为空"));
+        }
+        const updatedRows: targetSchema[] = await db.transaction(async (tx) => {
+            const updatePromises = items.map(({ id, data }) =>
+                tx
                     .update(targets)
                     .set({
                         targetId: data.targetId,
@@ -36,10 +38,11 @@ export default defineEventHandler(async (event) => {
                     })
                     .where(and(eq(targets.serverId, serverID), eq(targets.id, id)))
                     .returning()
-                    .all();
+            );
 
-                if (rows.length > 0) updatedRows.push(...rows);
-            }
+            // 并行更新
+            const results = await Promise.all(updatePromises);
+            return results.flat();
         });
 
         if (updatedRows.length === 0) {
