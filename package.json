@@ -2,6 +2,8 @@
     "name": "fgatenexus",
     "private": true,
     "version": "0.0.1",
+    "apiVersion": "0.0.1",
+    "minimumClientVersion": "0.0.1",
     "type": "module",
     "scripts": {
         "build": "nuxt build",

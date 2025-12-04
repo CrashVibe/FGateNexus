@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "../db/schema";
 import { pluginBridge } from "../service/mcwsbridge/MCWSBridge";
+import { checkClientVersion, CURRENT_API_VERSION, isValidVersion } from "../utils/version";
 
 export default defineWebSocketHandler({
     async open(peer) {
@@ -19,6 +20,28 @@ export default defineWebSocketHandler({
                 "WebSocket 请求缺失 Token 或 版本号"
             );
             return;
+        }
+
+        if (!isValidVersion(clientVersion)) {
+            peer.close(1008, "Bad Request: Invalid version format");
+            logger.warn(
+                {
+                    clientVersion
+                },
+                "WebSocket 请求版本格式无效"
+            );
+            return;
+        }
+
+        const versionWarning = checkClientVersion(clientVersion);
+        if (versionWarning) {
+            logger.warn(
+                {
+                    clientVersion,
+                    warning: versionWarning.warning
+                },
+                "客户端版本过低"
+            );
         }
 
         const database = await getDatabase();
@@ -53,7 +76,8 @@ export default defineWebSocketHandler({
             JSON.stringify({
                 type: "welcome",
                 message: "连接成功，欢迎使用 FGATE",
-                api_version: "0.0.1"
+                api_version: CURRENT_API_VERSION,
+                ...(versionWarning && { warning: versionWarning.warning })
             })
         );
 
