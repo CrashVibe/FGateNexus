@@ -17,7 +17,7 @@ export class PlayerLeaveHandler extends RequestHandler {
         const { playerName } = request.params || {};
 
         if (typeof playerName !== "string") {
-            console.warn("Invalid player leave params:", request.params);
+            logger.warn({ requestParams: request.params }, "无效玩家离开参数");
             return;
         }
 
@@ -31,7 +31,7 @@ export class PlayerLeaveHandler extends RequestHandler {
             }
         });
         if (!server) {
-            console.warn("Server not found for player leave:", serverID);
+            logger.warn({ serverID }, "玩家离开时未找到服务器");
             return;
         }
         if (server.notifyConfig.player_notify && server.adapterId) {

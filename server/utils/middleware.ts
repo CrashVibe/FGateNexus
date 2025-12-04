@@ -3,6 +3,7 @@ import type { EventHandlerRequest, H3Event } from "h3";
 import { createError, getCookie, setCookie } from "h3";
 import { getDatabase } from "~~/server/db/client";
 import { userSessions } from "~~/server/db/schema";
+import { logger } from "./logger";
 
 export async function requireAuth(event: H3Event<EventHandlerRequest>) {
     // 检查是否有用户设置了密码
@@ -16,7 +17,7 @@ export async function requireAuth(event: H3Event<EventHandlerRequest>) {
     // 检查会话
     const sessionToken = getCookie(event, "session-token");
     if (!sessionToken) {
-        console.error("未登录: 缺少 session-token cookie");
+        logger.error("未登录: 缺少 session-token cookie");
         throw createError({
             statusCode: 401,
             statusMessage: "未登录",
@@ -35,7 +36,7 @@ export async function requireAuth(event: H3Event<EventHandlerRequest>) {
         }
 
         setCookie(event, "session-token", "", { maxAge: 0 });
-        console.error("会话已过期或无效");
+        logger.error("会话已过期或无效");
         throw createError({
             statusCode: 401,
             statusMessage: "会话已过期",

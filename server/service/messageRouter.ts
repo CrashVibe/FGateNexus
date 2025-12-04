@@ -49,7 +49,7 @@ class MessageRouter {
             });
 
             if (!server || !server.adapter) {
-                console.warn(`服务器 ${serverId} 或其适配器未找到`);
+                logger.warn(`服务器 ${serverId} 或其适配器未找到`);
                 return;
             }
 
@@ -76,7 +76,7 @@ class MessageRouter {
 
             const botConnection = chatBridge.getConnectionData(server.adapter.id);
             if (!botConnection || !chatBridge.isOnline(server.adapter.id)) {
-                console.warn(`机器人 ${server.adapter.id} 未上线`);
+                logger.warn(`机器人 ${server.adapter.id} 未上线`);
                 return;
             }
 
@@ -88,9 +88,9 @@ class MessageRouter {
 
             await Promise.allSettled(sendPromises);
 
-            console.info(`[消息路由] 已将 MC 消息从服务器 ${serverId} 转发到 ${sendPromises.length} 个目标`);
+            logger.info(`[消息路由] 已将 MC 消息从服务器 ${serverId} 转发到 ${sendPromises.length} 个目标`);
         } catch (error) {
-            console.error(`[消息路由] 处理来自服务器 ${serverId} 的 MC 消息时出错：`, error);
+            logger.error({ error }, `[消息路由] 处理来自服务器 ${serverId} 的 MC 消息时出错：`);
         }
     }
 
@@ -164,7 +164,7 @@ class MessageRouter {
                 tasks.push(
                     pluginBridge
                         .broadcastMessageToServer(server.id, formattedMessage)
-                        .then(() => console.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`))
+                        .then(() => logger.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`))
                 );
             }
 
@@ -172,7 +172,7 @@ class MessageRouter {
                 await Promise.allSettled(tasks);
             }
         } catch (error) {
-            console.error(`[消息路由] 处理平台消息时出错：`, error);
+            logger.error({ error }, `[消息路由] 处理平台消息时出错：`);
         }
     }
 

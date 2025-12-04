@@ -1,13 +1,13 @@
-import { getDatabase } from "~~/server/db/client";
-import { RequestHandler } from "../RequestHandler";
 import type { AdapterInternal, Peer } from "crossws";
 import { eq, sql } from "drizzle-orm";
-import { pluginBridge } from "../MCWSBridge";
-import { players, playerServers, servers } from "~~/server/db/schema";
-import { getConfig } from "../../bindingmanager/config";
-import { bindingService } from "../../bindingmanager";
-import { renderNoBindKick } from "~~/shared/utils/template/binding";
 import moment from "moment-timezone";
+import { getDatabase } from "~~/server/db/client";
+import { players, playerServers, servers } from "~~/server/db/schema";
+import { renderNoBindKick } from "~~/shared/utils/template/binding";
+import { bindingService } from "../../bindingmanager";
+import { getConfig } from "../../bindingmanager/config";
+import { pluginBridge } from "../MCWSBridge";
+import { RequestHandler } from "../RequestHandler";
 import type { JsonRpcRequest } from "../types";
 
 export class PlayerLoginHandler extends RequestHandler {
@@ -88,10 +88,10 @@ export class PlayerLoginHandler extends RequestHandler {
                     formattedTime
                 );
                 this.sendResponse(peer, request.id, { action: "kick", reason: bindKickMsg });
-                console.info(`[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间: ${formattedTime}`);
+                logger.info(`[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间: ${formattedTime}`);
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                console.error("添加待处理绑定失败: ", errorMessage);
+                logger.error({ errorMessage }, "添加待处理绑定失败");
                 this.sendResponse(peer, request.id, { action: "kick", reason: errorMessage });
             }
             return;

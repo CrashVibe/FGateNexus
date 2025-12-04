@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "密码已删除，所有认证方式已清除", StatusCodes.OK);
     } catch (error) {
-        console.error("删除密码失败:", error);
+        logger.error({ error }, "删除密码失败");
         const apiError = ApiError.internal("删除密码失败");
         return createErrorResponse(event, apiError);
     }

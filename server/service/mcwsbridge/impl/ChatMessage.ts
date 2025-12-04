@@ -1,8 +1,8 @@
+import type { AdapterInternal, Peer } from "crossws";
+import { type MCChatMessage, messageRouter } from "../../messageRouter";
+import { pluginBridge } from "../MCWSBridge";
 import { RequestHandler } from "../RequestHandler";
 import type { JsonRpcRequest } from "../types";
-import type { AdapterInternal, Peer } from "crossws";
-import { pluginBridge } from "../MCWSBridge";
-import { type MCChatMessage, messageRouter } from "../../messageRouter";
 
 /**
  * 处理来自MC的聊天消息
@@ -22,7 +22,7 @@ export class ChatMessageHandler extends RequestHandler {
             typeof message !== "string" ||
             typeof timestamp !== "number"
         ) {
-            console.warn("Invalid chat message params:", request.params);
+            logger.warn({ requestParams: request.params }, "Invalid chat message params");
             return;
         }
 
@@ -37,9 +37,9 @@ export class ChatMessageHandler extends RequestHandler {
                 timestamp
             });
 
-            console.info(`[ChatMessageHandler] Processed chat message from ${playerName} on server ${serverId}`);
+            logger.info(`[ChatMessageHandler] 处理来自 ${playerName} 的聊天消息，服务器 ID: ${serverId}`);
         } catch (error) {
-            console.error("[ChatMessageHandler] Error processing chat message:", error);
+            logger.error({ error }, "[ChatMessageHandler] 无法处理聊天消息");
         }
     }
 }

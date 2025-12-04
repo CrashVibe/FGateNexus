@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "登录成功", StatusCodes.OK);
     } catch (error) {
-        console.error("登录失败:", error);
+        logger.error({ error }, "登录失败");
         const apiError = ApiError.internal("登录失败");
         return createErrorResponse(event, apiError);
     }

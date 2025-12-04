@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
     } catch (err) {
-        console.error("Database error:", err);
+        logger.error({ err }, "添加适配器失败");
         const apiError = ApiError.database("添加适配器失败");
         return createErrorResponse(event, apiError);
     }

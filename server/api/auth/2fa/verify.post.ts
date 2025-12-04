@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "2FA验证成功，已启用双重验证", StatusCodes.OK);
     } catch (error) {
-        console.error("2FA验证失败:", error);
+        logger.error({ error }, "2FA验证失败");
         const apiError = ApiError.internal("2FA验证失败");
         return createErrorResponse(event, apiError);
     }

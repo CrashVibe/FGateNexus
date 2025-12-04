@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
 
         return createApiResponse(event, "批量删除目标成功", StatusCodes.OK, deleted);
     } catch (err) {
-        console.error("Database error:", err);
+        logger.error({ err }, "Database error");
         return createErrorResponse(event, ApiError.database("批量删除目标失败"));
     }
 });

@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
     } catch (err) {
-        console.error("更新适配器失败：", err);
+        logger.error({ err }, "更新适配器失败");
         const apiError = ApiError.internal("更新适配器失败");
         return createErrorResponse(event, apiError);
     }
