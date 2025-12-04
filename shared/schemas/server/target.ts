@@ -8,6 +8,7 @@ export const TargetConfigSchema = z.object({
              * 是否启用
              */
             enabled: z.boolean().default(false),
+
             /**
              * 权限
              * 当前适配器和对应目标的权限

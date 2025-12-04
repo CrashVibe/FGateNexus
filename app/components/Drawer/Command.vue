@@ -1,6 +1,9 @@
 <template>
   <n-drawer-content closable title="远程指令配置">
     <n-form :model="selectedTarget" label-width="100">
+      <n-form-item label="是否开启此目标的远程指令" required>
+        <n-switch v-model:value="selectedTarget.config.CommandConfigSchema.enabled" />
+      </n-form-item>
       <n-form-item label="指令前缀">
         <n-input
           v-model:value="selectedTarget.config.CommandConfigSchema.prefix"
