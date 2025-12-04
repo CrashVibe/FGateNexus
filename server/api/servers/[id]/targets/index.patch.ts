@@ -4,7 +4,6 @@ import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
 import { ApiError, createErrorResponse } from "~~/shared/error";
-import type { targetSchema } from "~~/shared/schemas/server/target";
 import { batchDifferentDataSchema } from "~~/shared/schemas/server/target";
 import { createApiResponse } from "~~/shared/types";
 
@@ -25,25 +24,24 @@ export default defineEventHandler(async (event) => {
         if (items.length === 0) {
             return createErrorResponse(event, ApiError.validation("更新项不能为空"));
         }
-        const updatedRows: targetSchema[] = await db.transaction(async (tx) => {
-            const updatePromises = items.map(({ id, data }) =>
-                tx
-                    .update(targets)
-                    .set({
-                        targetId: data.targetId,
-                        type: data.type,
-                        enabled: data.enabled,
-                        config: data.config ?? undefined,
-                        updatedAt: sql`(unixepoch())`
-                    })
-                    .where(and(eq(targets.serverId, serverID), eq(targets.id, id)))
-                    .returning()
-            );
 
-            // 并行更新
-            const results = await Promise.all(updatePromises);
-            return results.flat();
-        });
+        const updatePromises = items.map(({ id, data }) =>
+            db
+                .update(targets)
+                .set({
+                    targetId: data.targetId,
+                    type: data.type,
+                    enabled: data.enabled,
+                    config: data.config ?? undefined,
+                    updatedAt: sql`(unixepoch())`
+                })
+                .where(and(eq(targets.serverId, serverID), eq(targets.id, id)))
+                .returning()
+        );
+
+        // 并行更新
+        const results = await Promise.all(updatePromises);
+        const updatedRows = results.flat();
 
         if (updatedRows.length === 0) {
             return createErrorResponse(event, ApiError.notFound("未匹配到任何目标"));
