@@ -12,12 +12,16 @@ async function createDatabaseInstance(): Promise<DatabaseInstance> {
         const { drizzle } = await import("drizzle-orm/bun-sqlite");
 
         const sqlite = new Database("sqlite.db");
+        sqlite.run("PRAGMA journal_mode = WAL;");
+        sqlite.run("PRAGMA synchronous = NORMAL;");
         return drizzle(sqlite, { schema });
     } else {
         const Database = (await import("better-sqlite3")).default;
         const { drizzle } = await import("drizzle-orm/better-sqlite3");
 
         const sqlite = new Database("sqlite.db");
+        sqlite.pragma("journal_mode = WAL");
+        sqlite.pragma("synchronous = NORMAL");
         return drizzle(sqlite, { schema });
     }
 }
