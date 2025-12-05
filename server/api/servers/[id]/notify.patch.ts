@@ -26,10 +26,7 @@ export default defineEventHandler(async (event) => {
         const { notify, targets: items = [] } = parsed.data;
 
         db.transaction((tx) => {
-            const result = tx.update(servers).set({ notifyConfig: notify }).where(eq(servers.id, serverId)).run();
-            if (!result || result.changes === 0) {
-                throw ApiError.database("更新服务器通知配置失败: 未能找到服务器");
-            }
+            tx.update(servers).set({ notifyConfig: notify }).where(eq(servers.id, serverId)).run();
 
             if (items.length === 0) return;
 

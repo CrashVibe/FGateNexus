@@ -26,10 +26,7 @@ export default defineEventHandler(async (event) => {
         const { chatsync: chatsync, targets: items = [] } = parsed.data;
 
         db.transaction((tx) => {
-            const result = tx.update(servers).set({ chatSyncConfig: chatsync }).where(eq(servers.id, serverID)).run();
-            if (!result || result.changes === 0) {
-                throw ApiError.database("更新服务器聊天同步配置失败: 未能找到服务器");
-            }
+            tx.update(servers).set({ chatSyncConfig: chatsync }).where(eq(servers.id, serverID)).run();
 
             if (items.length === 0) return;
 
