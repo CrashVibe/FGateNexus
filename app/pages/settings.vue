@@ -247,7 +247,7 @@ onMounted(() => {
   </div>
 </template>
 
-<style lang="less" scoped>
+<style lang="scss" scoped>
 :deep(.n-qr-code) {
   width: auto !important;
   height: auto !important;

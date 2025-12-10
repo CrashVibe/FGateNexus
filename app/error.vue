@@ -27,9 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import { HomeOutline, ArrowBackOutline } from "@vicons/ionicons5";
-import { darkTheme, lightTheme } from "naive-ui";
+import { ArrowBackOutline, HomeOutline } from "@vicons/ionicons5";
 import { useDark } from "@vueuse/core";
+import { darkTheme, lightTheme } from "naive-ui";
 
 const navigating = ref(false);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
@@ -207,7 +207,7 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped lang="less">
+<style scoped lang="scss">
 .error-page {
   position: fixed;
   top: 0;

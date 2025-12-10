@@ -10,7 +10,7 @@ export default defineNuxtConfig({
         client: true
     },
     ssr: false,
-    css: ["~/assets/css/main.less"],
+    css: ["~/assets/css/main.scss"],
     typescript: {
         // typeCheck: true,
         strict: true,
