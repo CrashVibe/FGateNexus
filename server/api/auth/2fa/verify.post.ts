@@ -1,21 +1,28 @@
 import { ApiError, createErrorResponse } from "#shared/error";
 import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
-import { defineEventHandler, readBody } from "h3";
+import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { authenticator } from "otplib";
+import { z } from "zod";
 import { getDatabase } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
+const bodySchema = z.object({
+    token: z.string().min(1, "验证码不能为空"),
+    secret: z.string().min(1, "密钥不能为空")
+});
+
 export default defineEventHandler(async (event) => {
     try {
-        const body = await readBody(event);
-        const { token, secret } = body;
-
-        if (!token || !secret) {
-            const apiError = ApiError.validation("验证码和密钥不能为空");
+        // 需要用户已认证
+        const session = await requireUserSession(event);
+        if (!session?.user) {
+            const apiError = ApiError.unauthorized("未认证");
             return createErrorResponse(event, apiError);
         }
+
+        const { token, secret } = await readValidatedBody(event, bodySchema.parse);
 
         const database = await getDatabase();
 

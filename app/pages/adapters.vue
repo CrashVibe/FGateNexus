@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { AddCircleOutline, RefreshOutline } from "@vicons/ionicons5";
 import type { FormInst } from "naive-ui";
-import type { ApiResponse, ApiResponseType } from "~~/shared/types";
+import type { ApiResponse } from "~~/shared/types";
 import {
   AdapterConfigSchema,
   AdapterType,
@@ -56,7 +56,7 @@ async function handleSubmitClick(e: MouseEvent) {
     if (botInstanceData.value.config) {
       const validatedConfig = AdapterConfigSchema.parse(botInstanceData.value.config);
 
-      await $fetch<ApiResponseType>("/api/adapter", {
+      await $fetch("/api/adapter", {
         method: "POST",
         body: {
           adapterType: botInstanceData.value.adapterType,
@@ -121,7 +121,7 @@ function handleChildClick(adapterID: number) {
 // 保存
 async function handleSave(adapter: BotInstanceData) {
   try {
-    await $fetch<ApiResponseType>("/api/adapter", {
+    await $fetch("/api/adapter", {
       method: "PUT",
       body: adapter
     });
@@ -137,7 +137,7 @@ async function handleSave(adapter: BotInstanceData) {
 // 删除
 async function handleDelete(adapterID: number) {
   try {
-    await $fetch<ApiResponseType>(`/api/adapter/${adapterID}`, {
+    await $fetch(`/api/adapter/${adapterID}`, {
       method: "DELETE"
     });
   } catch {
@@ -152,7 +152,7 @@ async function handleDelete(adapterID: number) {
 // 更改
 async function handleToggle(adapterID: number, enabled: boolean) {
   try {
-    await $fetch<ApiResponseType>(`/api/adapter/toggle/${adapterID}`, {
+    await $fetch(`/api/adapter/toggle/${adapterID}`, {
       method: "POST",
       body: { enabled }
     });

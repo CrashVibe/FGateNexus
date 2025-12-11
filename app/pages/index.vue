@@ -8,7 +8,7 @@ import {
   type ServerWithStatus
 } from "#shared/schemas/server/servers";
 import type { FormInst } from "naive-ui";
-import type { ApiResponse, ApiResponseType } from "~~/shared/types";
+import type { ApiResponse } from "~~/shared/types";
 import { StatusCodes } from "http-status-codes";
 import { isMobile } from "#imports";
 
@@ -43,7 +43,7 @@ async function handleSubmitClick(e: MouseEvent) {
       return;
     }
 
-    await $fetch<ApiResponseType>("/api/servers", {
+    await $fetch("/api/servers", {
       method: "POST",
       body: formData.value
     });

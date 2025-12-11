@@ -1,5 +1,5 @@
 import { defineEventHandler } from "h3";
-import { requireAuth } from "~~/server/utils/middleware";
+import { getDatabase } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
     const url = event.node.req.url;
@@ -9,22 +9,31 @@ export default defineEventHandler(async (event) => {
         return;
     }
 
-    // 白名单
+    // 公开端点
     const publicEndpoints = [
-        // 认证状态查询
-        { path: "/api/auth/status", method: "GET" },
-
-        // 登录相关
         { path: "/api/auth/login", method: "POST" },
         { path: "/api/auth/logout", method: "POST" },
-        { path: "/api/auth/2fa/verify", method: "POST" }
+        { path: "/api/auth/status", method: "GET" },
+        { path: "/api/auth/password", method: "POST" }
     ];
 
     const isPublicEndpoint = publicEndpoints.some(
         (endpoint) => url.startsWith(endpoint.path) && method === endpoint.method
     );
 
-    if (!isPublicEndpoint) {
-        await requireAuth(event);
+    // nuxt auth utils session 端点 开放
+    const isAuthSession = url.startsWith("/api/_auth/")
+
+    if (isPublicEndpoint || isAuthSession) {
+        return;
     }
+
+    const database = await getDatabase();
+    const user = await database.query.users.findFirst();
+
+    if (!user || !user.passwordHash) {
+        return;
+    }
+
+    await requireUserSession(event);
 });

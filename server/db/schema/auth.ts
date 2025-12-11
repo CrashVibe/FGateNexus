@@ -4,7 +4,6 @@ export const users = sqliteTable("users", {
     id: integer("id").primaryKey({ autoIncrement: true }),
     username: text("username").notNull().unique("username_idx"),
     passwordHash: text("password_hash"),
-    salt: text("salt"),
     twoFactorSecret: text("two_factor_secret"),
     twoFactorEnabled: integer("two_factor_enabled", { mode: "boolean" }).notNull().default(false),
     createdAt: integer("created_at", { mode: "timestamp" })

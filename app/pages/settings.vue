@@ -1,6 +1,10 @@
 <script lang="ts" setup>
+import { validatePasswordStrength } from "#shared/utils/password";
 import { ShieldCheckmarkOutline } from "@vicons/ionicons5";
 import { StatusCodes } from "http-status-codes";
+import { FetchError } from "ofetch";
+import type { ApiErrorResponse } from "~~/shared/error";
+import type { AuthStatus } from "~~/shared/schemas/auth";
 import type { ApiResponse } from "~~/shared/types";
 
 definePageMeta({
@@ -10,18 +14,37 @@ definePageMeta({
 const message = useMessage();
 const isLoading = ref(false);
 
-// 认证状态
-const authStatus = ref({
+const authStatus = ref<AuthStatus>({
   hasPassword: false,
   has2FA: false,
   isAuthenticated: false
 });
 
-// 表单数据
 const passwordForm = reactive({
   currentPassword: "",
   newPassword: "",
   confirmPassword: ""
+});
+
+const passwordStrength = computed(() => {
+  if (!passwordForm.newPassword) return null;
+  return validatePasswordStrength(passwordForm.newPassword);
+});
+
+const strengthColor = computed(() => {
+  if (!passwordStrength.value) return "default";
+  const score = passwordStrength.value.score;
+  if (score === 0) return "error";
+  if (score === 1) return "warning";
+  if (score === 2) return "default";
+  if (score === 3) return "info";
+  return "success";
+});
+
+const strengthText = computed(() => {
+  if (!passwordStrength.value) return "";
+  const labels = ["很弱", "弱", "一般", "强", "很强"];
+  return labels[passwordStrength.value.score] || "";
 });
 
 const twoFAForm = reactive({
@@ -30,15 +53,18 @@ const twoFAForm = reactive({
   token: [] as string[]
 });
 
-// 页面状态
+const deletePasswordForm = reactive({
+  currentPassword: ""
+});
+
 const showPasswordForm = ref(false);
 const showTwoFASetup = ref(false);
+const showDeletePasswordModal = ref(false);
 
-// 检查认证状态
 const checkAuthStatus = async () => {
   try {
     isLoading.value = true;
-    const response = await $fetch<ApiResponse<typeof authStatus.value>>("/api/auth/status");
+    const response = await $fetch<ApiResponse<AuthStatus>>("/api/auth/status");
     if (response.code === StatusCodes.OK && response.data) {
       authStatus.value = response.data;
     }
@@ -50,10 +76,14 @@ const checkAuthStatus = async () => {
   }
 };
 
-// 设置密码
 const handleSetPassword = async () => {
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     message.error("两次输入的密码不一致");
+    return;
+  }
+
+  if (passwordStrength.value && !passwordStrength.value.isValid) {
+    message.error(passwordStrength.value.error || "密码强度不够");
     return;
   }
 
@@ -66,10 +96,12 @@ const handleSetPassword = async () => {
         newPassword: passwordForm.newPassword
       }
     });
-    message.success("密码设置成功");
+    message.success("密码设置成功，请重新登录");
     showPasswordForm.value = false;
     Object.assign(passwordForm, { currentPassword: "", newPassword: "", confirmPassword: "" });
-    await checkAuthStatus();
+
+    await useUserSession().clear();
+    await navigateTo("/login");
   } catch (error) {
     console.error("Failed to set password:", error);
     message.error("密码设置失败");
@@ -78,7 +110,6 @@ const handleSetPassword = async () => {
   }
 };
 
-// 设置2FA
 const setup2FA = async () => {
   try {
     isLoading.value = true;
@@ -119,16 +150,50 @@ const verify2FA = async () => {
   }
 };
 
-// 删除认证方式
 const removeAuth = async (type: "password" | "2fa") => {
+  if (type === "password") {
+    showDeletePasswordModal.value = true;
+    return;
+  }
+
   try {
     isLoading.value = true;
     await $fetch<ApiResponse<void>>(`/api/auth/${type}`, { method: "DELETE" });
-    message.success(`${type === "password" ? "密码" : "2FA"}已删除`);
+    message.success("2FA已删除");
     await checkAuthStatus();
   } catch (error) {
     console.error(`Failed to remove ${type}:`, error);
-    message.error(`删除${type === "password" ? "密码" : "2FA"}失败`);
+    message.error("删除2FA失败");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const confirmDeletePassword = async () => {
+  if (!deletePasswordForm.currentPassword) {
+    message.error("请输入当前密码");
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+    await $fetch<ApiResponse<void>>("/api/auth/password", {
+      method: "DELETE",
+      body: {
+        currentPassword: deletePasswordForm.currentPassword
+      }
+    });
+    message.success("密码已删除");
+    showDeletePasswordModal.value = false;
+    deletePasswordForm.currentPassword = "";
+
+    await useUserSession().clear();
+    await checkAuthStatus();
+  } catch (error) {
+    const errorMessage =
+      error instanceof FetchError ? (error.data as ApiErrorResponse).message || "删除密码失败" : "删除密码失败";
+    console.error("Failed to remove password:", error);
+    message.error(errorMessage);
   } finally {
     isLoading.value = false;
   }
@@ -201,12 +266,46 @@ onMounted(() => {
           />
         </n-form-item>
         <n-form-item label="新密码">
-          <n-input
-            v-model:value="passwordForm.newPassword"
-            type="password"
-            placeholder="输入新密码"
-            show-password-on="click"
-          />
+          <n-space vertical style="width: 100%">
+            <n-input
+              v-model:value="passwordForm.newPassword"
+              type="password"
+              placeholder="输入新密码（至少8位）"
+              show-password-on="click"
+            />
+            <n-space v-if="passwordForm.newPassword" vertical size="small" style="width: 100%">
+              <n-space align="center" :size="8">
+                <n-text depth="3">密码强度：</n-text>
+                <n-tag :type="strengthColor" size="small">{{ strengthText }}</n-tag>
+              </n-space>
+              <n-progress
+                type="line"
+                :percentage="passwordStrength ? (passwordStrength.score / 4) * 100 : 0"
+                :status="strengthColor === 'error' ? 'error' : strengthColor === 'success' ? 'success' : 'default'"
+                :show-indicator="false"
+                :height="4"
+              />
+              <n-alert
+                v-if="passwordStrength && !passwordStrength.isValid"
+                type="warning"
+                size="small"
+                :show-icon="false"
+              >
+                {{ passwordStrength.error }}
+              </n-alert>
+              <n-space v-if="passwordStrength?.feedback?.suggestions?.length" vertical size="small">
+                <n-text depth="3" style="font-size: 12px">建议：</n-text>
+                <n-text
+                  v-for="(suggestion, index) in passwordStrength.feedback.suggestions"
+                  :key="index"
+                  depth="3"
+                  style="font-size: 12px"
+                >
+                  • {{ suggestion }}
+                </n-text>
+              </n-space>
+            </n-space>
+          </n-space>
         </n-form-item>
         <n-form-item label="确认密码">
           <n-input
@@ -241,6 +340,31 @@ onMounted(() => {
         <n-space>
           <n-button @click="showTwoFASetup = false">取消</n-button>
           <n-button type="primary" @click="verify2FA">验证</n-button>
+        </n-space>
+      </template>
+    </n-modal>
+
+    <!-- 删除密码确认模态框 -->
+    <n-modal v-model:show="showDeletePasswordModal" preset="dialog" title="删除密码">
+      <n-space vertical>
+        <n-alert type="warning" title="警告">
+          删除密码后，你将需要重新设置密码才能登录。此操作还会清除 2FA 设置。
+        </n-alert>
+        <n-form>
+          <n-form-item label="当前密码" required>
+            <n-input
+              v-model:value="deletePasswordForm.currentPassword"
+              type="password"
+              placeholder="输入当前密码以确认"
+              show-password-on="click"
+            />
+          </n-form-item>
+        </n-form>
+      </n-space>
+      <template #action>
+        <n-space>
+          <n-button @click="showDeletePasswordModal = false">点戳了~</n-button>
+          <n-button type="error" @click="confirmDeletePassword">确认删除</n-button>
         </n-space>
       </template>
     </n-modal>

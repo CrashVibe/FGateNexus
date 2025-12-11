@@ -1,0 +1,52 @@
+export default {
+    warnings: {
+        straightRow: "键盘上连续的按键很容易被猜到",
+        keyPattern: "简短的键盘模式很容易被猜到",
+        simpleRepeat: '重复字符如 "aaa" 很容易被猜到',
+        extendedRepeat: '重复的字符模式如 "abcabcabc" 很容易被猜到',
+        sequences: '常见的字符序列如 "abc" 很容易被猜到',
+        recentYears: "最近的年份很容易被猜到",
+        dates: "日期很容易被猜到",
+        topTen: "这是一个使用频率极高的密码",
+        topHundred: "这是一个经常使用的密码",
+        common: "这是一个常用密码",
+        similarToCommon: "这与常用密码相似",
+        wordByItself: "单个单词很容易被猜到",
+        namesByThemselves: "单个名字或姓氏很容易被猜到",
+        commonNames: "常见的名字和姓氏很容易被猜到",
+        userInputs: "不应包含任何个人或页面相关的数据",
+        pwned: "你的密码已在互联网数据泄露中暴露"
+    },
+    suggestions: {
+        l33t: "避免使用可预测的字母替换，如用 '@' 代替 'a'",
+        reverseWords: "避免使用常见单词的反转拼写",
+        allUppercase: "大写部分字母，但不要全部大写",
+        capitalization: "不要只大写首字母，多大写几个字母",
+        dates: "避免使用与你相关的日期和年份",
+        recentYears: "避免使用最近的年份",
+        associatedYears: "避免使用与你相关的年份",
+        sequences: "避免使用常见的字符序列",
+        repeated: "避免重复的单词和字符",
+        longerKeyboardPattern: "使用更长的键盘模式，并多次改变输入方向",
+        anotherWord: "添加更多不常见的单词",
+        useWords: "使用多个单词，但避免使用常见短语",
+        noNeed: "你可以创建强密码而无需使用符号、数字或大写字母",
+        pwned: "如果你在其他地方也使用此密码，应该更改它"
+    },
+    timeEstimation: {
+        ltSecond: "少于一秒",
+        second: "{base} 秒",
+        seconds: "{base} 秒",
+        minute: "{base} 分钟",
+        minutes: "{base} 分钟",
+        hour: "{base} 小时",
+        hours: "{base} 小时",
+        day: "{base} 天",
+        days: "{base} 天",
+        month: "{base} 个月",
+        months: "{base} 个月",
+        year: "{base} 年",
+        years: "{base} 年",
+        centuries: "数个世纪"
+    }
+};
