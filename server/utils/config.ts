@@ -1,3 +1,4 @@
+import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { z } from "zod";
@@ -33,7 +34,19 @@ const AppConfigSchema = z.object({
         .default({
             host: "127.0.0.1",
             port: 3000
+        }),
+    session: z
+        .object({
+            password: z
+                .string()
+                .min(32, "session.password 必须至少32个字符")
+                .default(() => {
+                    return crypto.randomBytes(32).toString("hex");
+                })
         })
+        .default(() => ({
+            password: crypto.randomBytes(32).toString("hex")
+        }))
 });
 
 type AppConfig = z.infer<typeof AppConfigSchema>;
@@ -84,6 +97,7 @@ class AppConfigManager {
             config = mergeWithDefaults({}).config;
             await fs.writeFile(configPath, JSON.stringify(config, null, 4), "utf-8");
         }
+        process.env.NUXT_SESSION_PASSWORD = config.session.password;
         return config;
     }
 
