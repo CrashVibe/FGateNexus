@@ -1,43 +1,49 @@
 import { ApiError, createErrorResponse } from "#shared/error";
+import { loginBodySchema } from "#shared/schemas/auth";
 import { createApiResponse } from "#shared/types";
-import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { authenticator } from "otplib";
 import { getDatabase } from "~~/server/db/client";
-import { userSessions } from "~~/server/db/schema";
-import { createSessionExpiry, generateSessionToken, verifyPassword } from "~~/server/utils/auth";
+import { checkRateLimit } from "~~/server/utils/rateLimit";
 
 export default defineEventHandler(async (event) => {
     try {
+        const clientIP = getRequestIP(event, { xForwardedFor: true }) || "unknown";
+        const rateLimit = await checkRateLimit(clientIP, "login");
+
+        if (!rateLimit.allowed) {
+            logger.warn({ ip: clientIP }, "登录请求速率超限");
+            const retryMsg = rateLimit.retryAfter
+                ? `请求过于频繁，请 ${rateLimit.retryAfter} 秒后重试`
+                : "请求过于频繁，请稍后再试";
+            return createErrorResponse(event, ApiError.tooManyRequests(retryMsg));
+        }
+
         const body = await readBody(event);
-        const { password, twoFactorToken } = body;
+        const parsed = loginBodySchema.safeParse(body);
 
-        if (!password) {
-            const apiError = ApiError.validation("密码不能为空");
-            return createErrorResponse(event, apiError);
+        if (!parsed.success) {
+            return createErrorResponse(event, ApiError.validation("请求参数错误"), parsed.error);
         }
 
+        const { password, twoFactorToken } = parsed.data;
         const database = await getDatabase();
-
-        // 获取用户
         const user = await database.query.users.findFirst();
-        if (!user || !user.passwordHash || !user.salt) {
-            const apiError = ApiError.validation("用户不存在或未设置密码");
-            return createErrorResponse(event, apiError);
+
+        if (!user || !user.passwordHash) {
+            return createErrorResponse(event, ApiError.unauthorized("密码错误"));
         }
 
-        // 验证密码
-        const isPasswordValid = await verifyPassword(password, user.salt, user.passwordHash);
+        const isPasswordValid = await verifyPassword(user.passwordHash, password);
         if (!isPasswordValid) {
-            const apiError = ApiError.validation("密码错误");
-            return createErrorResponse(event, apiError);
+            logger.warn({ userId: user.id }, "登录失败：密码错误");
+            return createErrorResponse(event, ApiError.unauthorized("密码错误"));
         }
 
-        // 如果启用了2FA，验证TOTP
+        // 验证2FA
         if (user.twoFactorEnabled && user.twoFactorSecret) {
             if (!twoFactorToken) {
-                const apiError = ApiError.validation("需要输入2FA验证码");
-                return createErrorResponse(event, apiError);
+                return createErrorResponse(event, ApiError.unauthorized("需要输入2FA验证码"));
             }
 
             const isValid = authenticator.verify({
@@ -46,33 +52,32 @@ export default defineEventHandler(async (event) => {
             });
 
             if (!isValid) {
-                const apiError = ApiError.validation("2FA验证码错误");
-                return createErrorResponse(event, apiError);
+                logger.warn({ userId: user.id }, "登录失败：2FA验证码错误");
+                return createErrorResponse(event, ApiError.unauthorized("2FA验证码错误"));
             }
         }
 
-        // 创建会话
-        const sessionToken = generateSessionToken();
-        const expiresAt = createSessionExpiry(24); // 24小时
+        logger.info(
+            {
+                userId: user.id,
+                username: user.username,
+                ip: getRequestIP(event),
+                userAgent: getHeader(event, "user-agent")
+            },
+            "登录成功"
+        );
 
-        await database.insert(userSessions).values({
-            userId: user.id,
-            sessionToken,
-            expiresAt
-        });
-
-        // 设置cookie
-        setCookie(event, "session-token", sessionToken, {
-            httpOnly: true,
-            secure: false, // 在生产环境中应该设置为true
-            sameSite: "strict",
-            maxAge: 24 * 60 * 60 // 24小时
+        await setUserSession(event, {
+            user: {
+                id: user.id,
+                username: user.username,
+                has2FA: user.twoFactorEnabled
+            }
         });
 
         return createApiResponse(event, "登录成功", StatusCodes.OK);
     } catch (error) {
         logger.error({ error }, "登录失败");
-        const apiError = ApiError.internal("登录失败");
-        return createErrorResponse(event, apiError);
+        return createErrorResponse(event, ApiError.internal("登录失败"));
     }
 });

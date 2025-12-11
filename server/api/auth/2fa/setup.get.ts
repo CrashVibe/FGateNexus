@@ -7,6 +7,13 @@ import { getDatabase } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
     try {
+        // 需要用户已认证
+        const session = await requireUserSession(event);
+        if (!session?.user) {
+            const apiError = ApiError.unauthorized("未认证");
+            return createErrorResponse(event, apiError);
+        }
+
         const database = await getDatabase();
 
         // 获取用户

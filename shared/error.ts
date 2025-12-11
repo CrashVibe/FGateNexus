@@ -1,5 +1,5 @@
-import type { ZodError } from "zod";
 import { type EventHandlerRequest, type H3Event, setResponseStatus } from "h3";
+import type { ZodError } from "zod";
 
 /**
  * API 错误响应模型，用于 OpenAPI 文档
@@ -27,7 +27,8 @@ export enum ApiErrorType {
     BadRequest = "BadRequest",
     Unauthorized = "Unauthorized",
     Forbidden = "Forbidden",
-    InternalServerError = "InternalServerError"
+    InternalServerError = "InternalServerError",
+    TooManyRequests = "TooManyRequests"
 }
 
 /**
@@ -50,47 +51,51 @@ export class ApiError extends Error {
      * 静态工厂方法
      */
     static database(message: string): ApiError {
-        return new ApiError(ApiErrorType.Database, `Database error: ${message}`);
+        return new ApiError(ApiErrorType.Database, message);
     }
 
     static validation(message: string): ApiError {
-        return new ApiError(ApiErrorType.Validation, `Validation error: ${message}`);
+        return new ApiError(ApiErrorType.Validation, message);
     }
 
     static authentication(message: string): ApiError {
-        return new ApiError(ApiErrorType.Authentication, `Authentication error: ${message}`);
+        return new ApiError(ApiErrorType.Authentication, message);
     }
 
     static authorization(message: string): ApiError {
-        return new ApiError(ApiErrorType.Authorization, `Authorization error: ${message}`);
+        return new ApiError(ApiErrorType.Authorization, message);
     }
 
     static notFound(message: string): ApiError {
-        return new ApiError(ApiErrorType.NotFound, `Not found: ${message}`);
+        return new ApiError(ApiErrorType.NotFound, message);
     }
 
     static conflict(message: string): ApiError {
-        return new ApiError(ApiErrorType.Conflict, `Conflict: ${message}`);
+        return new ApiError(ApiErrorType.Conflict, message);
     }
 
     static internal(message: string): ApiError {
-        return new ApiError(ApiErrorType.Internal, `Internal server error: ${message}`);
+        return new ApiError(ApiErrorType.Internal, message);
     }
 
     static badRequest(message: string): ApiError {
-        return new ApiError(ApiErrorType.BadRequest, `Bad request: ${message}`);
+        return new ApiError(ApiErrorType.BadRequest, message);
     }
 
     static unauthorized(message: string): ApiError {
-        return new ApiError(ApiErrorType.Unauthorized, `Unauthorized: ${message}`);
+        return new ApiError(ApiErrorType.Unauthorized, message);
     }
 
     static forbidden(message: string): ApiError {
-        return new ApiError(ApiErrorType.Forbidden, `Forbidden: ${message}`);
+        return new ApiError(ApiErrorType.Forbidden, message);
     }
 
     static internalServerError(message: string): ApiError {
-        return new ApiError(ApiErrorType.InternalServerError, `Internal server error: ${message}`);
+        return new ApiError(ApiErrorType.InternalServerError, message);
+    }
+
+    static tooManyRequests(message: string): ApiError {
+        return new ApiError(ApiErrorType.TooManyRequests, message);
     }
 
     /**
@@ -127,6 +132,7 @@ export class ApiError extends Error {
             [ApiErrorType.Authorization]: 403,
             [ApiErrorType.NotFound]: 404,
             [ApiErrorType.Conflict]: 409,
+            [ApiErrorType.TooManyRequests]: 429,
             [ApiErrorType.Internal]: 500,
             [ApiErrorType.BadRequest]: 400,
             [ApiErrorType.Unauthorized]: 401,

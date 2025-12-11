@@ -7,16 +7,18 @@ import { applyDefaults } from "./zod";
 /**
  * 合并用户配置与默认配置
  * @param userConfig 用户提供的配置（可能不完整）
- * @returns 合并后的完整配置
+ * @returns 合并后的完整配置和是否有变化的标志
  */
-function mergeWithDefaults(userConfig: Partial<AppConfig> = {}): AppConfig {
-    return applyDefaults(AppConfigSchema, userConfig);
+function mergeWithDefaults(userConfig: Partial<AppConfig> = {}): { config: AppConfig; changed: boolean } {
+    const merged = applyDefaults(AppConfigSchema, userConfig);
+    const changed = JSON.stringify(merged) !== JSON.stringify(userConfig);
+    return { config: merged, changed };
 }
 
 const AppConfigSchema = z.object({
     koishi: z
         .object({
-            host: z.string().nonempty("koishi.host 不能为空").default("127.0.0.1"),
+            host: z.ipv4().nonempty("koishi.host 不能为空").default("127.0.0.1"),
             port: z.number().int().positive("koishi.port 必须是正整数").default(5140)
         })
         .default({
@@ -25,7 +27,7 @@ const AppConfigSchema = z.object({
         }),
     nitro: z
         .object({
-            host: z.string().nonempty("nitro.host 不能为空").default("127.0.0.1"),
+            host: z.ipv4().nonempty("nitro.host 不能为空").default("127.0.0.1"),
             port: z.number().int().positive("nitro.port 必须是正整数").default(3000)
         })
         .default({
@@ -65,7 +67,12 @@ class AppConfigManager {
             try {
                 const fileContent = await fs.readFile(configPath, "utf-8");
                 const parsedConfig = JSON.parse(fileContent);
-                config = mergeWithDefaults(parsedConfig);
+                const { config: merged, changed } = mergeWithDefaults(parsedConfig);
+                config = merged;
+                if (changed) {
+                    logger.info("配置文件已补充缺失的默认值");
+                    await fs.writeFile(configPath, JSON.stringify(merged, null, 4), "utf-8");
+                }
             } catch (error) {
                 logger.error({ error }, "配置文件读取或校验失败");
                 process.exit(1);
@@ -74,33 +81,14 @@ class AppConfigManager {
             // 文件不存在，创建默认配置
             logger.info("配置文件不存在，创建默认配置...");
             await fs.mkdir(configDir, { recursive: true });
-            config = mergeWithDefaults({});
+            config = mergeWithDefaults({}).config;
             await fs.writeFile(configPath, JSON.stringify(config, null, 4), "utf-8");
         }
-
         return config;
     }
 
     getConfig(): AppConfig {
         return this.config;
-    }
-
-    /**
-     * 更新配置并保存到文件
-     * @param updates 要更新的配置项
-     */
-    async updateConfig(updates: Partial<AppConfig>): Promise<void> {
-        const mergedConfig = mergeWithDefaults({ ...this.config, ...updates });
-        this.config = mergedConfig;
-
-        const configPath = path.resolve(process.cwd(), "config/appsettings.json");
-        try {
-            await fs.writeFile(configPath, JSON.stringify(mergedConfig, null, 4), "utf-8");
-            logger.info("配置已更新并保存");
-        } catch (error) {
-            logger.error({ error }, "保存配置失败");
-            throw error;
-        }
     }
 
     /**
@@ -112,7 +100,7 @@ class AppConfigManager {
             await fs.access(configPath);
             const fileContent = await fs.readFile(configPath, "utf-8");
             const parsedConfig = JSON.parse(fileContent);
-            this.config = mergeWithDefaults(parsedConfig);
+            this.config = mergeWithDefaults(parsedConfig).config;
             logger.info("配置已重新加载");
         } catch (error) {
             logger.error({ error }, "重新加载配置文件失败");

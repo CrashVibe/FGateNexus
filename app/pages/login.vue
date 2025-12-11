@@ -1,7 +1,8 @@
 <script lang="ts" setup>
+import { loginBodySchema, type LoginBody } from "#shared/schemas/auth";
 import { LockClosedOutline, LogInOutline } from "@vicons/ionicons5";
-import { StatusCodes } from "http-status-codes";
-import type { ApiResponse } from "~~/shared/types";
+import { FetchError } from "ofetch";
+import type { ApiErrorResponse } from "~~/shared/error";
 
 definePageMeta({
   layout: false
@@ -10,70 +11,59 @@ definePageMeta({
 const message = useMessage();
 const router = useRouter();
 const isLoading = ref(false);
+const rules = zodToNaiveRules(loginBodySchema);
+const { loggedIn, fetch: refreshSession } = useUserSession();
 
 // 表单数据
-const loginForm = reactive({
+const credentials = reactive<LoginBody>({
   password: "",
-  twoFactorToken: [] as string[]
+  twoFactorToken: undefined
 });
 
-// 认证状态
-const authStatus = ref({
-  hasPassword: false,
-  has2FA: false,
-  isAuthenticated: false
-});
+const needsTwoFactor = ref(false);
+const twoFactorInput = ref<string[]>([]);
 
-// 检查认证状态
-const checkAuthRequired = async () => {
-  try {
-    const response = await $fetch<ApiResponse<typeof authStatus.value>>("/api/auth/status");
-    if (response.code === StatusCodes.OK && response.data) {
-      authStatus.value = response.data;
-
-      if (!authStatus.value.hasPassword) {
-        // 没有设置密码，直接跳转到首页
-        router.push("/");
-        return;
-      }
-
-      if (authStatus.value.isAuthenticated) {
-        // 已经登录，跳转到首页
-        router.push("/");
-        return;
-      }
-    }
-  } catch (error) {
-    console.error("Failed to check auth status:", error);
-  }
-};
-
-// 登录
 const handleLogin = async () => {
   try {
     isLoading.value = true;
 
-    const tokenString = loginForm.twoFactorToken.join("");
-    await $fetch<ApiResponse<void>>("/api/auth/login", {
-      method: "POST",
-      body: {
-        password: loginForm.password,
-        twoFactorToken: tokenString || undefined
-      }
-    });
+    if (twoFactorInput.value.length > 0) {
+      credentials.twoFactorToken = twoFactorInput.value.join("");
+    }
 
+    const validation = loginBodySchema.safeParse(credentials);
+    if (!validation.success) {
+      message.error(validation.error.issues[0]?.message || "请求参数错误");
+      return;
+    }
+
+    await $fetch("/api/auth/login", {
+      method: "POST",
+      body: validation.data
+    });
+    await refreshSession();
     message.success("登录成功");
     router.push("/");
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Login failed:", error);
-    message.error("登录失败");
+
+    const errorMessage =
+      error instanceof FetchError ? (error.data as ApiErrorResponse).message : "无效的凭据，请重试。";
+
+    if (errorMessage.includes("2FA") || errorMessage.includes("双重")) {
+      needsTwoFactor.value = true;
+    }
+
+    message.error(errorMessage);
   } finally {
     isLoading.value = false;
   }
 };
 
-onMounted(() => {
-  checkAuthRequired();
+onMounted(async () => {
+  if (loggedIn.value) {
+    router.push("/");
+  }
 });
 </script>
 
@@ -91,10 +81,10 @@ onMounted(() => {
         <n-space vertical size="large">
           <n-alert type="info">此实例已启用密码保护，请输入密码以继续访问。</n-alert>
 
-          <n-form @submit.prevent="handleLogin">
+          <n-form :model="credentials" :rules="rules" label-width="80px" @submit.prevent="handleLogin">
             <n-form-item label="密码">
               <n-input
-                v-model:value="loginForm.password"
+                v-model:value="credentials.password"
                 type="password"
                 placeholder="输入密码"
                 show-password-on="click"
@@ -103,13 +93,19 @@ onMounted(() => {
               />
             </n-form-item>
 
-            <n-form-item v-if="authStatus.has2FA" label="双重验证码">
-              <n-input-otp v-model:value="loginForm.twoFactorToken" :length="6" block :disabled="isLoading" />
+            <n-form-item v-if="needsTwoFactor" label="双重验证码">
+              <n-input-otp v-model:value="twoFactorInput" :length="6" block :disabled="isLoading" />
             </n-form-item>
           </n-form>
 
           <n-space vertical>
-            <n-button type="primary" block :loading="isLoading" @click="handleLogin">
+            <n-button
+              type="primary"
+              block
+              :loading="isLoading"
+              :disabled="!credentials.password || isLoading"
+              @click="handleLogin"
+            >
               <template #icon>
                 <n-icon :component="LogInOutline" />
               </template>
