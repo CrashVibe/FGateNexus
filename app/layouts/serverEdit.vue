@@ -20,11 +20,8 @@ const MOBILE_WIDTH = 768;
 
 const collapsed = ref(isMobile.value);
 const dialog = useDialog();
-const { setPageState, clearPageState, isPageDirty, savePage } = usePageStateProvider();
+const {  isPageDirty, savePage } = usePageStateStore();
 
-// 页面状态注册函数给子组件
-provide("registerPageState", setPageState);
-provide("clearPageState", clearPageState);
 
 // 本地存储避免重复字符串与分支
 const readStoredCollapsed = (): boolean | null => {

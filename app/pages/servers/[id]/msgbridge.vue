@@ -289,7 +289,6 @@ import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import type { FormInst } from "naive-ui";
 import type { z } from "zod";
-import type { PageState } from "~~/app/composables/usePageState";
 import {
   chatSyncConfigSchema,
   type ChatSyncConfig,
@@ -304,6 +303,7 @@ import {
   getDefaultChatSyncConfig
 } from "~~/shared/utils/chatSync";
 import { zodToNaiveRules } from "~~/shared/utils/validation";
+const { setPageState, clearPageState } = usePageStateStore();
 
 // ==================== 类型 ====================
 export type ChatSyncPatchBody = z.infer<typeof chatSyncPatchBodySchema>;
@@ -312,8 +312,6 @@ export type ChatSyncPatchBody = z.infer<typeof chatSyncPatchBodySchema>;
 definePageMeta({ layout: "server-edit" });
 
 // ==================== 依赖注入 / 工具 ====================
-const registerPageState = inject<(state: PageState) => void>("registerPageState");
-const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const router = useRouter();
 const message = useMessage();
@@ -563,12 +561,10 @@ function cancelChanges() {
 // ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
-  if (registerPageState) {
-    registerPageState({ isDirty: () => isDirty.value, save: handleSubmit });
-  }
+  setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {
-  if (clearPageState) clearPageState();
+  clearPageState();
 });
 </script>

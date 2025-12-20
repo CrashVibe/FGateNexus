@@ -178,8 +178,8 @@ export type NotifyPatchBody = z.infer<typeof notifyPatchBodySchema>;
 
 definePageMeta({ layout: "server-edit" });
 
-const registerPageState = inject<(state: PageState) => void>("registerPageState");
-const clearPageState = inject<() => void>("clearPageState");
+const { setPageState, clearPageState } = usePageStateStore();
+
 const route = useRoute();
 const message = useMessage();
 const router = useRouter();
@@ -319,13 +319,11 @@ function cancelChanges() {
 
 onMounted(async () => {
   await dataManager.refreshAll();
-  if (registerPageState) {
-    registerPageState({ isDirty: () => isDirty.value, save: handleSubmit });
-  }
+    setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {
-  if (clearPageState) clearPageState();
+  clearPageState();
 });
 
 const options = computed(

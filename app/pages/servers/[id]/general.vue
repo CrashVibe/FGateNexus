@@ -61,8 +61,8 @@ definePageMeta({
 });
 
 // ==================== 组合式函数和依赖注入 ====================
-const registerPageState = inject<(state: PageState) => void>("registerPageState");
-const clearPageState = inject<() => void>("clearPageState");
+const { setPageState, clearPageState } = usePageStateStore();
+
 const route = useRoute();
 const message = useMessage();
 const router = useRouter();
@@ -193,18 +193,14 @@ const dataManager = new DataManager();
 // ==================== 生命周期钩子 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
-  if (registerPageState) {
-    registerPageState({
-      isDirty: () => isDirty.value,
-      save: handleSubmit
-    });
-  }
+  setPageState({
+    isDirty: () => isDirty.value,
+    save: handleSubmit
+  });
 });
 
 onUnmounted(() => {
-  if (clearPageState) {
-    clearPageState();
-  }
+  clearPageState();
 });
 
 // ==================== 计算属性 ====================

@@ -350,9 +350,8 @@ definePageMeta({
 });
 
 // ==================== 组合式函数和依赖注入 ====================
+const { setPageState, clearPageState } = usePageStateStore();
 const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();
-const registerPageState = inject<(state: PageState) => void>("registerPageState");
-const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
 
@@ -529,20 +528,16 @@ onMounted(async () => {
   await dataManager.refreshAll();
   // 初始化混淆动画
   initObfuscatedAnimation();
-  if (registerPageState) {
-    registerPageState({
-      isDirty: () => isDirty.value,
-      save: handleSubmit
-    });
-  }
+  setPageState({
+    isDirty: () => isDirty.value,
+    save: handleSubmit
+  });
 });
 
 onUnmounted(() => {
   // 清理混淆动画
   stopObfuscatedAnimation();
-  if (clearPageState) {
-    clearPageState();
-  }
+  clearPageState();
 });
 
 // 监听表单数据变化，重新初始化动画

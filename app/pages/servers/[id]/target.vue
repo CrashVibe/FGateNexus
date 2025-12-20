@@ -51,16 +51,14 @@
 import { StatusCodes } from "http-status-codes";
 import { NButton, NInput, NSelect } from "naive-ui";
 import { v4 as uuidv4 } from "uuid";
-import type { PageState } from "~~/app/composables/usePageState";
 import type { targetSchema, targetSchemaRequestType } from "~~/shared/schemas/server/target";
 import type { ApiResponse } from "~~/shared/types";
+const { setPageState, clearPageState } = usePageStateStore();
 
 // ==================== 页面配置 ====================
 definePageMeta({ layout: "server-edit" });
 
 // ==================== 依赖注入 & 工具 ====================
-const registerPageState = inject<(state: PageState) => void>("registerPageState");
-const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const message = useMessage();
 
@@ -363,15 +361,13 @@ function cancelChanges() {
 // ==================== 生命周期 ====================
 onMounted(async () => {
   await dataManager.refreshAll();
-  if (registerPageState) {
-    registerPageState({
-      isDirty: () => isDirty.value,
-      save: handleSubmit
-    });
-  }
+  setPageState({
+    isDirty: () => isDirty.value,
+    save: handleSubmit
+  });
 });
 
 onUnmounted(() => {
-  if (clearPageState) clearPageState();
+  clearPageState();
 });
 </script>

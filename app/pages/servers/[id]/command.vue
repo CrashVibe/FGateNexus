@@ -53,7 +53,6 @@
 import { isMobile } from "#imports";
 import { StatusCodes } from "http-status-codes";
 import type { z } from "zod";
-import type { PageState } from "~~/app/composables/usePageState";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import type { CommandConfig, commandPatchBodySchema } from "~~/shared/schemas/server/command";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
@@ -61,12 +60,12 @@ import type { targetSchema } from "~~/shared/schemas/server/target";
 import type { ApiResponse } from "~~/shared/types";
 import { getDefaultCommandConfig } from "~~/shared/utils/command";
 
+const { setPageState, clearPageState } = usePageStateStore();
+
 export type CommandPatchBody = z.infer<typeof commandPatchBodySchema>;
 
 definePageMeta({ layout: "server-edit" });
 
-const registerPageState = inject<(state: PageState) => void>("registerPageState");
-const clearPageState = inject<() => void>("clearPageState");
 const route = useRoute();
 const router = useRouter();
 const message = useMessage();
@@ -240,15 +239,13 @@ function cancelChanges() {
 
 onMounted(async () => {
   await dataManager.refreshAll();
-  if (registerPageState) {
-    registerPageState({
-      isDirty: () => isDirty.value,
-      save: handleSubmit
-    });
-  }
+  setPageState({
+    isDirty: () => isDirty.value,
+    save: handleSubmit
+  });
 });
 
 onUnmounted(() => {
-  if (clearPageState) clearPageState();
+  clearPageState();
 });
 </script>
