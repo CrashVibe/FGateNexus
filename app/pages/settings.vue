@@ -4,21 +4,15 @@ import { ShieldCheckmarkOutline } from "@vicons/ionicons5";
 import { StatusCodes } from "http-status-codes";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
-import type { AuthStatus } from "~~/shared/schemas/auth";
 import type { ApiResponse } from "~~/shared/types";
 
 definePageMeta({
   layout: "default"
 });
 
+const checkAuthStatus = useAuthStore().checkAuthStatus;
 const message = useMessage();
 const isLoading = ref(false);
-
-const authStatus = ref<AuthStatus>({
-  hasPassword: false,
-  has2FA: false,
-  isAuthenticated: false
-});
 
 const passwordForm = reactive({
   currentPassword: "",
@@ -60,21 +54,6 @@ const deletePasswordForm = reactive({
 const showPasswordForm = ref(false);
 const showTwoFASetup = ref(false);
 const showDeletePasswordModal = ref(false);
-
-const checkAuthStatus = async () => {
-  try {
-    isLoading.value = true;
-    const response = await $fetch<ApiResponse<AuthStatus>>("/api/auth/status");
-    if (response.code === StatusCodes.OK && response.data) {
-      authStatus.value = response.data;
-    }
-  } catch (error) {
-    console.error("Failed to check auth status:", error);
-    message.error("获取认证状态失败");
-  } finally {
-    isLoading.value = false;
-  }
-};
 
 const handleSetPassword = async () => {
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
@@ -199,8 +178,8 @@ const confirmDeletePassword = async () => {
   }
 };
 
-onMounted(() => {
-  checkAuthStatus();
+onMounted(async () => {
+  await checkAuthStatus();
 });
 </script>
 
@@ -217,17 +196,19 @@ onMounted(() => {
         <!-- 密码设置 -->
         <n-card title="密码保护" size="large">
           <template #header-extra>
-            <n-tag v-if="authStatus.hasPassword" type="success">已设置</n-tag>
+            <n-tag v-if="useAuthStore().hasPassword" type="success">已设置</n-tag>
             <n-tag v-else type="warning">未设置</n-tag>
           </template>
           <n-space vertical>
             <n-text depth="3">设置密码以保护你的FGATE实例免受未授权访问</n-text>
             <n-space>
-              <n-button v-if="!authStatus.hasPassword" type="primary" @click="showPasswordForm = true">
+              <n-button v-if="!useAuthStore().hasPassword" type="primary" @click="showPasswordForm = true">
                 设置密码
               </n-button>
               <n-button v-else @click="showPasswordForm = true">修改密码</n-button>
-              <n-button v-if="authStatus.hasPassword" type="error" @click="removeAuth('password')">删除密码</n-button>
+              <n-button v-if="useAuthStore().hasPassword" type="error" @click="removeAuth('password')">
+                删除密码
+              </n-button>
             </n-space>
           </n-space>
         </n-card>
@@ -235,18 +216,24 @@ onMounted(() => {
         <!-- 2FA设置 -->
         <n-card title="双重验证 (2FA)" size="large">
           <template #header-extra>
-            <n-tag v-if="authStatus.has2FA" type="success">已启用</n-tag>
+            <n-tag v-if="useAuthStore().has2FA" type="success">已启用</n-tag>
             <n-tag v-else type="warning">未启用</n-tag>
           </template>
           <n-space vertical>
             <n-text depth="3">为你的账户添加额外的安全层，使用TOTP应用生成验证码</n-text>
             <n-space>
-              <n-button v-if="!authStatus.has2FA && authStatus.hasPassword" type="primary" @click="setup2FA">
+              <n-button
+                v-if="!useAuthStore().has2FA && useAuthStore().hasPassword"
+                type="primary"
+                @click="setup2FA"
+              >
                 启用2FA
               </n-button>
-              <n-button v-if="authStatus.has2FA" type="error" @click="removeAuth('2fa')">禁用2FA</n-button>
+              <n-button v-if="useAuthStore().has2FA" type="error" @click="removeAuth('2fa')">
+                禁用2FA
+              </n-button>
             </n-space>
-            <n-alert v-if="!authStatus.hasPassword" type="info" style="margin-top: 12px">
+            <n-alert v-if="!useAuthStore().hasPassword" type="info" style="margin-top: 12px">
               需要先设置密码才能启用2FA
             </n-alert>
           </n-space>
@@ -257,7 +244,7 @@ onMounted(() => {
     <!-- 密码设置模态框 -->
     <n-modal v-model:show="showPasswordForm" preset="dialog" title="设置密码">
       <n-form>
-        <n-form-item v-if="authStatus.hasPassword" label="当前密码">
+        <n-form-item v-if="useAuthStore().hasPassword" label="当前密码">
           <n-input
             v-model:value="passwordForm.currentPassword"
             type="password"

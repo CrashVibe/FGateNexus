@@ -16,7 +16,7 @@
     leave-to-class="opacity-0"
     name="theme-fade"
   >
-    <div v-if="isTransitioning" :class="transitionBgColor" class="fixed inset-0 z-[2] pointer-events-none" />
+    <div v-if="isTransitioning" :class="transitionBgColor" class="fixed inset-0 z-2 pointer-events-none" />
   </Transition>
 </template>
 

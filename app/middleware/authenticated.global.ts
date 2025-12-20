@@ -2,7 +2,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
     const { loggedIn } = useUserSession();
 
     try {
-        const status = await useAuth().checkAuthStatus();
+        const status = await useAuthStore().checkAuthStatus();
         if (!status.hasPassword) {
             if (to.path === "/login") {
                 return navigateTo("/");

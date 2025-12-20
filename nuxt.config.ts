@@ -38,7 +38,18 @@ export default defineNuxtConfig({
         host: "0.0.0.0",
         port: 3000
     },
-    modules: ["nuxtjs-naive-ui", "@nuxt/eslint", "@nuxtjs/tailwindcss", "nuxt-auth-utils"],
+    modules: [
+        [
+            "@pinia/nuxt",
+            {
+                AutoImport: ["defineStore", ["defineStore", "definePiniaStore"]]
+            }
+        ],
+        "nuxtjs-naive-ui",
+        "@nuxt/eslint",
+        "@nuxtjs/tailwindcss",
+        "nuxt-auth-utils"
+    ],
     vite: {
         build: {
             target: "esnext",
