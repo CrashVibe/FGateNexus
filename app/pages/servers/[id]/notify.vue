@@ -319,7 +319,7 @@ function cancelChanges() {
 
 onMounted(async () => {
   await dataManager.refreshAll();
-    setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
+  setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {

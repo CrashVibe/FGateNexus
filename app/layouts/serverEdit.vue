@@ -20,8 +20,7 @@ const MOBILE_WIDTH = 768;
 
 const collapsed = ref(isMobile.value);
 const dialog = useDialog();
-const {  isPageDirty, savePage } = usePageStateStore();
-
+const { isPageDirty, savePage } = usePageStateStore();
 
 // 本地存储避免重复字符串与分支
 const readStoredCollapsed = (): boolean | null => {

@@ -1,0 +1,15 @@
+{
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "cSpell.words": ["nuxt", "koishi", "nuxtjs", "koishijs"],
+    "material-icon-theme.activeIconPack": "vue_vuex",
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#0098b32d"
+    },
+    "cSpell.enabledFileTypes": {
+        "*": false,
+        "js": true,
+        "ts": true,
+        "vue": true,
+        "md": true
+    }
+}

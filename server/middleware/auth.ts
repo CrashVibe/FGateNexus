@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
     );
 
     // nuxt auth utils session 端点 开放
-    const isAuthSession = url.startsWith("/api/_auth/")
+    const isAuthSession = url.startsWith("/api/_auth/");
 
     if (isPublicEndpoint || isAuthSession) {
         return;

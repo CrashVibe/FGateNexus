@@ -222,16 +222,10 @@ onMounted(async () => {
           <n-space vertical>
             <n-text depth="3">为你的账户添加额外的安全层，使用TOTP应用生成验证码</n-text>
             <n-space>
-              <n-button
-                v-if="!useAuthStore().has2FA && useAuthStore().hasPassword"
-                type="primary"
-                @click="setup2FA"
-              >
+              <n-button v-if="!useAuthStore().has2FA && useAuthStore().hasPassword" type="primary" @click="setup2FA">
                 启用2FA
               </n-button>
-              <n-button v-if="useAuthStore().has2FA" type="error" @click="removeAuth('2fa')">
-                禁用2FA
-              </n-button>
+              <n-button v-if="useAuthStore().has2FA" type="error" @click="removeAuth('2fa')">禁用2FA</n-button>
             </n-space>
             <n-alert v-if="!useAuthStore().hasPassword" type="info" style="margin-top: 12px">
               需要先设置密码才能启用2FA
