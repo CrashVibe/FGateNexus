@@ -51,6 +51,23 @@ export default defineNuxtConfig({
         "nuxt-auth-utils"
     ],
     vite: {
+        optimizeDeps: {
+            include: [
+                "moment-timezone",
+                "@vue/devtools-core",
+                "@vue/devtools-kit",
+                "@vueuse/core",
+                "@vicons/ionicons5",
+                "vooks",
+                "highlight.js/lib/core",
+                "highlight.js/lib/languages/typescript",
+                "uuid",
+                "zod",
+                "http-status-codes",
+                "@zxcvbn-ts/core",
+                "@zxcvbn-ts/language-common"
+            ]
+        },
         build: {
             target: "esnext",
             minify: "terser",
