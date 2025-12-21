@@ -5,22 +5,29 @@ import { getConfigManager } from "./server/utils/config";
 
 await getConfigManager();
 
+const isDev = process.env.NODE_ENV !== "production";
+const isBinaryBuild = process.env.NUXT_BUILD_TARGET === "binary";
+
 export default defineNuxtConfig({
-    compatibilityDate: "latest",
-    devtools: { enabled: true },
+    compatibilityDate: "2025-08-06",
+    devtools: {
+        enabled: true,
+        timeline: {
+            enabled: true
+        }
+    },
     sourcemap: {
-        server: true,
-        client: true
+        client: isDev && !isBinaryBuild,
+        server: isDev && !isBinaryBuild
     },
     ssr: false,
     css: ["~/assets/css/main.scss"],
     typescript: {
-        // typeCheck: true,
         strict: true,
         tsConfig: {
             compilerOptions: {
-                types: ["bun-types"],
-                // 支持解析json文件
+                types: ["bun-types", "node"],
+                // 支持解析 json 文件
                 resolveJsonModule: true
             }
         }
@@ -31,7 +38,6 @@ export default defineNuxtConfig({
         }
     },
     experimental: {
-        asyncEntry: true,
         asyncContext: true
     },
     devServer: {
@@ -66,25 +72,24 @@ export default defineNuxtConfig({
                 "http-status-codes",
                 "@zxcvbn-ts/core",
                 "@zxcvbn-ts/language-common"
-            ]
+            ],
+            esbuildOptions: {
+                target: "esnext"
+            }
         },
         build: {
             target: "esnext",
-            minify: "terser",
-            terserOptions: {
-                compress: {
-                    drop_console: true,
-                    drop_debugger: true
-                },
-                format: {
-                    comments: false
-                }
-            },
+            minify: "esbuild",
             cssCodeSplit: true,
-            sourcemap: true
-        },
-        esbuild: {
-            target: "esnext"
+            rollupOptions: {
+                output: {
+                    manualChunks: {
+                        ui: ["naive-ui"],
+                        highlight: ["highlight.js"],
+                        vendor: ["moment-timezone", "uuid", "zod"]
+                    }
+                }
+            }
         },
         plugins: [
             AutoImport({
@@ -97,7 +102,10 @@ export default defineNuxtConfig({
             Components({
                 resolvers: [NaiveUiResolver()]
             })
-        ]
+        ],
+        worker: {
+            format: "es"
+        }
     },
     app: {
         head: {
@@ -116,9 +124,16 @@ export default defineNuxtConfig({
         layoutTransition: {
             name: "layout",
             mode: "out-in"
-        }
+        },
+        rootId: "root",
+        teleportId: "popovers"
     },
     nitro: {
+        esbuild: {
+            options: {
+                target: "esnext"
+            }
+        },
         experimental: {
             websocket: true
         },
@@ -126,7 +141,6 @@ export default defineNuxtConfig({
         serveStatic: "inline",
         minify: true,
         compressPublicAssets: true,
-        inlineDynamicImports: true,
         node: true,
         externals: {
             inline: [
@@ -135,10 +149,7 @@ export default defineNuxtConfig({
                 "@vue/runtime-dom",
                 "@vue/compiler-dom",
                 "@vue/runtime-core",
-                "@vue/reactivity",
-                "@vue/compiler-core",
-                "@vue/compiler-sfc",
-                "source-map-js"
+                "@vue/reactivity"
             ]
         }
     }
