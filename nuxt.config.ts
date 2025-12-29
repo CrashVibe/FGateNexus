@@ -17,7 +17,7 @@ export default defineNuxtConfig({
         server: isDev
     },
     ssr: false,
-    css: ["~/assets/css/main.scss"],
+    css: ["~/assets/css/main.scss", "~/assets/css/animate.scss"],
     typescript: {
         strict: true,
         tsConfig: {
