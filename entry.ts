@@ -45,7 +45,6 @@ async function startApplication() {
         const config = configManager.getConfig();
         process.env.NITRO_HOST = config.nitro.host;
         process.env.NITRO_PORT = String(config.nitro.port);
-        process.env.NUXT_SESSION_PASSWORD = config.session.password;
         await import("./.output/server/index.mjs");
     } catch (e) {
         console.error("应用启动失败:", e);

@@ -1,12 +1,8 @@
 import AutoImport from "unplugin-auto-import/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import Components from "unplugin-vue-components/vite";
-import { getConfigManager } from "./server/utils/config";
-
-await getConfigManager();
 
 const isDev = process.env.NODE_ENV !== "production";
-const isBinaryBuild = process.env.NUXT_BUILD_TARGET === "binary";
 
 export default defineNuxtConfig({
     compatibilityDate: "2025-08-06",
@@ -17,8 +13,8 @@ export default defineNuxtConfig({
         }
     },
     sourcemap: {
-        client: isDev && !isBinaryBuild,
-        server: isDev && !isBinaryBuild
+        client: isDev,
+        server: isDev
     },
     ssr: false,
     css: ["~/assets/css/main.scss"],
@@ -34,7 +30,8 @@ export default defineNuxtConfig({
     },
     runtimeConfig: {
         public: {
-            commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH || undefined
+            commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH || undefined,
+            isDev: isDev
         }
     },
     experimental: {

@@ -74,5 +74,8 @@
         "unplugin-auto-import": "^20.3.0",
         "unplugin-vue-components": "^30.0.0",
         "vue-tsc": "^3.2.0"
+    },
+    "patchedDependencies": {
+        "nuxt-auth-utils@0.5.26": "patches/nuxt-auth-utils@0.5.26.patch"
     }
 }

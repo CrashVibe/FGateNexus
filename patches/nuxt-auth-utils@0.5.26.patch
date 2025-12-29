@@ -1,0 +1,27 @@
+diff --git a/dist/module.mjs b/dist/module.mjs
+index c1a31c25747b7d0d729f9facdb1cbad05f4af48a..a87412c8170f263ef979caab30f581db2ce77cbd 100644
+--- a/dist/module.mjs
++++ b/dist/module.mjs
+@@ -85,22 +85,6 @@ const module$1 = defineNuxtModule({
+     runtimeConfig.hash = defu(runtimeConfig.hash, {
+       scrypt: options.hash?.scrypt
+     });
+-    if (nuxt.options.dev && !process.env[envSessionPassword]) {
+-      if (nuxt.options.runtimeConfig.session.password) {
+-        process.env[envSessionPassword] = nuxt.options.runtimeConfig.session.password;
+-      } else {
+-        const password = process.env[envSessionPassword] = randomUUID().replace(/-/g, "");
+-        const envPath = join(nuxt.options.rootDir, ".env");
+-        const envContent = await readFile(envPath, "utf-8").catch(() => "");
+-        if (!envContent.includes(envSessionPassword)) {
+-          await writeFile(
+-            envPath,
+-            `${envContent ? envContent + "\n" : envContent}${envSessionPassword}=${password}`,
+-            "utf-8"
+-          );
+-        }
+-      }
+-    }
+     runtimeConfig.public.auth = defu(runtimeConfig.public.auth, {
+       loadStrategy: options.loadStrategy ?? "server-first"
+     });
