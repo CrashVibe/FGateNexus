@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
         const adapterID = Number(getRouterParam(event, "id"));
 
         if (isNaN(adapterID)) {
-            const apiError = ApiError.validation("无效的适配器ID");
+            const apiError = ApiError.validation("无效的适配器 ID");
             return createErrorResponse(event, apiError);
         }
 

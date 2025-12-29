@@ -33,10 +33,10 @@ class RequestDispatcher {
     public registerHandler(handler: RequestHandler): void {
         const method = handler.getMethod();
         if (this.handlers.has(method)) {
-            throw new Error(`处理器已存在: ${method}`);
+            throw new Error(`处理器已存在：${method}`);
         }
         this.handlers.set(method, handler);
-        logger.info(`[REGISTER] 请求处理器已注册: ${method}`);
+        logger.info(`[REGISTER] 请求处理器已注册：${method}`);
     }
 
     /**
@@ -45,7 +45,7 @@ class RequestDispatcher {
     public async dispatch(request: JsonRpcRequest, peer: Peer<AdapterInternal>): Promise<void> {
         const handler = this.handlers.get(request.method);
         if (!handler) {
-            logger.warn(`[DISPATCH] 未找到处理器: ${request.method}`);
+            logger.warn(`[DISPATCH] 未找到处理器：${request.method}`);
             pluginBridge.messageHandler.sendError(peer, request.id, -32601, "Method not found");
             return;
         }
@@ -53,7 +53,7 @@ class RequestDispatcher {
         try {
             await handler.handleRequest(request, peer);
         } catch (error) {
-            logger.error({ error }, `[DISPATCH] 处理请求失败: ${request.method}`);
+            logger.error({ error }, `[DISPATCH] 处理请求失败：${request.method}`);
             pluginBridge.messageHandler.sendError(peer, request.id, -32603, "Internal error", error);
         }
     }

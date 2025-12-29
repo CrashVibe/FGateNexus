@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     try {
         const serverID = Number(getRouterParam(event, "id"));
         if (Number.isNaN(serverID)) {
-            const apiError = ApiError.validation("参数错误: 无效的服务器ID");
+            const apiError = ApiError.validation("参数错误：无效的服务器 ID");
             return createErrorResponse(event, apiError);
         }
 
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
             if (exists.length !== ids.length) {
                 const okSet = new Set(exists.map((e) => e.id));
                 const invalidIds = ids.filter((x) => !okSet.has(x));
-                throw ApiError.validation(`存在与该服务器不匹配或不存在的目标ID: ${invalidIds.join(", ")}`);
+                throw ApiError.validation(`存在与该服务器不匹配或不存在的目标 ID: ${invalidIds.join(", ")}`);
             }
 
             for (const i of items) {

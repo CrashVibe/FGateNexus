@@ -9,7 +9,7 @@ import { chatBridge } from "./chatbridge/chatbridge";
 import { pluginBridge } from "./mcwsbridge/MCWSBridge";
 
 /**
- * MC聊天消息数据
+ * MC 聊天消息数据
  */
 export interface MCChatMessage {
     playerName: string;
@@ -20,7 +20,7 @@ export interface MCChatMessage {
 
 /**
  * 消息路由服务
- * 负责处理MC服务器与聊天平台之间的双向消息路由
+ * 负责处理 MC 服务器与聊天平台之间的双向消息路由
  */
 class MessageRouter {
     private static instance: MessageRouter;
@@ -35,7 +35,7 @@ class MessageRouter {
     }
 
     /**
-     * 处理来自MC的聊天消息，转发到对应的聊天平台
+     * 处理来自 MC 的聊天消息，转发到对应的聊天平台
      */
     public async handleMCMessage(serverId: number, mcMessage: MCChatMessage): Promise<void> {
         try {
@@ -53,7 +53,7 @@ class MessageRouter {
                 return;
             }
 
-            const chatSyncConfig = server.chatSyncConfig;
+            const {chatSyncConfig} = server;
             if (!chatSyncConfig.enabled || server.targets.length === 0) {
                 return;
             }
@@ -95,7 +95,7 @@ class MessageRouter {
     }
 
     /**
-     * 处理来自聊天平台的消息，转发到对应的MC服务器
+     * 处理来自聊天平台的消息，转发到对应的 MC 服务器
      */
     public async handlePlatformMessage(connection: BotConnection, session: Session): Promise<void> {
         try {
@@ -131,7 +131,7 @@ class MessageRouter {
                                 connection,
                                 session.channelId || "",
                                 target.type,
-                                success ? `指令执行成功: ${message}` : `指令执行失败: ${message}` // TODO: 图片渲染
+                                success ? `指令执行成功: ${message}` : `指令执行失败：${message}` // TODO: 图片渲染
                             )
                         );
                     tasks.push(cmd);
@@ -139,7 +139,7 @@ class MessageRouter {
                 }
 
                 // chatSync 转发
-                const chatSyncConfig = server.chatSyncConfig;
+                const {chatSyncConfig} = server;
                 if (!chatSyncConfig?.enabled) continue;
 
                 const isTargetGroup = server.targets?.some(

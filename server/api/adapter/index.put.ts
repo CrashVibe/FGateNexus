@@ -14,17 +14,17 @@ export default defineEventHandler(async (event) => {
         const config = AdapterConfigSchema.safeParse(body.config);
 
         if (!body.adapterID) {
-            const apiError = ApiError.validation("更新适配器失败: 缺少适配器ID");
+            const apiError = ApiError.validation("更新适配器失败：缺少适配器 ID");
             return createErrorResponse(event, apiError);
         }
 
         if (body.adapterType === null || !Object.values(AdapterType).includes(body.adapterType)) {
-            const apiError = ApiError.validation("更新适配器失败: 适配器类型无效");
+            const apiError = ApiError.validation("更新适配器失败：适配器类型无效");
             return createErrorResponse(event, apiError);
         }
 
         if (!config.success) {
-            const apiError = ApiError.validation("更新适配器失败: 配置无效");
+            const apiError = ApiError.validation("更新适配器失败：配置无效");
             return createErrorResponse(event, apiError, config.error);
         }
 
@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
             }
             return createApiResponse(event, "更新适配器成功", StatusCodes.OK);
         } else {
-            const apiError = ApiError.database("更新适配器失败: 未能更新适配器");
+            const apiError = ApiError.database("更新适配器失败：未能更新适配器");
             return createErrorResponse(event, apiError);
         }
     } catch (err) {

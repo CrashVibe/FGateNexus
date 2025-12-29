@@ -1,10 +1,10 @@
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
+import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
+import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { createApiResponse } from "#shared/types";
-import { ApiError, createErrorResponse } from "#shared/error";
-import { StatusCodes } from "http-status-codes";
-import { eq } from "drizzle-orm";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 
 export default defineEventHandler(async (event) => {
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
         const adapterID = Number(getRouterParam(event, "id"));
 
         if (isNaN(adapterID)) {
-            const apiError = ApiError.validation("无效的适配器ID");
+            const apiError = ApiError.validation("无效的适配器 ID");
             return createErrorResponse(event, apiError);
         }
 

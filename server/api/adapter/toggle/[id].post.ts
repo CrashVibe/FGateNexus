@@ -1,10 +1,10 @@
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
+import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
+import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { createApiResponse } from "#shared/types";
-import { ApiError, createErrorResponse } from "#shared/error";
-import { StatusCodes } from "http-status-codes";
-import { eq } from "drizzle-orm";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 
 export default defineEventHandler(async (event) => {
@@ -13,12 +13,12 @@ export default defineEventHandler(async (event) => {
         const body: { enabled: boolean } = await readBody(event);
 
         if (typeof body.enabled !== "boolean") {
-            const apiError = ApiError.validation("开关适配器失败: 缺少启用状态");
+            const apiError = ApiError.validation("开关适配器失败：缺少启用状态");
             return createErrorResponse(event, apiError);
         }
 
         if (isNaN(adapterID)) {
-            const apiError = ApiError.validation("开关适配器失败: 无效的适配器ID");
+            const apiError = ApiError.validation("开关适配器失败：无效的适配器 ID");
             return createErrorResponse(event, apiError);
         }
 
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
             }
             return createApiResponse(event, "开关适配器成功", StatusCodes.OK);
         } else {
-            const apiError = ApiError.database("开关适配器失败: 未能找到适配器");
+            const apiError = ApiError.database("开关适配器失败：未能找到适配器");
             return createErrorResponse(event, apiError);
         }
     } catch (err) {

@@ -140,12 +140,12 @@ const pageSizes = [
 // ==================== 表格列 ====================
 const columns = [
   {
-    title: "目标ID",
+    title: "目标 ID",
     key: "targetId",
     width: "40%",
     render(row: targetSchema, index: number) {
       return h(NInput, {
-        placeholder: "请输入目标ID",
+        placeholder: "请输入目标 ID",
         value: row.targetId,
         onUpdateValue(v) {
           if (formData.value[index]) formData.value[index].targetId = v;
@@ -291,7 +291,7 @@ async function handleSubmit() {
     const msg = dup
       .map(([key, idxs]) => {
         const [tid, tp] = key.split("::");
-        return `目标ID "${tid}" + 类型 "${tp === "group" ? "群聊" : "私聊"}" 重复 ${idxs.length} 次`;
+        return `目标 ID "${tid}" + 类型 "${tp === "group" ? "群聊" : "私聊"}" 重复 ${idxs.length} 次`;
       })
       .join("； ");
     message.warning(`发现重复目标配置：${msg}`);

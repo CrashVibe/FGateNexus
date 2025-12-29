@@ -13,7 +13,5 @@ export function mergeServerConfig(
     currentServerConfig: BindingConfig,
     configUpdates?: Partial<BindingConfig>
 ): BindingConfig {
-    const mergedConfigWithDefaults = applyDefaults(BindingConfigSchema, { ...currentServerConfig, ...configUpdates });
-
-    return mergedConfigWithDefaults;
+    return applyDefaults(BindingConfigSchema, { ...currentServerConfig, ...configUpdates });
 }

@@ -82,7 +82,7 @@ class BindingService {
             throw new Error("服务器适配器配置未找到");
         }
 
-        const adapter = serversWithAdapters.adapter;
+        const {adapter} = serversWithAdapters;
 
         this.cleanUpExpiredBindings();
 

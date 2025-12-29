@@ -39,7 +39,7 @@ const AppConfigSchema = z.object({
         .object({
             password: z
                 .string()
-                .min(32, "session.password 必须至少32个字符")
+                .min(32, "session.password 必须至少 32 个字符")
                 .default(() => {
                     return crypto.randomBytes(32).toString("hex");
                 })
@@ -70,7 +70,7 @@ class AppConfigManager {
     private static async loadConfig(): Promise<AppConfig> {
         const configPath = path.resolve(process.cwd(), "config/appsettings.json");
         const configDir = path.dirname(configPath);
-        logger.info(`配置文件路径: ${configPath}`);
+        logger.info(`配置文件路径：${configPath}`);
 
         let config: AppConfig;
 

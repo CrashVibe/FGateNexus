@@ -7,7 +7,7 @@
       @click="router.push(`/servers/${props.server.id}`)"
     >
       <div class="flex flex-col gap-4">
-        <!-- 名称+状态 与 版本 -->
+        <!-- 名称 + 状态 与 版本 -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <n-text class="text-lg" strong>{{ server.name }}</n-text>
@@ -94,7 +94,7 @@ function copyTokenToClipboard(e?: Event) {
   }
 
   if (isCopying.value) {
-    message.warning("我**，这么快干什么!");
+    message.warning("我**，这么快干什么！");
     return;
   }
 
@@ -111,7 +111,7 @@ function copyTokenToClipboard(e?: Event) {
       }, 3000);
     })
     .catch(() => {
-      message.error("复制失败，小 clipboard 罢工了!");
+      message.error("复制失败，小 clipboard 罢工了！");
       isCopying.value = false;
     });
 }

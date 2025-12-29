@@ -1,9 +1,9 @@
 import type { AdapterInternal, Peer } from "crossws";
-import { ConnectionManager, type GetClientInfoResult } from "./ConnectionManager";
-import { MessageHandler } from "./MessageHandler";
+import { eq } from "drizzle-orm";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { eq } from "drizzle-orm";
+import { ConnectionManager, type GetClientInfoResult } from "./ConnectionManager";
+import { MessageHandler } from "./MessageHandler";
 import type { CommandResult } from "./types";
 
 /**
@@ -50,7 +50,7 @@ export class MCWSBridge {
             typeof result.player_count !== "number"
         ) {
             this.messageHandler.sendError(peer, null, -32603, "Invalid client info response", result);
-            throw new Error(`[WARNING] 客户端信息不完整: ${peer.id}`);
+            throw new Error(`[WARNING] 客户端信息不完整：${peer.id}`);
         }
 
         this.connectionManager.setConnectionData(serverID, { peer, serverId: serverID, data: result });

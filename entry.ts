@@ -33,7 +33,7 @@ async function initDatabase() {
 
         console.info("[SUCCESS] 数据库准备就绪");
     } catch (e) {
-        console.error("数据库迁移失败:", e);
+        console.error("数据库迁移失败：", e);
         process.exit(1);
     }
 }
@@ -47,7 +47,7 @@ async function startApplication() {
         process.env.NITRO_PORT = String(config.nitro.port);
         await import("./.output/server/index.mjs");
     } catch (e) {
-        console.error("应用启动失败:", e);
+        console.error("应用启动失败：", e);
         process.exit(1);
     }
 }

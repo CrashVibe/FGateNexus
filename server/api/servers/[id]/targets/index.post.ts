@@ -10,7 +10,7 @@ import { createApiResponse } from "~~/shared/types";
 export default defineEventHandler(async (event) => {
     try {
         const serverID = Number(getRouterParam(event, "id"));
-        if (Number.isNaN(serverID)) return createErrorResponse(event, ApiError.validation("无效服务器ID"));
+        if (Number.isNaN(serverID)) return createErrorResponse(event, ApiError.validation("无效服务器 ID"));
 
         const body = await readBody(event);
         const parsed = bulkCreateSchema.safeParse(body);

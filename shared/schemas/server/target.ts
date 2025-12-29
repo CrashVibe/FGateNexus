@@ -73,7 +73,7 @@ export const batchDifferentDataSchema = z.object({
     items: z
         .array(
             z.object({
-                id: z.string().min(1, "缺少目标ID"),
+                id: z.string().min(1, "缺少目标 ID"),
                 data: targetSchemaRequest
             })
         )

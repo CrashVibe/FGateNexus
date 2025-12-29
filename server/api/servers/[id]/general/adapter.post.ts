@@ -1,11 +1,11 @@
+import { ApiError, createErrorResponse } from "#shared/error";
+import { chooseAdapterSchema } from "#shared/schemas/server/servers";
+import { createApiResponse } from "#shared/types";
+import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
+import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { createApiResponse } from "#shared/types";
-import { ApiError, createErrorResponse } from "#shared/error";
-import { StatusCodes } from "http-status-codes";
-import { chooseAdapterSchema } from "#shared/schemas/server/servers";
-import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
     try {
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
         const parsed = chooseAdapterSchema.safeParse(body);
 
         if (isNaN(serverId)) {
-            const apiError = ApiError.validation("参数错误: 无效的服务器ID");
+            const apiError = ApiError.validation("参数错误：无效的服务器 ID");
             return createErrorResponse(event, apiError);
         }
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
             .returning();
 
         if (!result[0]) {
-            const apiError = ApiError.database("更新服务器对应适配器失败: 未能找到服务器");
+            const apiError = ApiError.database("更新服务器对应适配器失败：未能找到服务器");
             return createErrorResponse(event, apiError);
         }
         return createApiResponse(event, "更新服务器对应适配器成功", StatusCodes.OK);

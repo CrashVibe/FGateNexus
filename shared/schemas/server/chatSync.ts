@@ -20,12 +20,12 @@ export const chatSyncConfigSchema = z.object({
     platformToMcEnabled: z.boolean().default(true),
 
     /**
-     * MC到平台的消息格式模板
+     * MC 到平台的消息格式模板
      */
     mcToPlatformTemplate: z.string().default("[{serverName}] {playerName}: {message}"),
 
     /**
-     * 平台到MC的消息格式模板
+     * 平台到 MC 的消息格式模板
      */
     platformToMcTemplate: z.string().default("[{platform}] {nickname}: {message}"),
 

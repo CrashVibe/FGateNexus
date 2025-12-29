@@ -33,14 +33,14 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
 
-        // 验证TOTP令牌
+        // 验证 TOTP 令牌
         const isValid = authenticator.verify({ token, secret });
         if (!isValid) {
             const apiError = ApiError.validation("验证码错误");
             return createErrorResponse(event, apiError);
         }
 
-        // 启用2FA
+        // 启用 2FA
         await database
             .update(users)
             .set({
@@ -50,10 +50,10 @@ export default defineEventHandler(async (event) => {
             })
             .where(eq(users.id, user.id));
 
-        return createApiResponse(event, "2FA验证成功，已启用双重验证", StatusCodes.OK);
+        return createApiResponse(event, "2FA 验证成功，已启用双重验证", StatusCodes.OK);
     } catch (error) {
-        logger.error({ error }, "2FA验证失败");
-        const apiError = ApiError.internal("2FA验证失败");
+        logger.error({ error }, "2FA 验证失败");
+        const apiError = ApiError.internal("2FA 验证失败");
         return createErrorResponse(event, apiError);
     }
 });

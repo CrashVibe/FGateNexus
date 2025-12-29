@@ -43,7 +43,7 @@ export class PlayerDeathHandler extends RequestHandler {
             const formattedMessage = renderDeathMessage(
                 server.notifyConfig.death_notify_message,
                 playerName,
-                deathMessage ? deathMessage : "未知原因"
+                deathMessage || "未知原因"
             );
             for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
                 chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);

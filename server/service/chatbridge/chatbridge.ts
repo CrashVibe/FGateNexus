@@ -118,10 +118,10 @@ export class ChatBridge {
         if (connection) {
             connection.pluginInstance.dispose();
             this.connectionMap.delete(adapterID);
-            logger.info(`已移除 Bot 连接: ${adapterID}`);
+            logger.info(`已移除 Bot 连接：${adapterID}`);
             return;
         }
-        throw new Error(`找不到 Bot 连接: ${adapterID}`);
+        throw new Error(`找不到 Bot 连接：${adapterID}`);
     }
 
     /**
@@ -129,14 +129,14 @@ export class ChatBridge {
      */
     public addBot(adapterID: number, adapterType: AdapterType, config: OneBotConfig): void {
         if (this.connectionMap.has(adapterID)) {
-            throw new Error(`Bot 连接已存在: ${adapterID}`);
+            throw new Error(`Bot 连接已存在：${adapterID}`);
         }
         if (adapterType === AdapterType.Onebot) {
             const bot = this.createOnebot(config);
             this.connectionMap.set(adapterID, { pluginInstance: bot, adapterID: adapterID, adapterType, config });
-            logger.info(`已添加 Bot 连接: ${adapterID}`);
+            logger.info(`已添加 Bot 连接：${adapterID}`);
         } else {
-            throw new Error(`不支持的适配器类型(可能版本太低了吧?): ${adapterType}`);
+            throw new Error(`不支持的适配器类型 (可能版本太低了吧？): ${adapterType}`);
         }
     }
 
@@ -161,18 +161,18 @@ export class ChatBridge {
     public findBot(adapterID: number): Bot {
         const connection = this.connectionMap.get(adapterID);
         if (!connection) {
-            throw new Error(`找不到 Bot 连接: ${adapterID}`);
+            throw new Error(`找不到 Bot 连接：${adapterID}`);
         }
         let bot: Bot | undefined;
 
         if (connection.adapterType === AdapterType.Onebot) {
             bot = this.app.bots.find((bot) => bot.selfId === connection.config.selfId);
         } else {
-            throw new Error(`不支持的适配器类型(可能版本太低了吧?): ${connection.adapterType}`);
+            throw new Error(`不支持的适配器类型 (可能版本太低了吧？): ${connection.adapterType}`);
         }
 
         if (!bot) {
-            throw new Error(`找不到 Bot 实例: ${connection.config.selfId}`);
+            throw new Error(`找不到 Bot 实例：${connection.config.selfId}`);
         }
         return bot;
     }
@@ -183,7 +183,7 @@ export class ChatBridge {
     public updateConfig(adapterID: number, config: OneBotConfig): Promise<void> {
         const connection = this.connectionMap.get(adapterID);
         if (!connection) {
-            throw new Error(`找不到 Bot 连接: ${adapterID}`);
+            throw new Error(`找不到 Bot 连接：${adapterID}`);
         }
         connection.config = config;
         connection.pluginInstance.update(config, true);

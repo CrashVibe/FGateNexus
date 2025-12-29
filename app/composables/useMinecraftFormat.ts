@@ -8,7 +8,7 @@ const isDark = useDark({
     valueLight: "light"
 });
 
-// Minecraft颜色代码
+// Minecraft 颜色代码
 const MINECRAFT_COLORS: Record<string, string> = {
     "0": "#000000",
     "1": "#0000AA",
@@ -37,7 +37,7 @@ function generateObfuscated(text: string): string {
         .join("");
 }
 
-// 转换Minecraft文本为HTML
+// 转换 Minecraft 文本为 HTML
 function minecraftToHtml(text: string): string {
     if (!text) return "";
 

@@ -5,8 +5,8 @@ import { RequestHandler } from "../RequestHandler";
 import type { JsonRpcRequest } from "../types";
 
 /**
- * 处理来自MC的聊天消息
- * 这是一个notice（通知）
+ * 处理来自 MC 的聊天消息
+ * 这是一个 notice（通知）
  */
 export class ChatMessageHandler extends RequestHandler {
     getMethod(): string {

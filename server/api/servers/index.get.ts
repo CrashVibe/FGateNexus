@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
             const connectionData = pluginBridge.connectionManager.getConnectionData(server.id);
             return {
                 ...server,
-                isOnline: connectionData ? true : false,
+                isOnline: !!connectionData,
                 supports_papi: connectionData?.supports_papi ?? null,
                 supports_command: connectionData?.supports_command ?? null,
                 player_count: connectionData?.player_count ?? null

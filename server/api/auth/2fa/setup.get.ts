@@ -28,19 +28,19 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
 
-        // 生成2FA密钥
+        // 生成 2FA 密钥
         const secret = authenticator.generateSecret();
         const service = "FGATE";
         const account = user.username;
         const keyuri = authenticator.keyuri(account, service, secret);
 
-        return createApiResponse(event, "2FA设置信息生成成功", StatusCodes.OK, {
+        return createApiResponse(event, "2FA 设置信息生成成功", StatusCodes.OK, {
             keyuri,
             secret
         });
     } catch (error) {
-        logger.error({ error }, "生成2FA设置信息失败");
-        const apiError = ApiError.internal("生成2FA设置信息失败");
+        logger.error({ error }, "生成 2FA 设置信息失败");
+        const apiError = ApiError.internal("生成 2FA 设置信息失败");
         return createErrorResponse(event, apiError);
     }
 });

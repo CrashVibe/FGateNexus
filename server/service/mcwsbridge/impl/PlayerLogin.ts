@@ -88,7 +88,7 @@ export class PlayerLoginHandler extends RequestHandler {
                     formattedTime
                 );
                 this.sendResponse(peer, request.id, { action: "kick", reason: bindKickMsg });
-                logger.info(`[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间: ${formattedTime}`);
+                logger.info(`[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间：${formattedTime}`);
             } catch (error: unknown) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 logger.error({ errorMessage }, "添加待处理绑定失败");

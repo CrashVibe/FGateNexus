@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
 
-        // 禁用2FA
+        // 禁用 2FA
         await database
             .update(users)
             .set({
@@ -34,10 +34,10 @@ export default defineEventHandler(async (event) => {
             })
             .where(eq(users.id, user.id));
 
-        return createApiResponse(event, "2FA已禁用", StatusCodes.OK);
+        return createApiResponse(event, "2FA 已禁用", StatusCodes.OK);
     } catch (error) {
-        logger.error({ error }, "禁用2FA失败");
-        const apiError = ApiError.internal("禁用2FA失败");
+        logger.error({ error }, "禁用 2FA 失败");
+        const apiError = ApiError.internal("禁用 2FA 失败");
         return createErrorResponse(event, apiError);
     }
 });

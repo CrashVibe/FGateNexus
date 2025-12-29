@@ -113,7 +113,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="success">
                       {{ renderBindSuccess(formData.bindSuccessMsg, "Steve") }}
                     </n-text>
@@ -147,7 +147,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="error">
                       {{ renderBindFail(formData.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
@@ -181,7 +181,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="success">
                       {{ renderUnbindSuccess(formData.unbindSuccessMsg, "Steve") }}
                     </n-text>
@@ -215,7 +215,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="error">
                       {{ renderUnbindFail(formData.unbindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
@@ -258,7 +258,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text>
                       <span v-html="noBindKickMsgPreview"></span>
                     </n-text>
@@ -294,7 +294,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text>
                       <span v-html="unbindKickMsgPreview"></span>
                     </n-text>
@@ -449,9 +449,8 @@ class DataManager {
 
   async refreshAll(): Promise<void> {
     dataState.isLoading = true;
-    await Promise.all([this.refreshServerData()]).finally(() => {
-      dataState.isLoading = false;
-    });
+    await this.refreshServerData();
+    dataState.isLoading = false;
   }
 }
 
@@ -474,9 +473,9 @@ const formData = ref<BindingConfig>(getDefaultBindingConfig());
 const rules = zodToNaiveRules(BindingConfigSchema);
 const codeModeOptions = [
   { label: "纯数字", value: CODE_MODES.NUMBER },
-  { label: "纯单词(小写)", value: CODE_MODES.LOWER },
-  { label: "纯单词(大写)", value: CODE_MODES.UPPER },
-  { label: "纯单词(大小写)", value: CODE_MODES.WORD },
+  { label: "纯单词 (小写)", value: CODE_MODES.LOWER },
+  { label: "纯单词 (大写)", value: CODE_MODES.UPPER },
+  { label: "纯单词 (大小写)", value: CODE_MODES.WORD },
   { label: "大小写单词和数字", value: CODE_MODES.MIX }
 ];
 const bindCommandExample = computed(() => {

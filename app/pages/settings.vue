@@ -100,7 +100,7 @@ const setup2FA = async () => {
     }
   } catch (error) {
     console.error("Failed to setup 2FA:", error);
-    message.error("2FA设置失败");
+    message.error("2FA 设置失败");
   } finally {
     isLoading.value = false;
   }
@@ -117,13 +117,13 @@ const verify2FA = async () => {
         secret: twoFAForm.secret
       }
     });
-    message.success("2FA验证成功");
+    message.success("2FA 验证成功");
     showTwoFASetup.value = false;
     Object.assign(twoFAForm, { keyuri: "", secret: "", token: [] });
     await checkAuthStatus();
   } catch (error) {
     console.error("Failed to verify 2FA:", error);
-    message.error("2FA验证失败");
+    message.error("2FA 验证失败");
   } finally {
     isLoading.value = false;
   }
@@ -138,11 +138,11 @@ const removeAuth = async (type: "password" | "2fa") => {
   try {
     isLoading.value = true;
     await $fetch<ApiResponse<void>>(`/api/auth/${type}`, { method: "DELETE" });
-    message.success("2FA已删除");
+    message.success("2FA 已删除");
     await checkAuthStatus();
   } catch (error) {
     console.error(`Failed to remove ${type}:`, error);
-    message.error("删除2FA失败");
+    message.error("删除 2FA 失败");
   } finally {
     isLoading.value = false;
   }
@@ -200,7 +200,7 @@ onMounted(async () => {
             <n-tag v-else type="warning">未设置</n-tag>
           </template>
           <n-space vertical>
-            <n-text depth="3">设置密码以保护你的FGATE实例免受未授权访问</n-text>
+            <n-text depth="3">设置密码以保护你的 FGATE 实例免受未授权访问</n-text>
             <n-space>
               <n-button v-if="!useAuthStore().hasPassword" type="primary" @click="showPasswordForm = true">
                 设置密码
@@ -213,22 +213,22 @@ onMounted(async () => {
           </n-space>
         </n-card>
 
-        <!-- 2FA设置 -->
+        <!-- 2FA 设置 -->
         <n-card title="双重验证 (2FA)" size="large">
           <template #header-extra>
             <n-tag v-if="useAuthStore().has2FA" type="success">已启用</n-tag>
             <n-tag v-else type="warning">未启用</n-tag>
           </template>
           <n-space vertical>
-            <n-text depth="3">为你的账户添加额外的安全层，使用TOTP应用生成验证码</n-text>
+            <n-text depth="3">为你的账户添加额外的安全层，使用 TOTP 应用生成验证码</n-text>
             <n-space>
               <n-button v-if="!useAuthStore().has2FA && useAuthStore().hasPassword" type="primary" @click="setup2FA">
-                启用2FA
+                启用 2FA
               </n-button>
-              <n-button v-if="useAuthStore().has2FA" type="error" @click="removeAuth('2fa')">禁用2FA</n-button>
+              <n-button v-if="useAuthStore().has2FA" type="error" @click="removeAuth('2fa')">禁用 2FA</n-button>
             </n-space>
             <n-alert v-if="!useAuthStore().hasPassword" type="info" style="margin-top: 12px">
-              需要先设置密码才能启用2FA
+              需要先设置密码才能启用 2FA
             </n-alert>
           </n-space>
         </n-card>
@@ -305,10 +305,10 @@ onMounted(async () => {
       </template>
     </n-modal>
 
-    <!-- 2FA设置模态框 -->
+    <!-- 2FA 设置模态框 -->
     <n-modal v-model:show="showTwoFASetup" preset="dialog" title="设置双重验证">
       <n-space vertical>
-        <n-text>使用你的TOTP应用（如Google Authenticator、Authy等）扫描下方二维码：</n-text>
+        <n-text>使用你的 TOTP 应用（如 Google Authenticator、Authy 等）扫描下方二维码：</n-text>
         <div v-if="twoFAForm.keyuri" class="flex justify-center qrcode">
           <n-qr-code :value="twoFAForm.keyuri" :size="200" />
         </div>

@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     try {
         const serverID = Number(getRouterParam(event, "id"));
         if (isNaN(serverID)) {
-            const apiError = ApiError.validation("无效服务器ID");
+            const apiError = ApiError.validation("无效服务器 ID");
             return createErrorResponse(event, apiError);
         }
         const database = await getDatabase();

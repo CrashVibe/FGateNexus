@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, apiError);
         }
 
-        // 删除密码、2FA和相关数据
+        // 删除密码、2FA 和相关数据
         await database
             .update(users)
             .set({
