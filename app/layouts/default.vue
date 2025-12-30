@@ -113,3 +113,7 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
     </n-layout>
   </n-layout>
 </template>
+
+<style lang="scss" scoped>
+@import "./css/main.scss";
+</style>

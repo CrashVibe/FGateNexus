@@ -226,3 +226,7 @@ const selectedKey = computed(() => route.path);
     </n-layout>
   </n-layout>
 </template>
+
+<style lang="scss" scoped>
+@import "./css/main.scss";
+</style>
