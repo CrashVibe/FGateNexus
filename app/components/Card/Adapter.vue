@@ -1,12 +1,14 @@
 <template>
   <transition appear name="card-appear">
-    <n-card
-      :class="{ 'grayscale-[0.6]': !adapter.isOnline }"
-      class="transition-all duration-300 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl"
-      hoverable
+    <div
+      :class="[
+        'transition-all duration-300 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl',
+        { 'grayscale-[0.8]': !adapter.isOnline }
+      ]"
       @click="emit('click', adapter.id)"
     >
-      <div class="flex flex-col gap-3">
+      <n-card hoverable>
+        <div class="flex flex-col gap-3">
         <!-- head -->
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -30,8 +32,9 @@
         </div>
 
         <n-text class="text-xs text-right select-none opacity-70" depth="3">点击卡片修改配置</n-text>
-      </div>
-    </n-card>
+        </div>
+      </n-card>
+    </div>
   </transition>
 </template>
 

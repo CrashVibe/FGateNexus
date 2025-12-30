@@ -1,62 +1,65 @@
 <template>
   <transition appear name="card-appear">
-    <n-card
-      :class="{ 'grayscale-[0.6]': !server.isOnline }"
-      class="transition-all duration-300 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl"
-      hoverable
+    <div
+      :class="[
+        'transition-all duration-300 ease-in-out cursor-pointer hover:-translate-y-1 hover:shadow-xl',
+        { 'grayscale-[0.8]': !server.isOnline }
+      ]"
       @click="router.push(`/servers/${props.server.id}`)"
     >
-      <div class="flex flex-col gap-4">
-        <!-- 名称 + 状态 与 版本 -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <n-text class="text-lg" strong>{{ server.name }}</n-text>
-            <n-tag :bordered="false" :type="server.isOnline ? 'success' : 'error'" size="small">
-              {{ server.isOnline ? "在线" : "离线" }}
+      <n-card hoverable>
+        <div class="flex flex-col gap-4">
+          <!-- 名称 + 状态 与 版本 -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <n-text class="text-lg" strong>{{ server.name }}</n-text>
+              <n-tag :bordered="false" :type="server.isOnline ? 'success' : 'error'" size="small">
+                {{ server.isOnline ? "在线" : "离线" }}
+              </n-tag>
+            </div>
+            <n-tag :bordered="false" :type="server.isOnline ? 'default' : 'warning'" size="small">
+              {{ getVersion(server.minecraft_version) }}
             </n-tag>
           </div>
-          <n-tag :bordered="false" :type="server.isOnline ? 'default' : 'warning'" size="small">
-            {{ getVersion(server.minecraft_version) }}
-          </n-tag>
-        </div>
 
-        <!-- 服务器端 info -->
-        <div class="flex items-center gap-2">
-          <n-image :src="getSoftwareIcon(server.minecraft_software)" class="size-5" preview-disabled />
-          <n-text :depth="3">{{ server.minecraft_software || "未知服务器端" }}</n-text>
-        </div>
-
-        <!-- Token 框 -->
-        <div class="flex flex-col gap-2">
+          <!-- 服务器端 info -->
           <div class="flex items-center gap-2">
-            <n-text :depth="3" class="text-sm">Token:</n-text>
+            <n-image :src="getSoftwareIcon(server.minecraft_software)" class="size-5" preview-disabled />
+            <n-text :depth="3">{{ server.minecraft_software || "未知服务器端" }}</n-text>
           </div>
-          <n-input-group>
-            <n-input
-              :depth="showToken ? 3 : 2"
-              :value="showToken ? server.token : '•'.repeat(16)"
-              readonly
-              size="medium"
-              @click="copyTokenToClipboard"
-            />
-            <n-button size="medium" tertiary type="primary" @click.stop="copyTokenToClipboard">
-              <template #icon>
-                <n-icon>
-                  <svg height="1em" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </n-icon>
-              </template>
-            </n-button>
-          </n-input-group>
-        </div>
 
-        <n-text class="text-xs text-right select-none opacity-70" depth="3">点击卡片查看更多信息</n-text>
-      </div>
-    </n-card>
+          <!-- Token 框 -->
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2">
+              <n-text :depth="3" class="text-sm">Token:</n-text>
+            </div>
+            <n-input-group>
+              <n-input
+                :depth="showToken ? 3 : 2"
+                :value="showToken ? server.token : '•'.repeat(16)"
+                readonly
+                size="medium"
+                @click="copyTokenToClipboard"
+              />
+              <n-button size="medium" tertiary type="primary" @click.stop="copyTokenToClipboard">
+                <template #icon>
+                  <n-icon>
+                    <svg height="1em" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </n-icon>
+                </template>
+              </n-button>
+            </n-input-group>
+          </div>
+
+          <n-text class="text-xs text-right select-none opacity-70" depth="3">点击卡片查看更多信息</n-text>
+        </div>
+      </n-card>
+    </div>
   </transition>
 </template>
 
