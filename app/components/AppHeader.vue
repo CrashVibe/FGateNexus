@@ -28,7 +28,7 @@ const handleLogout = async () => {
     <n-space justify="space-between">
       <n-space align="center" size="large">
         <n-image class="align-middle size-8" preview-disabled src="/favicon.ico" />
-        <n-text class="text-base align-middle" strong>FGATE</n-text>
+        <n-text class="text-base align-middle" strong>FlowGate</n-text>
       </n-space>
       <n-space align="center" size="large">
         <n-button v-if="showSettings" circle quaternary @click="navigateToSettings">
