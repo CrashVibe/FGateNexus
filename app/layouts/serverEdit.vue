@@ -219,7 +219,7 @@ const selectedKey = computed(() => route.path);
         <n-menu :value="selectedKey" :collapsed="collapsed" :options="menuOptions" @update:value="handleMenuSelect" />
       </n-layout-sider>
       <n-layout-content :native-scrollbar="false">
-        <div class="h-full max-w-screen-xl p-8 pt-12 pb-24 mx-auto">
+        <div class="h-full max-w-7xl p-8 pt-12 pb-24 mx-auto">
           <slot />
         </div>
       </n-layout-content>
