@@ -1,16 +1,12 @@
 html,
-body,
-#app {
+body {
     height: 100%;
     padding: 0;
     margin: 0;
-    --header-height: 64px;
 }
 
-html {
-    transition:
-        background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+:root {
+    --header-height: 64px;
 }
 
 html:not(.dark) {
@@ -19,32 +15,4 @@ html:not(.dark) {
 
 html.dark {
     background-color: black;
-}
-
-
-/* 滚动条美化 */
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 4px;
-    transition: background 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.3);
-}
-
-/* 提升文字渲染质量 */
-* {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
 }
