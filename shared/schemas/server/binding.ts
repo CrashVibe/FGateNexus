@@ -38,10 +38,10 @@ export const BindingConfigSchema = z.object({
     bindSuccessMsg: z
         .string()
         .max(200, "绑定成功消息长度不能超过 200 个字符")
-        .default("绑定 {user} 成功! 你可以进入服务器了!"),
-    bindFailMsg: z.string().max(200, "绑定失败消息长度不能超过 200 个字符").default("绑定 {user} 失败! {why}"),
-    unbindSuccessMsg: z.string().max(200, "解绑成功消息长度不能超过 200 个字符").default("解除绑定 {user} 成功!"),
-    unbindFailMsg: z.string().max(200, "解绑失败消息长度不能超过 200 个字符").default("解除绑定 {user} 失败! {why}")
+        .default("绑定 {user} 成功！你可以进入服务器了！"),
+    bindFailMsg: z.string().max(200, "绑定失败消息长度不能超过 200 个字符").default("绑定 {user} 失败！{why}"),
+    unbindSuccessMsg: z.string().max(200, "解绑成功消息长度不能超过 200 个字符").default("解除绑定 {user} 成功！"),
+    unbindFailMsg: z.string().max(200, "解绑失败消息长度不能超过 200 个字符").default("解除绑定 {user} 失败！{why}")
 });
 
 export type BindingConfig = z.infer<typeof BindingConfigSchema>;

@@ -40,10 +40,10 @@ export default defineEventHandler(async (event) => {
             return createErrorResponse(event, ApiError.unauthorized("密码错误"));
         }
 
-        // 验证2FA
+        // 验证 2FA
         if (user.twoFactorEnabled && user.twoFactorSecret) {
             if (!twoFactorToken) {
-                return createErrorResponse(event, ApiError.unauthorized("需要输入2FA验证码"));
+                return createErrorResponse(event, ApiError.unauthorized("需要输入 2FA 验证码"));
             }
 
             const isValid = authenticator.verify({
@@ -52,8 +52,8 @@ export default defineEventHandler(async (event) => {
             });
 
             if (!isValid) {
-                logger.warn({ userId: user.id }, "登录失败：2FA验证码错误");
-                return createErrorResponse(event, ApiError.unauthorized("2FA验证码错误"));
+                logger.warn({ userId: user.id }, "登录失败：2FA 验证码错误");
+                return createErrorResponse(event, ApiError.unauthorized("2FA 验证码错误"));
             }
         }
 

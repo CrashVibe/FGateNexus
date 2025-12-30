@@ -85,7 +85,7 @@ const handleGoBack = () => {
   }
 };
 
-// 初始化Canvas动画
+// 初始化 Canvas 动画
 const initCanvas = () => {
   const canvas = canvasRef.value;
   if (!canvas) return;
@@ -93,7 +93,7 @@ const initCanvas = () => {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  // 设置Canvas尺寸
+  // 设置 Canvas 尺寸
   const resizeCanvas = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;

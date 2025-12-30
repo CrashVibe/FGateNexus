@@ -174,7 +174,7 @@
                         </n-tooltip>
                       </div>
                       <div class="text-sm text-gray-500">
-                        预览:
+                        预览：
                         <n-text type="info">{{ mcToPlatformPreview }}</n-text>
                       </div>
                     </div>
@@ -183,11 +183,11 @@
               </n-card>
             </n-grid-item>
             <n-grid-item>
-              <!-- 平台 → MC模板 -->
+              <!-- 平台 → MC 模板 -->
               <n-card embedded size="small">
                 <template #header>
                   <div class="flex items-center gap-2">
-                    <span>平台 → MC模板</span>
+                    <span>平台 → MC 模板</span>
                     <n-tag size="small" type="success">平台到游戏</n-tag>
                   </div>
                 </template>
@@ -219,7 +219,7 @@
                         </n-tooltip>
                       </div>
                       <div class="text-sm text-gray-500">
-                        预览:
+                        预览：
                         <n-text type="success">{{ platformToMcPreview }}</n-text>
                       </div>
                     </div>
@@ -431,7 +431,7 @@ function handleSelect(key: string) {
 const serverData = await getServerData();
 const mcToPlatformVariables = [
   { label: "玩家名", value: "{playerName}", example: "Steve" },
-  { label: "玩家UUID", value: "{playerUUID}", example: "12345678-1234-1234..." },
+  { label: "玩家 UUID", value: "{playerUUID}", example: "12345678-1234-1234..." },
   { label: "消息内容", value: "{message}", example: "Hello world!" },
   { label: "服务器名", value: "{serverName}", example: serverData.name },
   { label: "时间戳", value: "{timestamp}", example: "2024-01-01 12:00:00" }
@@ -440,7 +440,7 @@ const mcToPlatformVariables = [
 const platformToMcVariables = [
   { label: "平台名", value: "{platform}", example: "Onebot" },
   { label: "昵称", value: "{nickname}", example: "Alice" },
-  { label: "用户ID", value: "{userId}", example: "123456789" },
+  { label: "用户 ID", value: "{userId}", example: "123456789" },
   { label: "消息内容", value: "{message}", example: "Hi everyone!" },
   { label: "时间戳", value: "{timestamp}", example: "2024-01-01 12:00:00" }
 ];

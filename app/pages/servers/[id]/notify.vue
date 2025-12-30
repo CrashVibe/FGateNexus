@@ -33,7 +33,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="success">{{ renderJoinMessage(formData.join_notify_message, "Steve") }}</n-text>
                   </div>
                 </div>
@@ -64,7 +64,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="success">{{ renderLeaveMessage(formData.leave_notify_message, "Steve") }}</n-text>
                   </div>
                 </div>
@@ -102,7 +102,7 @@
                     </n-tooltip>
                   </div>
                   <div class="text-sm text-gray-500">
-                    预览:
+                    预览：
                     <n-text type="success">
                       {{ renderDeathMessage(formData.death_notify_message, "Steve", "掉落") }}
                     </n-text>
