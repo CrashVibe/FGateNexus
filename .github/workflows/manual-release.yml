@@ -52,14 +52,6 @@ jobs:
                   git push origin ":refs/tags/v${VERSION}" 2>/dev/null || true
               continue-on-error: true
 
-            - name: Create and push tag
-              run: |
-                  VERSION=${{ steps.package_version.outputs.version }}
-                  git config --local user.email "action@github.com"
-                  git config --local user.name "GitHub Action"
-                  git tag "v${VERSION}"
-                  git push origin "v${VERSION}"
-
             - name: Release
               uses: softprops/action-gh-release@v2
               with:
