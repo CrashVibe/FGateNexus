@@ -1,14 +1,15 @@
-name: Build and Release
-permissions:
-    contents: read
+name: Release
 
 on:
     push:
         branches: [main]
     workflow_dispatch:
 
+permissions:
+    contents: write
+
 jobs:
-    build:
+    release:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
@@ -27,60 +28,69 @@ jobs:
             - name: Install dependencies
               run: bun install --frozen-lockfile
 
-            - name: Get version
+            - name: Get version from package.json
               id: package_version
-              run: echo "version=$(bun -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
+              run: echo "version=$(node -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
+
+            - name: Check if version already exists
+              id: check_version
+              run: |
+                  VERSION=${{ steps.package_version.outputs.version }}
+                  if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}$"; then
+                    echo "exists=true" >> $GITHUB_OUTPUT
+                    echo "Version v${VERSION} already exists, skipping release"
+                  else
+                    echo "exists=false" >> $GITHUB_OUTPUT
+                    echo "Version v${VERSION} is new, will create release"
+                  fi
 
             - name: Build for All Platforms
+              if: steps.check_version.outputs.exists == 'false'
               run: bun run build:all
 
             - name: Archive artifacts with version
+              if: steps.check_version.outputs.exists == 'false'
               run: |
                   ls dist
                   VERSION=${{ steps.package_version.outputs.version }}
                   chmod +r dist/*
-                  tar -czf FGateNexus-v${VERSION}-linux-x64.tar.gz dist/FGateNexus-linux-x64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-linux-arm64.tar.gz dist/FGateNexus-linux-arm64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-mac-x64.tar.gz dist/FGateNexus-mac-x64 dist/migrations
-                  tar -czf FGateNexus-v${VERSION}-mac-arm64.tar.gz dist/FGateNexus-mac-arm64 dist/migrations
-                  zip -r FGateNexus-v${VERSION}-win.zip dist/FGateNexus-win-x64.exe dist/migrations
+                  cd dist
+                  tar -czf ../FGateNexus-v${VERSION}-linux-x64.tar.gz FGateNexus-linux-x64 migrations
+                  tar -czf ../FGateNexus-v${VERSION}-linux-arm64.tar.gz FGateNexus-linux-arm64 migrations
+                  tar -czf ../FGateNexus-v${VERSION}-mac-x64.tar.gz FGateNexus-mac-x64 migrations
+                  tar -czf ../FGateNexus-v${VERSION}-mac-arm64.tar.gz FGateNexus-mac-arm64 migrations
+                  zip -r ../FGateNexus-v${VERSION}-win.zip FGateNexus-win-x64.exe migrations
 
-            - name: Upload Linux x64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64
-                  path: |
-                      dist/FGateNexus-linux-x64
-                      dist/migrations
+            - name: Delete existing tag if exists
+              if: steps.check_version.outputs.exists == 'false'
+              run: |
+                  VERSION=${{ steps.package_version.outputs.version }}
+                  git tag -d "v${VERSION}" 2>/dev/null || true
+                  git push origin ":refs/tags/v${VERSION}" 2>/dev/null || true
+              continue-on-error: true
 
-            - name: Upload Linux arm64 artifact
-              uses: actions/upload-artifact@v4
+            - name: Release
+              if: steps.check_version.outputs.exists == 'false'
+              uses: softprops/action-gh-release@v2
               with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64
-                  path: |
-                      dist/FGateNexus-linux-arm64
-                      dist/migrations
+                  tag_name: v${{ steps.package_version.outputs.version }}
+                  name: v${{ steps.package_version.outputs.version }}
+                  draft: false
+                  generate_release_notes: true
+                  prerelease: false
+                  files: |
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz
+                      FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip
+                  body: |
+                      ### 下载说明
 
-            - name: Upload macOS x64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64
-                  path: |
-                      dist/FGateNexus-mac-x64
-                      dist/migrations
-
-            - name: Upload macOS arm64 artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64
-                  path: |
-                      dist/FGateNexus-mac-arm64
-                      dist/migrations
-
-            - name: Upload Windows artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: FGateNexus-v${{ steps.package_version.outputs.version }}-win
-                  path: |
-                      dist/FGateNexus-win-x64.exe
-                      dist/migrations
+                      | 平台 | 架构 | 文件名 |
+                      |------|------|--------|
+                      | Linux | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64.tar.gz` |
+                      | Linux | ARM64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64.tar.gz` |
+                      | macOS | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64.tar.gz` |
+                      | macOS | ARM64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz` |
+                      | Windows | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip` |
