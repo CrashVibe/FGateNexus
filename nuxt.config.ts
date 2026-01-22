@@ -3,6 +3,7 @@ import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import Components from "unplugin-vue-components/vite";
 
 const isDev = process.env.NODE_ENV !== "production";
+const isBuild = !isDev;
 
 export default defineNuxtConfig({
     compatibilityDate: "2025-08-06",
@@ -76,7 +77,8 @@ export default defineNuxtConfig({
         },
         build: {
             target: "esnext",
-            minify: "esbuild",
+            minify: isBuild,
+            sourcemap: isDev,
             cssCodeSplit: true,
             rollupOptions: {
                 output: {
