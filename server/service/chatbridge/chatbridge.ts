@@ -4,13 +4,13 @@ import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
 import type { Bot, ForkScope, Session } from "koishi";
 import { Context, Logger as klog } from "koishi";
-import { OneBotBot } from "koishi-plugin-adapter-onebot";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { getConfigManager } from "~~/server/utils/config";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import { bindingService } from "../bindingmanager";
 import { messageRouter } from "../messageRouter";
+import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
 
 /**
  * Bot 连接信息
@@ -99,12 +99,12 @@ export class ChatBridge {
     public createOnebot(config: OneBotConfig): ForkScope {
         logger.debug({ config }, "创建 Onebot Bot 实例");
         if (config.protocol === "ws-reverse") {
-            return this.app.plugin(OneBotBot, {
+            return this.app.plugin(OneBot, {
                 ...config,
                 responseTimeout: 5000
             });
         } else {
-            return this.app.plugin(OneBotBot, {
+            return this.app.plugin(OneBot, {
                 ...config
             });
         }
