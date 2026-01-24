@@ -23,7 +23,7 @@
         "@koishijs/plugin-http": "^0.6.3",
         "@koishijs/plugin-logger": "^2.6.9",
         "@koishijs/plugin-server": "^3.2.7",
-        "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.7",
+        "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.8",
         "@nuxt/eslint": "^1.12.1",
         "@nuxtjs/tailwindcss": "7.0.0-beta.1",
         "@pinia/nuxt": "^0.11.3",
