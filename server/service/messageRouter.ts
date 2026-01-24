@@ -114,7 +114,7 @@ class MessageRouter {
             for (const server of serversWithConfig) {
                 for (const target of server.targets) {
                     if (!target.config.CommandConfigSchema.enabled) continue;
-                    if (target.targetId !== session.channelId) continue;
+                    if (target.type === "group" ? target.targetId !== session.channelId : target.targetId !== session.userId) continue;
                     if (!session.content.startsWith(target.config.CommandConfigSchema.prefix)) continue;
                     const role = session.event.member?.roles;
                     if (!role || !role.some((r) => target.config.CommandConfigSchema.permissions.includes(r))) continue;
@@ -127,7 +127,7 @@ class MessageRouter {
                         .then(({ success, message }) =>
                             chatBridge.sendToTarget(
                                 connection,
-                                session.channelId || "",
+                                target.targetId,
                                 target.type,
                                 success ? `指令执行成功: ${message}` : `指令执行失败：${message}` // TODO: 图片渲染
                             )
@@ -146,7 +146,7 @@ class MessageRouter {
                 if (!isTargetGroup) continue;
 
                 if (!chatSyncConfig.platformToMcEnabled) continue;
-                if (!this.shouldForwardMessage(session.content || "", chatSyncConfig)) continue;
+                if (!this.shouldForwardMessage(session.content, chatSyncConfig)) continue;
 
                 const formattedMessage = formatPlatformToMCMessage(chatSyncConfig.platformToMcTemplate, {
                     platform: session.platform,
@@ -155,8 +155,8 @@ class MessageRouter {
                         if (!session.userId) throw new Error("消息格式化时用户 ID 不存在");
                         return session.userId;
                     })(),
-                    message: session.content || "",
-                    timestamp: session.timestamp || Date.now()
+                    message: session.content,
+                    timestamp: session.timestamp
                 });
 
                 tasks.push(
