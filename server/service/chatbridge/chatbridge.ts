@@ -43,7 +43,7 @@ export class ChatBridge {
     private app: Context;
     private constructor() {
         this.app = new Context();
-        this.init().then();
+        void this.init();
     }
 
     public static getInstance(): ChatBridge {
@@ -80,7 +80,7 @@ export class ChatBridge {
                 (conn) => conn.config.selfId === session.bot.selfId
             );
             if (connection && session.content) {
-                this.receiveMessage(connection, session);
+                await this.receiveMessage(connection, session);
             }
         });
         this.app.on("guild-member-removed", async (session) => {
@@ -88,7 +88,7 @@ export class ChatBridge {
                 (conn) => conn.config.selfId === session.bot.selfId
             );
             if (connection) {
-                this.handleGroupLeave(connection, session);
+                await this.handleGroupLeave(connection, session);
             }
         });
     }
@@ -136,7 +136,7 @@ export class ChatBridge {
             this.connectionMap.set(adapterID, { pluginInstance: bot, adapterID: adapterID, adapterType, config });
             logger.info(`已添加 Bot 连接：${adapterID}`);
         } else {
-            throw new Error(`不支持的适配器类型 (可能版本太低了吧？): ${adapterType}`);
+            throw new Error(`不支持的适配器类型 (可能版本太低了吧？): ${String(adapterType)}`);
         }
     }
 
@@ -168,7 +168,7 @@ export class ChatBridge {
         if (connection.adapterType === AdapterType.Onebot) {
             bot = this.app.bots.find((bot) => bot.selfId === connection.config.selfId);
         } else {
-            throw new Error(`不支持的适配器类型 (可能版本太低了吧？): ${connection.adapterType}`);
+            throw new Error(`不支持的适配器类型 (可能版本太低了吧？): ${String(connection.adapterType)}`);
         }
 
         if (!bot) {
