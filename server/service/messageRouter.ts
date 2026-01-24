@@ -116,10 +116,8 @@ class MessageRouter {
                     if (!target.config.CommandConfigSchema.enabled) continue;
                     if (target.targetId !== session.channelId) continue;
                     if (!session.content.startsWith(target.config.CommandConfigSchema.prefix)) continue;
-                    if (session.onebot) {
-                        const role = session.onebot.sender?.role;
-                        if (!role || !target.config.CommandConfigSchema.permissions.includes(role)) continue;
-                    }
+                    const role = session.event.member?.roles;
+                    if (!role || !role.some((r) => target.config.CommandConfigSchema.permissions.includes(r))) continue;
 
                     const cmd = pluginBridge
                         .executeCommand(
