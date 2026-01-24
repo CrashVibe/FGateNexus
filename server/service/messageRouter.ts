@@ -53,7 +53,7 @@ class MessageRouter {
                 return;
             }
 
-            const {chatSyncConfig} = server;
+            const { chatSyncConfig } = server;
             if (!chatSyncConfig.enabled || server.targets.length === 0) {
                 return;
             }
@@ -139,7 +139,7 @@ class MessageRouter {
                 }
 
                 // chatSync 转发
-                const {chatSyncConfig} = server;
+                const { chatSyncConfig } = server;
                 if (!chatSyncConfig?.enabled) continue;
 
                 const isTargetGroup = server.targets?.some(

@@ -5,11 +5,13 @@
     "workbench.colorCustomizations": {
         "statusBar.background": "#0098b32d"
     },
+    "editor.defaultFormatter": "oxc.oxc-vscode",
     "cSpell.enabledFileTypes": {
         "*": false,
         "js": true,
         "ts": true,
         "vue": true,
         "md": true
-    }
+    },
+    "oxc.typeAware": true
 }

@@ -1,5 +1,0 @@
-# generated
-migrations/*
-
-# lock files
-bun.lock

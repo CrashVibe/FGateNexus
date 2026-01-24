@@ -1,5 +1,5 @@
 {
-    "experimentalTernaries": false,
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
     "printWidth": 120,
     "tabWidth": 4,
     "useTabs": false,
@@ -17,9 +17,10 @@
     "endOfLine": "lf",
     "embeddedLanguageFormatting": "auto",
     "singleAttributePerLine": false,
+    "ignorePatterns": ["migrations/*", "bun.lock"],
     "overrides": [
         {
-            "files": "*.vue",
+            "files": ["*.vue"],
             "options": {
                 "tabWidth": 2
             }

@@ -2,7 +2,7 @@ import { defineEventHandler } from "h3";
 import { getDatabase } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
-    const {url, method} = event.node.req;
+    const { url, method } = event.node.req;
 
     if (!url?.startsWith("/api/")) {
         return;

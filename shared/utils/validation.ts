@@ -7,7 +7,7 @@ type ValidationRule = {
 };
 
 export function zodToNaiveRules<T extends z.ZodRawShape>(schema: z.ZodObject<T>): Record<string, ValidationRule[]> {
-    const {shape} = schema;
+    const { shape } = schema;
     const rules: Record<string, ValidationRule[]> = {};
 
     for (const key in shape) {
