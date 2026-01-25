@@ -1,22 +1,22 @@
 /* 页面 */
 .page-leave-active,
 .page-enter-active {
-    transition: all 0.2s ease;
+  transition: all 0.2s ease;
 }
 .page-leave-to,
 .page-enter-from {
-    opacity: 0;
-    transform: translateX(10px);
+  opacity: 0;
+  transform: translateX(10px);
 }
 
 /* 布局 */
 .layout-leave-active,
 .layout-enter-active {
-    transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
-    transform-origin: center center;
+  transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
+  transform-origin: center center;
 }
 .layout-enter-from,
 .layout-leave-to {
-    opacity: 0;
-    transform: scale(0.95);
+  opacity: 0;
+  transform: scale(0.95);
 }

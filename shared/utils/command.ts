@@ -4,5 +4,5 @@ import { type CommandConfig, CommandConfigSchema } from "../schemas/server/comma
  * 获取默认聊天同步配置
  */
 export function getDefaultCommandConfig(): CommandConfig {
-    return CommandConfigSchema.parse({});
+  return CommandConfigSchema.parse({});
 }

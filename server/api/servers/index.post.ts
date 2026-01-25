@@ -11,32 +11,32 @@ import { getDefaultCommandConfig } from "~~/shared/utils/command";
 import { getDefaultNotifyConfig } from "~~/shared/utils/notify";
 
 export default defineEventHandler(async (event) => {
-    try {
-        const body = await readBody(event);
-        const parsed = serverSchemaRequset.safeParse(body);
+  try {
+    const body = await readBody(event);
+    const parsed = serverSchemaRequset.safeParse(body);
 
-        if (!parsed.success) {
-            const apiError = ApiError.validation("添加服务器失败");
-            return createErrorResponse(event, apiError, parsed.error);
-        }
-
-        const database = await getDatabase();
-        const serverData = {
-            name: parsed.data.servername,
-            token: parsed.data.token
-        };
-        await database.insert(servers).values({
-            name: serverData.name,
-            token: serverData.token,
-            bindingConfig: getDefaultBindingConfig(),
-            chatSyncConfig: getDefaultChatSyncConfig(),
-            commandConfig: getDefaultCommandConfig(),
-            notifyConfig: getDefaultNotifyConfig()
-        });
-        return createApiResponse(event, "添加服务器成功", StatusCodes.CREATED);
-    } catch (err) {
-        logger.error({ err }, "Database error");
-        const apiError = ApiError.database("添加服务器失败");
-        return createErrorResponse(event, apiError);
+    if (!parsed.success) {
+      const apiError = ApiError.validation("添加服务器失败");
+      return createErrorResponse(event, apiError, parsed.error);
     }
+
+    const database = await getDatabase();
+    const serverData = {
+      name: parsed.data.servername,
+      token: parsed.data.token
+    };
+    await database.insert(servers).values({
+      name: serverData.name,
+      token: serverData.token,
+      bindingConfig: getDefaultBindingConfig(),
+      chatSyncConfig: getDefaultChatSyncConfig(),
+      commandConfig: getDefaultCommandConfig(),
+      notifyConfig: getDefaultNotifyConfig()
+    });
+    return createApiResponse(event, "添加服务器成功", StatusCodes.CREATED);
+  } catch (err) {
+    logger.error({ err }, "Database error");
+    const apiError = ApiError.database("添加服务器失败");
+    return createErrorResponse(event, apiError);
+  }
 });

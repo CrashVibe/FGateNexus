@@ -1,4 +1,5 @@
 import { type BindingConfig, BindingConfigSchema } from "../../shared/schemas/server/binding";
+
 import { applyDefaults } from "./zod";
 
 /**
@@ -10,8 +11,8 @@ import { applyDefaults } from "./zod";
  */
 
 export function mergeServerConfig(
-    currentServerConfig: BindingConfig,
-    configUpdates?: Partial<BindingConfig>
+  currentServerConfig: BindingConfig,
+  configUpdates?: Partial<BindingConfig>
 ): BindingConfig {
-    return applyDefaults(BindingConfigSchema, { ...currentServerConfig, ...configUpdates });
+  return applyDefaults(BindingConfigSchema, { ...currentServerConfig, ...configUpdates });
 }

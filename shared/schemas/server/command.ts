@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { TargetConfigSchema } from "./target";
 
 /**
@@ -10,11 +11,11 @@ export type CommandConfig = z.infer<typeof CommandConfigSchema>;
 export type CommandTarget = CommandConfig["targets"][number];
 
 export const commandPatchBodySchema = z.object({
-    command: CommandConfigSchema,
-    targets: z.array(
-        z.object({
-            id: z.uuidv4(),
-            config: TargetConfigSchema
-        })
-    )
+  command: CommandConfigSchema,
+  targets: z.array(
+    z.object({
+      id: z.uuidv4(),
+      config: TargetConfigSchema
+    })
+  )
 });

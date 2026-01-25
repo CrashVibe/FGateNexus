@@ -6,37 +6,37 @@ import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
-    try {
-        const database = await getDatabase();
+  try {
+    const database = await getDatabase();
 
-        const playersWithRelations = await database.query.players.findMany({
-            with: {
-                socialAccount: true,
-                playerServers: {
-                    with: {
-                        server: true
-                    }
-                }
-            }
-        });
+    const playersWithRelations = await database.query.players.findMany({
+      with: {
+        socialAccount: true,
+        playerServers: {
+          with: {
+            server: true
+          }
+        }
+      }
+    });
 
-        const result: PlayerWithRelations[] = playersWithRelations.map((p) => ({
-            player: {
-                id: p.id,
-                uuid: p.uuid,
-                name: p.name,
-                ip: p.ip,
-                socialAccountId: p.socialAccountId,
-                createdAt: p.createdAt,
-                updatedAt: p.updatedAt
-            },
-            socialAccount: p.socialAccount ?? null,
-            servers: p.playerServers.map((ps) => ps.server)
-        }));
+    const result: PlayerWithRelations[] = playersWithRelations.map((p) => ({
+      player: {
+        id: p.id,
+        uuid: p.uuid,
+        name: p.name,
+        ip: p.ip,
+        socialAccountId: p.socialAccountId,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
+      },
+      socialAccount: p.socialAccount ?? null,
+      servers: p.playerServers.map((ps) => ps.server)
+    }));
 
-        return createApiResponse(event, "获取玩家列表成功", StatusCodes.OK, result);
-    } catch (err) {
-        logger.error({ err }, "Database error");
-        return createErrorResponse(event, ApiError.database("获取玩家列表失败"));
-    }
+    return createApiResponse(event, "获取玩家列表成功", StatusCodes.OK, result);
+  } catch (err) {
+    logger.error({ err }, "Database error");
+    return createErrorResponse(event, ApiError.database("获取玩家列表失败"));
+  }
 });

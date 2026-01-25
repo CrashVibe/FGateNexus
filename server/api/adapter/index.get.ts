@@ -7,26 +7,26 @@ import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { createApiResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event) => {
-    try {
-        const database = await getDatabase();
-        const result = await database.select().from(adapters);
+  try {
+    const database = await getDatabase();
+    const result = await database.select().from(adapters);
 
-        const adaptersWithStatus: AdapterWithStatus[] = result.map((adapter) => {
-            let isOnline = false;
-            if (!chatBridge.getConnectionData(adapter.id)) {
-                isOnline = false;
-            } else {
-                isOnline = chatBridge.isOnline(adapter.id);
-            }
-            return {
-                ...adapter,
-                isOnline
-            };
-        });
+    const adaptersWithStatus: AdapterWithStatus[] = result.map((adapter) => {
+      let isOnline = false;
+      if (!chatBridge.getConnectionData(adapter.id)) {
+        isOnline = false;
+      } else {
+        isOnline = chatBridge.isOnline(adapter.id);
+      }
+      return {
+        ...adapter,
+        isOnline
+      };
+    });
 
-        return createApiResponse(event, "获取适配器列表成功", StatusCodes.OK, adaptersWithStatus);
-    } catch (err) {
-        logger.error({ err }, "获取适配器列表失败");
-        return createErrorResponse(event, ApiError.database("获取适配器列表失败"));
-    }
+    return createApiResponse(event, "获取适配器列表成功", StatusCodes.OK, adaptersWithStatus);
+  } catch (err) {
+    logger.error({ err }, "获取适配器列表失败");
+    return createErrorResponse(event, ApiError.database("获取适配器列表失败"));
+  }
 });

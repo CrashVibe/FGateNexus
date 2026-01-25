@@ -1,46 +1,47 @@
+import type { JsonRpcRequest } from "../types";
 import type { AdapterInternal, Peer } from "crossws";
 import { eq } from "drizzle-orm";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { renderJoinMessage } from "~~/shared/utils/template/notify";
+
 import { chatBridge } from "../../chatbridge/chatbridge";
 import { pluginBridge } from "../MCWSBridge";
 import { RequestHandler } from "../RequestHandler";
-import type { JsonRpcRequest } from "../types";
 
 export class PlayerJoinHandler extends RequestHandler {
-    getMethod(): string {
-        return "player.join";
+  getMethod(): string {
+    return "player.join";
+  }
+
+  async handleRequest(request: JsonRpcRequest<{ playerName: string }>, peer: Peer<AdapterInternal>): Promise<void> {
+    const { playerName } = request.params || {};
+
+    if (typeof playerName !== "string") {
+      logger.warn({ requestParams: request.params }, "无效玩家加入参数");
+      return;
     }
 
-    async handleRequest(request: JsonRpcRequest<{ playerName: string }>, peer: Peer<AdapterInternal>): Promise<void> {
-        const { playerName } = request.params || {};
+    const db = await getDatabase();
 
-        if (typeof playerName !== "string") {
-            logger.warn({ requestParams: request.params }, "无效玩家加入参数");
-            return;
-        }
-
-        const db = await getDatabase();
-
-        const serverID = pluginBridge.connectionManager.getServerId(peer);
-        const server = await db.query.servers.findFirst({
-            where: eq(servers.id, serverID),
-            with: {
-                targets: true
-            }
-        });
-        if (!server) {
-            logger.warn({ serverID }, "玩家加入时未找到服务器");
-            return;
-        }
-        if (server.notifyConfig.player_notify && server.adapterId) {
-            const botConnection = chatBridge.getConnectionData(server.adapterId);
-            if (!botConnection) return;
-            const formattedMessage = renderJoinMessage(server.notifyConfig.join_notify_message, playerName);
-            for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
-                chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
-            }
-        }
+    const serverID = pluginBridge.connectionManager.getServerId(peer);
+    const server = await db.query.servers.findFirst({
+      where: eq(servers.id, serverID),
+      with: {
+        targets: true
+      }
+    });
+    if (!server) {
+      logger.warn({ serverID }, "玩家加入时未找到服务器");
+      return;
     }
+    if (server.notifyConfig.player_notify && server.adapterId) {
+      const botConnection = chatBridge.getConnectionData(server.adapterId);
+      if (!botConnection) return;
+      const formattedMessage = renderJoinMessage(server.notifyConfig.join_notify_message, playerName);
+      for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
+        chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
+      }
+    }
+  }
 }

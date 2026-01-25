@@ -8,11 +8,11 @@
  */
 
 declare module "#auth-utils" {
-    interface User {
-        id: number;
-        username: string;
-        has2FA: boolean;
-    }
+  interface User {
+    id: number;
+    username: string;
+    has2FA: boolean;
+  }
 }
 
 export {};

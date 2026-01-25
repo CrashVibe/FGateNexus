@@ -1,17 +1,21 @@
 {
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "cSpell.words": ["nuxt", "koishi", "nuxtjs", "koishijs"],
-    "material-icon-theme.activeIconPack": "vue_vuex",
-    "workbench.colorCustomizations": {
-        "statusBar.background": "#0098b32d"
-    },
-    "editor.defaultFormatter": "oxc.oxc-vscode",
-    "cSpell.enabledFileTypes": {
-        "*": false,
-        "js": true,
-        "ts": true,
-        "vue": true,
-        "md": true
-    },
-    "oxc.typeAware": true
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "cSpell.words": ["nuxt", "koishi", "nuxtjs", "koishijs"],
+  "material-icon-theme.activeIconPack": "vue_vuex",
+  "workbench.colorCustomizations": {
+    "statusBar.background": "#0098b32d"
+  },
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "cSpell.enabledFileTypes": {
+    "*": false,
+    "js": true,
+    "ts": true,
+    "vue": true,
+    "md": true
+  },
+  "oxc.typeAware": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+    "source.fixAll.oxc": "always"
+  }
 }
