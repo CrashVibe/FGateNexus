@@ -25,11 +25,10 @@ const handleLogout = async () => {
 
 <template>
   <n-layout-header bordered class="h-(--header-height) p-4">
-    <n-space justify="space-between">
-      <n-space align="center" size="large">
-        <n-image class="size-8 align-middle" preview-disabled src="/favicon.ico" />
-        <n-text class="align-middle text-base" strong>FlowGate</n-text>
-      </n-space>
+    <n-space justify="space-between" align="center">
+      <div>
+        <!-- 预留，别删掉了啊啊啊啊 -->
+      </div>
       <n-space align="center" size="large">
         <n-button v-if="showSettings" circle quaternary @click="navigateToSettings">
           <template #icon>
