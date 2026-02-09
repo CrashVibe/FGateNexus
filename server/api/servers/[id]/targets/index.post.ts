@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getDatabase } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
 import { ApiError, createErrorResponse } from "~~/shared/error";
-import { bulkCreateSchema } from "~~/shared/schemas/server/target";
+import { TargetAPI, TargetConfigSchema } from "~~/shared/schemas/server/target";
 import { createApiResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event) => {
@@ -12,10 +12,9 @@ export default defineEventHandler(async (event) => {
     const serverID = Number(getRouterParam(event, "id"));
     if (Number.isNaN(serverID)) return createErrorResponse(event, ApiError.validation("无效服务器 ID"));
 
-    const body = await readBody(event);
-    const parsed = bulkCreateSchema.safeParse(body);
+    const parsed = TargetAPI.POST.request.safeParse(await readBody(event));
     if (!parsed.success) {
-      return createErrorResponse(event, ApiError.validation("请求体格式不正确"));
+      return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
     }
 
     const db = await getDatabase();
@@ -33,12 +32,12 @@ export default defineEventHandler(async (event) => {
       targetId: p.targetId,
       type: p.type,
       enabled: p.enabled,
-      config: getDefaultTargetConfig()
+      config: TargetConfigSchema.parse({})
     }));
 
     const inserted = await db.insert(targets).values(nowValues).returning();
 
-    return createApiResponse(event, "批量创建目标成功", StatusCodes.CREATED, inserted);
+    return createApiResponse(event, "批量创建目标成功", StatusCodes.CREATED, TargetAPI.POST.response.parse(inserted));
   } catch (err) {
     logger.error({ err }, "Database error");
     return createErrorResponse(event, ApiError.database("批量创建目标失败"));

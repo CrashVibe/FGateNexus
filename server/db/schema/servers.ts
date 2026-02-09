@@ -1,8 +1,9 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import type z from "zod";
 import type { BindingConfig } from "~~/shared/schemas/server/binding";
 import type { ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
 import type { CommandConfig } from "~~/shared/schemas/server/command";
-import type { NotifyConfig } from "~~/shared/schemas/server/notify";
+import type { NotifyConfigSchema } from "~~/shared/schemas/server/notify";
 
 import { adapters } from "./adapters";
 export const servers = sqliteTable("servers", {
@@ -19,5 +20,5 @@ export const servers = sqliteTable("servers", {
     mode: "json"
   })
     .notNull()
-    .$type<NotifyConfig>()
+    .$type<z.infer<typeof NotifyConfigSchema>>()
 });

@@ -1,3 +1,4 @@
+import type { ApiSchemaRegistry } from "..";
 import { z } from "zod";
 
 import { TargetConfigSchema } from "./target";
@@ -83,12 +84,18 @@ export const chatSyncConfigSchema = z.object({
 
 export type ChatSyncConfig = z.infer<typeof chatSyncConfigSchema>;
 
-export const chatSyncPatchBodySchema = z.object({
-  chatsync: chatSyncConfigSchema,
-  targets: z.array(
-    z.object({
-      id: z.uuidv4(),
-      config: TargetConfigSchema
-    })
-  )
-});
+export const ChatSyncAPI = {
+  PATCH: {
+    description: "更新服务器聊天同步配置",
+    request: z.object({
+      chatsync: chatSyncConfigSchema,
+      targets: z.array(
+        z.object({
+          id: z.uuidv4(),
+          config: TargetConfigSchema
+        })
+      )
+    }),
+    response: z.object({})
+  }
+} satisfies ApiSchemaRegistry;

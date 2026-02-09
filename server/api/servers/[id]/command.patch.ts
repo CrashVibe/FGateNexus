@@ -5,7 +5,7 @@ import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
-import { commandPatchBodySchema } from "~~/shared/schemas/server/command";
+import { CommandAPI } from "~~/shared/schemas/server/command";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,15 +15,13 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const body = await readBody(event);
-    const parsed = commandPatchBodySchema.safeParse(body);
+    const parsed = CommandAPI.PATCH.request.safeParse(await readBody(event));
     if (!parsed.success) {
-      const apiError = ApiError.validation("参数错误");
-      return createErrorResponse(event, apiError, parsed.error);
+      return createErrorResponse(event, ApiError.validation("参数错误"), parsed.error);
     }
 
     const db = await getDatabase();
-    const { command, targets: items = [] } = parsed.data;
+    const { command, targets: items } = parsed.data;
 
     db.transaction((tx) => {
       tx.update(servers).set({ commandConfig: command }).where(eq(servers.id, serverID)).run();

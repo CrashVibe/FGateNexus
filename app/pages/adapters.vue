@@ -1,16 +1,12 @@
 <script lang="ts" setup>
 import { AddCircleOutline, RefreshOutline } from "@vicons/ionicons5";
 import type { FormInst } from "naive-ui";
-import type { ApiResponse } from "~~/shared/types";
-import {
-  AdapterConfigSchema,
-  AdapterType,
-  type AdapterWithStatus,
-  type BotInstanceData
-} from "~~/shared/schemas/adapter";
+import { AdapterAPI, AdapterType, type AdaptersWithStatus, type AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { CardAdapter } from "#components";
-import { StatusCodes } from "http-status-codes";
 import { isMobile } from "#imports";
+import { AdapterData } from "~/composables/api";
+import type z from "zod";
+import { cloneDeep } from "lodash-es";
 
 // 选取适配器组件
 const adapterComponentMap: Record<AdapterType, Component> = {
@@ -20,12 +16,12 @@ function getAdapterComponent(adapterType: AdapterType): Component {
   return adapterComponentMap[adapterType];
 }
 
-const botSelectorRef = ref<FormInst>();
+const formRef = ref<FormInst>();
 
-const botInstanceData = ref<BotInstanceData>({
-  adapterType: null,
-  config: null,
-  adapterID: null
+const formData = ref<Partial<z.infer<typeof AdapterAPI.POST.request>>>({
+  type: undefined,
+  config: undefined,
+  name: undefined
 });
 const isSubmitting = ref(false);
 const message = useMessage();
@@ -33,36 +29,32 @@ const showModal = ref(false);
 
 function openModal() {
   showModal.value = true;
-  botInstanceData.value = {
-    adapterType: null,
-    config: null,
-    adapterID: null
+  formData.value = {
+    type: undefined,
+    name: undefined,
+    config: undefined
   };
 }
 
-async function handleSubmitClick(e: MouseEvent) {
-  e.preventDefault();
-
+async function handleSubmitClick() {
   if (isSubmitting.value) return;
 
   try {
     isSubmitting.value = true;
     try {
-      await botSelectorRef.value?.validate();
+      await formRef.value?.validate();
     } catch {
+      isSubmitting.value = false;
       return;
     }
 
-    if (botInstanceData.value.config) {
-      const validatedConfig = AdapterConfigSchema.parse(botInstanceData.value.config);
+    if (formData.value.config) {
+      const parsed = AdapterAPI.POST.request.parse(formData.value);
 
-      await $fetch("/api/adapter", {
-        method: "POST",
-        body: {
-          adapterType: botInstanceData.value.adapterType,
-          config: validatedConfig,
-          name: botInstanceData.value.name
-        }
+      await AdapterData.post({
+        type: parsed.type,
+        config: parsed.config,
+        name: parsed.name
       });
 
       message.success("Bot 实例创建成功");
@@ -71,25 +63,21 @@ async function handleSubmitClick(e: MouseEvent) {
     }
   } catch (error) {
     console.error("Submit failed:", error);
-    message.error("Bot 实例创建失败");
+    message.error("保存配置失败，请稍后再试");
   } finally {
     isSubmitting.value = false;
   }
 }
 
 // 适配器列表逻辑
-const adapterList = ref<AdapterWithStatus[]>([]);
+const adapterList = ref<AdaptersWithStatus>([]);
 const isLoadingList = ref(false);
 
 async function fetchAdapterList() {
   try {
     isLoadingList.value = true;
-    const response = await $fetch<ApiResponse<AdapterWithStatus[]>>("/api/adapter");
-    if (response.code === StatusCodes.OK && response.data) {
-      adapterList.value = response.data;
-    } else {
-      message.error("获取适配器列表失败");
-    }
+    const adapter_data = await AdapterData.gets();
+    adapterList.value = adapter_data;
   } catch (error) {
     console.error("Failed to fetch server list:", error);
     message.error("获取适配器列表失败");
@@ -118,13 +106,10 @@ function handleChildClick(adapterID: number) {
   }
 }
 
-// 保存
-async function handleSave(adapter: BotInstanceData) {
+// 修改
+async function handleSave(adapterID: number, adapter: z.infer<typeof AdapterAPI.POST.request>) {
   try {
-    await $fetch("/api/adapter", {
-      method: "PUT",
-      body: adapter
-    });
+    await AdapterData.put(adapterID, adapter);
   } catch {
     message.error("操作失败，请检查后端日志");
     return;
@@ -137,9 +122,7 @@ async function handleSave(adapter: BotInstanceData) {
 // 删除
 async function handleDelete(adapterID: number) {
   try {
-    await $fetch(`/api/adapter/${adapterID}`, {
-      method: "DELETE"
-    });
+    await AdapterData.delete(adapterID);
   } catch {
     message.error("操作失败，请检查后端日志");
     return;
@@ -152,9 +135,8 @@ async function handleDelete(adapterID: number) {
 // 更改
 async function handleToggle(adapterID: number, enabled: boolean) {
   try {
-    await $fetch(`/api/adapter/toggle/${adapterID}`, {
-      method: "POST",
-      body: { enabled }
+    await AdapterData.postToggle(adapterID, {
+      enabled
     });
   } catch {
     message.error("操作失败，请检查后端日志");
@@ -195,7 +177,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     <!-- modal 创建区 -->
     <div>
       <n-modal v-model:show="showModal" class="w-[90vw] max-w-150" preset="card" title="创建 Bot 实例">
-        <selector-bot ref="botSelectorRef" v-model="botInstanceData" />
+        <selector-bot ref="botSelectorRef" v-model="formData" />
         <template #action>
           <div class="flex justify-end gap-2">
             <n-button :disabled="isSubmitting" @click="showModal = false">取消</n-button>
@@ -233,7 +215,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     <n-drawer v-model:show="showDrawer" width="500">
       <drawer-bot
         v-if="selectedAdapter"
-        :adapter="selectedAdapter"
+        :adapter="cloneDeep(selectedAdapter)"
         @delete="handleDelete"
         @save="handleSave"
         @toggle="handleToggle"

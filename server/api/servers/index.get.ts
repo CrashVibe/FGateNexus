@@ -4,7 +4,7 @@ import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { ServersAPI } from "~~/shared/schemas/server/servers";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,16 +16,18 @@ export default defineEventHandler(async (event) => {
     });
 
     // 为每个服务器获取状态信息
-    const serversWithStatus: ServerWithStatus[] = result.map((server) => {
-      const connectionData = pluginBridge.connectionManager.getConnectionData(server.id);
-      return {
-        ...server,
-        isOnline: !!connectionData,
-        supports_papi: connectionData?.supports_papi ?? null,
-        supports_command: connectionData?.supports_command ?? null,
-        player_count: connectionData?.player_count ?? null
-      };
-    });
+    const serversWithStatus = ServersAPI.GETS.response.parse(
+      result.map((server) => {
+        const connectionData = pluginBridge.connectionManager.getConnectionData(server.id);
+        return {
+          ...server,
+          isOnline: !!connectionData,
+          supports_papi: connectionData?.supports_papi ?? null,
+          supports_command: connectionData?.supports_command ?? null,
+          player_count: connectionData?.player_count ?? null
+        };
+      })
+    );
 
     return createApiResponse(event, "获取服务器列表成功", StatusCodes.OK, serversWithStatus);
   } catch (err) {

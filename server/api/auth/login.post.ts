@@ -1,10 +1,10 @@
 import { ApiError, createErrorResponse } from "#shared/error";
-import { loginBodySchema } from "#shared/schemas/auth";
 import { createApiResponse } from "#shared/types";
 import { StatusCodes } from "http-status-codes";
 import { authenticator } from "otplib";
 import { getDatabase } from "~~/server/db/client";
 import { checkRateLimit } from "~~/server/utils/rateLimit";
+import { LoginAPI } from "~~/shared/schemas/auth";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -19,8 +19,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, ApiError.tooManyRequests(retryMsg));
     }
 
-    const body = await readBody(event);
-    const parsed = loginBodySchema.safeParse(body);
+    const parsed = LoginAPI.POST.request.safeParse(await readBody(event));
 
     if (!parsed.success) {
       return createErrorResponse(event, ApiError.validation("请求参数错误"), parsed.error);

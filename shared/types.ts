@@ -1,7 +1,7 @@
 import { type EventHandlerRequest, type H3Event, setResponseStatus } from "h3";
 
 export interface ApiResponse<T = unknown> {
-  code: number;
+  code?: number;
   message: string;
   data?: T;
 }
@@ -9,12 +9,11 @@ export interface ApiResponse<T = unknown> {
 export function createApiResponse<T>(
   event: H3Event<EventHandlerRequest>,
   message = "请求成功",
-  code = 200,
+  statusCode = 200,
   data?: T
 ): ApiResponse<T> {
-  setResponseStatus(event, code);
+  setResponseStatus(event, statusCode);
   return {
-    code,
     message,
     data
   };

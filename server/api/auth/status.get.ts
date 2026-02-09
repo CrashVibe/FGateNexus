@@ -14,22 +14,12 @@ export default defineEventHandler(async (event) => {
 
     const authStatus: AuthStatus = {
       hasPassword: false,
-      has2FA: false,
-      isAuthenticated: false
+      has2FA: false
     };
 
     if (user) {
       authStatus.hasPassword = !!user.passwordHash;
       authStatus.has2FA = user.twoFactorEnabled;
-
-      try {
-        const session = await getUserSession(event);
-        if (session?.user) {
-          authStatus.isAuthenticated = true;
-        }
-      } catch {
-        authStatus.isAuthenticated = false;
-      }
     }
 
     return createApiResponse(event, "认证状态查询成功", StatusCodes.OK, authStatus);

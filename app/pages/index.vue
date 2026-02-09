@@ -1,38 +1,28 @@
 <script lang="ts" setup>
 import { AddCircleOutline, RefreshOutline } from "@vicons/ionicons5";
 import { v4 as uuidv4 } from "uuid";
-import { zodToNaiveRules } from "#shared/utils/validation";
-import {
-  serverSchemaRequset,
-  type serverSchemaRequsetType,
-  type ServerWithStatus
-} from "#shared/schemas/server/servers";
+import { zodToNaiveRules } from "~/composables/useValidation";
+import { ServersAPI } from "#shared/schemas/server/servers";
 import type { FormInst } from "naive-ui";
-import type { ApiResponse } from "~~/shared/types";
-import { StatusCodes } from "http-status-codes";
 import { isMobile } from "#imports";
+import type z from "zod";
+import { ServerData } from "~/composables/api";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
 const formRef = ref<FormInst>();
-const formData = ref<serverSchemaRequsetType>({
-  servername: "",
-  token: ""
-});
+const formData = ref<z.infer<(typeof ServersAPI)["POST"]["request"]>>(ServersAPI.POST.request.parse({}));
+
 const isSubmitting = ref(false);
 const message = useMessage();
-const rules = zodToNaiveRules(serverSchemaRequset);
+const rules = zodToNaiveRules(ServersAPI.POST.request);
 const showModal = ref(false);
 
 function openModal() {
   showModal.value = true;
-  formData.value = {
-    servername: "",
-    token: ""
-  };
+  formData.value = ServersAPI.POST.request.parse({});
 }
 
-async function handleSubmitClick(e: MouseEvent) {
-  e.preventDefault();
-
+async function handleSubmitClick() {
   try {
     isSubmitting.value = true;
 
@@ -43,18 +33,15 @@ async function handleSubmitClick(e: MouseEvent) {
       return;
     }
 
-    await $fetch("/api/servers", {
-      method: "POST",
-      body: formData.value
-    });
+    await ServerData.post(formData.value);
 
-    message.success("服务器创建成功");
+    message.success("服务器创建成功～");
     showModal.value = false;
     // 刷新
     await fetchServerList();
   } catch (error) {
     console.error("Submit failed:", error);
-    message.error("服务器创建失败");
+    message.error("保存配置失败，请稍后再试");
   } finally {
     isSubmitting.value = false;
   }
@@ -71,12 +58,8 @@ const isLoadingList = ref(false);
 async function fetchServerList() {
   try {
     isLoadingList.value = true;
-    const response = await $fetch<ApiResponse<ServerWithStatus[]>>("/api/servers");
-    if (response.code === StatusCodes.OK && response.data) {
-      serverList.value = response.data;
-    } else {
-      message.error("获取服务器列表失败");
-    }
+    const servers_data = await ServerData.gets();
+    serverList.value = servers_data;
   } catch (error) {
     console.error("Failed to fetch server list:", error);
     message.error("获取服务器列表失败");

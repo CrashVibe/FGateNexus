@@ -5,7 +5,7 @@ import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
-import { chatSyncPatchBodySchema } from "~~/shared/schemas/server/chatSync";
+import { ChatSyncAPI } from "~~/shared/schemas/server/chatSync";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,8 +15,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const body = await readBody(event);
-    const parsed = chatSyncPatchBodySchema.safeParse(body);
+    const parsed = ChatSyncAPI.PATCH.request.safeParse(await readBody(event));
     if (!parsed.success) {
       const apiError = ApiError.validation("参数错误");
       return createErrorResponse(event, apiError, parsed.error);

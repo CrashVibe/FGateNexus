@@ -1,5 +1,5 @@
 import { ApiError, createErrorResponse } from "#shared/error";
-import type { PlayerWithRelations } from "#shared/schemas/player";
+import { PlayerAPI } from "#shared/schemas/player";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       }
     });
 
-    const result: PlayerWithRelations[] = playersWithRelations.map((p) => ({
+    const result = playersWithRelations.map((p) => ({
       player: {
         id: p.id,
         uuid: p.uuid,
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
       servers: p.playerServers.map((ps) => ps.server)
     }));
 
-    return createApiResponse(event, "获取玩家列表成功", StatusCodes.OK, result);
+    return createApiResponse(event, "获取玩家列表成功", StatusCodes.OK, PlayerAPI.GETS.response.parse(result));
   } catch (err) {
     logger.error({ err }, "Database error");
     return createErrorResponse(event, ApiError.database("获取玩家列表失败"));

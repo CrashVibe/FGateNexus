@@ -1,11 +1,11 @@
 import { ApiError, createErrorResponse } from "#shared/error";
-import { deletePasswordBodySchema } from "#shared/schemas/auth";
 import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
+import { LoginAPI } from "~~/shared/schemas/auth";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    const validationResult = deletePasswordBodySchema.safeParse(body);
+    const validationResult = LoginAPI.DELETE.request.safeParse(body);
 
     if (!validationResult.success) {
       const apiError = ApiError.badRequest("请求参数错误");

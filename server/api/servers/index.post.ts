@@ -1,19 +1,18 @@
 import { ApiError, createErrorResponse } from "#shared/error";
-import { serverSchemaRequset } from "#shared/schemas/server/servers";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { getDefaultBindingConfig } from "~~/shared/utils/binding";
-import { getDefaultChatSyncConfig } from "~~/shared/utils/chatSync";
-import { getDefaultCommandConfig } from "~~/shared/utils/command";
-import { getDefaultNotifyConfig } from "~~/shared/utils/notify";
+import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
+import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
+import { CommandConfigSchema } from "~~/shared/schemas/server/command";
+import { NotifyConfigSchema } from "~~/shared/schemas/server/notify";
+import { ServersAPI } from "~~/shared/schemas/server/servers";
 
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event);
-    const parsed = serverSchemaRequset.safeParse(body);
+    const parsed = ServersAPI.POST.request.safeParse(await readBody(event));
 
     if (!parsed.success) {
       const apiError = ApiError.validation("添加服务器失败");
@@ -28,10 +27,10 @@ export default defineEventHandler(async (event) => {
     await database.insert(servers).values({
       name: serverData.name,
       token: serverData.token,
-      bindingConfig: getDefaultBindingConfig(),
-      chatSyncConfig: getDefaultChatSyncConfig(),
-      commandConfig: getDefaultCommandConfig(),
-      notifyConfig: getDefaultNotifyConfig()
+      bindingConfig: BindingConfigSchema.parse({}),
+      chatSyncConfig: chatSyncConfigSchema.parse({}),
+      commandConfig: CommandConfigSchema.parse({}),
+      notifyConfig: NotifyConfigSchema.parse({})
     });
     return createApiResponse(event, "添加服务器成功", StatusCodes.CREATED);
   } catch (err) {

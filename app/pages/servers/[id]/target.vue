@@ -8,7 +8,7 @@
       </template>
       <n-data-table
         :columns="columns"
-        :data="data"
+        :data="formData"
         :pagination="{
           pageSizes: pageSizes,
           showSizePicker: true
@@ -28,8 +28,8 @@
     <!-- 操作按钮区 -->
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button :disabled="!isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
+      <n-button :disabled="!isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -47,79 +47,56 @@
 </template>
 
 <script lang="tsx" setup>
-// ==================== 导入 ====================
-import { StatusCodes } from "http-status-codes";
 import { NButton, NInput, NSelect } from "naive-ui";
 import { v4 as uuidv4 } from "uuid";
-import type { targetSchema, targetSchemaRequestType } from "~~/shared/schemas/server/target";
-import type { ApiResponse } from "~~/shared/types";
-const { setPageState, clearPageState } = usePageStateStore();
+import {
+  targetSchema,
+  targetSchemaRequest,
+  type targetResponse,
+  type targetSchemaRequestType
+} from "~~/shared/schemas/server/target";
+import { cloneDeep, groupBy, isEqual, keyBy } from "lodash-es";
+import { TargetData } from "~/composables/api";
+import z from "zod";
 
-// ==================== 页面配置 ====================
+const { setPageState, clearPageState } = usePageStateStore();
 definePageMeta({ layout: "server-edit" });
 
-// ==================== 依赖注入 & 工具 ====================
 const route = useRoute();
 const message = useMessage();
-
-// ==================== 工具函数 ====================
-const deepClone = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
 const isSameTarget = (
-  a: Pick<targetSchema, "targetId" | "type" | "enabled">,
-  b: Pick<targetSchema, "targetId" | "type" | "enabled">
+  a: Pick<targetResponse, "targetId" | "type" | "enabled">,
+  b: Pick<targetResponse, "targetId" | "type" | "enabled">
 ) => a.targetId === b.targetId && a.type === b.type && a.enabled === b.enabled;
+const serverId = Number(route.params?.["id"]);
 
-function buildRequestFromRow(row: targetSchema): targetSchemaRequestType {
-  return {
-    targetId: (row.targetId || "").trim(),
+function buildRequestFromRow(row: targetResponse): targetSchemaRequestType {
+  return targetSchemaRequest.parse({
+    targetId: row.targetId.trim(),
     type: row.type,
-    enabled: !!row.enabled
-  };
+    enabled: !!row.enabled,
+    config: row.config
+  });
 }
 
-function getDefaultTarget(): targetSchema {
-  // 本地临时行（id 以 temp- 开头），提交创建后会用后端返回替换
-  return {
-    id: `temp-${uuidv4()}`,
-    serverId: Number(route.params?.["id"] ?? 0),
-    targetId: "",
-    type: "group",
-    enabled: true,
-    config: {
-      CommandConfigSchema: { enabled: false, permissions: [], prefix: "/" },
-      chatSyncConfigSchema: { enabled: false },
-      NotifyConfigSchema: { enabled: false }
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  };
+function getDefaultTarget(): targetResponse {
+  return targetSchema.extend({ targetId: z.string().default("") }).parse({
+    id: `temp-${uuidv4()}`
+  });
 }
 
-// ==================== 计算属性 ====================
-const data = computed(() => formData.value);
-
-const isDirty = computed(
-  () =>
-    dataState.isSubmitting ||
-    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.originalTargets))
-);
-const isAnyLoading = computed(() => dataState.isLoading);
-
-// ==================== 类型定义与状态 ====================
-interface DataState {
-  isLoading: boolean;
-  isSubmitting: boolean;
-  originalTargets: targetSchema[];
-}
-const dataState = reactive<DataState>({
+const isDirty = computed(() => !isEqual(formData.value, originalTargets));
+const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false,
-  originalTargets: []
+  isSubmitting: false
 });
 
-const formData = ref<targetSchema[]>([]);
+const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
-// ==================== 选项 ====================
+let originalTargets: targetResponse[] = [];
+
+const formData = ref<targetResponse[]>([]);
+
 const targetTypeOptions = [
   { label: "群聊", value: "group" },
   { label: "私聊", value: "private" }
@@ -137,13 +114,12 @@ const pageSizes = [
   { label: "40 每页", value: 40 }
 ];
 
-// ==================== 表格列 ====================
 const columns = [
   {
     title: "目标 ID",
     key: "targetId",
     width: "40%",
-    render(row: targetSchema, index: number) {
+    render(row: targetResponse, index: number) {
       return h(NInput, {
         placeholder: "请输入目标 ID",
         value: row.targetId,
@@ -157,7 +133,7 @@ const columns = [
     title: "类型",
     key: "type",
     width: "20%",
-    render(row: targetSchema, index: number) {
+    render(row: targetResponse, index: number) {
       return h(NSelect, {
         value: row.type,
         options: targetTypeOptions,
@@ -171,7 +147,7 @@ const columns = [
     title: "状态",
     key: "enabled",
     width: "20%",
-    render(row: targetSchema, index: number) {
+    render(row: targetResponse, index: number) {
       return h(NSelect, {
         value: row.enabled ? "enable" : "disable",
         options: statusFilterOptions,
@@ -184,7 +160,7 @@ const columns = [
   {
     title: "操作",
     key: "actions",
-    render(row: targetSchema) {
+    render(row: targetResponse) {
       const id = row.id;
       return (
         <NButton size="small" onClick={() => id && removeTargetById(id)}>
@@ -195,7 +171,6 @@ const columns = [
   }
 ];
 
-// ==================== 目标管理 ====================
 function addTarget() {
   const list = formData.value;
   if (list.length > 0 && !list[list.length - 1]?.targetId?.trim()) {
@@ -210,157 +185,102 @@ function removeTargetById(id: string) {
   if (idx !== -1) formData.value.splice(idx, 1);
 }
 
-// ==================== 数据管理类 ====================
-class DataManager {
-  serverId = Number(route.params?.["id"]);
-  get baseUrl() {
-    return `/api/servers/${this.serverId}/targets`;
-  }
-
-  async fetchTargets(): Promise<targetSchema[]> {
-    const res = await $fetch<ApiResponse<targetSchema[]>>(this.baseUrl);
-    if (res.code !== StatusCodes.OK) throw new Error(res.message || "获取目标失败");
-    return res.data ?? [];
-  }
-
-  async createTargets(payloads: targetSchemaRequestType[]): Promise<targetSchema[]> {
-    if (!payloads.length) return [];
-    const res = await $fetch<ApiResponse<targetSchema[]>>(this.baseUrl, {
-      method: "POST",
-      body: payloads
-    });
-    if (![StatusCodes.OK, StatusCodes.CREATED].includes(res.code)) {
-      throw new Error(res.message || "批量创建目标失败");
-    }
-    return res.data ?? [];
-  }
-
-  async updateTargets(items: { id: string; data: targetSchemaRequestType }[]): Promise<void> {
-    if (!items.length) return;
-    const res = await $fetch<ApiResponse<targetSchema[]>>(this.baseUrl, {
-      method: "PATCH",
-      body: { items }
-    });
-    if (res.code !== StatusCodes.OK) throw new Error(res.message || "批量更新目标失败");
-  }
-
-  async deleteTargets(ids: string[]): Promise<void> {
-    if (!ids.length) return;
-    const res = await $fetch<ApiResponse<targetSchema[]>>(this.baseUrl, {
-      method: "DELETE",
-      body: { ids }
-    });
-    if (res.code !== StatusCodes.OK) throw new Error(res.message || "批量删除目标失败");
-  }
-
-  async refreshAll(): Promise<void> {
-    if (!this.serverId) return;
-    dataState.isLoading = true;
-    try {
-      const targets = await this.fetchTargets();
-      dataState.originalTargets = deepClone(targets);
-      formData.value = deepClone(targets);
-    } catch (e) {
-      console.error(e);
-      message.error("刷新目标列表失败");
-    } finally {
-      dataState.isLoading = false;
-    }
+async function refreshAll(): Promise<void> {
+  loadingMap.isLoading = true;
+  try {
+    const targets = await TargetData.gets(serverId);
+    originalTargets = cloneDeep(targets);
+    formData.value = cloneDeep(targets);
+  } catch (e) {
+    console.error(e);
+    message.error("刷新目标列表失败");
+  } finally {
+    loadingMap.isLoading = false;
   }
 }
 
-const dataManager = new DataManager();
-
-// ==================== 事件处理：保存 ====================
 async function handleSubmit() {
-  if (!dataManager.serverId) {
-    message.error("服务器 ID 无效");
-    return;
-  }
-
   // 1) 组合唯一性校验
-  const combo = new Map<string, number[]>();
-  formData.value.forEach((t, i) => {
-    const key = `${(t.targetId || "").trim()}::${t.type}`;
-    const arr = combo.get(key) ?? [];
-    arr.push(i);
-    combo.set(key, arr);
-  });
-  const dup = [...combo.entries()].filter(([, idxs]) => idxs.length > 1);
+  const keyToItems = groupBy(formData.value, (t) => `${t.targetId.trim()}::${t.type}`);
+  const dup = Object.entries(keyToItems).filter(([, items]) => items.length > 1);
   if (dup.length) {
     const msg = dup
-      .map(([key, idxs]) => {
-        const [tid, tp] = key.split("::");
-        return `目标 ID "${tid}" + 类型 "${tp === "group" ? "群聊" : "私聊"}" 重复 ${idxs.length} 次`;
+      .map(([, items]) => {
+        if (!items[0]) return undefined;
+        const { targetId, type } = items[0];
+        return `目标 ID "${targetId.trim()}" + 类型 "${type === "group" ? "群聊" : "私聊"}" 出现 ${items.length} 次`;
       })
+      .filter(Boolean)
       .join("； ");
     message.warning(`发现重复目标配置：${msg}`);
     return;
   }
 
   // 2) 差异对比
-  const originalById = new Map(dataState.originalTargets.map((t) => [t.id, t]));
-  const currentById = new Map(formData.value.map((t) => [t.id, t]));
+  const originalById = keyBy(originalTargets, "id");
+  const currentById = keyBy(formData.value, "id");
 
   const toCreate = formData.value.filter((t) => t.id.startsWith("temp-"));
-  const toDelete = dataState.originalTargets.filter((t) => !currentById.has(t.id));
-  const toUpdate = formData.value
-    .filter((t) => !t.id.startsWith("temp-") && originalById.has(t.id))
-    .filter((t) => {
-      const ori = originalById.get(t.id)!;
-      return !isSameTarget(
+  const toDelete = originalTargets.filter((t) => !currentById[t.id]);
+  const toUpdate = formData.value.filter((t) => {
+    const ori = originalById[t.id];
+    return (
+      !t.id.startsWith("temp-") &&
+      ori &&
+      !isSameTarget(
         { targetId: t.targetId, type: t.type, enabled: t.enabled },
         { targetId: ori.targetId, type: ori.type, enabled: ori.enabled }
-      );
-    });
+      )
+    );
+  });
 
-  if (!toCreate.length && !toUpdate.length && !toDelete.length) {
+  if ((!toCreate.length && !toUpdate.length && !toDelete.length) || !isDirty.value) {
     message.info("没有需要保存的更改");
     return;
   }
 
   // 3) 提交
-  dataState.isSubmitting = true;
+  loadingMap.isSubmitting = true;
   try {
     // 3.1 批量创建
-    const created = await dataManager.createTargets(toCreate.map((row) => buildRequestFromRow(row)));
-
-    // 用后端返回替换本地临时行（按 targetId+type 匹配）
-    for (const c of created) {
-      const idx = formData.value.findIndex(
-        (r) => r.id.startsWith("temp-") && r.targetId === c.targetId && r.type === c.type
+    if (toCreate.length > 0) {
+      await TargetData.creates(
+        serverId,
+        toCreate.map((row) => buildRequestFromRow(row))
       );
-      if (idx !== -1) formData.value[idx] = c;
     }
 
     // 3.2 更新
-    await dataManager.updateTargets(
-      toUpdate.map((row) => ({
-        id: row.id,
-        data: buildRequestFromRow(row)
-      }))
-    );
+    if (toUpdate.length > 0) {
+      await TargetData.updates(serverId, {
+        items: toUpdate.map((row) => ({
+          id: row.id,
+          data: buildRequestFromRow(row)
+        }))
+      });
+    }
 
     // 3.3 删除
-    await dataManager.deleteTargets(toDelete.map((r) => r.id));
+    if (toDelete.length > 0) {
+      await TargetData.deletes(serverId, { ids: toDelete.map((r) => r.id) });
+    }
 
-    await dataManager.refreshAll();
-    message.success("目标配置已保存");
+    await refreshAll();
+    message.success("配置已保存");
   } catch (err) {
     console.error("保存失败：", err);
-    message.error("保存失败，请稍后重试");
+    message.error("保存配置失败，请稍后再试");
   } finally {
-    dataState.isSubmitting = false;
+    loadingMap.isSubmitting = false;
   }
 }
 
 function cancelChanges() {
-  formData.value = deepClone(dataState.originalTargets ?? []);
+  formData.value = cloneDeep(originalTargets);
 }
 
-// ==================== 生命周期 ====================
 onMounted(async () => {
-  await dataManager.refreshAll();
+  await refreshAll();
   setPageState({
     isDirty: () => isDirty.value,
     save: handleSubmit

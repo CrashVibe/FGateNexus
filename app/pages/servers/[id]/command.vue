@@ -23,9 +23,8 @@
     <n-drawer v-model:show="drawerVisible" :width="502">
       <drawer-command
         v-if="selectTarget"
-        :adapter-type="dataState.data.adapterData?.type"
+        :adapter-type="adapterData?.type"
         :target="selectTarget"
-        @save="handleTargetSave"
       />
     </n-drawer>
 
@@ -51,145 +50,81 @@
 
 <script lang="ts" setup>
 import { isMobile } from "#imports";
-import { StatusCodes } from "http-status-codes";
-import type { z } from "zod";
+import type { FormInst } from "naive-ui";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
-import type { CommandConfig, commandPatchBodySchema } from "~~/shared/schemas/server/command";
+import { CommandConfigSchema, type CommandAPI, type CommandConfig } from "~~/shared/schemas/server/command";
+import type { targetResponse } from "~~/shared/schemas/server/target";
+import { cloneDeep, differenceWith, isEqual, pick } from "lodash-es";
+import { AdapterData, CommandData, ServerData } from "~/composables/api";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { targetSchema } from "~~/shared/schemas/server/target";
-import type { ApiResponse } from "~~/shared/types";
-import { getDefaultCommandConfig } from "~~/shared/utils/command";
+import { pickEditableTarget } from "~~/shared/utils/target";
+import type z from "zod";
 
 const { setPageState, clearPageState } = usePageStateStore();
-
-export type CommandPatchBody = z.infer<typeof commandPatchBodySchema>;
 
 definePageMeta({ layout: "server-edit" });
 
 const route = useRoute();
 const router = useRouter();
 const message = useMessage();
+const formRef = ref<FormInst>();
 
-const formRef = ref();
-const formData = ref<CommandConfig>(getDefaultCommandConfig());
+interface FormState {
+  config: CommandConfig;
+  targets: targetResponse[];
+}
 
-const editedTargets = ref(new Map<string, targetSchema>());
-const selectTarget = ref<targetSchema | null>(null);
+const formData = reactive<FormState>({
+  config: CommandConfigSchema.parse({}),
+  targets: []
+});
+
+const selectTarget = ref<targetResponse | null>(null);
 const drawerVisible = ref(false);
+let serverData: ServerWithStatus | null = null;
+const adapterData= ref<AdapterWithStatus | null>(null);
 
-const dataState = reactive({
-  data: {
-    serverData: null as ServerWithStatus | null,
-    adapterData: null as AdapterWithStatus | null
-  },
+const originalFormData = ref<FormState | null>(null);
+
+const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false,
-  original: { commandConfig: null as CommandConfig | null }
+  isSubmitting: false
 });
 
-const options = computed(
-  () =>
-    dataState.data.serverData?.targets?.map((t) => ({
-      label: t.targetId ?? t.id,
-      key: String(t.id)
-    })) || []
-);
+const isDirty = computed(() => !isEqual(formData, originalFormData.value));
+const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
-function getOriginalTargetById(id: string): targetSchema | null {
-  return (dataState.data.serverData?.targets || []).find((t) => String(t.id) === String(id)) || null;
-}
-
-function pickEditableTarget(raw: targetSchema): targetSchema {
-  const id = String(raw.id);
-  if (!editedTargets.value.has(id)) {
-    editedTargets.value.set(id, JSON.parse(JSON.stringify(raw)));
-  }
-  return editedTargets.value.get(id)!;
-}
-
-const modifiedTargets = computed(() => {
-  const list = Array.from(editedTargets.value.values());
-  return list.filter((t) => {
-    const original = getOriginalTargetById(String(t.id));
-    if (!original) return true;
-    return JSON.stringify(t.config) !== JSON.stringify(original.config);
-  });
-});
-
-const isDirty = computed(() => {
-  const formChanged =
-    !dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.commandConfig);
-  const targetsChanged = modifiedTargets.value.length > 0;
-  return formChanged || targetsChanged;
-});
-
-const isAnyLoading = computed(() => dataState.isLoading || dataState.isSubmitting);
-
-// 数据管理
-class DataManager {
-  async refreshServerData(): Promise<void> {
-    if (!route.params?.id) return;
-    try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params.id}`);
-      if (response.code === StatusCodes.OK && response.data) {
-        dataState.data.serverData = response.data;
-        dataState.original.commandConfig = response.data.commandConfig as CommandConfig;
-        formData.value = JSON.parse(JSON.stringify(response.data.commandConfig || getDefaultCommandConfig()));
-        if (response.data.adapterId) {
-          const adapterResponse = await $fetch<ApiResponse<AdapterWithStatus>>(
-            `/api/adapter/${response.data.adapterId}`
-          );
-          if (adapterResponse.code === StatusCodes.OK && adapterResponse.data) {
-            dataState.data.adapterData = adapterResponse.data;
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Failed to refresh server data:", error);
-      message.error("刷新服务器数据失败");
-    }
-  }
-
-  async updateServer(serverId: number, body: CommandPatchBody): Promise<void> {
-    await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${serverId}/command`, {
-      method: "PATCH",
-      body
-    });
-    dataState.original.commandConfig = JSON.parse(JSON.stringify(body.command));
-  }
-
-  async refreshAll(): Promise<void> {
-    dataState.isLoading = true;
-    await this.refreshServerData().finally(() => {
-      dataState.isLoading = false;
-    });
-  }
-}
-
-const dataManager = new DataManager();
+const options = ref<{ label: string; key: string }[]>([]);
 
 function handleSelect(key: string) {
-  const raw = (dataState.data.serverData?.targets || []).find((t) => String(t.id) === String(key));
-  if (!raw) return;
-  const editable = pickEditableTarget(raw);
-  selectTarget.value = editable;
   drawerVisible.value = true;
+  const selected = serverData?.targets.find((t) => String(t.id) === String(key));
+  if (selected) {
+    const editable = pickEditableTarget(selected, formData.targets);
+    selectTarget.value = editable;
+  }
 }
 
-function handleTargetSave(updated: targetSchema) {
-  const id = String(updated?.id);
-  if (!id) return;
-  const original = getOriginalTargetById(id);
-  if (!original) return;
-  editedTargets.value.set(id, JSON.parse(JSON.stringify(updated)));
-  drawerVisible.value = false;
+async function refreshServerData(): Promise<void> {
+  if (!route.params["id"]) return;
+  loadingMap.isLoading = true;
+  try {
+    const data = await ServerData.get(Number(route.params["id"]));
+    serverData = data;
+    options.value = data.targets.map((target) => ({ label: target.targetId, key: target.id }));
+    adapterData.value = data.adapterId ? await AdapterData.get(data.adapterId) : null;
+    formData.config = cloneDeep(data.commandConfig || CommandConfigSchema.parse({}));
+    formData.targets = cloneDeep(data.targets || []);
+    originalFormData.value = cloneDeep(formData);
+  } catch (error) {
+    console.error("Failed to refresh server data:", error);
+    message.error("刷新服务器数据失败");
+  } finally {
+    loadingMap.isLoading = false;
+  }
 }
 
 async function handleSubmit() {
-  if (!dataState.data.serverData) {
-    message.error("服务器数据未加载或无效");
-    return;
-  }
   if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
@@ -201,48 +136,40 @@ async function handleSubmit() {
     return;
   }
 
-  const targetsPayload: CommandPatchBody["targets"] = modifiedTargets.value.map((t) => ({
-    id: t.id,
-    config: t.config
-  }));
+  const targetsPayload: z.infer<typeof CommandAPI.PATCH.request>["targets"] = differenceWith(
+    formData.targets,
+    originalFormData.value?.targets || [],
+    isEqual
+  ).map((t) => pick(t, ["id", "config"]));
 
-  if (!targetsPayload.length && selectTarget.value) {
-    const t = selectTarget.value;
-    targetsPayload.push({ id: t.id, config: t.config });
-  }
-
-  const payload: CommandPatchBody = { command: formData.value, targets: targetsPayload };
-
+  loadingMap.isSubmitting = true;
   try {
-    dataState.isSubmitting = true;
-    await dataManager.updateServer(dataState.data.serverData.id, payload);
-    message.success("远程指令配置已保存");
-    editedTargets.value.clear();
+    await CommandData.patch(Number(route.params["id"]), { command: formData.config, targets: targetsPayload });
+    message.success("配置已保存");
     selectTarget.value = null;
-    dataState.isSubmitting = false;
-    await dataManager.refreshAll();
+    await refreshServerData();
   } catch (error) {
     console.error("Submit failed:", error);
-    dataState.isSubmitting = false;
+    message.error("保存配置失败，请稍后再试");
+  } finally {
+    loadingMap.isSubmitting = false;
   }
 }
 
 function cancelChanges() {
-  if (dataState.original.commandConfig) {
-    formData.value = JSON.parse(JSON.stringify(dataState.original.commandConfig));
+  if (originalFormData.value) {
+    formData.config = cloneDeep(originalFormData.value.config);
+    formData.targets = cloneDeep(originalFormData.value.targets);
   } else {
-    formData.value = getDefaultCommandConfig();
+    formData.config = CommandConfigSchema.parse({});
+    formData.targets = [];
   }
-  editedTargets.value.clear();
   selectTarget.value = null;
 }
 
 onMounted(async () => {
-  await dataManager.refreshAll();
-  setPageState({
-    isDirty: () => isDirty.value,
-    save: handleSubmit
-  });
+  await refreshServerData();
+  setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {

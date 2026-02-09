@@ -6,11 +6,11 @@
         <n-grid-item>
           <n-card class="h-full" size="small" title="玩家进出事件">
             <n-form-item label="是否启用" path="player_notify">
-              <n-switch v-model:value="formData.player_notify" />
+              <n-switch v-model:value="formData.config.player_notify" />
             </n-form-item>
             <n-form-item class="mb-2" label="玩家进出时发送的消息" path="join_notify_message">
               <n-input
-                v-model:value="formData.join_notify_message"
+                v-model:value="formData.config.join_notify_message"
                 maxlength="200"
                 placeholder="绑定成功时的反馈消息"
                 show-count
@@ -21,7 +21,7 @@
                     <n-tooltip v-for="tag in joinVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.join_notify_message.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.join_notify_message.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('join_notify_message', tag.value)"
@@ -35,7 +35,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderJoinMessage(formData.join_notify_message, "Steve") }}
+                      {{ renderJoinMessage(formData.config.join_notify_message, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -43,7 +43,7 @@
             </n-form-item>
             <n-form-item class="mb-2" label="玩家离开时发送的消息" path="leave_notify_message">
               <n-input
-                v-model:value="formData.leave_notify_message"
+                v-model:value="formData.config.leave_notify_message"
                 maxlength="200"
                 placeholder="绑定成功时的反馈消息"
                 show-count
@@ -54,7 +54,7 @@
                     <n-tooltip v-for="tag in leaveVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.leave_notify_message.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.leave_notify_message.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('leave_notify_message', tag.value)"
@@ -68,7 +68,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderLeaveMessage(formData.leave_notify_message, "Steve") }}
+                      {{ renderLeaveMessage(formData.config.leave_notify_message, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -79,11 +79,11 @@
         <n-grid-item>
           <n-card class="h-full" size="small" title="死亡事件">
             <n-form-item label="是否启用" path="player_disappoint_notify">
-              <n-switch v-model:value="formData.player_disappoint_notify" />
+              <n-switch v-model:value="formData.config.player_disappoint_notify" />
             </n-form-item>
             <n-form-item class="mb-2" label="玩家死亡时发送的消息" path="death_notify_message">
               <n-input
-                v-model:value="formData.death_notify_message"
+                v-model:value="formData.config.death_notify_message"
                 maxlength="200"
                 placeholder="玩家死亡时发送的消息"
                 show-count
@@ -94,7 +94,7 @@
                     <n-tooltip v-for="tag in deathVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.death_notify_message.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.death_notify_message.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('death_notify_message', tag.value)"
@@ -108,7 +108,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderDeathMessage(formData.death_notify_message, "Steve", "掉落") }}
+                      {{ renderDeathMessage(formData.config.death_notify_message, "Steve", "掉落") }}
                     </n-text>
                   </div>
                 </div>
@@ -149,8 +149,8 @@
 
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button :disabled="!isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
+      <n-button :disabled="!isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -169,112 +169,115 @@
 
 <script lang="ts" setup>
 import { isMobile } from "#imports";
-import { StatusCodes } from "http-status-codes";
 import type { FormInst } from "naive-ui";
 import type { z } from "zod";
-import { NotifyConfigSchema, type NotifyConfig, type notifyPatchBodySchema } from "~~/shared/schemas/server/notify";
+import { NotifyConfigSchema, type NotifyAPI } from "~~/shared/schemas/server/notify";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { targetSchema } from "~~/shared/schemas/server/target";
-import type { ApiResponse } from "~~/shared/types";
+import type { targetResponse } from "~~/shared/schemas/server/target";
 import { renderDeathMessage, renderJoinMessage, renderLeaveMessage } from "~~/shared/utils/template/notify";
-
-export type NotifyPatchBody = z.infer<typeof notifyPatchBodySchema>;
+import { isEqual, cloneDeep, differenceWith, pick } from "lodash-es";
+import { NotifyData, ServerData } from "~/composables/api";
+import { pickEditableTarget } from "~~/shared/utils/target";
+import { createVariablesArray, createVariableMap } from "~/composables/usePlaceholderVariables";
 
 definePageMeta({ layout: "server-edit" });
 
 const { setPageState, clearPageState } = usePageStateStore();
-
 const route = useRoute();
 const message = useMessage();
 const router = useRouter();
 const formRef = ref<FormInst>();
-const formData = ref<NotifyConfig>(getDefaultNotifyConfig());
+
+interface FormState {
+  config: z.infer<typeof NotifyConfigSchema>;
+  targets: targetResponse[];
+}
+
+const formData = reactive<FormState>({
+  config: NotifyConfigSchema.parse({}),
+  targets: []
+});
 const rules = zodToNaiveRules(NotifyConfigSchema);
 
-const editedTargets = ref(new Map<string, targetSchema>());
-const selectTarget = ref<targetSchema | null>(null);
+const selectTarget = ref<targetResponse | null>(null);
 const drawerVisible = ref(false);
+const originalFormData = ref<FormState | null>(null);
+let serverData: ServerWithStatus | null = null;
+const options = ref<{ label: string; key: string }[]>([]);
 
-const dataState = reactive({
-  data: { serverData: null as ServerWithStatus | null },
+const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false,
-  original: { NotifyConfig: null as NotifyConfig | null }
+  isSubmitting: false
 });
+
+// 占位符变量定义
+const NOTIFY_VARIABLES = createVariableMap({
+  "{playerName}": { label: "玩家名称", example: "Steve" },
+  "{deathMessage}": { label: "死亡原因", example: "掉落" }
+});
+
+const joinVariables = computed(() =>
+  createVariablesArray({
+    "{playerName}": NOTIFY_VARIABLES["{playerName}"]
+  })
+);
+
+const leaveVariables = computed(() =>
+  createVariablesArray({
+    "{playerName}": NOTIFY_VARIABLES["{playerName}"]
+  })
+);
+
+const deathVariables = computed(() =>
+  createVariablesArray({
+    "{playerName}": NOTIFY_VARIABLES["{playerName}"],
+    "{deathMessage}": NOTIFY_VARIABLES["{deathMessage}"]
+  })
+);
 
 function insertPlaceholder(
-  field: keyof Pick<NotifyConfig, "join_notify_message" | "leave_notify_message" | "death_notify_message">,
+  field: keyof Pick<
+    z.infer<typeof NotifyConfigSchema>,
+    "join_notify_message" | "leave_notify_message" | "death_notify_message"
+  >,
   placeholder: string
 ) {
-  const current = formData.value[field] || "";
-  formData.value[field] = current + placeholder;
+  const current = formData.config[field] || "";
+  formData.config[field] = current + placeholder;
 }
 
-const joinVariables = [{ label: "玩家名称", value: "{playerName}", example: "Steve" }];
-const leaveVariables = [{ label: "玩家名称", value: "{playerName}", example: "Steve" }];
-const deathVariables = [
-  { label: "玩家名称", value: "{playerName}", example: "Steve" },
-  { label: "死亡原因", value: "{deathMessage}", example: "掉落" }
-];
-
-class DataManager {
-  async refreshServerData(): Promise<void> {
-    if (!route.params?.id) return;
-    try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params.id}`);
-      if (response.code === StatusCodes.OK && response.data) {
-        dataState.data.serverData = response.data;
-        dataState.original = { NotifyConfig: response.data.notifyConfig };
-        formData.value = JSON.parse(JSON.stringify(response.data.notifyConfig));
-      }
-    } catch (error) {
-      console.error("Failed to refresh server data:", error);
-      message.error("刷新服务器数据失败");
-    }
-  }
-
-  async updateServer(serverId: number, body: NotifyPatchBody): Promise<void> {
-    await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${serverId}/notify`, { method: "PATCH", body });
-    dataState.original.NotifyConfig = JSON.parse(JSON.stringify(body.notify));
-  }
-
-  async refreshAll(): Promise<void> {
-    dataState.isLoading = true;
-    await this.refreshServerData().finally(() => {
-      dataState.isLoading = false;
-    });
+async function refreshServerData(): Promise<void> {
+  if (!route.params["id"]) return;
+  loadingMap.isLoading = true;
+  try {
+    const data = await ServerData.get(Number(route.params["id"]));
+    serverData = data;
+    formData.config = cloneDeep(data.notifyConfig);
+    formData.targets = cloneDeep(data.targets);
+    originalFormData.value = cloneDeep(formData);
+    options.value = data.targets.map((target) => ({ label: target.targetId, key: target.id }));
+  } catch (error) {
+    console.error(error);
+    message.error("刷新服务器数据失败");
+  } finally {
+    loadingMap.isLoading = false;
   }
 }
 
-const dataManager = new DataManager();
+const isDirty = computed(() => !isEqual(formData, originalFormData.value));
 
-function getOriginalTargetById(id: string): targetSchema | null {
-  return dataState.data.serverData?.targets.find((t) => t.id === id) || null;
+const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
+
+function handleSelect(key: string) {
+  drawerVisible.value = true;
+  const selected = serverData?.targets.find((t) => t.id === key) || null;
+  if (selected) {
+    const editable = pickEditableTarget(selected, formData.targets);
+    selectTarget.value = editable;
+  }
 }
-
-const modifiedTargets = computed(() => {
-  const list = Array.from(editedTargets.value.values());
-  return list.filter((t) => {
-    const original = getOriginalTargetById(t.id);
-    if (!original) return true;
-    return JSON.stringify(t.config) !== JSON.stringify(original.config);
-  });
-});
-
-const isDirty = computed(() => {
-  const formChanged =
-    !dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.NotifyConfig);
-  const targetsChanged = modifiedTargets.value.length > 0;
-  return formChanged || targetsChanged;
-});
-
-const isAnyLoading = computed(() => dataState.isLoading || dataState.isSubmitting);
 
 async function handleSubmit() {
-  if (!dataState.data.serverData) {
-    message.error("服务器数据未加载或无效");
-    return;
-  }
   if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
@@ -286,68 +289,43 @@ async function handleSubmit() {
     return;
   }
 
-  const targetsPayload: NotifyPatchBody["targets"] = modifiedTargets.value.map((t) => ({
-    id: t.id,
-    config: t.config
-  }));
-  if (!targetsPayload.length && selectTarget.value) {
-    const t = selectTarget.value;
-    targetsPayload.push({ id: t.id, config: t.config });
-  }
+  const targetsPayload: z.infer<typeof NotifyAPI.PATCH.request>["targets"] = differenceWith(
+    formData.targets,
+    originalFormData.value?.targets || [],
+    isEqual
+  ).map((t) => pick(t, ["id", "config"]));
 
-  const payload: NotifyPatchBody = { notify: formData.value, targets: targetsPayload };
-
+  loadingMap.isSubmitting = true;
   try {
-    dataState.isSubmitting = true;
-    await dataManager.updateServer(dataState.data.serverData.id, payload);
-    message.success("事件通知设置已保存");
-    dataState.isSubmitting = false;
-    editedTargets.value.clear();
+    await NotifyData.patch(Number(route.params["id"]), { notify: formData.config, targets: targetsPayload });
+    message.success("配置已保存");
     selectTarget.value = null;
-    await dataManager.refreshAll();
+    await refreshServerData();
   } catch (error) {
     console.error("Submit failed:", error);
-    dataState.isSubmitting = false;
+    message.error("保存配置失败，请稍后再试");
+  } finally {
+    loadingMap.isSubmitting = false;
   }
 }
 
 function cancelChanges() {
-  if (dataState.original.NotifyConfig) {
-    formData.value = JSON.parse(JSON.stringify(dataState.original.NotifyConfig));
+  if (originalFormData.value) {
+    formData.config = cloneDeep(originalFormData.value.config);
+    formData.targets = cloneDeep(originalFormData.value.targets);
   } else {
-    formData.value = getDefaultNotifyConfig();
+    formData.config = NotifyConfigSchema.parse({});
+    formData.targets = [];
   }
-  editedTargets.value.clear();
   selectTarget.value = null;
 }
 
 onMounted(async () => {
-  await dataManager.refreshAll();
+  await refreshServerData();
   setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {
   clearPageState();
 });
-
-const options = computed(
-  () => dataState.data.serverData?.targets?.map((target) => ({ label: target.targetId, key: target.id })) || []
-);
-
-function pickEditableTarget(raw: targetSchema): targetSchema {
-  const id = raw.id;
-  if (!editedTargets.value.has(id)) {
-    editedTargets.value.set(id, JSON.parse(JSON.stringify(raw)));
-  }
-  return editedTargets.value.get(id) as targetSchema;
-}
-
-function handleSelect(key: string) {
-  drawerVisible.value = true;
-  const selected = dataState.data.serverData?.targets.find((t) => t.id.toString() === key) || null;
-  if (selected) {
-    const editable = pickEditableTarget(selected);
-    selectTarget.value = editable;
-  }
-}
 </script>

@@ -1,18 +1,22 @@
 <template>
   <div>
     <HeaderServer class="mb-3" />
-    <n-form ref="formRef" :model="formData" :rules="rules">
+    <n-form ref="formRef" :model="formData.config" :rules="rules">
       <n-grid :x-gap="12" :y-gap="12" :cols="isMobile ? 1 : '2'">
         <n-grid-item>
           <n-card class="h-fit" size="small" title="基础设置">
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <n-form-item label="绑定数量" path="maxBindCount">
-                <n-input-number v-model:value="formData.maxBindCount" class="w-full" placeholder="请输入最大绑定数量" />
+                <n-input-number
+                  v-model:value="formData.config.maxBindCount"
+                  class="w-full"
+                  placeholder="请输入最大绑定数量"
+                />
               </n-form-item>
 
               <n-form-item label="验证码长度" path="codeLength">
                 <n-input-number
-                  v-model:value="formData.codeLength"
+                  v-model:value="formData.config.codeLength"
                   class="w-full"
                   placeholder="生成的验证码字符数量，影响验证码复杂度"
                 />
@@ -20,7 +24,7 @@
 
               <n-form-item label="验证码模式" path="codeMode">
                 <n-select
-                  v-model:value="formData.codeMode"
+                  v-model:value="formData.config.codeMode"
                   :options="codeModeOptions"
                   class="w-full"
                   placeholder="请选择验证码生成模式"
@@ -29,7 +33,7 @@
 
               <n-form-item label="验证码过期时间" path="codeExpire">
                 <n-input-number
-                  v-model:value="formData.codeExpire"
+                  v-model:value="formData.config.codeExpire"
                   :min="1"
                   :step="1"
                   class="w-full"
@@ -41,7 +45,7 @@
             </div>
             <n-form-item label="绑定前缀" path="prefix">
               <n-input
-                v-model:value="formData.prefix"
+                v-model:value="formData.config.prefix"
                 :maxlength="50"
                 class="w-full"
                 placeholder="如：/绑定 ，用于绑定账号的指令前缀"
@@ -50,7 +54,7 @@
             </n-form-item>
             <n-form-item label="解绑前缀" path="unbindPrefix">
               <n-input
-                v-model:value="formData.unbindPrefix"
+                v-model:value="formData.config.unbindPrefix"
                 :maxlength="50"
                 :placeholder="`如：/解绑 ，用于解绑账号的专用指令前缀，留空则用绑定前缀+玩家名`"
                 class="w-full"
@@ -59,10 +63,10 @@
             </n-form-item>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <n-form-item label="允许解绑" :show-feedback="false" path="allowUnbind">
-                <n-switch v-model:value="formData.allowUnbind" />
+                <n-switch v-model:value="formData.config.allowUnbind" />
               </n-form-item>
               <n-form-item label="离群自动解绑" :show-feedback="false" path="allowGroupUnbind">
-                <n-switch v-model:value="formData.allowGroupUnbind" />
+                <n-switch v-model:value="formData.config.allowGroupUnbind" />
               </n-form-item>
             </div>
             <n-divider title-placement="left">指令示例预览</n-divider>
@@ -75,7 +79,7 @@
                 <n-code :code="bindCommandExample" language="text" />
               </div>
             </div>
-            <n-collapse-transition :show="formData.allowUnbind">
+            <n-collapse-transition :show="formData.config.allowUnbind">
               <n-text class="mb-2" round type="warning">
                 <h1>解绑指令</h1>
                 <p class="text-gray-500">使用专用解绑前缀进行解绑操作，直接输入玩家名称即可</p>
@@ -90,7 +94,7 @@
           <n-card class="h-full" size="small" title="反馈消息配置">
             <n-form-item class="mb-2" label="绑定成功" path="bindSuccessMsg">
               <n-input
-                v-model:value="formData.bindSuccessMsg"
+                v-model:value="formData.config.bindSuccessMsg"
                 maxlength="200"
                 placeholder="绑定成功时的反馈消息"
                 show-count
@@ -101,7 +105,7 @@
                     <n-tooltip v-for="tag in bindSuccessVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.bindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.bindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('bindSuccessMsg', tag.value)"
@@ -115,7 +119,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderBindSuccess(formData.bindSuccessMsg, "Steve") }}
+                      {{ renderBindSuccess(formData.config.bindSuccessMsg, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -124,7 +128,7 @@
 
             <n-form-item class="mb-2" label="绑定失败" path="bindFailMsg">
               <n-input
-                v-model:value="formData.bindFailMsg"
+                v-model:value="formData.config.bindFailMsg"
                 maxlength="200"
                 placeholder="绑定失败时的反馈消息"
                 show-count
@@ -135,7 +139,7 @@
                     <n-tooltip v-for="tag in bindFailVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.bindFailMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.bindFailMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('bindFailMsg', tag.value)"
@@ -149,7 +153,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="error">
-                      {{ renderBindFail(formData.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
+                      {{ renderBindFail(formData.config.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
                   </div>
                 </div>
@@ -158,7 +162,7 @@
 
             <n-form-item class="mb-2" label="解绑成功" path="unbindSuccessMsg">
               <n-input
-                v-model:value="formData.unbindSuccessMsg"
+                v-model:value="formData.config.unbindSuccessMsg"
                 maxlength="200"
                 placeholder="解绑成功时的反馈消息，支持#user占位符"
                 show-count
@@ -169,7 +173,7 @@
                     <n-tooltip v-for="tag in unbindSuccessVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.unbindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.unbindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('unbindSuccessMsg', tag.value)"
@@ -183,7 +187,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderUnbindSuccess(formData.unbindSuccessMsg, "Steve") }}
+                      {{ renderUnbindSuccess(formData.config.unbindSuccessMsg, "Steve") }}
                     </n-text>
                   </div>
                 </div>
@@ -192,7 +196,7 @@
 
             <n-form-item class="mb-2" label="解绑失败" path="unbindFailMsg">
               <n-input
-                v-model:value="formData.unbindFailMsg"
+                v-model:value="formData.config.unbindFailMsg"
                 maxlength="200"
                 placeholder="解绑失败时的反馈消息"
                 show-count
@@ -203,7 +207,7 @@
                     <n-tooltip v-for="tag in unbindFailVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.unbindFailMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.unbindFailMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('unbindFailMsg', tag.value)"
@@ -217,7 +221,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="error">
-                      {{ renderUnbindFail(formData.unbindFailMsg, "Steve", "因为某种奇妙の原因") }}
+                      {{ renderUnbindFail(formData.config.unbindFailMsg, "Steve", "因为某种奇妙の原因") }}
                     </n-text>
                   </div>
                 </div>
@@ -228,12 +232,12 @@
         <n-grid-item>
           <n-card class="h-fit" size="small" title="绑定提示">
             <n-form-item label="强制绑定" path="forceBind">
-              <n-switch v-model:value="formData.forceBind" />
+              <n-switch v-model:value="formData.config.forceBind" />
             </n-form-item>
 
             <n-form-item class="mb-2" label="未绑定踢出消息" path="nobindkickMsg">
               <n-input
-                v-model:value="formData.nobindkickMsg"
+                v-model:value="formData.config.nobindkickMsg"
                 :rows="3"
                 maxlength="500"
                 placeholder="当玩家未绑定社交账号时显示的踢出消息，支持颜色代码"
@@ -246,7 +250,7 @@
                     <n-tooltip v-for="tag in noBindKickVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.nobindkickMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.nobindkickMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('nobindkickMsg', tag.value)"
@@ -269,7 +273,7 @@
 
             <n-form-item class="mb-2" label="解绑踢出消息" path="unbindkickMsg">
               <n-input
-                v-model:value="formData.unbindkickMsg"
+                v-model:value="formData.config.unbindkickMsg"
                 :rows="2"
                 maxlength="500"
                 placeholder="当玩家的社交账号被解绑时显示的踢出消息"
@@ -282,7 +286,7 @@
                     <n-tooltip v-for="tag in unbindKickVariables" :key="tag.value" trigger="hover">
                       <template #trigger>
                         <n-tag
-                          :type="formData.unbindkickMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="formData.config.unbindkickMsg.includes(tag.value) ? 'primary' : 'default'"
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('unbindkickMsg', tag.value)"
@@ -327,14 +331,14 @@
 </template>
 
 <script lang="ts" setup>
-// ==================== 导入 ====================
 import { isMobile } from "#imports";
-import { StatusCodes } from "http-status-codes";
 import moment from "moment-timezone";
 import type { FormInst } from "naive-ui";
+import type z from "zod";
+import { cloneDeep, isEqual } from "lodash-es";
+import { BindingData, ServerData } from "~/composables/api";
 import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "~~/shared/schemas/server/binding";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { ApiResponse } from "~~/shared/types";
+import type { ServersAPI } from "~~/shared/schemas/server/servers";
 import {
   renderBindFail,
   renderBindSuccess,
@@ -343,133 +347,37 @@ import {
   renderUnbindKick,
   renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
+import { createVariablesArray } from "~/composables/usePlaceholderVariables";
 
-// ==================== 页面配置 ====================
-definePageMeta({
-  layout: "server-edit"
-});
-
-// ==================== 组合式函数和依赖注入 ====================
 const { setPageState, clearPageState } = usePageStateStore();
 const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();
+
+definePageMeta({ layout: "server-edit" });
+
 const route = useRoute();
 const message = useMessage();
-
-// ==================== 计算属性 ====================
-
-const isDirty = computed(
-  () =>
-    dataState.isSubmitting ||
-    (!dataState.isLoading && JSON.stringify(formData.value) !== JSON.stringify(dataState.original.bindingConfig))
-);
-const isAnyLoading = computed(() => dataState.isLoading);
-
-// ==================== 类型定义 ====================
-interface DataState {
-  data: {
-    serverData: ServerWithStatus | null;
-  };
-  isLoading: boolean;
-  isSubmitting: boolean;
-  original: {
-    bindingConfig: BindingConfig | null;
-  };
-}
-
-// ==================== 数据状态 ====================
-const dataState = reactive<DataState>({
-  data: {
-    serverData: null
-  },
-  isLoading: true,
-  isSubmitting: false,
-  original: { bindingConfig: null }
-});
-// ==================== 数据管理类 ====================
-
-class DataManager {
-  async refreshServerData(): Promise<void> {
-    if (!route.params?.["id"]) return;
-    try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
-      if (response.code === StatusCodes.OK && response.data) {
-        dataState.data.serverData = response.data;
-        dataState.original = { bindingConfig: response.data.bindingConfig };
-        formData.value = JSON.parse(JSON.stringify(response.data.bindingConfig));
-      }
-    } catch (error) {
-      console.error("Failed to refresh server data:", error);
-      message.error("刷新服务器数据失败");
-    }
-  }
-
-  async updateServerBindingConfig(serverId: number, bindingConfig: BindingConfig): Promise<void> {
-    try {
-      dataState.isSubmitting = true;
-      await $fetch<ApiResponse<BindingConfig>>(`/api/servers/${serverId}/binding`, {
-        method: "POST",
-        body: bindingConfig
-      });
-      message.success("适配器设置已保存");
-      dataState.original.bindingConfig = bindingConfig;
-    } catch (error) {
-      console.error("Submit failed:", error);
-      message.error("适配器设置保存失败");
-      throw error;
-    } finally {
-      dataState.isSubmitting = false;
-    }
-  }
-
-  async handleSubmit(): Promise<void> {
-    if (!dataState.data.serverData) {
-      message.error("服务器数据未加载或无效");
-      return;
-    }
-
-    if (!formData.value) {
-      message.error("表单数据无效");
-      return;
-    }
-
-    const hasChanges = JSON.stringify(formData.value) !== JSON.stringify(dataState.original.bindingConfig);
-    if (!hasChanges) {
-      message.info("没有需要保存的更改");
-      return;
-    }
-
-    try {
-      await this.updateServerBindingConfig(dataState.data.serverData.id, formData.value);
-      Object.assign(dataState.data.serverData, { bindingConfig: formData.value });
-      await this.refreshAll();
-    } catch (error) {
-      console.error("Submit failed:", error);
-    }
-  }
-
-  async refreshAll(): Promise<void> {
-    dataState.isLoading = true;
-    await this.refreshServerData();
-    dataState.isLoading = false;
-  }
-}
-
-// ==================== 模板插入函数 ====================
-function insertPlaceholder(
-  field: keyof Pick<
-    BindingConfig,
-    "nobindkickMsg" | "unbindkickMsg" | "bindSuccessMsg" | "bindFailMsg" | "unbindSuccessMsg" | "unbindFailMsg"
-  >,
-  placeholder: string
-) {
-  const current = formData.value[field] || "";
-  formData.value[field] = current + placeholder;
-}
-
-// ==================== 表单数据和验证 ====================
-
 const formRef = ref<FormInst>();
-const formData = ref<BindingConfig>(getDefaultBindingConfig());
+
+interface FormState {
+  config: BindingConfig;
+}
+
+const formData = reactive<FormState>({
+  config: BindingConfigSchema.parse({})
+});
+
+let serverData: z.infer<typeof ServersAPI.GET.response> | null = null;
+
+const originalFormData = ref<FormState | null>(null);
+
+const loadingMap = reactive({
+  isLoading: true,
+  isSubmitting: false
+});
+
+const isDirty = computed(() => !isEqual(formData, originalFormData.value));
+const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
+
 const rules = zodToNaiveRules(BindingConfigSchema);
 const codeModeOptions = [
   { label: "纯数字", value: CODE_MODES.NUMBER },
@@ -478,22 +386,23 @@ const codeModeOptions = [
   { label: "纯单词 (大小写)", value: CODE_MODES.WORD },
   { label: "大小写单词和数字", value: CODE_MODES.MIX }
 ];
+
 const bindCommandExample = computed(() => {
-  return formData.value.prefix + generateVerificationCode(formData.value.codeMode, formData.value.codeLength);
-});
-const unbindCommandExample = computed(() => {
-  return formData.value.unbindPrefix + "Steve";
+  return formData.config.prefix + generateVerificationCode(formData.config.codeMode, formData.config.codeLength);
 });
 
-// 时间 + 过期时间
+const unbindCommandExample = computed(() => {
+  return formData.config.unbindPrefix + "Steve";
+});
+
 const bindExpireTimeExample = computed(() => {
-  const expireTime = formData.value.codeExpire;
+  const expireTime = formData.config.codeExpire;
   return moment().add(expireTime, "minutes").format("YYYY-MM-DD HH:mm:ss");
 });
 
 const noBindKickMsgPreview = computed(() => {
   const replaced = renderNoBindKick(
-    formData.value.nobindkickMsg,
+    formData.config.nobindkickMsg,
     "Steve",
     bindCommandExample.value,
     bindExpireTimeExample.value
@@ -502,79 +411,127 @@ const noBindKickMsgPreview = computed(() => {
 });
 
 const unbindKickMsgPreview = computed(() => {
-  const replaced = renderUnbindKick(formData.value.unbindkickMsg, "114514");
+  const replaced = renderUnbindKick(formData.config.unbindkickMsg, "114514");
   return minecraftToHtml(replaced);
 });
 
-// ==================== 数据管理器实例 ====================
-const dataManager = new DataManager();
+const noBindKickVariables = computed(() =>
+  createVariablesArray({
+    "{name}": { label: "玩家名", example: "Steve" },
+    "{message}": { label: "消息", example: bindCommandExample.value },
+    "{time}": { label: "过期时间", example: bindExpireTimeExample.value }
+  })
+);
 
-// ==================== 事件处理函数 ====================
-async function handleSubmit() {
-  await dataManager.handleSubmit();
+const unbindKickVariables = computed(() =>
+  createVariablesArray({
+    "{social_account}": { label: "社交账号", example: "114514" }
+  })
+);
+
+const bindSuccessVariables = computed(() =>
+  createVariablesArray({
+    "{user}": { label: "玩家名", example: "Steve" }
+  })
+);
+
+const bindFailVariables = computed(() =>
+  createVariablesArray({
+    "{user}": { label: "玩家名", example: "Steve" },
+    "{why}": { label: "原因", example: "因为某种奇妙の原因" }
+  })
+);
+
+const unbindSuccessVariables = computed(() =>
+  createVariablesArray({
+    "{user}": { label: "玩家名", example: "Steve" }
+  })
+);
+
+const unbindFailVariables = computed(() =>
+  createVariablesArray({
+    "{user}": { label: "玩家名", example: "Steve" },
+    "{why}": { label: "原因", example: "因为某种奇妙の原因" }
+  })
+);
+
+function insertPlaceholder(
+  field: keyof Pick<
+    BindingConfig,
+    "nobindkickMsg" | "unbindkickMsg" | "bindSuccessMsg" | "bindFailMsg" | "unbindSuccessMsg" | "unbindFailMsg"
+  >,
+  placeholder: string
+) {
+  const current = formData.config[field] || "";
+  formData.config[field] = current + placeholder;
 }
 
-function cancelChanges() {
-  if (dataState.original.bindingConfig) {
-    formData.value = JSON.parse(JSON.stringify(dataState.original.bindingConfig));
-  } else {
-    formData.value = getDefaultBindingConfig();
+async function refreshServerData(): Promise<void> {
+  if (!route.params["id"]) return;
+  loadingMap.isLoading = true;
+  try {
+    const data = await ServerData.get(Number(route.params["id"]));
+    serverData = data;
+    formData.config = cloneDeep(data.bindingConfig || BindingConfigSchema.parse({}));
+    originalFormData.value = cloneDeep(formData);
+  } catch (error) {
+    console.error("Failed to refresh server data:", error);
+    message.error("刷新服务器数据失败");
+  } finally {
+    loadingMap.isLoading = false;
   }
 }
 
-// ==================== 生命周期钩子 ====================
+async function handleSubmit() {
+  if (!isDirty.value) {
+    message.info("没有需要保存的更改");
+    return;
+  }
+
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
+
+  loadingMap.isSubmitting = true;
+  try {
+    await BindingData.patch(serverData?.id ?? Number(route.params["id"]), { config: formData.config });
+    message.success("绑定配置已保存");
+    await refreshServerData();
+  } catch (error) {
+    console.error("Submit failed:", error);
+    message.error("保存配置失败，请稍后再试");
+  } finally {
+    loadingMap.isSubmitting = false;
+  }
+}
+
+function cancelChanges() {
+  if (originalFormData.value) {
+    formData.config = cloneDeep(originalFormData.value.config);
+  } else {
+    formData.config = BindingConfigSchema.parse({});
+  }
+}
+
 onMounted(async () => {
-  await dataManager.refreshAll();
-  // 初始化混淆动画
+  await refreshServerData();
   initObfuscatedAnimation();
-  setPageState({
-    isDirty: () => isDirty.value,
-    save: handleSubmit
-  });
+  setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {
-  // 清理混淆动画
   stopObfuscatedAnimation();
   clearPageState();
 });
 
-// 监听表单数据变化，重新初始化动画
 watch(
-  () => [formData.value.nobindkickMsg, formData.value.unbindkickMsg],
+  () => [formData.config.nobindkickMsg, formData.config.unbindkickMsg],
   () => {
     nextTick(() => {
       initObfuscatedAnimation();
     });
   }
 );
-
-// ==================== 模板变量定义 ====================
-// 踢出未绑定账号消息变量
-const noBindKickVariables = [
-  { label: "玩家名", value: "{name}", example: "Steve" },
-  { label: "消息", value: "{message}", example: bindCommandExample.value },
-  { label: "过期时间", value: "{time}", example: bindExpireTimeExample.value }
-];
-
-// 踢出已解绑账号消息变量
-const unbindKickVariables = [{ label: "社交账号", value: "{social_account}", example: "114514" }];
-
-// 绑定成功消息变量
-const bindSuccessVariables = [{ label: "玩家名", value: "{user}", example: "Steve" }];
-
-// 绑定失败消息变量
-const bindFailVariables = [
-  { label: "玩家名", value: "{user}", example: "Steve" },
-  { label: "原因", value: "{why}", example: "因为某种奇妙の原因" }
-];
-
-// 解绑成功消息变量
-const unbindSuccessVariables = [{ label: "玩家名", value: "{user}", example: "Steve" }];
-
-// 解绑失败消息变量
-const unbindFailVariables = [
-  { label: "玩家名", value: "{user}", example: "Steve" },
-  { label: "原因", value: "{why}", example: "因为某种奇妙の原因" }
-];
 </script>

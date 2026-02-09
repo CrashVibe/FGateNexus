@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
 import { ApiError, createErrorResponse } from "~~/shared/error";
-import { batchDifferentDataSchema } from "~~/shared/schemas/server/target";
+import { TargetAPI } from "~~/shared/schemas/server/target";
 import { createApiResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event) => {
@@ -12,10 +12,9 @@ export default defineEventHandler(async (event) => {
     const serverID = Number(getRouterParam(event, "id"));
     if (Number.isNaN(serverID)) return createErrorResponse(event, ApiError.validation("无效的 ID"));
 
-    const body = await readBody(event);
-    const parsed = batchDifferentDataSchema.safeParse(body);
+    const parsed = TargetAPI.PATCH.request.safeParse(await readBody(event));
     if (!parsed.success) {
-      return createErrorResponse(event, ApiError.validation("请求体格式不正确"));
+      return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
     }
 
     const db = await getDatabase();
@@ -32,7 +31,7 @@ export default defineEventHandler(async (event) => {
           targetId: data.targetId,
           type: data.type,
           enabled: data.enabled,
-          config: data.config ?? undefined,
+          config: data.config,
           updatedAt: sql`(unixepoch())`
         })
         .where(and(eq(targets.serverId, serverID), eq(targets.id, id)))

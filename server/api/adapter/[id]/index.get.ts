@@ -6,6 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
+import { AdapterAPI } from "~~/shared/schemas/adapter";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,10 +33,15 @@ export default defineEventHandler(async (event) => {
       isOnline = chatBridge.isOnline(adapter.id);
     }
 
-    return createApiResponse(event, `获取 ${adapterID} 适配器成功`, StatusCodes.OK, {
-      ...adapter,
-      isOnline
-    });
+    return createApiResponse(
+      event,
+      `获取 ${adapterID} 适配器成功`,
+      StatusCodes.OK,
+      AdapterAPI.GET.response.parse({
+        ...adapter,
+        isOnline
+      })
+    );
   } catch {
     const apiError = ApiError.internal(`获取 ${Number(getRouterParam(event, "id"))} 适配器失败`);
     return createErrorResponse(event, apiError);

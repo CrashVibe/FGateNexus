@@ -43,14 +43,10 @@ const menuOptions = inject<Ref<MenuItem[]>>(
 );
 
 const configMenuItems = computed(() => {
-  const serverId = route.params?.["id"];
-  if (!serverId) return [];
   return menuOptions.value
     .flatMap((item) => item.children || [])
     .filter((item) => {
-      const key = item.key;
-      if (!key) return false;
-      return key !== "/" && key !== route.path;
+      return !!item.key && item.key !== "/" && item.key !== route.path;
     });
 });
 

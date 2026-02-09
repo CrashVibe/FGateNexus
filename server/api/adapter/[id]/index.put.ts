@@ -6,42 +6,37 @@ import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
-import { AdapterConfigSchema, AdapterType, type BotInstanceData } from "~~/shared/schemas/adapter";
+import { AdapterAPI } from "~~/shared/schemas/adapter";
 
 export default defineEventHandler(async (event) => {
   try {
-    const body: BotInstanceData = await readBody(event);
-    const config = AdapterConfigSchema.safeParse(body.config);
+    const id = Number(getRouterParam(event, "id"));
+    const parsed = AdapterAPI.PUT.request.safeParse(await readBody(event));
 
-    if (!body.adapterID) {
-      const apiError = ApiError.validation("更新适配器失败：缺少适配器 ID");
+    if (isNaN(id)) {
+      const apiError = ApiError.validation("更新适配器失败：无效的适配器 ID");
       return createErrorResponse(event, apiError);
     }
 
-    if (body.adapterType === null || !Object.values(AdapterType).includes(body.adapterType)) {
-      const apiError = ApiError.validation("更新适配器失败：适配器类型无效");
-      return createErrorResponse(event, apiError);
-    }
-
-    if (!config.success) {
-      const apiError = ApiError.validation("更新适配器失败：配置无效");
-      return createErrorResponse(event, apiError, config.error);
+    if (!parsed.success) {
+      const apiError = ApiError.validation("更新适配器失败：配置无效" + parsed.error.message);
+      return createErrorResponse(event, apiError, parsed.error);
     }
 
     const database = await getDatabase();
     const result = await database
       .update(adapters)
       .set({
-        name: body.name || "",
-        type: body.adapterType,
-        config: config.data
+        name: parsed.data.name,
+        type: parsed.data.type,
+        config: parsed.data.config
       })
-      .where(eq(adapters.id, body.adapterID))
+      .where(eq(adapters.id, id))
       .returning();
 
     if (result[0]) {
       if (chatBridge.getConnectionData(result[0].id)) {
-        await chatBridge.updateConfig(body.adapterID, config.data);
+        await chatBridge.updateConfig(id, parsed.data.config);
       }
       return createApiResponse(event, "更新适配器成功", StatusCodes.OK);
     } else {

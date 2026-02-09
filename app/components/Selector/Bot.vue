@@ -1,17 +1,22 @@
 <script lang="ts" setup>
-import type { BotInstanceData } from "#shared/schemas/adapter";
-import { AdapterType } from "#shared/schemas/adapter";
+import { AdapterType, type AdapterAPI } from "#shared/schemas/adapter";
 import { OneBotWSConfigSchema, OneBotWSReverseConfigSchema } from "#shared/schemas/adapter/onebot";
-import { createDynamicZodRules } from "#shared/utils/validation";
-import type { FormInst } from "naive-ui";
+import { createDynamicZodRules } from "~/composables/useValidation";
+import type z from "zod";
 
-const modelValue = defineModel<BotInstanceData>({ required: true });
-const formRef = ref<FormInst>();
+const modelValue = defineModel<Partial<z.infer<typeof AdapterAPI.POST.request>>>({ required: true });
+
+const props = defineProps({
+  isEdit: {
+    type: Boolean,
+    default: false
+  }
+});
 
 const selectedType = computed({
-  get: () => modelValue.value.adapterType,
+  get: () => modelValue.value.type,
   set: (value) => {
-    modelValue.value.adapterType = value;
+    modelValue.value.type = value;
     if (value === AdapterType.Onebot) {
       modelValue.value.config = {
         selfId: "",
@@ -27,14 +32,6 @@ const protocolOptions = [
   { label: "WebSocket 正向连接", value: "ws" }
 ];
 
-const wsConfig = ref({
-  endpoint: "",
-  timeout: 5000,
-  retryTimes: 3,
-  retryInterval: 3000,
-  retryLazy: 1000
-});
-
 const currentSchema = computed(() => {
   if (modelValue.value.config?.protocol === "ws") {
     return OneBotWSConfigSchema;
@@ -44,22 +41,21 @@ const currentSchema = computed(() => {
   return null;
 });
 
-const getRules = createDynamicZodRules(() => currentSchema.value);
-const rules = computed(() => getRules());
+const rules = computed(() => createDynamicZodRules(() => currentSchema.value)());
 
 const onProtocolChange = () => {
   if (modelValue.value.config?.protocol === "ws") {
     modelValue.value.config = {
       ...modelValue.value.config,
-      ...wsConfig.value
+      ...{
+        timeout: 5000,
+        retryTimes: 3,
+        retryInterval: 3000,
+        retryLazy: 1000
+      }
     };
   }
 };
-
-defineExpose({
-  validate: () => formRef.value?.validate(),
-  restoreValidation: () => formRef.value?.restoreValidation()
-});
 </script>
 
 <template>
@@ -72,17 +68,18 @@ defineExpose({
       require-mark-placement="left"
     >
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div class="md:col-span-2">
-          <n-form-item label="Bot 实例名称">
+        <div class="mb-2 md:col-span-2">
+          <n-form-item label="Bot 实例名称" :show-feedback="false">
             <n-input v-model:value="modelValue.name" placeholder="请输入 Bot 实例名称" show-count maxlength="12" />
           </n-form-item>
         </div>
-        <div class="mb-4 md:col-span-2">
+        <div class="mb-2 md:col-span-2">
           <n-form-item :show-feedback="false" label="适配器类型" required>
             <n-select
               v-model:value="selectedType"
               :options="[{ label: 'OneBot', value: AdapterType.Onebot }]"
               placeholder="请选择适配器类型"
+              :disabled="props.isEdit"
             />
           </n-form-item>
         </div>

@@ -27,22 +27,15 @@
     <n-alert v-if="!props.adapterType && props.target.type === 'group'" title="权限提示" type="warning">
       由于你没有选择适配器，无法提供权限提示
     </n-alert>
-    <template #footer>
-      <div class="flex justify-end gap-3">
-        <n-button :disabled="loading" :loading="loading" type="primary" @click="handleSave">保存</n-button>
-      </div>
-    </template>
   </n-drawer-content>
 </template>
 
 <script lang="ts" setup>
 import { AdapterType } from "~~/shared/schemas/adapter";
-import type { targetSchema } from "~~/shared/schemas/server/target";
-
-const loading = ref(false);
+import type { targetResponse } from "~~/shared/schemas/server/target";
 
 const props = defineProps<{
-  target: targetSchema;
+  target: targetResponse;
   adapterType?: AdapterType;
 }>();
 
@@ -60,19 +53,4 @@ const options = computed(() => {
 const selectedTarget = computed(() => {
   return props.target;
 });
-
-const emit = defineEmits<{
-  save: [data: targetSchema];
-}>();
-
-const handleSave = async () => {
-  try {
-    loading.value = true;
-    emit("save", selectedTarget.value);
-  } catch {
-    return;
-  } finally {
-    loading.value = false;
-  }
-};
 </script>

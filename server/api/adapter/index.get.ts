@@ -1,9 +1,10 @@
 import { StatusCodes } from "http-status-codes";
+import type z from "zod";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { ApiError, createErrorResponse } from "~~/shared/error";
-import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
+import { AdapterAPI } from "~~/shared/schemas/adapter";
 import { createApiResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +12,7 @@ export default defineEventHandler(async (event) => {
     const database = await getDatabase();
     const result = await database.select().from(adapters);
 
-    const adaptersWithStatus: AdapterWithStatus[] = result.map((adapter) => {
+    const adaptersWithStatus: z.infer<typeof AdapterAPI.GETS.response> = result.map((adapter) => {
       let isOnline = false;
       if (!chatBridge.getConnectionData(adapter.id)) {
         isOnline = false;
@@ -24,7 +25,12 @@ export default defineEventHandler(async (event) => {
       };
     });
 
-    return createApiResponse(event, "获取适配器列表成功", StatusCodes.OK, adaptersWithStatus);
+    return createApiResponse(
+      event,
+      "获取适配器列表成功",
+      StatusCodes.OK,
+      AdapterAPI.GETS.response.parse(adaptersWithStatus)
+    );
   } catch (err) {
     logger.error({ err }, "获取适配器列表失败");
     return createErrorResponse(event, ApiError.database("获取适配器列表失败"));

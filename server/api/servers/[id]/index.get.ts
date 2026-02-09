@@ -4,7 +4,7 @@ import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { ServersAPI } from "~~/shared/schemas/server/servers";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -26,14 +26,18 @@ export default defineEventHandler(async (event) => {
     }
 
     const connectionData = pluginBridge.connectionManager.getConnectionData(result.id);
-    const serversWithStatus: ServerWithStatus = {
-      ...result,
-      isOnline: !!connectionData,
-      supports_papi: connectionData?.supports_papi ?? null,
-      supports_command: connectionData?.supports_command ?? null,
-      player_count: connectionData?.player_count ?? null
-    };
-    return createApiResponse(event, "获取服务器列表成功", StatusCodes.OK, serversWithStatus);
+    return createApiResponse(
+      event,
+      "获取服务器列表成功",
+      StatusCodes.OK,
+      ServersAPI.GET.response.parse({
+        ...result,
+        isOnline: !!connectionData,
+        supports_papi: connectionData?.supports_papi ?? null,
+        supports_command: connectionData?.supports_command ?? null,
+        player_count: connectionData?.player_count ?? null
+      })
+    );
   } catch (err) {
     logger.error({ err }, "Database error");
     return createErrorResponse(event, ApiError.database("获取服务器列表失败"));

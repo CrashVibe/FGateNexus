@@ -1,4 +1,4 @@
-import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "../schemas/server/binding";
+import { CODE_MODES } from "../schemas/server/binding";
 
 // 生成验证码
 export function generateVerificationCode(code_mode: CODE_MODES, length: number): string {
@@ -13,8 +13,3 @@ export function generateVerificationCode(code_mode: CODE_MODES, length: number):
   const chars = charSets[code_mode];
   return Array.from({ length }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join("");
 }
-
-// 获取默认的绑定配置
-export const getDefaultBindingConfig = (): BindingConfig => {
-  return BindingConfigSchema.parse({});
-};

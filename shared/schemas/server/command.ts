@@ -1,3 +1,4 @@
+import type { ApiSchemaRegistry } from "..";
 import { z } from "zod";
 
 import { TargetConfigSchema } from "./target";
@@ -8,14 +9,19 @@ import { TargetConfigSchema } from "./target";
 export const CommandConfigSchema = z.object({});
 
 export type CommandConfig = z.infer<typeof CommandConfigSchema>;
-export type CommandTarget = CommandConfig["targets"][number];
 
-export const commandPatchBodySchema = z.object({
-  command: CommandConfigSchema,
-  targets: z.array(
-    z.object({
-      id: z.uuidv4(),
-      config: TargetConfigSchema
-    })
-  )
-});
+export const CommandAPI = {
+  PATCH: {
+    description: "更新服务器命令配置",
+    request: z.object({
+      command: CommandConfigSchema,
+      targets: z.array(
+        z.object({
+          id: z.uuidv4(),
+          config: TargetConfigSchema
+        })
+      )
+    }),
+    response: z.object({})
+  }
+} satisfies ApiSchemaRegistry;

@@ -17,18 +17,18 @@ export interface ApiErrorResponse {
  * API 错误类型枚举
  */
 export enum ApiErrorType {
-  Database = "Database",
-  Validation = "Validation",
-  Authentication = "Authentication",
-  Authorization = "Authorization",
-  NotFound = "NotFound",
-  Conflict = "Conflict",
-  Internal = "Internal",
-  BadRequest = "BadRequest",
-  Unauthorized = "Unauthorized",
-  Forbidden = "Forbidden",
-  InternalServerError = "InternalServerError",
-  TooManyRequests = "TooManyRequests"
+  Database = 50001,
+  Validation = 50002,
+  Authentication = 50003,
+  Authorization = 50004,
+  NotFound = 50005,
+  Conflict = 50006,
+  Internal = 50007,
+  BadRequest = 50008,
+  Unauthorized = 50009,
+  Forbidden = 50010,
+  InternalServerError = 50011,
+  TooManyRequests = 50012
 }
 
 /**
@@ -116,7 +116,7 @@ export class ApiError extends Error {
 
     return {
       message: errorMessage,
-      code: this.status,
+      code: this.type,
       errors: this.errors // 可选
     };
   }

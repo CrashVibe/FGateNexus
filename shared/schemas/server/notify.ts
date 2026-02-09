@@ -1,3 +1,4 @@
+import type { ApiSchemaRegistry } from "..";
 import { z } from "zod";
 
 import { TargetConfigSchema } from "./target";
@@ -32,14 +33,18 @@ export const NotifyConfigSchema = z.object({
   death_notify_message: z.string().default("[死亡] {playerName} 因 {deathMessage} 死亡了")
 });
 
-export type NotifyConfig = z.infer<typeof NotifyConfigSchema>;
-
-export const notifyPatchBodySchema = z.object({
-  notify: NotifyConfigSchema,
-  targets: z.array(
-    z.object({
-      id: z.uuidv4(),
-      config: TargetConfigSchema
-    })
-  )
-});
+export const NotifyAPI = {
+  PATCH: {
+    description: "更新服务器通知配置",
+    request: z.object({
+      notify: NotifyConfigSchema,
+      targets: z.array(
+        z.object({
+          id: z.uuidv4(),
+          config: TargetConfigSchema
+        })
+      )
+    }),
+    response: z.object({})
+  }
+} satisfies ApiSchemaRegistry;

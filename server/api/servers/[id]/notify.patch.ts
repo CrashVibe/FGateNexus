@@ -5,7 +5,7 @@ import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
-import { notifyPatchBodySchema } from "~~/shared/schemas/server/notify";
+import { NotifyAPI } from "~~/shared/schemas/server/notify";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,14 +16,14 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    const parsed = notifyPatchBodySchema.safeParse(body);
+    const parsed = NotifyAPI.PATCH.request.safeParse(body);
     if (!parsed.success) {
       const apiError = ApiError.validation("参数错误");
       return createErrorResponse(event, apiError, parsed.error);
     }
 
     const db = await getDatabase();
-    const { notify, targets: items = [] } = parsed.data;
+    const { notify, targets: items } = parsed.data;
 
     db.transaction((tx) => {
       tx.update(servers).set({ notifyConfig: notify }).where(eq(servers.id, serverId)).run();

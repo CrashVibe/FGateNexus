@@ -64,11 +64,12 @@
 </template>
 
 <script lang="ts" setup>
-import type { ServerWithStatus } from "#shared/schemas/server/servers";
+import type { ServersAPI } from "#shared/schemas/server/servers";
 import MinecraftDefaultIcon from "@/assets/icon/software/minecraft.svg";
+import type z from "zod";
 
 const props = defineProps<{
-  server: ServerWithStatus;
+  server: z.infer<(typeof ServersAPI)["GET"]["response"]>[number];
 }>();
 
 const message = useMessage();

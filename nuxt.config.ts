@@ -52,7 +52,7 @@ export default defineNuxtConfig({
     "nuxtjs-naive-ui",
     "@nuxt/eslint",
     "@nuxtjs/tailwindcss",
-    "nuxt-auth-utils"
+    "nuxt-auth-utils",
   ],
   vite: {
     optimizeDeps: {
@@ -69,7 +69,8 @@ export default defineNuxtConfig({
         "zod",
         "http-status-codes",
         "@zxcvbn-ts/core",
-        "@zxcvbn-ts/language-common"
+        "@zxcvbn-ts/language-common",
+        "lodash-es"
       ],
       esbuildOptions: {
         target: "esnext"

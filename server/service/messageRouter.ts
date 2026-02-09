@@ -3,8 +3,7 @@ import { eq } from "drizzle-orm";
 import type { Session } from "koishi";
 import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import type { ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
-import { formatMCToPlatformMessage, formatPlatformToMCMessage } from "~~/shared/utils/chatSync";
+import { formatMCToPlatformMessage, formatPlatformToMCMessage, shouldForwardMessage } from "~~/shared/utils/chatSync";
 
 import { chatBridge } from "./chatbridge/chatbridge";
 import { pluginBridge } from "./mcwsbridge/MCWSBridge";
@@ -53,17 +52,13 @@ class MessageRouter {
         logger.warn(`服务器 ${serverId} 或其适配器未找到`);
         return;
       }
-
       const { chatSyncConfig } = server;
-      if (!chatSyncConfig.enabled || server.targets.length === 0) {
-        return;
-      }
 
       // 过滤
       if (!chatSyncConfig.mcToPlatformEnabled) {
         return;
       }
-      if (!this.shouldForwardMessage(mcMessage.message, chatSyncConfig)) {
+      if (!shouldForwardMessage(mcMessage.message, chatSyncConfig)) {
         return;
       }
 
@@ -132,18 +127,9 @@ class MessageRouter {
           tasks.push(cmd);
           return; // 阻断
         }
-
-        // chatSync 转发
         const { chatSyncConfig } = server;
-        if (!chatSyncConfig?.enabled) continue;
-
-        const isTargetGroup = server.targets?.some(
-          (t) => t.config.chatSyncConfigSchema.enabled && t.targetId === session.channelId
-        );
-        if (!isTargetGroup) continue;
-
         if (!chatSyncConfig.platformToMcEnabled) continue;
-        if (!this.shouldForwardMessage(session.content, chatSyncConfig)) continue;
+        if (!shouldForwardMessage(session.content, chatSyncConfig)) continue;
 
         const formattedMessage = formatPlatformToMCMessage(chatSyncConfig.platformToMcTemplate, {
           platform: session.platform,
@@ -169,51 +155,6 @@ class MessageRouter {
     } catch (error) {
       logger.error({ error }, `[消息路由] 处理平台消息时出错：`);
     }
-  }
-
-  /**
-   * 检查消息是否应该被转发
-   */
-  private shouldForwardMessage(message: string, config: ChatSyncConfig): boolean {
-    const { filters } = config;
-
-    // 消息长度
-    if (message.length < filters.minMessageLength || message.length > filters.maxMessageLength) {
-      return false;
-    }
-
-    if (filters.filterMode === "blacklist") {
-      // 黑名单模式：检查是否包含黑名单关键词或匹配正则表达式
-      if (filters.blacklistKeywords.some((keyword) => message.toLowerCase().includes(keyword.toLowerCase()))) {
-        return false;
-      }
-      if (
-        filters.blacklistRegex.some((regex) => {
-          try {
-            return new RegExp(regex, "i").test(message);
-          } catch {
-            return false;
-          }
-        })
-      ) {
-        return false;
-      }
-      return true;
-    } else if (filters.filterMode === "whitelist") {
-      // 白名单模式：检查是否以指定前缀开头或匹配正则表达式
-      const hasPrefix = filters.whitelistPrefixes.some((prefix) => message.startsWith(prefix));
-      const hasRegexMatch = filters.whitelistRegex.some((regex) => {
-        try {
-          return new RegExp(regex).test(message);
-        } catch {
-          return false;
-        }
-      });
-      return hasPrefix || hasRegexMatch;
-    }
-
-    // 默认黑名单模式
-    return true;
   }
 }
 

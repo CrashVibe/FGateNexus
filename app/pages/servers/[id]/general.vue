@@ -27,8 +27,8 @@
     </n-form>
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button :disabled="!isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
+      <n-button :disabled="!isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -46,153 +46,106 @@
 </template>
 
 <script lang="ts" setup>
-// ==================== 导入 ====================
 import { isMobile } from "#imports";
-import { StatusCodes } from "http-status-codes";
+import { cloneDeep, isEqual } from "lodash-es";
 import type { SelectMixedOption } from "naive-ui/es/select/src/interface";
-import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
-import { type ChooseAdapter, chooseAdapterSchema, type ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { ApiResponse } from "~~/shared/types";
-import { zodToNaiveRules } from "~~/shared/utils/validation";
+import type z from "zod";
+import { AdapterData, GeneralData, ServerData } from "~/composables/api";
+import { GeneralAPI } from "~~/shared/schemas/server/general";
+import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import { zodToNaiveRules } from "~/composables/useValidation";
 
-// ==================== 页面配置 ====================
 definePageMeta({
   layout: "server-edit"
 });
 
-// ==================== 组合式函数和依赖注入 ====================
 const { setPageState, clearPageState } = usePageStateStore();
-
 const route = useRoute();
 const message = useMessage();
+const dialog = useDialog();
 const router = useRouter();
-// ==================== 类型定义 ====================
-interface DataState {
-  data: {
-    adapterList: AdapterWithStatus[];
-    serverData: ServerWithStatus | null;
-  };
-  isLoading: boolean;
-  isSubmitting: boolean;
-  original: {
-    adapterId: number | null;
-  };
-}
-
-// ==================== 数据状态 ====================
-const dataState = reactive<DataState>({
-  data: {
-    adapterList: [],
-    serverData: null
-  },
+const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false,
-  original: { adapterId: null }
+  isSubmitting: false
+});
+const isAnyLoading = computed(() => loadingMap.isLoading);
+const isDirty = computed(() => !isEqual(formData, original));
+const rules = zodToNaiveRules(GeneralAPI.PATCH.request);
+const adapterOptions = ref<SelectMixedOption[]>([]);
+let serverData: ServerWithStatus | null = null;
+const formData = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
+  adapterId: null
+});
+const original = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
+  adapterId: null
 });
 
-// ==================== 数据管理类 ====================
-class DataManager {
-  async handleDelete() {
-    if (!dataState.data.serverData) {
-      message.error("服务器数据未加载或无效");
-      return;
-    }
-
-    try {
-      await $fetch<ApiResponse<void>>(`/api/servers/${dataState.data.serverData.id}`, {
-        method: "DELETE"
-      });
-      message.success("服务器已删除");
-      dataState.data.serverData = null;
-      router.push("/");
-    } catch (error) {
-      console.error("Delete failed:", error);
-      message.error("删除服务器失败");
-    }
-  }
-
-  async fetchAdapterList(): Promise<void> {
-    try {
-      const response = await $fetch<ApiResponse<AdapterWithStatus[]>>("/api/adapter");
-      if (response.code !== StatusCodes.OK || !response.data) {
-        message.error(response.message);
-        return;
+async function handleDelete() {
+  dialog.warning({
+    title: "确认删除",
+    content: "确定要删除此服务器吗？删除后将无法恢复。",
+    positiveText: "确认删除",
+    negativeText: "取消",
+    onPositiveClick: async () => {
+      try {
+        await ServerData.delete(Number(serverData?.id ?? route.params["id"]));
+        message.success("服务器已删除～");
+        serverData = null;
+        router.push("/");
+      } catch (error) {
+        console.error("Delete failed:", error);
+        message.error("删除服务器失败");
       }
-      dataState.data.adapterList = response.data;
-    } catch (error) {
-      console.error("Failed to fetch adapter list:", error);
-      message.error("获取适配器列表失败");
-      throw error;
     }
-  }
+  });
+}
 
-  async refreshServerData(): Promise<void> {
-    if (!route.params?.["id"]) return;
-    try {
-      const response = await $fetch<ApiResponse<ServerWithStatus>>(`/api/servers/${route.params["id"]}`);
-      if (response.code === StatusCodes.OK && response.data) {
-        dataState.data.serverData = response.data;
-        dataState.original = { adapterId: response.data.adapterId };
-      }
-    } catch (error) {
-      console.error("Failed to refresh server data:", error);
-      message.error("刷新服务器数据失败");
-    }
-  }
-
-  async updateServerAdapter(serverId: number, adapterData: ChooseAdapter): Promise<void> {
-    try {
-      dataState.isSubmitting = true;
-      await $fetch<ApiResponse<ChooseAdapter>>(`/api/servers/${serverId}/general/adapter`, {
-        method: "POST",
-        body: adapterData
-      });
-      message.success("适配器设置已保存");
-      dataState.original = { ...adapterData };
-    } catch (error) {
-      console.error("Submit failed:", error);
-      message.error("适配器设置保存失败");
-      throw error;
-    } finally {
-      dataState.isSubmitting = false;
-    }
-  }
-
-  async handleSubmit(): Promise<void> {
-    if (!dataState.data.serverData) {
-      message.error("服务器数据未加载或无效");
-      return;
-    }
-
-    const hasChanges = formData.value.adapterId !== dataState.original.adapterId;
-    if (!hasChanges) {
-      message.info("没有需要保存的更改");
-      return;
-    }
-
-    try {
-      await this.updateServerAdapter(dataState.data.serverData.id, formData.value);
-      Object.assign(dataState.data.serverData, { adapterId: formData.value.adapterId });
-      await this.refreshAll();
-    } catch (error) {
-      console.error("Submit failed:", error);
-    }
-  }
-
-  async refreshAll(): Promise<void> {
-    dataState.isLoading = true;
-    await Promise.all([this.fetchAdapterList(), this.refreshServerData()]).finally(() => {
-      dataState.isLoading = false;
-    });
+async function handleSubmit(): Promise<void> {
+  loadingMap.isSubmitting = true;
+  try {
+    await GeneralData.patch(serverData?.id ?? Number(route.params["id"]), formData);
+    Object.assign(original, cloneDeep(formData));
+    message.success("配置已保存");
+    await refreshAll();
+  } catch (error) {
+    console.error("Submit failed:", error);
+    message.error("保存配置失败，请稍后再试");
+  } finally {
+    loadingMap.isSubmitting = false;
   }
 }
 
-// ==================== 数据管理器实例 ====================
-const dataManager = new DataManager();
+async function refreshAll(): Promise<void> {
+  loadingMap.isLoading = true;
+  try {
+    const [adapterData, serverDataResult] = await Promise.all([
+      AdapterData.gets(),
+      ServerData.get(Number(route.params["id"]))
+    ]);
 
-// ==================== 生命周期钩子 ====================
+    serverData = serverDataResult;
+
+    adapterOptions.value = adapterData.map((adapter) => ({
+      label: `#${adapter.id} - ${adapter.type} [${adapter.isOnline ? "在线" : "离线"}${adapter.enabled ? "" : " · 已禁用"}]`,
+      value: adapter.id
+    }));
+
+    formData.adapterId = serverDataResult.adapterId;
+    Object.assign(original, cloneDeep(formData));
+  } catch (error) {
+    console.error("Refresh failed:", error);
+    message.error("加载数据失败");
+  } finally {
+    loadingMap.isLoading = false;
+  }
+}
+
+function cancelChanges() {
+  Object.assign(formData, cloneDeep(original));
+}
+
 onMounted(async () => {
-  await dataManager.refreshAll();
+  await refreshAll();
   setPageState({
     isDirty: () => isDirty.value,
     save: handleSubmit
@@ -202,47 +155,4 @@ onMounted(async () => {
 onUnmounted(() => {
   clearPageState();
 });
-
-// ==================== 计算属性 ====================
-const adapterOptions = computed<SelectMixedOption[]>(() =>
-  dataState.data.adapterList.map((adapter) => ({
-    label: `#${adapter.id} - ${adapter.type} [${adapter.isOnline ? "在线" : "离线"}${adapter.enabled ? "" : " · 已禁用"}]`,
-    value: adapter.id
-  }))
-);
-
-const isAnyLoading = computed(() => dataState.isLoading);
-
-const isDirty = computed(
-  () => dataState.isSubmitting || (!dataState.isLoading && formData.value.adapterId !== dataState.original.adapterId)
-);
-
-// ==================== 表单数据和验证 ====================
-const formData = ref<ChooseAdapter>({ adapterId: null });
-const rules = zodToNaiveRules(chooseAdapterSchema);
-
-// ==================== 事件处理函数 ====================
-async function handleSubmit() {
-  await dataManager.handleSubmit();
-}
-
-function cancelChanges() {
-  formData.value = { ...dataState.original };
-}
-
-async function handleDelete() {
-  await dataManager.handleDelete();
-}
-
-// ==================== 监听器 ====================
-watch(
-  () => dataState.data.serverData,
-  (newServerData) => {
-    if (newServerData) {
-      formData.value = { adapterId: newServerData.adapterId };
-      dataState.original = { adapterId: newServerData.adapterId };
-    }
-  },
-  { immediate: true }
-);
 </script>

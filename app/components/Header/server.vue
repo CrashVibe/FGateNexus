@@ -31,6 +31,7 @@ import type { MenuItem } from "~/layouts/serverEdit.vue";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { isMobile } from "#imports";
 import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
+import { ServerData } from "~/composables/api";
 
 const route = useRoute();
 interface Props {
@@ -41,7 +42,7 @@ interface Props {
 const serverData = ref<ServerWithStatus | null>(null);
 
 onMounted(async () => {
-  serverData.value = await getServerData();
+  serverData.value = await ServerData.get(Number(route.params["id"]));
 });
 
 const menuOptions: Ref<MenuItem[]> = inject(
@@ -78,13 +79,7 @@ defineOptions({
 const router = useRouter();
 
 const goBack = () => {
-  if (props.backPath.includes("[id]")) {
-    const currentRoute = router.currentRoute.value;
-    const serverId = currentRoute.params["id"] || "";
-    const targetPath = props.backPath.replace("[id]", serverId as string);
-    router.push(targetPath);
-  } else {
-    router.push(props.backPath);
-  }
+  const targetPath = props.backPath.replace("[id]", route.params["id"]?.toString() ?? "");
+  router.push(targetPath);
 };
 </script>

@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { loginBodySchema, type LoginBody } from "#shared/schemas/auth";
 import { LockClosedOutline, LogInOutline } from "@vicons/ionicons5";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
+import { LoginAPI, type LoginBody } from "~~/shared/schemas/auth";
 
 definePageMeta({
   layout: false
@@ -11,8 +11,7 @@ definePageMeta({
 const message = useMessage();
 const router = useRouter();
 const isLoading = ref(false);
-const rules = zodToNaiveRules(loginBodySchema);
-const { loggedIn, fetch: refreshSession } = useUserSession();
+const rules = zodToNaiveRules(LoginAPI.POST.request);
 
 // 表单数据
 const credentials = reactive<LoginBody>({
@@ -31,17 +30,13 @@ const handleLogin = async () => {
       credentials.twoFactorToken = twoFactorInput.value.join("");
     }
 
-    const validation = loginBodySchema.safeParse(credentials);
+    const validation = LoginAPI.POST.request.safeParse(credentials);
     if (!validation.success) {
       message.error(validation.error.issues[0]?.message || "请求参数错误");
       return;
     }
 
-    await $fetch("/api/auth/login", {
-      method: "POST",
-      body: validation.data
-    });
-    await refreshSession();
+    await useAuthStore().login(validation.data);
     message.success("登录成功");
     router.push("/");
   } catch (error: unknown) {
@@ -61,7 +56,7 @@ const handleLogin = async () => {
 };
 
 onMounted(async () => {
-  if (loggedIn.value) {
+  if (!(await useAuthStore().requireAuth())) {
     router.push("/");
   }
 });
@@ -93,7 +88,7 @@ onMounted(async () => {
               />
             </n-form-item>
 
-            <n-form-item v-if="needsTwoFactor" label="双重验证码">
+            <n-form-item v-if="useAuthStore().has2FA" label="双重验证码">
               <n-input-otp v-model:value="twoFactorInput" :length="6" block :disabled="isLoading" />
             </n-form-item>
           </n-form>

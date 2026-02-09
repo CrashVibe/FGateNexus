@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { validatePasswordStrength } from "#shared/utils/password";
 import { ShieldCheckmarkOutline } from "@vicons/ionicons5";
-import { StatusCodes } from "http-status-codes";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
 import type { ApiResponse } from "~~/shared/types";
@@ -93,7 +92,7 @@ const setup2FA = async () => {
   try {
     isLoading.value = true;
     const response = await $fetch<ApiResponse<{ keyuri: string; secret: string }>>("/api/auth/2fa/setup");
-    if (response.code === StatusCodes.OK && response.data) {
+    if (response.data) {
       twoFAForm.keyuri = response.data.keyuri;
       twoFAForm.secret = response.data.secret;
       showTwoFASetup.value = true;

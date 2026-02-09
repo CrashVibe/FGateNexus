@@ -6,14 +6,15 @@ import { StatusCodes } from "http-status-codes";
 import { getDatabase } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
+import { AdapterAPI } from "~~/shared/schemas/adapter";
 
 export default defineEventHandler(async (event) => {
   try {
     const adapterID = Number(getRouterParam(event, "id"));
-    const body: { enabled: boolean } = await readBody(event);
+    const parsed = AdapterAPI.POSTTOGGLE.request.safeParse(await readBody(event));
 
-    if (typeof body.enabled !== "boolean") {
-      const apiError = ApiError.validation("开关适配器失败：缺少启用状态");
+    if (!parsed.success) {
+      const apiError = ApiError.validation("开关适配器失败：配置无效" + parsed.error.message);
       return createErrorResponse(event, apiError);
     }
 
@@ -25,12 +26,12 @@ export default defineEventHandler(async (event) => {
     const database = await getDatabase();
     const result = await database
       .update(adapters)
-      .set({ enabled: body.enabled })
+      .set({ enabled: parsed.data.enabled })
       .where(eq(adapters.id, adapterID))
       .returning();
 
     if (result[0]) {
-      if (body.enabled) {
+      if (parsed.data.enabled) {
         chatBridge.addBot(adapterID, result[0].type, result[0].config);
       } else {
         chatBridge.removeBot(adapterID);

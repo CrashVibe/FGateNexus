@@ -44,24 +44,20 @@
 
 <script lang="tsx" setup>
 import { RefreshOutline } from "@vicons/ionicons5";
-import { StatusCodes } from "http-status-codes";
 import { NTag, NText } from "naive-ui";
-import type { PlayerWithRelations } from "~~/shared/schemas/player";
-import type { ApiResponse } from "~~/shared/types";
+import type z from "zod";
+import { PlayerData } from "~/composables/api";
+import type { PlayerAPI } from "~~/shared/schemas/player";
 
 const message = useMessage();
-const playerList = ref<PlayerWithRelations[]>([]);
+const playerList = ref<z.infer<typeof PlayerAPI.GETS.response>>([]);
 const isLoadingList = ref(false);
 
 async function fetchServerList() {
+  isLoadingList.value = true;
   try {
-    isLoadingList.value = true;
-    const response = await $fetch<ApiResponse<PlayerWithRelations[]>>("/api/players");
-    if (response.code === StatusCodes.OK && response.data) {
-      playerList.value = response.data;
-    } else {
-      message.error("获取服务器列表失败");
-    }
+    const data = await PlayerData.gets();
+    playerList.value = data;
   } catch (error) {
     console.error("Failed to fetch server list:", error);
     message.error("获取服务器列表失败");
@@ -137,7 +133,7 @@ const columns = [
     title: "社交账号",
     key: "socialAccount",
     width: "20%",
-    render(row: PlayerWithRelations) {
+    render(row: z.infer<typeof PlayerAPI.GETS.response.element>) {
       return row.socialAccount ? (
         <>
           <NTag type="info" size="small">
