@@ -13,10 +13,10 @@ console.info("工作目录在 ", process.cwd());
 
 async function initDatabase() {
   const dbFilePath = path.resolve("./sqlite.db");
-  const isNewDatabase = !(await fs
-    .access(dbFilePath)
-    .then(() => false)
-    .catch(() => true));
+  const isNewDatabase = await fs
+      .access(dbFilePath)
+      .then(() => false)
+      .catch(() => true);
 
   const client = new Database(dbFilePath);
 
@@ -54,4 +54,4 @@ async function startApplication() {
   }
 }
 
-startApplication();
+void startApplication();
