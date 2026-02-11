@@ -1,7 +1,6 @@
 import { isMobile } from "#imports";
 
 const SIDEBAR_STORAGE_KEY = "sidebar-collapsed";
-const MOBILE_WIDTH = 768;
 
 export function useSidebarCollapsed() {
   const collapsed = ref(isMobile.value);
@@ -27,7 +26,7 @@ export function useSidebarCollapsed() {
 
   /** 处理窗口大小变化 */
   const handleResize = () => {
-    if (window.innerWidth <= MOBILE_WIDTH) {
+    if (isMobile.value) {
       setCollapsed(true, false);
     } else {
       const stored = readStoredCollapsed();
