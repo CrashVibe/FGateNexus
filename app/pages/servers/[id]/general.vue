@@ -56,7 +56,7 @@ import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { zodToNaiveRules } from "~/composables/useValidation";
 
 definePageMeta({
-  layout: "server-edit"
+  layout: "default"
 });
 
 const { setPageState, clearPageState } = usePageStateStore();

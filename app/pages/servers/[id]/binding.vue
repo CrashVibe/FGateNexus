@@ -352,7 +352,7 @@ import { createVariablesArray } from "~/composables/usePlaceholderVariables";
 const { setPageState, clearPageState } = usePageStateStore();
 const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();
 
-definePageMeta({ layout: "server-edit" });
+definePageMeta({ layout: "default" });
 
 const route = useRoute();
 const message = useMessage();

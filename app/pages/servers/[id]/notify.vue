@@ -180,7 +180,7 @@ import { NotifyData, ServerData } from "~/composables/api";
 import { pickEditableTarget } from "~~/shared/utils/target";
 import { createVariablesArray, createVariableMap } from "~/composables/usePlaceholderVariables";
 
-definePageMeta({ layout: "server-edit" });
+definePageMeta({ layout: "default" });
 
 const { setPageState, clearPageState } = usePageStateStore();
 const route = useRoute();

@@ -1,15 +1,16 @@
 <script lang="ts" setup>
 import { isMobile } from "#imports";
-import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed } from "vue";
 import type { RouteLocationAsPathGeneric } from "vue-router";
 import Header from "~/components/layouts/Header.vue";
 import { useSidebarCollapsed } from "~/composables/useSidebarCollapsed";
+import type { MenuItem } from "~/layouts/default.vue";
 
 interface Props {
-  menuOptions?: MenuMixedOption[];
+  menuOptions?: MenuItem[];
   onMenuSelect?: (key: RouteLocationAsPathGeneric) => void;
 }
+const menuKey = computed(() => props.menuOptions.map((i) => i.key).join("-"));
 
 const props = withDefaults(defineProps<Props>(), {
   menuOptions: () => [],
@@ -48,12 +49,16 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
             <n-text class="align-middle text-xl" strong>FlowGate</n-text>
           </div>
         </router-link>
-        <n-menu
-          :value="selectedKey"
-          :collapsed="collapsed"
-          :options="props.menuOptions"
-          @update:value="handleMenuSelect"
-        />
+        <transition name="page-jump-in" mode="out-in">
+          <n-menu
+            :key="menuKey"
+            :value="selectedKey"
+            :collapsed="collapsed"
+            :options="props.menuOptions"
+            :indent="24"
+            @update:value="handleMenuSelect"
+          />
+        </transition>
       </n-layout-sider>
       <n-layout>
         <Header />

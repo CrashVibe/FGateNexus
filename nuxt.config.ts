@@ -18,7 +18,7 @@ export default defineNuxtConfig({
     server: isDev
   },
   ssr: false,
-  css: ["~/assets/css/main.scss", "~/assets/css/animate.scss"],
+  css: ["~/assets/css/main.scss"],
   typescript: {
     strict: true,
     tsConfig: {
@@ -52,7 +52,7 @@ export default defineNuxtConfig({
     "nuxtjs-naive-ui",
     "@nuxt/eslint",
     "@nuxtjs/tailwindcss",
-    "nuxt-auth-utils",
+    "nuxt-auth-utils"
   ],
   vite: {
     optimizeDeps: {
@@ -119,10 +119,6 @@ export default defineNuxtConfig({
     },
     pageTransition: {
       name: "page",
-      mode: "out-in"
-    },
-    layoutTransition: {
-      name: "layout",
       mode: "out-in"
     },
     rootId: "root",

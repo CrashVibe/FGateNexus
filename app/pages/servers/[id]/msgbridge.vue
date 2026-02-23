@@ -301,7 +301,7 @@ const { setPageState, clearPageState } = usePageStateStore();
 
 export type ChatSyncPatchBody = z.infer<typeof ChatSyncAPI.PATCH.request>;
 
-definePageMeta({ layout: "server-edit" });
+definePageMeta({ layout: "default" });
 
 const route = useRoute();
 const router = useRouter();

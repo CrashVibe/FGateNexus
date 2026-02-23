@@ -21,11 +21,7 @@
     </n-grid>
 
     <n-drawer v-model:show="drawerVisible" :width="502">
-      <drawer-command
-        v-if="selectTarget"
-        :adapter-type="adapterData?.type"
-        :target="selectTarget"
-      />
+      <drawer-command v-if="selectTarget" :adapter-type="adapterData?.type" :target="selectTarget" />
     </n-drawer>
 
     <n-divider />
@@ -62,7 +58,7 @@ import type z from "zod";
 
 const { setPageState, clearPageState } = usePageStateStore();
 
-definePageMeta({ layout: "server-edit" });
+definePageMeta({ layout: "default" });
 
 const route = useRoute();
 const router = useRouter();
@@ -82,7 +78,7 @@ const formData = reactive<FormState>({
 const selectTarget = ref<targetResponse | null>(null);
 const drawerVisible = ref(false);
 let serverData: ServerWithStatus | null = null;
-const adapterData= ref<AdapterWithStatus | null>(null);
+const adapterData = ref<AdapterWithStatus | null>(null);
 
 const originalFormData = ref<FormState | null>(null);
 

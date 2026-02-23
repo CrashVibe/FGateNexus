@@ -29,21 +29,21 @@
 
 <script lang="ts" setup>
 import { isMobile } from "#imports";
-import type { MenuItem } from "~/layouts/serverEdit.vue";
+import type { Menu } from "~/layouts/default.vue";
 
 definePageMeta({
-  layout: "server-edit"
+  layout: "default"
 });
 
 const router = useRouter();
 const route = useRoute();
-const menuOptions = inject<Ref<MenuItem[]>>(
+const MenuOptions = inject<Menu>(
   "menuOptions",
   computed(() => [])
 );
 
 const configMenuItems = computed(() => {
-  return menuOptions.value
+  return MenuOptions.value
     .flatMap((item) => item.children || [])
     .filter((item) => {
       return !!item.key && item.key !== "/" && item.key !== route.path;

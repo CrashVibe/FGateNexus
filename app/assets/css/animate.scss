@@ -1,22 +1,48 @@
-/* 页面 */
-.page-leave-active,
-.page-enter-active {
-  transition: all 0.2s ease;
-}
-.page-leave-to,
-.page-enter-from {
-  opacity: 0;
-  transform: translateX(10px);
+$ease-out-smooth: cubic-bezier(0.1, 0.9, 0.2, 1);
+$ease-in-expo: cubic-bezier(0.95, 0.05, 0.795, 0.035);
+
+.page-enter-active,
+.page-jump-in-enter-active {
+  @media not (prefers-reduced-motion: reduce) {
+    > * {
+      $length: 20;
+      transition: all $ease-out-smooth !important;
+      transition-duration: (600ms + 50ms * ($length - 1)) !important;
+      transition-delay: (10ms * ($length - 1)) !important;
+
+      @for $i from 1 through $length {
+        &:nth-child(#{$i}) {
+          transition-duration: (600ms + 50ms * ($i - 1)) !important;
+          transition-delay: (10ms * ($i - 1)) !important;
+        }
+      }
+    }
+  }
 }
 
-/* 布局 */
-.layout-leave-active,
-.layout-enter-active {
-  transition: all 0.3s cubic-bezier(0.55, 0, 0.1, 1);
-  transform-origin: center center;
+.page-leave-active,
+.page-jump-in-leave-active {
+  transition: all $ease-in-expo 100ms !important;
 }
-.layout-enter-from,
-.layout-leave-to {
+
+.page-enter-from {
+  > * {
+    translate: 2rem;
+    opacity: 0;
+  }
+}
+.page-jump-in-enter-from {
+  > * {
+    translate: 0 8rem;
+    opacity: 0;
+  }
+}
+
+.page-leave-to {
+  translate: -2rem;
   opacity: 0;
-  transform: scale(0.95);
+}
+.page-jump-in-leave-to {
+  translate: 0 -2rem;
+  opacity: 0;
 }

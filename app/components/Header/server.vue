@@ -1,5 +1,5 @@
 <template>
-  <div v-bind="$attrs">
+  <div v-if="found" v-bind="$attrs">
     <div class="mb-4 flex items-center justify-between">
       <!-- info -->
       <div>
@@ -27,11 +27,10 @@
 
 <script lang="ts" setup>
 import { ArrowBackOutline } from "@vicons/ionicons5";
-import type { MenuItem } from "~/layouts/serverEdit.vue";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { isMobile } from "#imports";
-import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { ServerData } from "~/composables/api";
+import type { Menu, MenuItem } from "~/layouts/default.vue";
 
 const route = useRoute();
 interface Props {
@@ -45,16 +44,16 @@ onMounted(async () => {
   serverData.value = await ServerData.get(Number(route.params["id"]));
 });
 
-const menuOptions: Ref<MenuItem[]> = inject(
+const menuOptions = inject<Menu>(
   "menuOptions",
   computed(() => [])
 );
 
-function findMenuItem(menu: MenuMixedOption[], key: string): MenuMixedOption | null {
+function findMenuItem(menu: MenuItem[], key: string): MenuItem | null {
   for (const item of menu) {
     if (item.key === key) return item;
     if (item.children) {
-      const child = findMenuItem(item.children as MenuMixedOption[], key);
+      const child = findMenuItem(item.children, key);
       if (child) return child;
     }
   }
@@ -63,7 +62,10 @@ function findMenuItem(menu: MenuMixedOption[], key: string): MenuMixedOption | n
 
 const found = computed(() => {
   const found = findMenuItem(menuOptions.value, route.path);
-  if (!found) throw new Error(`Menu item not found for path: ${route.path}`);
+  if (!found) {
+    console.warn(`Menu item not found for path: ${route.path}`);
+    return { label: "", desc: "" };
+  }
   return found;
 });
 

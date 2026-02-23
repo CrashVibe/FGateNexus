@@ -60,7 +60,7 @@ import { TargetData } from "~/composables/api";
 import z from "zod";
 
 const { setPageState, clearPageState } = usePageStateStore();
-definePageMeta({ layout: "server-edit" });
+definePageMeta({ layout: "default" });
 
 const route = useRoute();
 const message = useMessage();
