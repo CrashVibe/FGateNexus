@@ -69,7 +69,7 @@ import MinecraftDefaultIcon from "@/assets/icon/software/minecraft.svg";
 import type z from "zod";
 
 const props = defineProps<{
-  server: z.infer<(typeof ServersAPI)["GET"]["response"]>[number];
+  server: z.infer<(typeof ServersAPI)["GET"]["response"]>;
 }>();
 
 const message = useMessage();
