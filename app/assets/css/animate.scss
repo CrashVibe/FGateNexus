@@ -18,11 +18,23 @@ $ease-in-expo: cubic-bezier(0.95, 0.05, 0.795, 0.035);
       }
     }
   }
+  @media (prefers-reduced-motion: reduce) {
+    > * {
+      transition: none !important;
+      transition-duration: 0ms !important;
+      transition-delay: 0ms !important;
+    }
+  }
 }
 
 .page-leave-active,
 .page-jump-in-leave-active {
-  transition: all $ease-in-expo 100ms !important;
+  @media not (prefers-reduced-motion: reduce) {
+    transition: all $ease-in-expo 100ms !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none !important;
+  }
 }
 
 .page-enter-from {
