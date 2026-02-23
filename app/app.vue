@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { useColorMode } from "@vueuse/core";
-import { darkTheme, type GlobalTheme, type GlobalThemeOverrides } from "naive-ui";
+import { darkTheme, type GlobalTheme } from "naive-ui";
 import { onMounted, ref } from "vue";
+import { themeOverrides } from "~/utils/color";
 
 import hljs from "highlight.js/lib/core";
 import typescript from "highlight.js/lib/languages/typescript";
@@ -17,12 +18,6 @@ watch(colorMode, async (mode) => {
   await nextTick(); // 不加这个会没有自带的过渡效果
   theme.value = mode === "dark" ? darkTheme : null;
 });
-
-const themeOverrides: GlobalThemeOverrides = {
-  LoadingBar: {
-    height: "4px"
-  }
-};
 
 const loadingBarRef = ref();
 
