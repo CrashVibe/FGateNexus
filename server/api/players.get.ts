@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
         updatedAt: p.updatedAt
       },
       socialAccount: p.socialAccount ?? null,
-      servers: p.playerServers.map((ps) => ps.server)
+      serversName: p.playerServers.map((ps) => ps.server.name)
     }));
 
     return createApiResponse(event, "获取玩家列表成功", StatusCodes.OK, PlayerAPI.GETS.response.parse(result));

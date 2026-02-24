@@ -27,7 +27,7 @@ export const PlayerAPI = {
             updatedAt: z.coerce.date()
           })
           .nullable(),
-        servers: ServersAPI.GETS.response
+        serversName: z.array(ServersAPI.GETS.response.element.shape.name)
       })
     ),
     request: z.object({})
