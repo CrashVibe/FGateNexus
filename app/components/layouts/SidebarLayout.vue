@@ -73,5 +73,31 @@ const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
 </template>
 
 <style lang="scss" scoped>
-@use "../../layouts/css/main.scss";
+.n-menu {
+  padding-bottom: 14px;
+  overflow: visible;
+  :deep(.n-menu-item) {
+    .n-menu-item-content {
+      &::before {
+        border-left: 4px solid transparent;
+        transition:
+          border 0.3s var(--n-bezier),
+          background-color 0.3s var(--n-bezier);
+      }
+      &.n-menu-item-content--selected {
+        .n-text {
+          color: var(--primary-hex);
+        }
+        &::before {
+          border-left-color: var(--n-item-text-color-active);
+        }
+      }
+    }
+  }
+  &.cover {
+    :deep(.n-submenu-children) {
+      --n-item-height: 50px;
+    }
+  }
+}
 </style>
