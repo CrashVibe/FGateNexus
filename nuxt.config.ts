@@ -115,7 +115,8 @@ export default defineNuxtConfig({
           type: "image/x-icon",
           href: "/favicon.ico"
         }
-      ]
+      ],
+      meta: [{ name: "robots", content: "noindex, nofollow, noarchive" }]
     },
     pageTransition: {
       name: "page",
