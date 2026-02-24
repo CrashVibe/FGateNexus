@@ -2,12 +2,7 @@
   <div v-if="found" v-bind="$attrs">
     <div class="mb-4 flex items-center justify-between">
       <!-- info -->
-      <div>
-        <n-text strong>
-          <h1 class="text-2xl">{{ found.label }}</h1>
-          <p class="text-gray-500">{{ serverData?.name }}</p>
-        </n-text>
-      </div>
+      <PageHeader v-if="found.label" :title="found.label" :description="serverData?.name" />
       <!-- button -->
       <n-button quaternary @click="goBack">
         <template #icon>
@@ -31,6 +26,7 @@ import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { isMobile } from "#imports";
 import { ServerData } from "~/composables/api";
 import type { Menu, MenuItem } from "~/layouts/default.vue";
+import PageHeader from "~/components/Header/PageHeader.vue";
 
 const route = useRoute();
 interface Props {

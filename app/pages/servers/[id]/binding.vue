@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-3" />
+    <ServerHeader class="mb-3" />
     <n-form ref="formRef" :model="formData.config" :rules="rules">
       <n-grid :x-gap="12" :y-gap="12" :cols="isMobile ? 1 : '2'">
         <n-grid-item>
@@ -348,6 +348,7 @@ import {
   renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
 import { createVariablesArray } from "~/composables/usePlaceholderVariables";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 
 const { setPageState, clearPageState } = usePageStateStore();
 const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();

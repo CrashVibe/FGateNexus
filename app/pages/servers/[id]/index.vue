@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer back-button-text="服务器列表" back-path="/" class="mb-3" />
+    <ServerHeader back-button-text="服务器列表" back-path="/" class="mb-3" />
 
     <n-grid v-if="configMenuItems.length > 0" :cols="isMobile ? 1 : '3'" :item-responsive="true" x-gap="12" y-gap="12">
       <n-gi v-for="menuItem in configMenuItems" :key="menuItem.key" :span="getCardSpan(String(menuItem.label))">
@@ -29,6 +29,7 @@
 
 <script lang="ts" setup>
 import { isMobile } from "#imports";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 import type { Menu } from "~/layouts/default.vue";
 
 definePageMeta({
@@ -66,6 +67,7 @@ const navigateToMenuItem = (key: string | number) => {
   height: 100%;
   cursor: pointer;
   transition: all 0.2s;
+
 
   &:hover {
     transform: translateY(-2px);

@@ -7,6 +7,7 @@ import { isMobile } from "#imports";
 import { AdapterData } from "~/composables/api";
 import type z from "zod";
 import { cloneDeep } from "lodash-es";
+import PageHeader from "~/components/Header/PageHeader.vue";
 
 // 选取适配器组件
 const adapterComponentMap: Record<AdapterType, Component> = {
@@ -152,12 +153,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
   <div class="flex h-full flex-col gap-3">
     <!-- head -->
     <div>
-      <!-- text 区 -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <n-text class="flex flex-col gap-2" strong>
-          <h1 class="text-2xl sm:text-3xl">Bot 实例列表</h1>
-          <p class="text-sm text-gray-400 sm:text-base">管理多个 Bot 实例，点击进入详细配置。</p>
-        </n-text>
+      <PageHeader title="Bot 实例列表" description="管理多个 Bot 实例，点击进入详细配置。">
         <div class="flex flex-wrap gap-2 sm:gap-3">
           <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
             刷新列表
@@ -172,7 +168,7 @@ async function handleToggle(adapterID: number, enabled: boolean) {
             </template>
           </n-button>
         </div>
-      </div>
+      </PageHeader>
     </div>
     <!-- modal 创建区 -->
     <div>

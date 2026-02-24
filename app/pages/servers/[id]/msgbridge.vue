@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-3" />
+    <ServerHeader class="mb-3" />
 
     <n-form ref="formRef" :model="formData" :rules="rules">
       <!-- 基础配置区域 -->
@@ -296,6 +296,7 @@ import { zodToNaiveRules } from "~/composables/useValidation";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { pickEditableTarget } from "~~/shared/utils/target";
 import { createVariablesArray, createVariableMap } from "~/composables/usePlaceholderVariables";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 
 const { setPageState, clearPageState } = usePageStateStore();
 

@@ -16,6 +16,7 @@ import type { RouteLocationAsPathGeneric } from "vue-router";
 import SidebarLayout from "~/components/layouts/SidebarLayout.vue";
 
 export type MenuItem = MenuMixedOption & {
+  label?: string;
   desc?: string;
   children?: MenuItem[];
 };

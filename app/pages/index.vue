@@ -8,6 +8,7 @@ import { isMobile } from "#imports";
 import type z from "zod";
 import { ServerData } from "~/composables/api";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import PageHeader from "~/components/Header/PageHeader.vue";
 
 const formRef = ref<FormInst>();
 const formData = ref<z.infer<(typeof ServersAPI)["POST"]["request"]>>(ServersAPI.POST.request.parse({}));
@@ -80,27 +81,25 @@ onMounted(() => {
   <div class="flex h-full flex-col gap-3">
     <!-- head -->
     <div>
+      <PageHeader title="服务器列表" description="管理你的服务器，点击卡片进入详细配置">
+        <template #actions>
+          <div class="flex flex-wrap gap-2 sm:gap-3">
+            <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
+              刷新列表
+              <template #icon>
+                <n-icon :component="RefreshOutline" />
+              </template>
+            </n-button>
+            <n-button ghost size="large" type="primary" @click="openModal">
+              创建服务器
+              <template #icon>
+                <n-icon :component="AddCircleOutline" />
+              </template>
+            </n-button>
+          </div>
+        </template>
+      </PageHeader>
       <!-- text 区 -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <n-text class="flex flex-col gap-2" strong>
-          <h1 class="text-2xl sm:text-3xl">服务器列表</h1>
-          <p class="text-sm text-gray-400 sm:text-base">管理你的服务器，点击卡片进入详细配置</p>
-        </n-text>
-        <div class="flex flex-wrap gap-2 sm:gap-3">
-          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
-            刷新列表
-            <template #icon>
-              <n-icon :component="RefreshOutline" />
-            </template>
-          </n-button>
-          <n-button ghost size="large" type="primary" @click="openModal">
-            创建服务器
-            <template #icon>
-              <n-icon :component="AddCircleOutline" />
-            </template>
-          </n-button>
-        </div>
-      </div>
     </div>
     <!-- modal 创建区 -->
     <div>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-3" />
+    <ServerHeader class="mb-3" />
 
     <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
       <n-grid-item>
@@ -55,6 +55,7 @@ import { AdapterData, CommandData, ServerData } from "~/composables/api";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { pickEditableTarget } from "~~/shared/utils/target";
 import type z from "zod";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 
 const { setPageState, clearPageState } = usePageStateStore();
 

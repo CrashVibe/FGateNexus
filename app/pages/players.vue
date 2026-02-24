@@ -2,12 +2,7 @@
   <div class="flex h-full flex-col gap-3">
     <!-- head -->
     <div>
-      <!-- text 区 -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <n-text class="flex flex-col gap-2" strong>
-          <h1 class="text-2xl sm:text-3xl">玩家列表</h1>
-          <p class="text-sm text-gray-400 sm:text-base">查看你的玩家，查看玩家的社交账号绑定情况及所在服务器。</p>
-        </n-text>
+      <PageHeader title="玩家列表" description="查看你的玩家，查看玩家的社交账号绑定情况及所在服务器。">
         <div class="flex flex-wrap gap-2 sm:gap-3">
           <n-button size="large" strong :loading="isLoadingList" @click="fetchServerList">
             刷新列表
@@ -18,7 +13,7 @@
             </template>
           </n-button>
         </div>
-      </div>
+      </PageHeader>
     </div>
     <div>
       <div class="mb-4">
@@ -48,6 +43,7 @@ import { NTag, NText } from "naive-ui";
 import type z from "zod";
 import { PlayerData } from "~/composables/api";
 import type { PlayerAPI } from "~~/shared/schemas/player";
+import PageHeader from "~/components/Header/PageHeader.vue";
 
 const message = useMessage();
 const playerList = ref<z.infer<typeof PlayerAPI.GETS.response>>([]);

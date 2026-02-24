@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { validatePasswordStrength } from "#shared/utils/password";
-import { ShieldCheckmarkOutline } from "@vicons/ionicons5";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
 import type { ApiResponse } from "~~/shared/types";
+import PageHeader from "~/components/Header/PageHeader.vue";
 
 definePageMeta({
   layout: "default"
@@ -178,17 +178,18 @@ const confirmDeletePassword = async () => {
 };
 
 onMounted(async () => {
-  await checkAuthStatus();
+  isLoading.value = true;
+  try {
+    await checkAuthStatus();
+  } finally {
+    isLoading.value = false;
+  }
 });
 </script>
 
 <template>
   <div class="mx-auto max-w-4xl">
-    <n-page-header title="安全设置" subtitle="配置密码保护和双重验证">
-      <template #avatar>
-        <n-icon :component="ShieldCheckmarkOutline" />
-      </template>
-    </n-page-header>
+    <PageHeader title="安全设置" description="配置密码保护和双重验证" />
 
     <n-spin :show="isLoading">
       <n-space vertical size="large" class="mt-6">

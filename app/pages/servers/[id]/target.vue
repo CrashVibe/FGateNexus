@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-3" />
+    <ServerHeader class="mb-3" />
 
     <n-card size="small" title="目标配置">
       <template #header-extra>
@@ -58,6 +58,7 @@ import {
 import { cloneDeep, groupBy, isEqual, keyBy } from "lodash-es";
 import { TargetData } from "~/composables/api";
 import z from "zod";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 
 const { setPageState, clearPageState } = usePageStateStore();
 definePageMeta({ layout: "default" });

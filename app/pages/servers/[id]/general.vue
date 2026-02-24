@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-3" />
+    <ServerHeader class="mb-3" />
     <n-form :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
         <n-gi>
@@ -54,6 +54,7 @@ import { AdapterData, GeneralData, ServerData } from "~/composables/api";
 import { GeneralAPI } from "~~/shared/schemas/server/general";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { zodToNaiveRules } from "~/composables/useValidation";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 
 definePageMeta({
   layout: "default"

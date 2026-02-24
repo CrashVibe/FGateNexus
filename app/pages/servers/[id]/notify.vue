@@ -1,6 +1,6 @@
 <template>
   <div>
-    <HeaderServer class="mb-3" />
+    <ServerHeader class="mb-3" />
     <n-form ref="formRef" :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12" class="mb-3">
         <n-grid-item>
@@ -179,6 +179,7 @@ import { isEqual, cloneDeep, differenceWith, pick } from "lodash-es";
 import { NotifyData, ServerData } from "~/composables/api";
 import { pickEditableTarget } from "~~/shared/utils/target";
 import { createVariablesArray, createVariableMap } from "~/composables/usePlaceholderVariables";
+import ServerHeader from "~/components/Header/ServerHeader.vue";
 
 definePageMeta({ layout: "default" });
 
