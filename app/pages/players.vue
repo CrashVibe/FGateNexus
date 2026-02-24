@@ -82,7 +82,7 @@ const data = computed(() =>
       uuid: player.player.uuid,
       ip: player.player.ip,
       socialAccount: player.socialAccount,
-      server: player.servers.map((server) => server.name).join(", ")
+      serversName: player.serversName.join(", ")
     }))
     .filter((player) => {
       return (
@@ -150,7 +150,7 @@ const columns = [
   },
   {
     title: "所在服务器",
-    key: "server",
+    key: "serversName",
     width: "10%"
   }
 ];
