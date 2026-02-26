@@ -1,5 +1,5 @@
 import { defineEventHandler } from "h3";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
   const { url, method } = event.node.req;
@@ -27,8 +27,7 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  const database = await getDatabase();
-  const user = await database.query.users.findFirst();
+  const user = await db.query.users.findFirst();
 
   if (!user || !user.passwordHash) {
     return;

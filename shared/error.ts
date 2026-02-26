@@ -1,5 +1,6 @@
-import { type EventHandlerRequest, type H3Event, setResponseStatus } from "h3";
 import type { ZodError } from "zod";
+
+import { type EventHandlerRequest, type H3Event, setResponseStatus } from "h3";
 
 /**
  * API 错误响应模型，用于 OpenAPI 文档

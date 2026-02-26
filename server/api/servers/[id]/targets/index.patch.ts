@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
 import { ApiError, createErrorResponse } from "~~/shared/error";
 import { TargetAPI } from "~~/shared/schemas/server/target";
@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
     }
 
-    const db = await getDatabase();
     const { items } = parsed.data;
 
     if (items.length === 0) {

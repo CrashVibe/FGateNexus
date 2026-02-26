@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { AdapterAPI } from "~~/shared/schemas/adapter";
@@ -17,8 +17,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const database = await getDatabase();
-    const adapter = await database.query.adapters.findFirst({
+    const adapter = await db.query.adapters.findFirst({
       where: eq(adapters.id, adapterID)
     });
 

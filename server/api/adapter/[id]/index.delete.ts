@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 
@@ -16,8 +16,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const database = await getDatabase();
-    const result = await database.delete(adapters).where(eq(adapters.id, adapterID)).returning();
+    const result = await db.delete(adapters).where(eq(adapters.id, adapterID)).returning();
 
     if (result[0]) {
       chatBridge.removeBot(adapterID);

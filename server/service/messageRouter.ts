@@ -1,9 +1,11 @@
-import type { BotConnection } from "./chatbridge/chatbridge";
-import { eq } from "drizzle-orm";
 import type { Session } from "koishi";
-import { getDatabase } from "~~/server/db/client";
+
+import { eq } from "drizzle-orm";
+import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { formatMCToPlatformMessage, formatPlatformToMCMessage, shouldForwardMessage } from "~~/shared/utils/chatSync";
+
+import type { BotConnection } from "./chatbridge/chatbridge";
 
 import { chatBridge } from "./chatbridge/chatbridge";
 import { pluginBridge } from "./mcwsbridge/MCWSBridge";
@@ -39,8 +41,7 @@ class MessageRouter {
    */
   public async handleMCMessage(serverId: number, mcMessage: MCChatMessage): Promise<void> {
     try {
-      const database = await getDatabase();
-      const server = await database.query.servers.findFirst({
+      const server = await db.query.servers.findFirst({
         where: eq(servers.id, serverId),
         with: {
           adapter: true,
@@ -93,8 +94,7 @@ class MessageRouter {
    */
   public async handlePlatformMessage(connection: BotConnection, session: Session): Promise<void> {
     try {
-      const database = await getDatabase();
-      const serversWithConfig = await database.query.servers.findMany({
+      const serversWithConfig = await db.query.servers.findMany({
         where: eq(servers.adapterId, connection.adapterID),
         with: {
           targets: true

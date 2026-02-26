@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { z } from "zod";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
 const bodySchema = z.object({
@@ -15,8 +15,7 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    const database = await getDatabase();
-    const user = await database.query.users.findFirst();
+    const user = await db.query.users.findFirst();
 
     // 如果用户已设置密码则需要认证
     if (user?.passwordHash) {
@@ -26,7 +25,10 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    const { currentPassword, newPassword } = await readValidatedBody(event, bodySchema.parse);
+    const { currentPassword, newPassword } = await readValidatedBody(
+      event,
+      async (body) => await bodySchema.parseAsync(body)
+    );
 
     // 密码强度验证
     const validation = validatePasswordStrength(newPassword);
@@ -50,9 +52,9 @@ export default defineEventHandler(async (event) => {
 
     // 更新或创建用户
     if (user) {
-      await database.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+      await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
     } else {
-      await database.insert(users).values({
+      await db.insert(users).values({
         username: "admin",
         passwordHash,
         createdAt: new Date(),

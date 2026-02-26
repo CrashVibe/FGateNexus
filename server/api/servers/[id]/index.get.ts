@@ -2,7 +2,7 @@ import { ApiError, createErrorResponse } from "#shared/error";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
 import { ServersAPI } from "~~/shared/schemas/server/servers";
 
@@ -13,8 +13,7 @@ export default defineEventHandler(async (event) => {
       const apiError = ApiError.validation("无效服务器 ID");
       return createErrorResponse(event, apiError);
     }
-    const database = await getDatabase();
-    const result = await database.query.servers.findFirst({
+    const result = await db.query.servers.findFirst({
       where: (server, { eq }) => eq(server.id, serverID),
       with: {
         targets: true

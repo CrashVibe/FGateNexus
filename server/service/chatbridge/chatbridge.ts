@@ -1,11 +1,12 @@
 import type { AdapterConfig } from "#shared/schemas/adapter";
 import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
+import type { Bot, ForkScope, Session } from "koishi";
+
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
 import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
-import type { Bot, ForkScope, Session } from "koishi";
 import { Context, Logger as klog } from "koishi";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { getConfigManager } from "~~/server/utils/config";
 import { AdapterType } from "~~/shared/schemas/adapter";
@@ -42,9 +43,10 @@ export class ChatBridge {
   static instance: ChatBridge | null = null;
   private connectionMap = new Map<number, BotConnection>(); // Bot ID -> Bot Connection
   private app: Context;
+  private pluginsContext: ForkScope[] = [];
+
   private constructor() {
     this.app = new Context();
-    void this.init();
   }
 
   public static getInstance(): ChatBridge {
@@ -57,19 +59,20 @@ export class ChatBridge {
   public async init(): Promise<void> {
     const config = (await getConfigManager()).getConfig();
     klog.levels.base = 1;
-    this.app.plugin(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Server as any,
-      Server.Config({
-        host: config.koishi.host,
-        port: config.koishi.port
-      })
+    this.pluginsContext.push(
+      this.app.plugin(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Server as any,
+        Server.Config({
+          host: config.koishi.host,
+          port: config.koishi.port
+        })
+      )
     );
     logger.info(`Koishi 服务启动 http://${config.koishi.host}:${config.koishi.port}`);
-    this.app.plugin(HTTP);
+    this.pluginsContext.push(this.app.plugin(HTTP));
     await this.app.start();
-    const database = await getDatabase();
-    const result = await database.select().from(adapters);
+    const result = await db.select().from(adapters);
     for (const adapter of result) {
       if (!adapter.enabled) {
         continue;
@@ -92,6 +95,17 @@ export class ChatBridge {
         await this.handleGroupLeave(connection, session);
       }
     });
+  }
+
+  public async close(): Promise<void> {
+    for (const pluginContext of this.pluginsContext) {
+      pluginContext.dispose();
+    }
+    for (const connection of this.connectionMap.values()) {
+      connection.pluginInstance.dispose();
+    }
+    this.connectionMap.clear();
+    await this.app.stop();
   }
 
   /**

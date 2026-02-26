@@ -1,10 +1,12 @@
-import type { JsonRpcRequest } from "../types";
 import type { AdapterInternal, Peer } from "crossws";
+
 import { eq, sql } from "drizzle-orm";
 import moment from "moment-timezone";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { players, playerServers, servers } from "~~/server/db/schema";
 import { renderNoBindKick } from "~~/shared/utils/template/binding";
+
+import type { JsonRpcRequest } from "../types";
 
 import { bindingService } from "../../bindingmanager";
 import { getConfig } from "../../bindingmanager/config";
@@ -24,11 +26,10 @@ export class PlayerLoginHandler extends RequestHandler {
     if (typeof playerName !== "string" || typeof uuid !== "string" || (ip === null ? false : typeof ip !== "string")) {
       throw new Error("Invalid params: player, uuid and ip are required");
     }
-    const database = await getDatabase();
 
     const serverID = pluginBridge.connectionManager.getServerId(peer);
 
-    const server = await database.query.servers.findFirst({
+    const server = await db.query.servers.findFirst({
       where: eq(servers.id, serverID)
     });
 
@@ -37,7 +38,7 @@ export class PlayerLoginHandler extends RequestHandler {
     }
 
     // 玩家信息写入
-    const [player] = await database
+    const [player] = await db
       .insert(players)
       .values({
         uuid,
@@ -60,14 +61,14 @@ export class PlayerLoginHandler extends RequestHandler {
     }
 
     // 是否存在关系
-    const existingRelation = await database
+    const existingRelation = await db
       .select()
       .from(playerServers)
       .where(eq(playerServers.playerId, player.id) && eq(playerServers.serverId, serverID))
       .limit(1);
 
     if (existingRelation.length === 0) {
-      await database.insert(playerServers).values({
+      await db.insert(playerServers).values({
         playerId: player.id,
         serverId: serverID
       });

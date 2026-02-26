@@ -1,8 +1,8 @@
-import { generateVerificationCode } from "#shared/utils/binding";
-import type { BotConnection } from "../chatbridge/chatbridge";
-import { and, eq, sql } from "drizzle-orm";
 import type { Session } from "koishi";
-import { getDatabase } from "~~/server/db/client";
+
+import { generateVerificationCode } from "#shared/utils/binding";
+import { and, eq, sql } from "drizzle-orm";
+import { db } from "~~/server/db/client";
 import { players, servers, socialAccounts, targets } from "~~/server/db/schema";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import {
@@ -13,8 +13,9 @@ import {
   renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
 
-import { pluginBridge } from "../mcwsbridge/MCWSBridge";
+import type { BotConnection } from "../chatbridge/chatbridge";
 
+import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 import { getConfig } from "./config";
 
 interface PendingBinding {
@@ -71,8 +72,7 @@ class BindingService {
     playerNickname: string
   ): Promise<{ has: boolean; message: string; expiresAt: Date }> {
     const bindingConfig = await getConfig(serverID);
-    const database = await getDatabase();
-    const serversWithAdapters = await database.query.servers.findFirst({
+    const serversWithAdapters = await db.query.servers.findFirst({
       with: {
         adapter: true
       },
@@ -141,14 +141,13 @@ class BindingService {
     const bindings = this.pendingBindings.get(connection.adapterID);
     let hit = false;
     if (bindings) {
-      const database = await getDatabase();
       for (const binding of bindings) {
         if (binding.message !== ctx.content) continue;
         if (!Object.values(AdapterType).includes(ctx.platform as AdapterType) || !ctx.userId || !ctx.channelId) {
           continue;
         }
 
-        const server_list = await database.query.targets.findFirst({
+        const server_list = await db.query.targets.findFirst({
           where: and(eq(targets.serverId, binding.serverID), eq(targets.targetId, ctx.channelId)),
           with: {
             server: true
@@ -181,13 +180,12 @@ class BindingService {
     socialUid: string,
     socialNickname: string | null
   ): Promise<void> {
-    const database = await getDatabase();
-    let socialAccount = await database.query.socialAccounts.findFirst({
+    let socialAccount = await db.query.socialAccounts.findFirst({
       where: and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType))
     });
 
     if (!socialAccount) {
-      const [newAccount] = await database
+      const [newAccount] = await db
         .insert(socialAccounts)
         .values({
           uid: socialUid,
@@ -204,7 +202,7 @@ class BindingService {
       throw new Error(`社交账号 ${socialUid} 创建失败`);
     }
 
-    const [updatedPlayer] = await database
+    const [updatedPlayer] = await db
       .update(players)
       .set({
         socialAccountId: socialAccount.id,
@@ -223,8 +221,7 @@ class BindingService {
       return false;
     }
 
-    const database = await getDatabase();
-    const serversWithBindingConfig = await database.query.targets.findMany({
+    const serversWithBindingConfig = await db.query.targets.findMany({
       where: and(eq(targets.targetId, ctx.channelId)),
       with: {
         server: {
@@ -288,8 +285,7 @@ class BindingService {
       return false;
     }
 
-    const database = await getDatabase();
-    const serversWithBindingConfig = await database.query.targets.findMany({
+    const serversWithBindingConfig = await db.query.targets.findMany({
       where: and(eq(targets.targetId, ctx.channelId)),
       with: {
         server: {
@@ -309,7 +305,7 @@ class BindingService {
       return false;
     }
 
-    const socialAccount = await database.query.socialAccounts.findFirst({
+    const socialAccount = await db.query.socialAccounts.findFirst({
       where: and(eq(socialAccounts.uid, ctx.userId), eq(socialAccounts.adapterType, ctx.platform as AdapterType)),
       with: {
         players: true
@@ -363,9 +359,7 @@ class BindingService {
     playerUUID: string;
     socialUID: string;
   }> {
-    const database = await getDatabase();
-
-    const socialAccount = await database.query.socialAccounts.findFirst({
+    const socialAccount = await db.query.socialAccounts.findFirst({
       where: and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType)),
       with: {
         players: true
@@ -381,7 +375,7 @@ class BindingService {
       throw new Error("未找到匹配的玩家");
     }
 
-    await database
+    await db
       .update(players)
       .set({
         socialAccountId: null,

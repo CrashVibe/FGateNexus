@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import type { ApiSchemaRegistry } from "..";
 
 // 验证码模式枚举值

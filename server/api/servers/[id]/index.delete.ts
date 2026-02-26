@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
 
@@ -14,8 +14,7 @@ export default defineEventHandler(async (event) => {
       const apiError = ApiError.validation("无效服务器 ID");
       return createErrorResponse(event, apiError);
     }
-    const database = await getDatabase();
-    const result = await database.query.servers.findFirst({
+    const result = await db.query.servers.findFirst({
       where: (server, { eq }) => eq(server.id, serverID)
     });
     if (!result) {
@@ -23,7 +22,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const deleteResult = await database.delete(servers).where(eq(servers.id, serverID)).returning();
+    const deleteResult = await db.delete(servers).where(eq(servers.id, serverID)).returning();
 
     if (deleteResult[0]) {
       if (pluginBridge.connectionManager.getConnectionData(serverID)) {

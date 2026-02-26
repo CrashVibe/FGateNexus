@@ -1,7 +1,8 @@
 import type { AdapterInternal, Peer } from "crossws";
-import { eq } from "drizzle-orm";
-import { getDatabase } from "~~/server/db/client";
 
+import { eq } from "drizzle-orm";
+
+import { db } from "../db/client";
 import { servers } from "../db/schema";
 import { pluginBridge } from "../service/mcwsbridge/MCWSBridge";
 import { checkClientVersion, CURRENT_API_VERSION, isValidVersion } from "../utils/version";
@@ -45,8 +46,7 @@ export default defineWebSocketHandler({
       );
     }
 
-    const database = await getDatabase();
-    const db_token = await database.select().from(servers).where(eq(servers.token, token)).limit(1);
+    const db_token = await db.select().from(servers).where(eq(servers.token, token)).limit(1);
     if (db_token.length === 0) {
       peer.close(1008, "Unauthorized: Invalid authorization token");
       logger.warn({ token }, "WebSocket 请求 Token 无效");
@@ -71,7 +71,7 @@ export default defineWebSocketHandler({
       return;
     }
 
-    pluginBridge.connectionManager.addConnection(peer as unknown as Peer<AdapterInternal>, server.id);
+    await pluginBridge.connectionManager.addConnection(peer as unknown as Peer<AdapterInternal>, server.id);
 
     peer.send(
       JSON.stringify({

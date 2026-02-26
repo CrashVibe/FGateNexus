@@ -1,7 +1,8 @@
+import type { TargetConfig } from "~~/shared/schemas/server/target";
+
 import { sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { v4 as uuidv4 } from "uuid";
-import type { TargetConfig } from "~~/shared/schemas/server/target";
 
 import { servers } from "./servers";
 

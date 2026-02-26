@@ -1,10 +1,8 @@
-import AutoImport from "unplugin-auto-import/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import Components from "unplugin-vue-components/vite";
 
 const isDev = process.env.NODE_ENV !== "production";
 const isBuild = !isDev;
-
 export default defineNuxtConfig({
   compatibilityDate: "2025-08-06",
   devtools: {
@@ -20,12 +18,23 @@ export default defineNuxtConfig({
   ssr: false,
   css: ["~/assets/css/main.scss"],
   typescript: {
+    typeCheck: true,
     strict: true,
     tsConfig: {
       compilerOptions: {
         types: ["bun-types", "node"],
         // 支持解析 json 文件
-        resolveJsonModule: true
+        resolveJsonModule: true,
+        paths: {
+          "~~/*": ["./*"],
+          "~~": ["."],
+          "~/*": ["./app/*"],
+          "~": ["./app"],
+          "@/*": ["./app/*"],
+          "@": ["./app"],
+          "#shared/*": ["./shared/*"],
+          "#shared": ["./shared"]
+        }
       }
     }
   },
@@ -54,7 +63,21 @@ export default defineNuxtConfig({
     "@nuxtjs/tailwindcss",
     "nuxt-auth-utils"
   ],
+  imports: {
+    presets: [
+      {
+        from: "naive-ui",
+        imports: ["useMessage", "useDialog", "useNotification", "useLoadingBar"]
+      }
+    ]
+  },
   vite: {
+    plugins: [
+      Components({
+        resolvers: [NaiveUiResolver()],
+        dts: true
+      })
+    ],
     optimizeDeps: {
       include: [
         "moment-timezone",
@@ -62,6 +85,7 @@ export default defineNuxtConfig({
         "@vue/devtools-kit",
         "@vueuse/core",
         "@vicons/ionicons5",
+        "naive-ui",
         "vooks",
         "highlight.js/lib/core",
         "highlight.js/lib/languages/typescript",
@@ -91,18 +115,6 @@ export default defineNuxtConfig({
         }
       }
     },
-    plugins: [
-      AutoImport({
-        imports: [
-          {
-            "naive-ui": ["useDialog", "useMessage", "useNotification", "useLoadingBar"]
-          }
-        ]
-      }),
-      Components({
-        resolvers: [NaiveUiResolver()]
-      })
-    ],
     worker: {
       format: "es"
     }

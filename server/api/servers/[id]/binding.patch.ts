@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
 
@@ -23,8 +23,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError, parsed.error);
     }
 
-    const database = await getDatabase();
-    const result = await database
+    const result = await db
       .update(servers)
       .set({
         bindingConfig: parsed.data

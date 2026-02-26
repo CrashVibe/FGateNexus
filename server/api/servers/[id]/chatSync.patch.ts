@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
 import { ChatSyncAPI } from "~~/shared/schemas/server/chatSync";
 
@@ -21,7 +21,6 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError, parsed.error);
     }
 
-    const db = await getDatabase();
     const { chatsync, targets: items = [] } = parsed.data;
 
     db.transaction((tx) => {

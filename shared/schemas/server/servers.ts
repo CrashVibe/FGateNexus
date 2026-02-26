@@ -1,7 +1,9 @@
-import type { ApiSchemaRegistry } from "..";
+import type { servers } from "~~/server/db/schema";
+
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import type { servers } from "~~/server/db/schema";
+
+import type { ApiSchemaRegistry } from "..";
 
 import { BindingConfigSchema } from "./binding";
 import { chatSyncConfigSchema } from "./chatSync";

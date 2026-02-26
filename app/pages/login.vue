@@ -3,6 +3,7 @@ import { LockClosedOutline, LogInOutline } from "@vicons/ionicons5";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
 import { LoginAPI, type LoginBody } from "~~/shared/schemas/auth";
+import { useAuthStore } from "#imports";
 
 definePageMeta({
   layout: false

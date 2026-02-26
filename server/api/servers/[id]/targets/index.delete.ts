@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { and, eq, inArray } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
 import { TargetAPI } from "~~/shared/schemas/server/target";
 export default defineEventHandler(async (event) => {
@@ -16,8 +16,6 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
     }
     const { ids } = parsed.data;
-
-    const db = await getDatabase();
 
     const deleted = await db
       .delete(targets)

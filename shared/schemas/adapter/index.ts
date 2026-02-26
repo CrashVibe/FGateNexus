@@ -1,6 +1,8 @@
-import type { ApiSchemaRegistry } from "..";
-import z from "zod";
 import type { adapters } from "~~/server/db/schema";
+
+import z from "zod";
+
+import type { ApiSchemaRegistry } from "..";
 
 import { type OneBotConfig, OneBotConfigSchema } from "./onebot";
 

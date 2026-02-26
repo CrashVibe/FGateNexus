@@ -1,6 +1,7 @@
+import type { AdapterInternal, Peer } from "crossws";
+
 import type { RequestHandler } from "./RequestHandler";
 import type { JsonRpcRequest } from "./types";
-import type { AdapterInternal, Peer } from "crossws";
 
 import { ChatMessageHandler } from "./impl/ChatMessage";
 import { PlayerDeathHandler } from "./impl/PlayerDeath";

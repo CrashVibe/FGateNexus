@@ -1,5 +1,6 @@
-import type { JsonRpcRequest } from "./types";
 import type { AdapterInternal, Peer } from "crossws";
+
+import type { JsonRpcRequest } from "./types";
 
 import { pluginBridge } from "./MCWSBridge";
 

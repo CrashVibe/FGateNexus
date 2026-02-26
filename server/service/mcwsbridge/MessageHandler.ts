@@ -1,6 +1,8 @@
-import type { JsonRpcRequest, JsonRpcResponse, PendingRequest } from "./types";
 import type { AdapterInternal, Peer } from "crossws";
+
 import { v4 as uuidv4 } from "uuid";
+
+import type { JsonRpcRequest, JsonRpcResponse, PendingRequest } from "./types";
 
 import { requestDispatcher } from "./RequestDispatcher";
 import { isValidJsonRpcResponse } from "./utils";

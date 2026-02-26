@@ -1,14 +1,15 @@
 import type z from "zod";
+import type { NotifyAPI } from "~~/shared/schemas/server/notify";
+import type { ApiResponse } from "~~/shared/types";
+
 import { AdapterAPI } from "~~/shared/schemas/adapter";
 import { PlayerAPI } from "~~/shared/schemas/player";
 import { BindingAPI } from "~~/shared/schemas/server/binding";
 import { ChatSyncAPI } from "~~/shared/schemas/server/chatSync";
 import { CommandAPI } from "~~/shared/schemas/server/command";
 import { GeneralAPI } from "~~/shared/schemas/server/general";
-import type { NotifyAPI } from "~~/shared/schemas/server/notify";
 import { ServersAPI } from "~~/shared/schemas/server/servers";
 import { TargetAPI } from "~~/shared/schemas/server/target";
-import type { ApiResponse } from "~~/shared/types";
 
 export const ServerData = {
   async get(serverId: number) {
