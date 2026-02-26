@@ -3,13 +3,11 @@ import { PlayerAPI } from "#shared/schemas/player";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
   try {
-    const database = await getDatabase();
-
-    const playersWithRelations = await database.query.players.findMany({
+    const playersWithRelations = await db.query.players.findMany({
       with: {
         socialAccount: true,
         playerServers: {

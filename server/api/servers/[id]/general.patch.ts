@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { GeneralAPI } from "~~/shared/schemas/server/general";
 
@@ -21,9 +21,8 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, ApiError.validation("参数错误"), parsed.error);
     }
 
-    const database = await getDatabase();
     if (parsed.data.adapterId !== undefined) {
-      const result = await database
+      const result = await db
         .update(servers)
         .set({
           adapterId: parsed.data.adapterId

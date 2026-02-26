@@ -2,7 +2,7 @@ import { ApiError, createErrorResponse } from "#shared/error";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { AdapterAPI} from "~~/shared/schemas/adapter";
@@ -15,8 +15,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError, parsed.error);
     }
 
-    const database = await getDatabase();
-    const result = await database
+    const result = await db
       .insert(adapters)
       .values({
         name: parsed.data.name || "",

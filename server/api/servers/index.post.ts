@@ -2,7 +2,7 @@ import { ApiError, createErrorResponse } from "#shared/error";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
 import { chatSyncConfigSchema } from "~~/shared/schemas/server/chatSync";
@@ -19,12 +19,11 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError, parsed.error);
     }
 
-    const database = await getDatabase();
     const serverData = {
       name: parsed.data.servername,
       token: parsed.data.token
     };
-    await database.insert(servers).values({
+    await db.insert(servers).values({
       name: serverData.name,
       token: serverData.token,
       bindingConfig: BindingConfigSchema.parse({}),

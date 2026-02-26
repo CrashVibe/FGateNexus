@@ -2,8 +2,8 @@ import { ApiError, createErrorResponse } from "#shared/error";
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { authenticator } from "otplib";
-import { getDatabase } from "~~/server/db/client";
+import { generateSecret, generateURI } from "otplib";
+import { db } from "~~/server/db/client";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,10 +14,8 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const database = await getDatabase();
-
     // 获取用户
-    const user = await database.query.users.findFirst();
+    const user = await db.query.users.findFirst();
     if (!user) {
       const apiError = ApiError.notFound("用户不存在");
       return createErrorResponse(event, apiError);
@@ -29,10 +27,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // 生成 2FA 密钥
-    const secret = authenticator.generateSecret();
+    const secret = generateSecret();
     const service = "FGATE";
     const account = user.username;
-    const keyuri = authenticator.keyuri(account, service, secret);
+    const keyuri = generateURI({
+      issuer: service,
+      label: account,
+      secret
+    });
 
     return createApiResponse(event, "2FA 设置信息生成成功", StatusCodes.OK, {
       keyuri,

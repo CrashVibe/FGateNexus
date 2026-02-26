@@ -1,13 +1,13 @@
 import type { JsonRpcRequest } from "../types";
 import type { AdapterInternal, Peer } from "crossws";
 import { eq } from "drizzle-orm";
-import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { renderJoinMessage } from "~~/shared/utils/template/notify";
 
 import { chatBridge } from "../../chatbridge/chatbridge";
 import { pluginBridge } from "../MCWSBridge";
 import { RequestHandler } from "../RequestHandler";
+import { db } from "~~/server/db/client";
 
 export class PlayerJoinHandler extends RequestHandler {
   getMethod(): string {
@@ -21,8 +21,6 @@ export class PlayerJoinHandler extends RequestHandler {
       logger.warn({ requestParams: request.params }, "无效玩家加入参数");
       return;
     }
-
-    const db = await getDatabase();
 
     const serverID = pluginBridge.connectionManager.getServerId(peer);
     const server = await db.query.servers.findFirst({
@@ -40,7 +38,7 @@ export class PlayerJoinHandler extends RequestHandler {
       if (!botConnection) return;
       const formattedMessage = renderJoinMessage(server.notifyConfig.join_notify_message, playerName);
       for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
-        chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
+        await chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
       }
     }
   }

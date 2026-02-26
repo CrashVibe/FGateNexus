@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
 import { ApiError, createErrorResponse } from "~~/shared/error";
 import { TargetAPI, TargetConfigSchema } from "~~/shared/schemas/server/target";
@@ -16,8 +16,6 @@ export default defineEventHandler(async (event) => {
     if (!parsed.success) {
       return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
     }
-
-    const db = await getDatabase();
 
     const serverExists = await db.query.servers.findFirst({
       where: (s, { eq }) => eq(s.id, serverID)

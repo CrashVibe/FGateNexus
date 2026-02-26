@@ -1,7 +1,3 @@
-import AutoImport from "unplugin-auto-import/vite";
-import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
-import Components from "unplugin-vue-components/vite";
-
 const isDev = process.env.NODE_ENV !== "production";
 const isBuild = !isDev;
 
@@ -20,12 +16,24 @@ export default defineNuxtConfig({
   ssr: false,
   css: ["~/assets/css/main.scss"],
   typescript: {
+    typeCheck: true,
     strict: true,
     tsConfig: {
       compilerOptions: {
         types: ["bun-types", "node"],
         // 支持解析 json 文件
-        resolveJsonModule: true
+        resolveJsonModule: true,
+        baseUrl: ".",
+        paths: {
+          "~~/*": ["./*"],
+          "~~": ["."],
+          "~/*": ["./app/*"],
+          "~": ["./app"],
+          "@/*": ["./app/*"],
+          "@": ["./app"],
+          "#shared/*": ["./shared/*"],
+          "#shared": ["./shared"]
+        }
       }
     }
   },
@@ -91,18 +99,6 @@ export default defineNuxtConfig({
         }
       }
     },
-    plugins: [
-      AutoImport({
-        imports: [
-          {
-            "naive-ui": ["useDialog", "useMessage", "useNotification", "useLoadingBar"]
-          }
-        ]
-      }),
-      Components({
-        resolvers: [NaiveUiResolver()]
-      })
-    ],
     worker: {
       format: "es"
     }
@@ -132,7 +128,8 @@ export default defineNuxtConfig({
       }
     },
     experimental: {
-      websocket: true
+      websocket: true,
+      database: true
     },
     preset: "bun",
     serveStatic: "inline",

@@ -1,11 +1,11 @@
 import type { CommandResult } from "./types";
 import type { AdapterInternal, Peer } from "crossws";
 import { eq } from "drizzle-orm";
-import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 
 import { ConnectionManager, type GetClientInfoResult } from "./ConnectionManager";
 import { MessageHandler } from "./MessageHandler";
+import { db } from "~~/server/db/client";
 
 /**
  * Minecraft WebSocket 桥接器
@@ -56,8 +56,7 @@ export class MCWSBridge {
 
     this.connectionManager.setConnectionData(serverID, { peer, serverId: serverID, data: result });
     // 更新数据库中的服务器信息
-    const database = await getDatabase();
-    await database
+    await db
       .update(servers)
       .set({
         minecraft_version: result.minecraft_version,

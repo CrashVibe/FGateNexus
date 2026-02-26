@@ -1,13 +1,13 @@
 import type { JsonRpcRequest } from "../types";
 import type { AdapterInternal, Peer } from "crossws";
 import { eq } from "drizzle-orm";
-import { getDatabase } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { renderDeathMessage } from "~~/shared/utils/template/notify";
 
 import { chatBridge } from "../../chatbridge/chatbridge";
 import { pluginBridge } from "../MCWSBridge";
 import { RequestHandler } from "../RequestHandler";
+import { db } from "~~/server/db/client";
 
 export class PlayerDeathHandler extends RequestHandler {
   getMethod(): string {
@@ -24,8 +24,6 @@ export class PlayerDeathHandler extends RequestHandler {
       logger.warn({ requestParams: request.params }, "玩家死亡时参数无效");
       return;
     }
-
-    const db = await getDatabase();
 
     const serverID = pluginBridge.connectionManager.getServerId(peer);
     const server = await db.query.servers.findFirst({
@@ -47,7 +45,7 @@ export class PlayerDeathHandler extends RequestHandler {
         deathMessage || "未知原因"
       );
       for (const target of server.targets.filter((t) => t.config.NotifyConfigSchema.enabled)) {
-        chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
+        await chatBridge.sendToTarget(botConnection, target.targetId, target.type, formattedMessage);
       }
     }
   }

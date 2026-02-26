@@ -3,9 +3,9 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { authenticator } from "otplib";
+import { verify } from "otplib";
 import { z } from "zod";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
 const bodySchema = z.object({
@@ -22,26 +22,24 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const { token, secret } = await readValidatedBody(event, bodySchema.parse);
-
-    const database = await getDatabase();
+    const { token, secret } = await readValidatedBody(event, (data) => bodySchema.parse(data));
 
     // 获取用户
-    const user = await database.query.users.findFirst();
+    const user = await db.query.users.findFirst();
     if (!user) {
       const apiError = ApiError.notFound("用户不存在");
       return createErrorResponse(event, apiError);
     }
 
     // 验证 TOTP 令牌
-    const isValid = authenticator.verify({ token, secret });
+    const isValid = verify({ token, secret });
     if (!isValid) {
       const apiError = ApiError.validation("验证码错误");
       return createErrorResponse(event, apiError);
     }
 
     // 启用 2FA
-    await database
+    await db
       .update(users)
       .set({
         twoFactorSecret: secret,

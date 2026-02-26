@@ -1,8 +1,8 @@
 import { ApiError, createErrorResponse } from "#shared/error";
 import { createApiResponse } from "#shared/types";
 import { StatusCodes } from "http-status-codes";
-import { authenticator } from "otplib";
-import { getDatabase } from "~~/server/db/client";
+import { verify } from "otplib";
+import { db } from "~~/server/db/client";
 import { checkRateLimit } from "~~/server/utils/rateLimit";
 import { LoginAPI } from "~~/shared/schemas/auth";
 
@@ -26,8 +26,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const { password, twoFactorToken } = parsed.data;
-    const database = await getDatabase();
-    const user = await database.query.users.findFirst();
+    const user = await db.query.users.findFirst();
 
     if (!user || !user.passwordHash) {
       return createErrorResponse(event, ApiError.unauthorized("密码错误"));
@@ -45,7 +44,7 @@ export default defineEventHandler(async (event) => {
         return createErrorResponse(event, ApiError.unauthorized("需要输入 2FA 验证码"));
       }
 
-      const isValid = authenticator.verify({
+      const isValid = verify({
         token: twoFactorToken,
         secret: user.twoFactorSecret
       });

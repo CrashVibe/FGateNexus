@@ -3,7 +3,7 @@ import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 import { LoginAPI } from "~~/shared/schemas/auth";
 
@@ -15,10 +15,8 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError);
     }
 
-    const database = await getDatabase();
-
     // 获取用户
-    const user = await database.query.users.findFirst({
+    const user = await db.query.users.findFirst({
       where: eq(users.id, session.user.id)
     });
     if (!user) {
@@ -48,7 +46,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 删除密码、2FA 和相关数据
-    await database
+    await db
       .update(users)
       .set({
         passwordHash: null,

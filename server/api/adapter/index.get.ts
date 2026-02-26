@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import type z from "zod";
-import { getDatabase } from "~~/server/db/client";
+import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
 import { ApiError, createErrorResponse } from "~~/shared/error";
@@ -9,8 +9,7 @@ import { createApiResponse } from "~~/shared/types";
 
 export default defineEventHandler(async (event) => {
   try {
-    const database = await getDatabase();
-    const result = await database.select().from(adapters);
+    const result = await db.select().from(adapters);
 
     const adaptersWithStatus: z.infer<typeof AdapterAPI.GETS.response> = result.map((adapter) => {
       let isOnline = false;
