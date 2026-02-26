@@ -327,21 +327,18 @@ onMounted(async () => {
 
     <!-- 删除密码确认模态框 -->
     <n-modal v-model:show="showDeletePasswordModal" preset="dialog" title="删除密码">
-      <n-space vertical>
-        <n-alert type="warning" title="警告">
-          删除密码后，你将需要重新设置密码才能登录。此操作还会清除 2FA 设置。
-        </n-alert>
-        <n-form>
-          <n-form-item label="当前密码" required>
-            <n-input
-              v-model:value="deletePasswordForm.currentPassword"
-              type="password"
-              placeholder="输入当前密码以确认"
-              show-password-on="click"
-            />
-          </n-form-item>
-        </n-form>
-      </n-space>
+      <p class="mt-2">此操作会清除 2FA 设置！</p>
+      <n-divider />
+      <n-form>
+        <n-form-item label="当前密码" required>
+          <n-input
+            v-model:value="deletePasswordForm.currentPassword"
+            type="password"
+            placeholder="输入当前密码以确认"
+            show-password-on="click"
+          />
+        </n-form-item>
+      </n-form>
       <template #action>
         <n-space>
           <n-button @click="showDeletePasswordModal = false">点戳了~</n-button>
