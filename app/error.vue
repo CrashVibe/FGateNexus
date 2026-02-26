@@ -28,23 +28,19 @@
 
 <script setup lang="ts">
 import { ArrowBackOutline, HomeOutline } from "@vicons/ionicons5";
-import { useDark } from "@vueuse/core";
-import { darkTheme, lightTheme } from "naive-ui";
+import { useColorMode } from "@vueuse/core";
+import { darkTheme, type GlobalTheme } from "naive-ui";
 
 const navigating = ref(false);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
-// 主题相关
-const isDark = useDark({
-  storageKey: "vueuse-color-scheme",
-  selector: "html",
-  attribute: "class",
-  valueDark: "dark",
-  valueLight: "light"
-});
+const colorMode = useColorMode();
 
-const theme = computed(() => {
-  return isDark.value ? darkTheme : lightTheme;
+const theme = ref<GlobalTheme | null>(colorMode.value === "dark" ? darkTheme : null);
+
+watch(colorMode, async (mode) => {
+  await nextTick(); // 不加这个会没有自带的过渡效果
+  theme.value = mode === "dark" ? darkTheme : null;
 });
 
 // Canvas 动画相关
@@ -115,7 +111,7 @@ const initCanvas = () => {
         vy: (Math.random() - 0.5) * 0.5,
         size: Math.random() * 3 + 1,
         opacity: Math.random() * 0.5 + 0.1,
-        color: isDark.value ? "#18a058" : "#36ad6a"
+        color: theme.value === darkTheme ? "#18a058" : "#36ad6a"
       });
     }
   };
@@ -177,10 +173,10 @@ const initCanvas = () => {
 
   // 更新粒子颜色
   watch(
-    () => isDark.value,
+    () => theme.value,
     () => {
       particles.forEach((particle) => {
-        particle.color = isDark.value ? "#18a058" : "#36ad6a";
+        particle.color = theme.value === darkTheme ? "#18a058" : "#36ad6a";
       });
     }
   );
