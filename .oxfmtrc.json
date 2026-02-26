@@ -16,9 +16,9 @@
   "vueIndentScriptAndStyle": false,
   "endOfLine": "lf",
   "embeddedLanguageFormatting": "auto",
-  "experimentalSortPackageJson": true,
+  "sortPackageJson": true,
   "singleAttributePerLine": false,
-  "experimentalSortImports": {
+  "sortImports": {
     "groups": [
       "type-import",
       ["value-builtin", "value-external"],
@@ -29,8 +29,8 @@
       "unknown"
     ]
   },
-  "experimentalTailwindcss": {
-    "attributes": ["class"],
+  "sortTailwindcss": {
+    "functions": ["clsx", "cn"],
     "preserveWhitespace": true
   },
   "ignorePatterns": ["migrations/*", "bun.lock"],

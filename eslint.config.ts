@@ -8,5 +8,5 @@ export default withNuxt(
       "vue/html-self-closing": 0
     }
   },
-  ...oxlint.configs["flat/recommended"]
+  ...(oxlint.configs["flat/recommended"] || [])
 );
