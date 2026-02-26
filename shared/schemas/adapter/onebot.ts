@@ -5,7 +5,7 @@ export const OneBotWSReverseConfigSchema = z.object({
   selfId: z.string().min(1, "selfId 不能为空"),
   protocol: z.literal("ws-reverse"),
   token: z.preprocess((val) => (val === "" ? undefined : val), z.string()).optional(),
-  path: z.string().min(1, "路径不能为空"),
+  path: z.string().min(1, "路径不能为空")
 });
 
 export const OneBotWSConfigSchema = z.object({

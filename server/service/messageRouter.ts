@@ -1,9 +1,11 @@
-import type { BotConnection } from "./chatbridge/chatbridge";
-import { eq } from "drizzle-orm";
 import type { Session } from "koishi";
+
+import { eq } from "drizzle-orm";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { formatMCToPlatformMessage, formatPlatformToMCMessage, shouldForwardMessage } from "~~/shared/utils/chatSync";
+
+import type { BotConnection } from "./chatbridge/chatbridge";
 
 import { chatBridge } from "./chatbridge/chatbridge";
 import { pluginBridge } from "./mcwsbridge/MCWSBridge";

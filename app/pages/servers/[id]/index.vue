@@ -68,7 +68,6 @@ const navigateToMenuItem = (key: string | number) => {
   cursor: pointer;
   transition: all 0.2s;
 
-
   &:hover {
     transform: translateY(-2px);
   }

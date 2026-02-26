@@ -1,7 +1,8 @@
-import { defineStore } from "pinia";
 import type z from "zod";
-import { LoginAPI, type AuthStatus } from "~~/shared/schemas/auth";
 import type { ApiResponse } from "~~/shared/types";
+
+import { defineStore } from "pinia";
+import { LoginAPI, type AuthStatus } from "~~/shared/schemas/auth";
 
 interface State {
   authStatus: AuthStatus;

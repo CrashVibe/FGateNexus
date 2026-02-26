@@ -1,9 +1,11 @@
-import type { JsonRpcRequest } from "../types";
 import type { AdapterInternal, Peer } from "crossws";
+
 import { eq } from "drizzle-orm";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 import { renderLeaveMessage } from "~~/shared/utils/template/notify";
+
+import type { JsonRpcRequest } from "../types";
 
 import { chatBridge } from "../../chatbridge/chatbridge";
 import { pluginBridge } from "../MCWSBridge";

@@ -1,13 +1,13 @@
+import type { AuthStatus } from "~~/shared/schemas/auth";
+
 import { createApiResponse } from "#shared/types";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { ApiError, createErrorResponse } from "~~/shared/error";
-import type { AuthStatus } from "~~/shared/schemas/auth";
 
 export default defineEventHandler(async (event) => {
   try {
-
     // 检查是否存在用户
     const user = await db.query.users.findFirst();
 

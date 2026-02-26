@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
-import { AdapterAPI} from "~~/shared/schemas/adapter";
+import { AdapterAPI } from "~~/shared/schemas/adapter";
 
 export default defineEventHandler(async (event) => {
   try {

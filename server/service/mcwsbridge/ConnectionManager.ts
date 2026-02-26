@@ -1,5 +1,6 @@
-import type { MCWSBridge } from "./MCWSBridge";
 import type { AdapterInternal, Peer } from "crossws";
+
+import type { MCWSBridge } from "./MCWSBridge";
 
 /**
  * 服务器连接信息

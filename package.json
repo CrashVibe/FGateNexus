@@ -9,6 +9,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "format": "oxfmt .",
     "lint": "oxlint --type-aware && eslint .",
     "lint:fix": "oxlint --fix --type-aware && eslint . --fix",
     "db:generate": "drizzle-kit generate",

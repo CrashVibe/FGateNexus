@@ -1,7 +1,7 @@
-import { generateVerificationCode } from "#shared/utils/binding";
-import type { BotConnection } from "../chatbridge/chatbridge";
-import { and, eq, sql } from "drizzle-orm";
 import type { Session } from "koishi";
+
+import { generateVerificationCode } from "#shared/utils/binding";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "~~/server/db/client";
 import { players, servers, socialAccounts, targets } from "~~/server/db/schema";
 import { AdapterType } from "~~/shared/schemas/adapter";
@@ -13,8 +13,9 @@ import {
   renderUnbindSuccess
 } from "~~/shared/utils/template/binding";
 
-import { pluginBridge } from "../mcwsbridge/MCWSBridge";
+import type { BotConnection } from "../chatbridge/chatbridge";
 
+import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 import { getConfig } from "./config";
 
 interface PendingBinding {

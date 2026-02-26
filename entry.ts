@@ -1,9 +1,8 @@
 import { Database } from "bun:sqlite";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
-
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 import { getConfigManager } from "./server/utils/config";
 
@@ -14,9 +13,9 @@ console.info("工作目录在 ", process.cwd());
 async function initDatabase() {
   const dbFilePath = path.resolve("./sqlite.db");
   const isNewDatabase = await fs
-      .access(dbFilePath)
-      .then(() => false)
-      .catch(() => true);
+    .access(dbFilePath)
+    .then(() => false)
+    .catch(() => true);
 
   const client = new Database(dbFilePath);
 

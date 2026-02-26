@@ -1,5 +1,4 @@
 import { type BindingConfig, BindingConfigSchema } from "../../shared/schemas/server/binding";
-
 import { applyDefaults } from "./zod";
 
 /**

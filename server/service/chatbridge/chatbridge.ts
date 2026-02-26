@@ -1,9 +1,10 @@
 import type { AdapterConfig } from "#shared/schemas/adapter";
 import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
+import type { Bot, ForkScope, Session } from "koishi";
+
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
 import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
-import type { Bot, ForkScope, Session } from "koishi";
 import { Context, Logger as klog } from "koishi";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";

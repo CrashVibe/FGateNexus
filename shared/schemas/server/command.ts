@@ -1,5 +1,6 @@
-import type { ApiSchemaRegistry } from "..";
 import { z } from "zod";
+
+import type { ApiSchemaRegistry } from "..";
 
 import { TargetConfigSchema } from "./target";
 

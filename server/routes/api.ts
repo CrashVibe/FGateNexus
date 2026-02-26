@@ -1,10 +1,11 @@
 import type { AdapterInternal, Peer } from "crossws";
+
 import { eq } from "drizzle-orm";
 
+import { db } from "../db/client";
 import { servers } from "../db/schema";
 import { pluginBridge } from "../service/mcwsbridge/MCWSBridge";
 import { checkClientVersion, CURRENT_API_VERSION, isValidVersion } from "../utils/version";
-import { db } from "../db/client";
 
 export default defineWebSocketHandler({
   async open(peer) {
