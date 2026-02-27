@@ -25,8 +25,9 @@ import { ArrowBackOutline } from "@vicons/ionicons5";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import { isMobile } from "#imports";
 import { ServerData } from "~/composables/api";
-import type { Menu, MenuItem } from "~/layouts/default.vue";
+import type { Menu } from "~/layouts/default.vue";
 import PageHeader from "~/components/Header/PageHeader.vue";
+import type { NavigationMenuChildItem, NavigationMenuItem } from "@nuxt/ui";
 
 const route = useRoute();
 interface Props {
@@ -45,9 +46,12 @@ const menuOptions = inject<Menu>(
   computed(() => [])
 );
 
-function findMenuItem(menu: MenuItem[], key: string): MenuItem | null {
-  for (const item of menu) {
-    if (item.key === key) return item;
+function findMenuItem(
+  menu: NavigationMenuItem[][] | NavigationMenuChildItem[],
+  key: string
+): NavigationMenuItem | null {
+  for (const item of menu.flat()) {
+    if (item.to === key) return item;
     if (item.children) {
       const child = findMenuItem(item.children, key);
       if (child) return child;

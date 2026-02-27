@@ -3,13 +3,13 @@
     <ServerHeader back-button-text="服务器列表" back-path="/" class="mb-3" />
 
     <n-grid v-if="configMenuItems.length > 0" :cols="isMobile ? 1 : '3'" :item-responsive="true" x-gap="12" y-gap="12">
-      <n-gi v-for="menuItem in configMenuItems" :key="menuItem.key" :span="getCardSpan(String(menuItem.label))">
+      <n-gi v-for="menuItem in configMenuItems" :key="menuItem.to" :span="getCardSpan(String(menuItem.label))">
         <n-card
           :title="String(menuItem.label)"
           class="config-card"
           embedded
           hoverable
-          @click="navigateToMenuItem(menuItem.key!)"
+          @click="navigateToMenuItem(menuItem.to)"
         >
           <template v-if="menuItem.icon" #header-extra>
             <n-icon :component="menuItem.icon" size="20" />
@@ -45,9 +45,10 @@ const MenuOptions = inject<Menu>(
 
 const configMenuItems = computed(() => {
   return MenuOptions.value
+    .flat()
     .flatMap((item) => item.children || [])
     .filter((item) => {
-      return !!item.key && item.key !== "/" && item.key !== route.path;
+      return !!item.to && item.to !== "/" && item.to !== route.path;
     });
 });
 

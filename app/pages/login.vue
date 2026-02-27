@@ -64,7 +64,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex min-h-[calc(100vh-var(--header-height))] items-center justify-center">
+  <div class="flex min-h-[calc(100vh-var(--header-height))] items-center justify-center h-screen">
     <n-card class="w-full max-w-md">
       <template #header>
         <div class="flex items-center gap-2">

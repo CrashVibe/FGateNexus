@@ -1,3 +1,6 @@
+import tailwindcss_postcss from "@tailwindcss/postcss";
+import tailwindcss from "@tailwindcss/vite";
+import autoprefixer from "autoprefixer";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import Components from "unplugin-vue-components/vite";
 
@@ -16,10 +19,10 @@ export default defineNuxtConfig({
     server: isDev
   },
   ssr: false,
-  css: ["~/assets/css/main.scss"],
+  css: ["~/assets/css/main.css", "~/assets/css/animate.scss"],
   typescript: {
-    typeCheck: true,
     strict: true,
+    typeCheck: "build",
     tsConfig: {
       compilerOptions: {
         types: ["bun-types", "node"],
@@ -60,8 +63,9 @@ export default defineNuxtConfig({
     ],
     "nuxtjs-naive-ui",
     "@nuxt/eslint",
-    "@nuxtjs/tailwindcss",
-    "nuxt-auth-utils"
+    "nuxt-auth-utils",
+    "@nuxt/ui",
+    "@nuxt/image"
   ],
   imports: {
     presets: [
@@ -72,12 +76,19 @@ export default defineNuxtConfig({
     ]
   },
   vite: {
+    css: {
+      postcss: {
+        plugins: [tailwindcss_postcss(), autoprefixer()]
+      }
+    },
     plugins: [
       Components({
         resolvers: [NaiveUiResolver()],
         dts: true
-      })
-    ],
+      }),
+      tailwindcss()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any[],
     optimizeDeps: {
       include: [
         "moment-timezone",

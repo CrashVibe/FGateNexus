@@ -1,136 +1,118 @@
 <script lang="ts" setup>
+import type { NavigationMenuItem } from "@nuxt/ui";
 import {
   ArrowBackOutline,
   ChatbubbleOutline,
-  CodeSlashOutline,
-  CubeOutline,
   LinkOutline,
   MenuOutline,
   NotificationsOutline,
   PeopleOutline,
-  SettingsOutline
+  SettingsOutline,
+  LogOutOutline
 } from "@vicons/ionicons5";
-import type { MenuMixedOption } from "naive-ui/es/menu/src/interface";
 import { computed, provide } from "vue";
-import type { RouteLocationAsPathGeneric } from "vue-router";
-import SidebarLayout from "~/components/layouts/SidebarLayout.vue";
 
-export type MenuItem = MenuMixedOption & {
-  label?: string;
-  desc?: string;
-  children?: MenuItem[];
-};
-
-const router = useRouter();
 const route = useRoute();
 const dialog = useDialog();
-const { isPageDirty, savePage } = usePageStateStore();
+const { savePage } = usePageStateStore();
 
 const renderIcon = (icon: Component) => () => h(icon);
 
 // 基础菜单
-const basicMenuOptions: MenuItem[] = [
-  {
-    type: "group",
-    label: "核心功能",
-    children: [
-      { label: "服务器管理", key: "/", icon: renderIcon(MenuOutline) },
-      { label: "Bot 实例", key: "/adapters", icon: renderIcon(LinkOutline) },
-      { label: "玩家列表", key: "/players", icon: renderIcon(PeopleOutline) }
-    ]
-  },
-  {
-    type: "divider"
-  },
-  {
-    type: "group",
-    label: "系统设置",
-    children: [{ label: "系统设置", key: "/settings", icon: renderIcon(SettingsOutline) }]
-  }
+const basicMenuOptions: NavigationMenuItem[][] = [
+  [
+    { label: "服务器管理", to: "/", icon: renderIcon(MenuOutline) },
+    { label: "Bot 实例", to: "/adapters", icon: renderIcon(LinkOutline) },
+    { label: "玩家列表", to: "/players", icon: renderIcon(PeopleOutline) }
+  ],
+  [
+    {
+      label: "系统设置",
+      open: true,
+      type: "label",
+      children: [{ label: "系统设置", to: "/settings", icon: renderIcon(SettingsOutline) }]
+    }
+  ]
 ];
 
 // 服务器编辑
 const serverId = computed(() => route.params?.["id"] as string | undefined);
 
 const serverMenuOptions = computed(() => {
-  const menu: MenuItem[] = [];
-  menu.push({
+  const menu: NavigationMenuItem[][] = [[], []];
+  menu[0]!.push({
     label: "返回",
-    key: "/",
+    to: "/",
     icon: renderIcon(ArrowBackOutline),
     desc: "返回服务器列表主页。"
   });
   if (serverId.value) {
     const sid = serverId.value;
-    menu.push(
+    menu[0]!.push({
+      label: "配置概览",
+      to: `/servers/${sid}`,
+      icon: renderIcon(MenuOutline),
+      desc: "查看所有可用的配置选项。"
+    });
+    menu[1]!.push(
       {
-        label: "配置概览",
-        key: `/servers/${sid}`,
-        icon: renderIcon(MenuOutline),
-        desc: "查看所有可用的配置选项。"
-      },
-      {
-        type: "divider"
-      },
-      {
-        type: "group",
         label: "基础配置",
+        type: "label",
+        open: true,
+        icon: renderIcon(SettingsOutline),
         children: [
           {
             label: "基础设置",
-            key: `/servers/${sid}/general`,
-            icon: renderIcon(SettingsOutline),
+            to: `/servers/${sid}/general`,
             desc: "配置服务器的基础运行参数和常规设置。"
           },
           {
             label: "目标配置",
-            key: `/servers/${sid}/target`,
-            icon: renderIcon(CubeOutline),
+            to: `/servers/${sid}/target`,
             desc: "配置聊天平台的消息目标。"
           }
         ]
       },
       {
-        type: "group",
         label: "服务器管理",
-        key: `server_manager`,
+        type: "label",
+        open: true,
+        icon: renderIcon(LinkOutline),
         children: [
           {
             label: "账号绑定",
-            key: `/servers/${sid}/binding`,
-            icon: renderIcon(LinkOutline),
+            to: `/servers/${sid}/binding`,
             desc: "设置社交账号与游戏账号的绑定规则。"
           },
           {
             label: "远程指令",
-            key: `/servers/${sid}/command`,
-            icon: renderIcon(CodeSlashOutline),
+            to: `/servers/${sid}/command`,
             desc: "配置服务器的远程指令。"
           }
         ]
       },
       {
-        type: "group",
         label: "聊天与消息",
-        key: `server_bot`,
+        type: "label",
+        open: true,
+        icon: renderIcon(ChatbubbleOutline),
         children: [
           {
             label: "消息互通",
-            key: `/servers/${sid}/msgbridge`,
-            icon: renderIcon(ChatbubbleOutline),
+            to: `/servers/${sid}/msgbridge`,
             desc: "Minecraft 与 聊天平台消息双向同步配置。"
           }
         ]
       },
       {
-        type: "group",
         label: "事件与通知",
-        key: `server_event`,
+        type: "label",
+        open: true,
+        icon: renderIcon(NotificationsOutline),
         children: [
           {
             label: "事件通知",
-            key: `/servers/${sid}/notify`,
-            icon: renderIcon(NotificationsOutline),
+            to: `/servers/${sid}/notify`,
             desc: "配置服务器的事件通知。"
           }
         ]
@@ -152,36 +134,83 @@ const menuOptions = computed(() => {
 
 export type Menu = typeof menuOptions;
 
-const handleMenuSelect = (key: RouteLocationAsPathGeneric) => {
-  const targetPath = String(key);
-  if (!targetPath || targetPath === route.path) return;
+const router = useRouter();
 
-  if (isPageDirty()) {
-    dialog.warning({
-      title: "有未保存的更改",
-      content: "切换页面前请保存更改，或放弃未保存内容。",
-      positiveText: "保存并切换",
-      negativeText: "放弃更改",
-      transformOrigin: "center",
-      onPositiveClick: async () => {
-        await savePage();
-        router.push(targetPath).catch(() => {});
-      },
-      onNegativeClick: () => {
-        router.push(targetPath).catch(() => {});
-      }
-    });
-    return;
+watch(
+  () => usePageStateStore().to,
+  (value) => {
+    if (value) {
+      dialog.warning({
+        title: "有未保存的更改",
+        content: "切换页面前请保存更改，或放弃未保存内容。",
+        positiveText: "保存并切换",
+        negativeText: "放弃更改",
+        transformOrigin: "center",
+        onPositiveClick: async () => {
+          await savePage();
+          router.push(value);
+        },
+        onNegativeClick: () => {
+          usePageStateStore().clearPageState();
+          router.push(value);
+        }
+      });
+    }
   }
+);
 
-  router.push(targetPath).catch(() => {});
+const open = ref(false);
+
+const handleLogout = async () => {
+  await useAuthStore().logout();
 };
 
 provide("menuOptions", menuOptions);
 </script>
 
 <template>
-  <SidebarLayout :menu-options="menuOptions" @menu-select="handleMenuSelect">
-    <slot />
-  </SidebarLayout>
+  <UDashboardGroup unit="rem">
+    <UDashboardSidebar id="default" v-model:open="open" :min-size="12" collapsible resizable class="border-r-0 py-4">
+      <template #header="{ collapsed }">
+        <NuxtLink to="/" class="flex items-center justify-center gap-0.5">
+          <Logo class="h-8 w-auto shrink-0" />
+          <span v-if="!collapsed" class="text-highlighted text-xl font-bold">FGate</span>
+        </NuxtLink>
+      </template>
+
+      <template #default="{ collapsed }">
+        <transition name="page-jump-in" mode="out-in">
+          <div :key="JSON.stringify(menuOptions)">
+            <UNavigationMenu :collapsed="collapsed" :items="menuOptions" orientation="vertical" tooltip popover />
+          </div>
+        </transition>
+      </template>
+
+      <template #footer>
+        <div class="flex w-full items-center justify-between">
+          <ThemeToggle />
+          <n-button v-if="useAuthStore().hasPassword" circle quaternary @click="handleLogout">
+            <template #icon>
+              <n-icon :component="LogOutOutline" />
+            </template>
+          </n-button>
+        </div>
+      </template>
+    </UDashboardSidebar>
+
+    <div
+      class="ring-default bg-default/75 m-0 flex min-w-0 flex-1 overflow-hidden rounded-lg shadow ring sm:m-4 lg:ml-0"
+    >
+      <UDashboardPanel
+        class="scrollbar-custom relative min-h-0 overflow-y-auto"
+        :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
+      >
+        <template #body>
+          <UContainer class="gap-4 py-8 sm:gap-6">
+            <slot />
+          </UContainer>
+        </template>
+      </UDashboardPanel>
+    </div>
+  </UDashboardGroup>
 </template>
