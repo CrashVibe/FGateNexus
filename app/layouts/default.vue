@@ -25,14 +25,7 @@ const basicMenuOptions: NavigationMenuItem[][] = [
     { label: "Bot 实例", to: "/adapters", icon: renderIcon(LinkOutline) },
     { label: "玩家列表", to: "/players", icon: renderIcon(PeopleOutline) }
   ],
-  [
-    {
-      label: "系统设置",
-      open: true,
-      type: "label",
-      children: [{ label: "系统设置", to: "/settings", icon: renderIcon(SettingsOutline) }]
-    }
-  ]
+  [{ label: "系统设置", to: "/settings", icon: renderIcon(SettingsOutline) }]
 ];
 
 // 服务器编辑
