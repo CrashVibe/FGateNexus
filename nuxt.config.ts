@@ -64,8 +64,7 @@ export default defineNuxtConfig({
     "nuxtjs-naive-ui",
     "@nuxt/eslint",
     "nuxt-auth-utils",
-    "@nuxt/ui",
-    "@nuxt/image"
+    "@nuxt/ui"
   ],
   imports: {
     presets: [
