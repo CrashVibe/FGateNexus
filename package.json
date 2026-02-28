@@ -26,7 +26,6 @@
     "@koishijs/plugin-server": "^3.2.7",
     "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.8",
     "@nuxt/eslint": "^1.15.2",
-    "@nuxt/image": "2.0.0",
     "@nuxt/ui": "^4.5.0",
     "@pinia/nuxt": "^0.11.3",
     "@tailwindcss/vite": "^4.2.1",
