@@ -154,20 +154,22 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     <!-- head -->
     <div>
       <PageHeader title="Bot 实例列表" description="管理多个 Bot 实例，点击进入详细配置。">
-        <div class="flex flex-wrap gap-2 sm:gap-3">
-          <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
-            刷新列表
-            <template #icon>
-              <n-icon :component="RefreshOutline" />
-            </template>
-          </n-button>
-          <n-button ghost size="large" type="primary" @click="openModal">
-            创建新 Bot 实例
-            <template #icon>
-              <n-icon :component="AddCircleOutline" />
-            </template>
-          </n-button>
-        </div>
+        <template #actions>
+          <div class="flex flex-wrap gap-2 sm:gap-3">
+            <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
+              刷新列表
+              <template #icon>
+                <n-icon :component="RefreshOutline" />
+              </template>
+            </n-button>
+            <n-button ghost size="large" type="primary" @click="openModal">
+              创建新 Bot 实例
+              <template #icon>
+                <n-icon :component="AddCircleOutline" />
+              </template>
+            </n-button>
+          </div>
+        </template>
       </PageHeader>
     </div>
     <!-- modal 创建区 -->
