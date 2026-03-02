@@ -6,6 +6,7 @@ import Components from "unplugin-vue-components/vite";
 
 const isDev = process.env.NODE_ENV !== "production";
 const isBuild = !isDev;
+
 export default defineNuxtConfig({
   compatibilityDate: "2025-08-06",
   devtools: {

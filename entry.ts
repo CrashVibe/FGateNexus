@@ -1,6 +1,11 @@
+import type { MigrationMeta } from "drizzle-orm/migrator";
+import type { TablesRelationalConfig } from "drizzle-orm/relations";
+import type { SQLiteSyncDialect } from "drizzle-orm/sqlite-core/dialect";
+import type { SQLiteSession } from "drizzle-orm/sqlite-core/session";
+
 import { Database } from "bun:sqlite";
 import { drizzle } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -28,9 +33,24 @@ async function initDatabase() {
   }
 
   try {
-    migrate(db, {
-      migrationsFolder: path.resolve("./migrations")
+    const { embeddedJournal, embeddedSqlFiles } = (await import("./.output/server/migrations/embedded.js")) as {
+      embeddedJournal: { entries: { tag: string; when: number; breakpoints: boolean }[] };
+      embeddedSqlFiles: Record<string, string>;
+    };
+    const migrations: MigrationMeta[] = embeddedJournal.entries.map((entry) => {
+      const sql = embeddedSqlFiles[entry.tag];
+      return {
+        sql: sql.split("--> statement-breakpoint"),
+        folderMillis: entry.when,
+        hash: createHash("sha256").update(sql).digest("hex"),
+        bps: entry.breakpoints
+      };
     });
+    const { dialect, session } = db as unknown as {
+      dialect: SQLiteSyncDialect;
+      session: SQLiteSession<"sync", void, Record<string, unknown>, TablesRelationalConfig>;
+    };
+    dialect.migrate(migrations, session, undefined);
 
     console.info("[SUCCESS] 数据库准备就绪");
   } catch (e) {

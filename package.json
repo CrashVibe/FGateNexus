@@ -14,11 +14,10 @@
     "lint:fix": "oxlint --fix --type-aware && eslint . --fix",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "build:all": "NUXT_BUILD_TARGET=binary bun run build && bun run build:mac && bun run build:linux && bun run build:win && bun run copy:migrations",
+    "build:all": "NUXT_BUILD_TARGET=binary bun run build && bun run build:mac && bun run build:linux && bun run build:win",
     "build:mac": "bun build --compile --target=bun-darwin-arm64 ./entry.ts --outfile ./dist/FGateNexus-mac-arm64 && bun build --compile --target=bun-darwin-x64 ./entry.ts --outfile ./dist/FGateNexus-mac-x64",
     "build:linux": "bun build --compile --target=bun-linux-arm64 ./entry.ts --outfile ./dist/FGateNexus-linux-arm64 && bun build --compile --target=bun-linux-x64 ./entry.ts --outfile ./dist/FGateNexus-linux-x64",
-    "build:win": "bun build --compile --target=bun-windows-x64 ./entry.ts --outfile ./dist/FGateNexus-win-x64.exe",
-    "copy:migrations": "node -e \"const fs=require('fs'); if(fs.existsSync('./migrations')) { fs.cpSync('./migrations', './dist/migrations', {recursive: true}); }\""
+    "build:win": "bun build --compile --target=bun-windows-x64 ./entry.ts --outfile ./dist/FGateNexus-win-x64.exe"
   },
   "dependencies": {
     "@koishijs/plugin-http": "^0.6.3",
