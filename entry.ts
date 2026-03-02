@@ -38,7 +38,7 @@ async function initDatabase() {
       embeddedSqlFiles: Record<string, string>;
     };
     const migrations: MigrationMeta[] = embeddedJournal.entries.map((entry) => {
-      const sql = embeddedSqlFiles[entry.tag];
+      const sql = embeddedSqlFiles[entry.tag]!;
       return {
         sql: sql.split("--> statement-breakpoint"),
         folderMillis: entry.when,
