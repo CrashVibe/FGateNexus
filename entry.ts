@@ -33,6 +33,7 @@ async function initDatabase() {
   }
 
   try {
+    // @ts-expect-error - This module is generated during build
     const { embeddedJournal, embeddedSqlFiles } = (await import("./.output/server/migrations/embedded.js")) as {
       embeddedJournal: { entries: { tag: string; when: number; breakpoints: boolean }[] };
       embeddedSqlFiles: Record<string, string>;
@@ -66,6 +67,7 @@ async function startApplication() {
     const config = configManager.getConfig();
     process.env.NITRO_HOST = config.nitro.host;
     process.env.NITRO_PORT = String(config.nitro.port);
+    // @ts-expect-error - This module is generated during build
     await import("./.output/server/index.mjs");
   } catch (e) {
     console.error("应用启动失败：", e);
