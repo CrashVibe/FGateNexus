@@ -39,7 +39,8 @@ export default defineNuxtConfig({
           "#shared/*": ["./shared/*"],
           "#shared": ["./shared"]
         }
-      }
+      },
+      include: ["../drizzle.config.ts", "../entry.ts", "../eslint.config.ts"]
     }
   },
   runtimeConfig: {

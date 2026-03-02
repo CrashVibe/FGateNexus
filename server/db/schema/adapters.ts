@@ -1,7 +1,8 @@
-import type { AdapterConfig } from "~~/shared/schemas/adapter";
-
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import { AdapterType } from "~~/shared/schemas/adapter";
+
+import type { AdapterConfig } from "../../../shared/schemas/adapter";
+
+import { AdapterType } from "../../../shared/schemas/adapter";
 
 export const adapters = sqliteTable("adapters", {
   id: integer("id").primaryKey({ autoIncrement: true }),
