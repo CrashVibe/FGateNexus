@@ -133,6 +133,7 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      title: "FlowGate Nexus",
       link: [
         {
           rel: "icon",
