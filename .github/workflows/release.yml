@@ -55,11 +55,11 @@ jobs:
           VERSION=${{ steps.package_version.outputs.version }}
           chmod +r dist/*
           cd dist
-          tar -czf ../FGateNexus-v${VERSION}-linux-x64.tar.gz FGateNexus-linux-x64 migrations
-          tar -czf ../FGateNexus-v${VERSION}-linux-arm64.tar.gz FGateNexus-linux-arm64 migrations
-          tar -czf ../FGateNexus-v${VERSION}-mac-x64.tar.gz FGateNexus-mac-x64 migrations
-          tar -czf ../FGateNexus-v${VERSION}-mac-arm64.tar.gz FGateNexus-mac-arm64 migrations
-          zip -r ../FGateNexus-v${VERSION}-win.zip FGateNexus-win-x64.exe migrations
+          tar -czf ../FGateNexus-v${VERSION}-linux-x64.tar.gz FGateNexus-linux-x64
+          tar -czf ../FGateNexus-v${VERSION}-linux-arm64.tar.gz FGateNexus-linux-arm64
+          tar -czf ../FGateNexus-v${VERSION}-mac-x64.tar.gz FGateNexus-mac-x64
+          tar -czf ../FGateNexus-v${VERSION}-mac-arm64.tar.gz FGateNexus-mac-arm64
+          zip -r ../FGateNexus-v${VERSION}-win.zip FGateNexus-win-x64.exe
 
       - name: Delete existing tag if exists
         if: steps.check_version.outputs.exists == 'false'
