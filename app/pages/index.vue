@@ -11,7 +11,9 @@ import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import PageHeader from "~/components/Header/PageHeader.vue";
 
 const formRef = ref<FormInst>();
-const formData = ref<z.infer<(typeof ServersAPI)["POST"]["request"]>>(ServersAPI.POST.request.parse({}));
+const formData = ref<z.infer<(typeof ServersAPI)["POST"]["request"]>>(
+  ServersAPI.POST.request.parse({ token: uuidv4() })
+);
 
 const isSubmitting = ref(false);
 const message = useMessage();
@@ -20,7 +22,7 @@ const showModal = ref(false);
 
 function openModal() {
   showModal.value = true;
-  formData.value = ServersAPI.POST.request.parse({});
+  formData.value = ServersAPI.POST.request.parse({ token: uuidv4() });
 }
 
 async function handleSubmitClick() {
