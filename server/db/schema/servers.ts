@@ -1,26 +1,32 @@
-import type z from "zod";
-
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-
-import type { BindingConfig } from "../../../shared/schemas/server/binding";
-import type { ChatSyncConfig } from "../../../shared/schemas/server/chatSync";
-import type { CommandConfig } from "../../../shared/schemas/server/command";
-import type { NotifyConfigSchema } from "../../../shared/schemas/server/notify";
+import type { z } from "zod";
+import type { BindingConfig } from "~~/shared/schemas/server/binding";
+import type { ChatSyncConfig } from "~~/shared/schemas/server/chat-sync";
+import type { CommandConfig } from "~~/shared/schemas/server/command";
+import type { NotifyConfigSchema } from "~~/shared/schemas/server/notify";
 
 import { adapters } from "./adapters";
 export const servers = sqliteTable("servers", {
+  adapterId: integer("adapter_id").references(() => adapters.id, {
+    onDelete: "set null",
+  }),
+  bindingConfig: text("binding_config", { mode: "json" })
+    .notNull()
+    .$type<BindingConfig>(),
+  chatSyncConfig: text("chat_sync_config", { mode: "json" })
+    .notNull()
+    .$type<ChatSyncConfig>(),
+  commandConfig: text("command_config", { mode: "json" })
+    .notNull()
+    .$type<CommandConfig>(),
   id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull().unique("name_idx"),
-  token: text("token").notNull().unique("token_idx"),
-  minecraft_version: text("version"),
   minecraft_software: text("software"),
-  adapterId: integer("adapter_id").references(() => adapters.id, { onDelete: "set null" }),
-  bindingConfig: text("binding_config", { mode: "json" }).notNull().$type<BindingConfig>(),
-  chatSyncConfig: text("chat_sync_config", { mode: "json" }).notNull().$type<ChatSyncConfig>(),
-  commandConfig: text("command_config", { mode: "json" }).notNull().$type<CommandConfig>(),
+  minecraft_version: text("version"),
+  name: text("name").notNull().unique("name_idx"),
   notifyConfig: text("notify_config", {
-    mode: "json"
+    mode: "json",
   })
     .notNull()
-    .$type<z.infer<typeof NotifyConfigSchema>>()
+    .$type<z.infer<typeof NotifyConfigSchema>>(),
+  token: text("token").notNull().unique("token_idx"),
 });

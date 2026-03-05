@@ -1,11 +1,12 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
+import { chatBridge } from "~~/server/service/chatbridge";
 import { AdapterAPI } from "~~/shared/schemas/adapter";
+
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -18,20 +19,19 @@ export default defineEventHandler(async (event) => {
     const result = await db
       .insert(adapters)
       .values({
+        config: parsed.data.config,
         name: parsed.data.name || "",
         type: parsed.data.type,
-        config: parsed.data.config
       })
       .returning();
     if (result[0]) {
       chatBridge.addBot(result[0].id, parsed.data.type, parsed.data.config);
       return createApiResponse(event, "添加适配器成功", StatusCodes.CREATED);
-    } else {
-      const apiError = ApiError.database("添加适配器失败：未能插入适配器");
-      return createErrorResponse(event, apiError);
     }
-  } catch (err) {
-    logger.error({ err }, "添加适配器失败");
+    const apiError = ApiError.database("添加适配器失败：未能插入适配器");
+    return createErrorResponse(event, apiError);
+  } catch (error) {
+    logger.error({ error }, "添加适配器失败");
     const apiError = ApiError.database("添加适配器失败");
     return createErrorResponse(event, apiError);
   }

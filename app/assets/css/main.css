@@ -5,7 +5,8 @@ html,
 body {
   padding: 0;
   margin: 0;
-  --sans-font: "Segoe UI", "Helvetica Neue", sans-serif, -apple-system, system-ui;
+  --sans-font:
+    "Segoe UI", "Helvetica Neue", sans-serif, -apple-system, system-ui;
 
   font-family: var(--sans-font);
 }

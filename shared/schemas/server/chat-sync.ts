@@ -1,0 +1,107 @@
+import { z } from "zod";
+
+import type { ApiSchemaRegistry } from "#shared/schemas";
+
+import { TargetConfigSchema } from "./target";
+
+/**
+ * 聊天同步配置
+ */
+export const chatSyncConfigSchema = z.object({
+  /**
+   * 是否启用聊天同步
+   */
+  enabled: z.boolean().default(false),
+
+  /**
+   * 过滤配置
+   */
+  filters: z
+    .object({
+      /**
+       * 黑名单关键词（仅在黑名单模式下使用）
+       */
+      blacklistKeywords: z.array(z.string()).default([]),
+
+      /**
+       * 黑名单正则表达式（仅在黑名单模式下使用）
+       */
+      blacklistRegex: z.array(z.string()).default([]),
+
+      /**
+       * 过滤模式：blacklist（黑名单模式，转发全部消息但屏蔽指定内容）或 whitelist（白名单模式，仅转发匹配的消息）
+       */
+      filterMode: z.enum(["blacklist", "whitelist"]).default("blacklist"),
+
+      /**
+       * 最大消息长度
+       */
+      maxMessageLength: z.number().min(1).default(500),
+
+      /**
+       * 最小消息长度
+       */
+      minMessageLength: z.number().min(0).default(1),
+
+      /**
+       * 白名单前缀（仅在白名单模式下使用）
+       */
+      whitelistPrefixes: z.array(z.string()).default([]),
+
+      /**
+       * 白名单正则表达式（仅在白名单模式下使用）
+       */
+      whitelistRegex: z.array(z.string()).default([]),
+    })
+    .default({
+      blacklistKeywords: [],
+      blacklistRegex: [],
+      filterMode: "blacklist",
+      maxMessageLength: 500,
+      minMessageLength: 1,
+      whitelistPrefixes: [],
+      whitelistRegex: [],
+    }),
+
+  /**
+   * 是否启用从 Minecraft 到 平台 的转发
+   */
+  mcToPlatformEnabled: z.boolean().default(true),
+
+  /**
+   * MC 到平台的消息格式模板
+   */
+  mcToPlatformTemplate: z
+    .string()
+    .default("[{serverName}] {playerName}: {message}"),
+
+  /**
+   * 是否启用从 平台 到 Minecraft 的转发
+   */
+  platformToMcEnabled: z.boolean().default(true),
+
+  /**
+   * 平台到 MC 的消息格式模板
+   */
+  platformToMcTemplate: z
+    .string()
+    .default("[{platform}] {nickname}: {message}"),
+});
+
+export type ChatSyncConfig = z.infer<typeof chatSyncConfigSchema>;
+
+export const ChatSyncAPI = {
+  PATCH: {
+    description: "更新服务器聊天同步配置",
+    request: z.object({
+      chatsync: chatSyncConfigSchema,
+      targets: z.array(
+        z.object({
+          config: TargetConfigSchema,
+          id: z.uuidv4(),
+        }),
+      ),
+    }),
+    response: z.object({}),
+  },
+} satisfies ApiSchemaRegistry;

@@ -9,7 +9,11 @@
           <!-- 基础设置 -->
           <n-card class="h-full" size="small" title="基础设置">
             <template #header-extra>
-              <n-tag :type="formData.config.enabled ? 'success' : 'default'" round size="small">
+              <n-tag
+                :type="formData.config.enabled ? 'success' : 'default'"
+                round
+                size="small"
+              >
                 {{ formData.config.enabled ? "已启用" : "未启用" }}
               </n-tag>
             </template>
@@ -19,11 +23,17 @@
             </n-form-item>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
               <n-form-item label="MC → 平台" path="mcToPlatformEnabled">
-                <n-switch v-model:value="formData.config.mcToPlatformEnabled" :disabled="!formData.config.enabled" />
+                <n-switch
+                  v-model:value="formData.config.mcToPlatformEnabled"
+                  :disabled="!formData.config.enabled"
+                />
               </n-form-item>
 
               <n-form-item label="平台 → MC" path="platformToMcEnabled">
-                <n-switch v-model:value="formData.config.platformToMcEnabled" :disabled="!formData.config.enabled" />
+                <n-switch
+                  v-model:value="formData.config.platformToMcEnabled"
+                  :disabled="!formData.config.enabled"
+                />
               </n-form-item>
             </div>
           </n-card>
@@ -82,7 +92,9 @@
                   show-count
                 />
                 <template #feedback>
-                  <div class="text-sm text-gray-500">包含这些关键词的消息将被过滤，不会转发</div>
+                  <div class="text-sm text-gray-500">
+                    包含这些关键词的消息将被过滤，不会转发
+                  </div>
                 </template>
               </n-form-item>
 
@@ -96,7 +108,9 @@
                   :rows="2"
                 />
                 <template #feedback>
-                  <div class="text-sm text-gray-500">匹配这些正则表达式的消息将被过滤，不会转发</div>
+                  <div class="text-sm text-gray-500">
+                    匹配这些正则表达式的消息将被过滤，不会转发
+                  </div>
                 </template>
               </n-form-item>
             </template>
@@ -111,7 +125,9 @@
                   show-count
                 />
                 <template #feedback>
-                  <div class="text-sm text-gray-500">仅转发以这些前缀开头的消息</div>
+                  <div class="text-sm text-gray-500">
+                    仅转发以这些前缀开头的消息
+                  </div>
                 </template>
               </n-form-item>
 
@@ -125,7 +141,9 @@
                   :rows="2"
                 />
                 <template #feedback>
-                  <div class="text-sm text-gray-500">仅转发匹配这些正则表达式的消息</div>
+                  <div class="text-sm text-gray-500">
+                    仅转发匹配这些正则表达式的消息
+                  </div>
                 </template>
               </n-form-item>
             </template>
@@ -147,7 +165,11 @@
                   </div>
                 </template>
 
-                <n-form-item label="模板内容" label-placement="top" path="mcToPlatformTemplate">
+                <n-form-item
+                  label="模板内容"
+                  label-placement="top"
+                  path="mcToPlatformTemplate"
+                >
                   <n-input
                     v-model:value="formData.config.mcToPlatformTemplate"
                     :maxlength="200"
@@ -159,13 +181,28 @@
                   <template #feedback>
                     <div class="mt-2 space-y-2">
                       <div class="flex flex-wrap gap-1">
-                        <n-tooltip v-for="tag in mcToPlatformVariables" :key="tag.value" trigger="hover">
+                        <n-tooltip
+                          v-for="tag in mcToPlatformVariables"
+                          :key="tag.value"
+                          trigger="hover"
+                        >
                           <template #trigger>
                             <n-tag
-                              :type="formData.config.mcToPlatformTemplate.includes(tag.value) ? 'primary' : 'default'"
+                              :type="
+                                formData.config.mcToPlatformTemplate.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'default'
+                              "
                               class="cursor-pointer"
                               size="small"
-                              @click="insertPlaceholder('mcToPlatformTemplate', tag.value)"
+                              @click="
+                                insertPlaceholder(
+                                  'mcToPlatformTemplate',
+                                  tag.value,
+                                )
+                              "
                             >
                               {{ tag.value }}
                             </n-tag>
@@ -192,7 +229,11 @@
                   </div>
                 </template>
 
-                <n-form-item label="模板内容" label-placement="top" path="platformToMcTemplate">
+                <n-form-item
+                  label="模板内容"
+                  label-placement="top"
+                  path="platformToMcTemplate"
+                >
                   <n-input
                     v-model:value="formData.config.platformToMcTemplate"
                     :maxlength="200"
@@ -204,13 +245,28 @@
                   <template #feedback>
                     <div class="mt-2 space-y-2">
                       <div class="flex flex-wrap gap-1">
-                        <n-tooltip v-for="tag in platformToMcVariables" :key="tag.value" trigger="hover">
+                        <n-tooltip
+                          v-for="tag in platformToMcVariables"
+                          :key="tag.value"
+                          trigger="hover"
+                        >
                           <template #trigger>
                             <n-tag
-                              :type="formData.config.platformToMcTemplate.includes(tag.value) ? 'success' : 'default'"
+                              :type="
+                                formData.config.platformToMcTemplate.includes(
+                                  tag.value,
+                                )
+                                  ? 'success'
+                                  : 'default'
+                              "
                               class="cursor-pointer"
                               size="small"
-                              @click="insertPlaceholder('platformToMcTemplate', tag.value)"
+                              @click="
+                                insertPlaceholder(
+                                  'platformToMcTemplate',
+                                  tag.value,
+                                )
+                              "
                             >
                               {{ tag.value }}
                             </n-tag>
@@ -220,7 +276,9 @@
                       </div>
                       <div class="text-sm text-gray-500">
                         预览：
-                        <n-text type="success">{{ platformToMcPreview }}</n-text>
+                        <n-text type="success">{{
+                          platformToMcPreview
+                        }}</n-text>
                       </div>
                     </div>
                   </template>
@@ -238,11 +296,20 @@
           <n-card class="h-full" size="small" title="配置群聊">
             单独对目标进行配置
             <template #footer>
-              <n-dropdown v-if="options.length" trigger="hover" :options="options" @select="handleSelect">
+              <n-dropdown
+                v-if="options.length"
+                trigger="hover"
+                :options="options"
+                @select="handleSelect"
+              >
                 <n-button>配置目标</n-button>
               </n-dropdown>
               <n-alert v-else type="warning">
-                <n-button text dashed @click="router.push(`/servers/${route.params.id}/target`)">
+                <n-button
+                  text
+                  dashed
+                  @click="router.push(`/servers/${route.params.id}/target`)"
+                >
                   你还没有创建目标哦（去创建）
                 </n-button>
               </n-alert>
@@ -253,10 +320,16 @@
     </div>
 
     <n-drawer v-model:show="drawerVisible" :width="502">
-      <n-drawer-content v-if="selectTarget" closable :title="`目标配置 · ${selectTarget.targetId || selectTarget.id}`">
+      <n-drawer-content
+        v-if="selectTarget"
+        closable
+        :title="`目标配置 · ${selectTarget.targetId || selectTarget.id}`"
+      >
         <n-form :model="selectTarget">
           <n-form-item label="是否开启此目标的聊天同步" required>
-            <n-switch v-model:value="selectTarget.config.chatSyncConfigSchema.enabled" />
+            <n-switch
+              v-model:value="selectTarget.config.chatSyncConfigSchema.enabled"
+            />
           </n-form-item>
         </n-form>
       </n-drawer-content>
@@ -265,8 +338,19 @@
     <!-- 操作按钮区 -->
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="!isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
-      <n-button :disabled="!isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button
+        :disabled="!isDirty"
+        :loading="isAnyLoading"
+        @click="cancelChanges"
+        >取消更改</n-button
+      >
+      <n-button
+        :disabled="!isDirty"
+        :loading="isAnyLoading"
+        ghost
+        type="primary"
+        @click="handleSubmit"
+      >
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -284,19 +368,30 @@
 </template>
 
 <script lang="ts" setup>
-import { isMobile } from "#imports";
+import { differenceWith, isEqual, pick } from "lodash-es";
 import type { FormInst } from "naive-ui";
 import type { z } from "zod";
-import { ChatSyncData, ServerData } from "~/composables/api";
-import { cloneDeep, differenceWith, isEqual, pick } from "lodash-es";
-import { chatSyncConfigSchema, type ChatSyncAPI, type ChatSyncConfig } from "~~/shared/schemas/server/chatSync";
-import type { targetResponse } from "~~/shared/schemas/server/target";
-import { formatMCToPlatformMessage, formatPlatformToMCMessage } from "~~/shared/utils/chatSync";
-import { zodToNaiveRules } from "~/composables/useValidation";
+import { chatSyncConfigSchema } from "~~/shared/schemas/server/chat-sync";
+import type {
+  ChatSyncAPI,
+  ChatSyncConfig,
+} from "~~/shared/schemas/server/chat-sync";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import type { targetResponse } from "~~/shared/schemas/server/target";
+import {
+  formatMCToPlatformMessage,
+  formatPlatformToMCMessage,
+} from "~~/shared/utils/chat-sync";
 import { pickEditableTarget } from "~~/shared/utils/target";
-import { createVariablesArray, createVariableMap } from "~/composables/usePlaceholderVariables";
-import ServerHeader from "~/components/Header/ServerHeader.vue";
+
+import { isMobile } from "#imports";
+import ServerHeader from "@/components/header/server-header.vue";
+import { ChatSyncData, ServerData } from "~/composables/api";
+import {
+  createVariablesArray,
+  createVariableMap,
+} from "~/composables/use-placeholder-variables";
+import { zodToNaiveRules } from "~/composables/use-validation";
 
 const { setPageState, clearPageState } = usePageStateStore();
 
@@ -310,21 +405,26 @@ const message = useMessage();
 const formRef = ref<FormInst>();
 const formData = reactive<FormState>({
   config: chatSyncConfigSchema.parse({}),
-  targets: []
+  targets: [],
 });
 const rules = zodToNaiveRules(chatSyncConfigSchema);
 
-function createArrayTextComputed(key: "blacklistKeywords" | "blacklistRegex" | "whitelistPrefixes" | "whitelistRegex") {
-  return computed({
+const createArrayTextComputed = (
+  key:
+    | "blacklistKeywords"
+    | "blacklistRegex"
+    | "whitelistPrefixes"
+    | "whitelistRegex",
+) =>
+  computed({
     get: () => (formData.config.filters[key] || []).join(","),
     set: (v: string) => {
       formData.config.filters[key] = v
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-    }
+    },
   });
-}
 
 const blacklistKeywordsText = createArrayTextComputed("blacklistKeywords");
 const blacklistRegexText = createArrayTextComputed("blacklistRegex");
@@ -344,7 +444,7 @@ const originalFormData = ref<FormState | null>(null);
 
 const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false
+  isSubmitting: false,
 });
 
 const isDirty = computed(() => !isEqual(formData, originalFormData.value));
@@ -352,82 +452,94 @@ const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
 const options = ref<{ label: string; key: string }[]>([]);
 
-function handleSelect(key: string) {
+const handleSelect = (key: string) => {
   drawerVisible.value = true;
   const selected = serverData?.targets.find((t) => t.id === key) || null;
   if (selected) {
     const editable = pickEditableTarget(selected, formData.targets);
     selectTarget.value = editable;
   }
-}
+};
 
 // 占位符变量定义
 const MC_TO_PLATFORM_VARIABLES_MAP = createVariableMap({
-  "{playerName}": { label: "玩家名", example: "Steve" },
-  "{playerUUID}": { label: "玩家 UUID", example: "12345678-1234-1234..." },
-  "{message}": { label: "消息内容", example: "Hello world!" },
-  "{serverName}": { label: "服务器名", example: "" },
-  "{timestamp}": { label: "时间戳", example: new Date().getTime() }
+  "{message}": { example: "Hello world!", label: "消息内容" },
+  "{playerName}": { example: "Steve", label: "玩家名" },
+  "{playerUUID}": { example: "12345678-1234-1234...", label: "玩家 UUID" },
+  "{serverName}": { example: "", label: "服务器名" },
+  "{timestamp}": { example: Date.now(), label: "时间戳" },
 });
 
 const PLATFORM_TO_MC_VARIABLES_MAP = createVariableMap({
-  "{platform}": { label: "平台名", example: "Onebot" },
-  "{nickname}": { label: "昵称", example: "Alice" },
-  "{userId}": { label: "用户 ID", example: "123456789" },
-  "{message}": { label: "消息内容", example: "Hi everyone!" },
-  "{timestamp}": { label: "时间戳", example: new Date().getTime() }
+  "{message}": { example: "Hi everyone!", label: "消息内容" },
+  "{nickname}": { example: "Alice", label: "昵称" },
+  "{platform}": { example: "Onebot", label: "平台名" },
+  "{timestamp}": { example: Date.now(), label: "时间戳" },
+  "{userId}": { example: "123456789", label: "用户 ID" },
 });
 
-const mcToPlatformVariables = computed(() => createVariablesArray(MC_TO_PLATFORM_VARIABLES_MAP));
-const platformToMcVariables = computed(() => createVariablesArray(PLATFORM_TO_MC_VARIABLES_MAP));
+const mcToPlatformVariables = computed(() =>
+  createVariablesArray(MC_TO_PLATFORM_VARIABLES_MAP),
+);
+const platformToMcVariables = computed(() =>
+  createVariablesArray(PLATFORM_TO_MC_VARIABLES_MAP),
+);
 
 const mcToPlatformPreview = computed(() =>
   formatMCToPlatformMessage(formData.config.mcToPlatformTemplate, {
+    message: MC_TO_PLATFORM_VARIABLES_MAP["{message}"].example,
     playerName: MC_TO_PLATFORM_VARIABLES_MAP["{playerName}"].example,
     playerUUID: MC_TO_PLATFORM_VARIABLES_MAP["{playerUUID}"].example,
-    message: MC_TO_PLATFORM_VARIABLES_MAP["{message}"].example,
     serverName: serverData?.name ?? "",
-    timestamp: MC_TO_PLATFORM_VARIABLES_MAP["{timestamp}"].example
-  })
+    timestamp: MC_TO_PLATFORM_VARIABLES_MAP["{timestamp}"].example,
+  }),
 );
 
 const platformToMcPreview = computed(() =>
   formatPlatformToMCMessage(formData.config.platformToMcTemplate, {
-    platform: PLATFORM_TO_MC_VARIABLES_MAP["{platform}"].example,
-    nickname: PLATFORM_TO_MC_VARIABLES_MAP["{nickname}"].example,
-    userId: PLATFORM_TO_MC_VARIABLES_MAP["{userId}"].example,
     message: PLATFORM_TO_MC_VARIABLES_MAP["{message}"].example,
-    timestamp: PLATFORM_TO_MC_VARIABLES_MAP["{timestamp}"].example
-  })
+    nickname: PLATFORM_TO_MC_VARIABLES_MAP["{nickname}"].example,
+    platform: PLATFORM_TO_MC_VARIABLES_MAP["{platform}"].example,
+    timestamp: PLATFORM_TO_MC_VARIABLES_MAP["{timestamp}"].example,
+    userId: PLATFORM_TO_MC_VARIABLES_MAP["{userId}"].example,
+  }),
 );
 
-function insertPlaceholder(
-  field: keyof Pick<ChatSyncConfig, "mcToPlatformTemplate" | "platformToMcTemplate">,
-  placeholder: string
-) {
+const insertPlaceholder = (
+  field: keyof Pick<
+    ChatSyncConfig,
+    "mcToPlatformTemplate" | "platformToMcTemplate"
+  >,
+  placeholder: string,
+) => {
   const current = formData.config[field] || "";
   formData.config[field] = current + placeholder;
-}
+};
 
-async function refreshServerData(): Promise<void> {
-  if (!route.params?.id) return;
+const refreshServerData = async (): Promise<void> => {
+  if (!route.params?.id) {
+    return;
+  }
   loadingMap.isLoading = true;
   try {
     const data = await ServerData.get(Number(route.params["id"]));
     serverData = data;
-    formData.config = cloneDeep(data.chatSyncConfig);
-    formData.targets = cloneDeep(data.targets);
-    originalFormData.value = cloneDeep(formData);
-    options.value = data.targets.map((target) => ({ label: target.targetId, key: target.id }));
+    formData.config = structuredClone(data.chatSyncConfig);
+    formData.targets = structuredClone(data.targets);
+    originalFormData.value = structuredClone(toRaw(formData));
+    options.value = data.targets.map((target) => ({
+      key: target.id,
+      label: target.targetId,
+    }));
   } catch (error) {
     console.error("Failed to refresh server data:", error);
     message.error("刷新服务器数据失败");
   } finally {
     loadingMap.isLoading = false;
   }
-}
+};
 
-async function handleSubmit() {
+const handleSubmit = async () => {
   if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
@@ -439,15 +551,19 @@ async function handleSubmit() {
     return;
   }
 
-  const targetsPayload: z.infer<typeof ChatSyncAPI.PATCH.request>["targets"] = differenceWith(
-    formData.targets,
-    originalFormData.value?.targets || [],
-    isEqual
-  ).map((t) => pick(t, ["id", "config"]));
+  const targetsPayload: z.infer<typeof ChatSyncAPI.PATCH.request>["targets"] =
+    differenceWith(
+      formData.targets,
+      originalFormData.value?.targets || [],
+      isEqual,
+    ).map((t) => pick(t, ["id", "config"]));
 
   loadingMap.isSubmitting = true;
   try {
-    await ChatSyncData.patch(Number(route.params["id"]), { chatsync: formData.config, targets: targetsPayload });
+    await ChatSyncData.patch(Number(route.params["id"]), {
+      chatsync: formData.config,
+      targets: targetsPayload,
+    });
     message.success("消息同步配置已保存");
     selectTarget.value = null;
     await refreshServerData();
@@ -456,18 +572,18 @@ async function handleSubmit() {
   } finally {
     loadingMap.isSubmitting = false;
   }
-}
+};
 
-function cancelChanges() {
+const cancelChanges = () => {
   if (originalFormData.value) {
-    formData.config = cloneDeep(originalFormData.value.config);
-    formData.targets = cloneDeep(originalFormData.value.targets);
+    formData.config = structuredClone(toRaw(originalFormData.value.config));
+    formData.targets = structuredClone(toRaw(originalFormData.value.targets));
   } else {
     formData.config = chatSyncConfigSchema.parse({});
     formData.targets = [];
   }
   selectTarget.value = null;
-}
+};
 
 onMounted(async () => {
   await refreshServerData();

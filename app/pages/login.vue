@@ -2,11 +2,13 @@
 import { LockClosedOutline, LogInOutline } from "@vicons/ionicons5";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
-import { LoginAPI, type LoginBody } from "~~/shared/schemas/auth";
+import { LoginAPI } from "~~/shared/schemas/auth";
+import type { LoginBody } from "~~/shared/schemas/auth";
+
 import { useAuthStore } from "#imports";
 
 definePageMeta({
-  layout: false
+  layout: false,
 });
 
 const message = useMessage();
@@ -17,7 +19,7 @@ const rules = zodToNaiveRules(LoginAPI.POST.request);
 // 表单数据
 const credentials = reactive<LoginBody>({
   password: "",
-  twoFactorToken: undefined
+  twoFactorToken: undefined,
 });
 
 const needsTwoFactor = ref(false);
@@ -44,7 +46,9 @@ const handleLogin = async () => {
     console.error("Login failed:", error);
 
     const errorMessage =
-      error instanceof FetchError ? (error.data as ApiErrorResponse).message : "无效的凭据，请重试。";
+      error instanceof FetchError
+        ? (error.data as ApiErrorResponse).message
+        : "无效的凭据，请重试。";
 
     if (errorMessage.includes("2FA") || errorMessage.includes("双重")) {
       needsTwoFactor.value = true;
@@ -64,7 +68,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex min-h-[calc(100vh-var(--header-height))] items-center justify-center h-screen">
+  <div
+    class="flex h-screen min-h-[calc(100vh-var(--header-height))] items-center justify-center"
+  >
     <n-card class="w-full max-w-md">
       <template #header>
         <div class="flex items-center gap-2">
@@ -75,9 +81,16 @@ onMounted(async () => {
 
       <n-spin :show="isLoading">
         <n-space vertical size="large">
-          <n-alert type="info">此实例已启用密码保护，请输入密码以继续访问。</n-alert>
+          <n-alert type="info"
+            >此实例已启用密码保护，请输入密码以继续访问。</n-alert
+          >
 
-          <n-form :model="credentials" :rules="rules" label-width="80px" @submit.prevent="handleLogin">
+          <n-form
+            :model="credentials"
+            :rules="rules"
+            label-width="80px"
+            @submit.prevent="handleLogin"
+          >
             <n-form-item label="密码">
               <n-input
                 v-model:value="credentials.password"
@@ -90,7 +103,12 @@ onMounted(async () => {
             </n-form-item>
 
             <n-form-item v-if="useAuthStore().has2FA" label="双重验证码">
-              <n-input-otp v-model:value="twoFactorInput" :length="6" block :disabled="isLoading" />
+              <n-input-otp
+                v-model:value="twoFactorInput"
+                :length="6"
+                block
+                :disabled="isLoading"
+              />
             </n-form-item>
           </n-form>
 

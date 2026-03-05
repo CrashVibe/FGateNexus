@@ -1,36 +1,34 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
-import { chatBridge } from "~~/server/service/chatbridge/chatbridge";
+import { chatBridge } from "~~/server/service/chatbridge";
 import { AdapterAPI } from "~~/shared/schemas/adapter";
+
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
 
 export default defineEventHandler(async (event) => {
   try {
     const adapterID = Number(getRouterParam(event, "id"));
 
-    if (isNaN(adapterID)) {
+    if (Number.isNaN(adapterID)) {
       const apiError = ApiError.validation("无效的适配器 ID");
       return createErrorResponse(event, apiError);
     }
 
     const adapter = await db.query.adapters.findFirst({
-      where: eq(adapters.id, adapterID)
+      where: eq(adapters.id, adapterID),
     });
 
     if (!adapter) {
       const apiError = ApiError.database("未能找到适配器");
       return createErrorResponse(event, apiError);
     }
-    let isOnline = false;
-    if (!chatBridge.getConnectionData(adapter.id)) {
-      isOnline = false;
-    } else {
-      isOnline = chatBridge.isOnline(adapter.id);
-    }
+    const isOnline = chatBridge.getConnectionData(adapter.id)
+      ? chatBridge.isOnline(adapter.id)
+      : false;
 
     return createApiResponse(
       event,
@@ -38,11 +36,13 @@ export default defineEventHandler(async (event) => {
       StatusCodes.OK,
       AdapterAPI.GET.response.parse({
         ...adapter,
-        isOnline
-      })
+        isOnline,
+      }),
     );
   } catch {
-    const apiError = ApiError.internal(`获取 ${Number(getRouterParam(event, "id"))} 适配器失败`);
+    const apiError = ApiError.internal(
+      `获取 ${Number(getRouterParam(event, "id"))} 适配器失败`,
+    );
     return createErrorResponse(event, apiError);
   }
 });

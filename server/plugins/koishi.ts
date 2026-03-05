@@ -1,6 +1,6 @@
-import { chatBridge } from "../service/chatbridge/chatbridge";
-export default defineNitroPlugin(async (nitro) => {
-  await chatBridge.init();
+import { chatBridge } from "~~/server/service/chatbridge";
+export default defineNitroPlugin((nitro) => {
+  void chatBridge.init();
 
   nitro.hooks.hook("close", async () => {
     logger.info("正在关闭 Koishi...");

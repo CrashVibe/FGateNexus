@@ -10,34 +10,45 @@ import { createApiResponse } from "~~/shared/types";
 export default defineEventHandler(async (event) => {
   try {
     const serverID = Number(getRouterParam(event, "id"));
-    if (Number.isNaN(serverID)) return createErrorResponse(event, ApiError.validation("无效服务器 ID"));
+    if (Number.isNaN(serverID)) {
+      return createErrorResponse(event, ApiError.validation("无效服务器 ID"));
+    }
 
     const parsed = TargetAPI.POST.request.safeParse(await readBody(event));
     if (!parsed.success) {
-      return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
+      return createErrorResponse(
+        event,
+        ApiError.validation("请求体格式不正确"),
+        parsed.error,
+      );
     }
 
     const serverExists = await db.query.servers.findFirst({
-      where: (s, { eq }) => eq(s.id, serverID)
+      where: (s, { eq }) => eq(s.id, serverID),
     });
     if (!serverExists) {
       return createErrorResponse(event, ApiError.notFound("服务器不存在"));
     }
 
     const nowValues = parsed.data.map((p) => ({
+      config: TargetConfigSchema.parse({}),
+      enabled: p.enabled,
       id: uuidv4(),
       serverId: serverID,
       targetId: p.targetId,
       type: p.type,
-      enabled: p.enabled,
-      config: TargetConfigSchema.parse({})
     }));
 
     const inserted = await db.insert(targets).values(nowValues).returning();
 
-    return createApiResponse(event, "批量创建目标成功", StatusCodes.CREATED, TargetAPI.POST.response.parse(inserted));
-  } catch (err) {
-    logger.error({ err }, "Database error");
+    return createApiResponse(
+      event,
+      "批量创建目标成功",
+      StatusCodes.CREATED,
+      TargetAPI.POST.response.parse(inserted),
+    );
+  } catch (error) {
+    logger.error({ error }, "Database error");
     return createErrorResponse(event, ApiError.database("批量创建目标失败"));
   }
 });

@@ -3,10 +3,20 @@
     <div class="error-page">
       <canvas ref="canvasRef" class="background-canvas" />
 
-      <n-result status="404" title="404 资源不存在" description="这里！什么也没有...一片虚无，去别处转转吧">
+      <n-result
+        status="404"
+        title="404 资源不存在"
+        description="这里！什么也没有...一片虚无，去别处转转吧"
+      >
         <template #footer>
           <n-space>
-            <n-button type="primary" ghost size="large" :loading="navigating" @click="handleGoHome">
+            <n-button
+              type="primary"
+              ghost
+              size="large"
+              :loading="navigating"
+              @click="handleGoHome"
+            >
               <template #icon>
                 <n-icon :component="HomeOutline" />
               </template>
@@ -29,17 +39,21 @@
 <script setup lang="ts">
 import { ArrowBackOutline, HomeOutline } from "@vicons/ionicons5";
 import { useColorMode } from "@vueuse/core";
-import { darkTheme, type GlobalTheme } from "naive-ui";
+import { darkTheme } from "naive-ui";
+import type { GlobalTheme } from "naive-ui";
 
 const navigating = ref(false);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const colorMode = useColorMode();
 
-const theme = ref<GlobalTheme | null>(colorMode.value === "dark" ? darkTheme : null);
+const theme = ref<GlobalTheme | null>(
+  colorMode.value === "dark" ? darkTheme : null,
+);
 
 watch(colorMode, async (mode) => {
-  await nextTick(); // 不加这个会没有自带的过渡效果
+  // 不加这个会没有自带的过渡效果
+  await nextTick();
   theme.value = mode === "dark" ? darkTheme : null;
 });
 
@@ -59,7 +73,7 @@ const particles: Particle[] = [];
 
 // 页面标题
 useHead({
-  title: "404 - 页面未找到 | FGate"
+  title: "404 - 页面未找到 | FGate",
 });
 
 // 返回首页
@@ -84,10 +98,14 @@ const handleGoBack = () => {
 // 初始化 Canvas 动画
 const initCanvas = () => {
   const canvas = canvasRef.value;
-  if (!canvas) return;
+  if (!canvas) {
+    return;
+  }
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) {
+    return;
+  }
 
   // 设置 Canvas 尺寸
   const resizeCanvas = () => {
@@ -101,17 +119,20 @@ const initCanvas = () => {
   // 创建粒子
   const createParticles = () => {
     particles.length = 0;
-    const particleCount = Math.min(50, Math.floor((canvas.width * canvas.height) / 15000));
+    const particleCount = Math.min(
+      50,
+      Math.floor((canvas.width * canvas.height) / 15_000),
+    );
 
-    for (let i = 0; i < particleCount; i++) {
+    for (let i = 0; i < particleCount; i += 1) {
       particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
+        color: theme.value === darkTheme ? "#18a058" : "#36ad6a",
+        opacity: Math.random() * 0.5 + 0.1,
+        size: Math.random() * 3 + 1,
         vx: (Math.random() - 0.5) * 0.5,
         vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * 3 + 1,
-        opacity: Math.random() * 0.5 + 0.1,
-        color: theme.value === darkTheme ? "#18a058" : "#36ad6a"
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
       });
     }
   };
@@ -122,14 +143,18 @@ const initCanvas = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 更新和绘制粒子
-    particles.forEach((particle, index) => {
+    for (const [index, particle] of particles.entries()) {
       // 更新位置
       particle.x += particle.vx;
       particle.y += particle.vy;
 
       // 边界检查
-      if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-      if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+      if (particle.x < 0 || particle.x > canvas.width) {
+        particle.vx *= -1;
+      }
+      if (particle.y < 0 || particle.y > canvas.height) {
+        particle.vy *= -1;
+      }
 
       // 确保粒子在画布内
       particle.x = Math.max(0, Math.min(canvas.width, particle.x));
@@ -145,12 +170,14 @@ const initCanvas = () => {
       ctx.restore();
 
       // 绘制连线
-      particles.forEach((otherParticle, otherIndex) => {
-        if (index >= otherIndex) return;
+      for (const [otherIndex, otherParticle] of particles.entries()) {
+        if (index >= otherIndex) {
+          continue;
+        }
 
         const dx = particle.x - otherParticle.x;
         const dy = particle.y - otherParticle.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distance = Math.hypot(dx, dy);
 
         if (distance < 100) {
           ctx.save();
@@ -163,8 +190,8 @@ const initCanvas = () => {
           ctx.stroke();
           ctx.restore();
         }
-      });
-    });
+      }
+    }
 
     animationId = requestAnimationFrame(animate);
   };
@@ -175,10 +202,10 @@ const initCanvas = () => {
   watch(
     () => theme.value,
     () => {
-      particles.forEach((particle) => {
+      for (const particle of particles) {
         particle.color = theme.value === darkTheme ? "#18a058" : "#36ad6a";
-      });
-    }
+      }
+    },
   );
 
   // 清理函数

@@ -1,44 +1,67 @@
 <script lang="ts" setup>
 import { AddCircleOutline, RefreshOutline } from "@vicons/ionicons5";
+import { cloneDeep } from "lodash-es";
 import type { FormInst } from "naive-ui";
-import { AdapterAPI, AdapterType, type AdaptersWithStatus, type AdapterWithStatus } from "~~/shared/schemas/adapter";
+import type { z } from "zod";
+import { AdapterAPI, AdapterType } from "~~/shared/schemas/adapter";
+import type {
+  AdaptersWithStatus,
+  AdapterWithStatus,
+} from "~~/shared/schemas/adapter";
+
 import { CardAdapter } from "#components";
 import { isMobile } from "#imports";
+import PageHeader from "@/components/header/page-header.vue";
 import { AdapterData } from "~/composables/api";
-import type z from "zod";
-import { cloneDeep } from "lodash-es";
-import PageHeader from "~/components/Header/PageHeader.vue";
 
 // 选取适配器组件
 const adapterComponentMap: Record<AdapterType, Component> = {
-  [AdapterType.Onebot]: CardAdapter
+  [AdapterType.Onebot]: CardAdapter,
 };
-function getAdapterComponent(adapterType: AdapterType): Component {
-  return adapterComponentMap[adapterType];
-}
+const getAdapterComponent = (adapterType: AdapterType): Component =>
+  adapterComponentMap[adapterType];
 
 const formRef = ref<FormInst>();
 
 const formData = ref<Partial<z.infer<typeof AdapterAPI.POST.request>>>({
-  type: undefined,
   config: undefined,
-  name: undefined
+  name: undefined,
+  type: undefined,
 });
 const isSubmitting = ref(false);
 const message = useMessage();
 const showModal = ref(false);
 
-function openModal() {
+const openModal = () => {
   showModal.value = true;
   formData.value = {
-    type: undefined,
+    config: undefined,
     name: undefined,
-    config: undefined
+    type: undefined,
   };
-}
+};
 
-async function handleSubmitClick() {
-  if (isSubmitting.value) return;
+// 适配器列表逻辑
+const adapterList = ref<AdaptersWithStatus>([]);
+const isLoadingList = ref(false);
+
+const fetchAdapterList = async () => {
+  try {
+    isLoadingList.value = true;
+    const adapter_data = await AdapterData.gets();
+    adapterList.value = adapter_data;
+  } catch (error) {
+    console.error("Failed to fetch server list:", error);
+    message.error("获取适配器列表失败");
+  } finally {
+    isLoadingList.value = false;
+  }
+};
+
+const handleSubmitClick = async () => {
+  if (isSubmitting.value) {
+    return;
+  }
 
   try {
     isSubmitting.value = true;
@@ -53,9 +76,9 @@ async function handleSubmitClick() {
       const parsed = AdapterAPI.POST.request.parse(formData.value);
 
       await AdapterData.post({
-        type: parsed.type,
         config: parsed.config,
-        name: parsed.name
+        name: parsed.name,
+        type: parsed.type,
       });
 
       message.success("Bot 实例创建成功");
@@ -68,28 +91,11 @@ async function handleSubmitClick() {
   } finally {
     isSubmitting.value = false;
   }
-}
+};
 
-// 适配器列表逻辑
-const adapterList = ref<AdaptersWithStatus>([]);
-const isLoadingList = ref(false);
-
-async function fetchAdapterList() {
-  try {
-    isLoadingList.value = true;
-    const adapter_data = await AdapterData.gets();
-    adapterList.value = adapter_data;
-  } catch (error) {
-    console.error("Failed to fetch server list:", error);
-    message.error("获取适配器列表失败");
-  } finally {
-    isLoadingList.value = false;
-  }
-}
-
-async function handleRefresh() {
+const handleRefresh = async () => {
   await fetchAdapterList();
-}
+};
 
 onMounted(() => {
   fetchAdapterList();
@@ -99,16 +105,19 @@ onMounted(() => {
 const showDrawer = ref(false);
 const selectedAdapter = ref<AdapterWithStatus | null>(null);
 
-function handleChildClick(adapterID: number) {
-  const adapter = adapterList.value.find((adapter) => adapter.id === adapterID);
+const handleChildClick = (adapterID: number) => {
+  const adapter = adapterList.value.find((item) => item.id === adapterID);
   if (adapter) {
     selectedAdapter.value = adapter;
     showDrawer.value = true;
   }
-}
+};
 
 // 修改
-async function handleSave(adapterID: number, adapter: z.infer<typeof AdapterAPI.POST.request>) {
+const handleSave = async (
+  adapterID: number,
+  adapter: z.infer<typeof AdapterAPI.POST.request>,
+) => {
   try {
     await AdapterData.put(adapterID, adapter);
   } catch {
@@ -118,10 +127,10 @@ async function handleSave(adapterID: number, adapter: z.infer<typeof AdapterAPI.
   message.success("Bot 实例更新成功");
   showDrawer.value = false;
   await fetchAdapterList();
-}
+};
 
 // 删除
-async function handleDelete(adapterID: number) {
+const handleDelete = async (adapterID: number) => {
   try {
     await AdapterData.delete(adapterID);
   } catch {
@@ -131,13 +140,13 @@ async function handleDelete(adapterID: number) {
   message.success("Bot 实例删除成功");
   showDrawer.value = false;
   await fetchAdapterList();
-}
+};
 
 // 更改
-async function handleToggle(adapterID: number, enabled: boolean) {
+const handleToggle = async (adapterID: number, enabled: boolean) => {
   try {
     await AdapterData.postToggle(adapterID, {
-      enabled
+      enabled,
     });
   } catch {
     message.error("操作失败，请检查后端日志");
@@ -147,16 +156,24 @@ async function handleToggle(adapterID: number, enabled: boolean) {
   message.success(`Bot 实例已${enabled ? "启用" : "禁用"}成功`);
   showDrawer.value = false;
   await fetchAdapterList();
-}
+};
 </script>
 <template>
   <div class="flex h-full flex-col gap-3">
     <!-- head -->
     <div>
-      <PageHeader title="Bot 实例列表" description="管理多个 Bot 实例，点击进入详细配置。">
+      <PageHeader
+        title="Bot 实例列表"
+        description="管理多个 Bot 实例，点击进入详细配置。"
+      >
         <template #actions>
           <div class="flex flex-wrap gap-2 sm:gap-3">
-            <n-button :loading="isLoadingList" size="large" strong @click="handleRefresh">
+            <n-button
+              :loading="isLoadingList"
+              size="large"
+              strong
+              @click="handleRefresh"
+            >
               刷新列表
               <template #icon>
                 <n-icon :component="RefreshOutline" />
@@ -174,12 +191,25 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     </div>
     <!-- modal 创建区 -->
     <div>
-      <n-modal v-model:show="showModal" class="w-[90vw] max-w-150" preset="card" title="创建 Bot 实例">
+      <n-modal
+        v-model:show="showModal"
+        class="w-[90vw] max-w-150"
+        preset="card"
+        title="创建 Bot 实例"
+      >
         <selector-bot ref="botSelectorRef" v-model="formData" />
         <template #action>
           <div class="flex justify-end gap-2">
-            <n-button :disabled="isSubmitting" @click="showModal = false">取消</n-button>
-            <n-button :disabled="isSubmitting" :loading="isSubmitting" ghost type="primary" @click="handleSubmitClick">
+            <n-button :disabled="isSubmitting" @click="showModal = false"
+              >取消</n-button
+            >
+            <n-button
+              :disabled="isSubmitting"
+              :loading="isSubmitting"
+              ghost
+              type="primary"
+              @click="handleSubmitClick"
+            >
               确认创建
             </n-button>
           </div>
@@ -188,7 +218,11 @@ async function handleToggle(adapterID: number, enabled: boolean) {
     </div>
     <!-- Content -->
     <div class="flex-1">
-      <n-empty v-if="adapterList.length === 0" class="mt-6 sm:mt-10" description="暂无 Bot 实例，请先创建一个 Bot 实例">
+      <n-empty
+        v-if="adapterList.length === 0"
+        class="mt-6 sm:mt-10"
+        description="暂无 Bot 实例，请先创建一个 Bot 实例"
+      >
         <template #extra>
           <n-button size="medium" type="primary" @click="openModal">
             创建新 Bot 实例
@@ -198,8 +232,15 @@ async function handleToggle(adapterID: number, enabled: boolean) {
           </n-button>
         </template>
       </n-empty>
-      <n-grid :cols="isMobile ? 1 : '600:2 1100:3 1600:4'" x-gap="16" y-gap="16">
-        <n-gi v-for="(adapter, index) in adapterList || []" :key="adapterList.indexOf(adapter)">
+      <n-grid
+        :cols="isMobile ? 1 : '600:2 1100:3 1600:4'"
+        x-gap="16"
+        y-gap="16"
+      >
+        <n-gi
+          v-for="(adapter, index) in adapterList || []"
+          :key="adapterList.indexOf(adapter)"
+        >
           <component
             :is="getAdapterComponent(adapter.type)"
             :adapter="adapter"

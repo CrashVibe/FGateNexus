@@ -3,7 +3,7 @@
     <div
       :class="[
         'cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl',
-        { 'grayscale-[0.8]': !adapter.isOnline }
+        { 'grayscale-[0.8]': !adapter.isOnline },
       ]"
       @click="emit('click', adapter.id)"
     >
@@ -13,7 +13,11 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <n-text class="text-lg" strong># {{ adapter.id }}</n-text>
-              <n-tag :bordered="false" :type="adapter.isOnline ? 'success' : 'error'" size="small">
+              <n-tag
+                :bordered="false"
+                :type="adapter.isOnline ? 'success' : 'error'"
+                size="small"
+              >
                 {{ adapter.isOnline ? "在线" : "离线" }}
               </n-tag>
               <n-text>{{ adapter.type }}</n-text>
@@ -21,17 +25,25 @@
           </div>
 
           <div class="flex items-center justify-center">
-            <n-text class="text-primary text-2xl" strong>{{ adapter.name || adapter.type }}</n-text>
+            <n-text class="text-primary text-2xl" strong>{{
+              adapter.name || adapter.type
+            }}</n-text>
           </div>
 
           <div class="flex items-center justify-between text-sm">
             <n-text depth="2">适配器开关</n-text>
-            <n-tag :bordered="false" :type="adapter.isOnline ? 'success' : 'warning'" size="small">
+            <n-tag
+              :bordered="false"
+              :type="adapter.isOnline ? 'success' : 'warning'"
+              size="small"
+            >
               {{ adapter.enabled ? "启用" : "禁用" }}
             </n-tag>
           </div>
 
-          <n-text class="text-right text-xs opacity-70 select-none" depth="3">点击卡片修改配置</n-text>
+          <n-text class="text-right text-xs opacity-70 select-none" depth="3"
+            >点击卡片修改配置</n-text
+          >
         </div>
       </n-card>
     </div>
@@ -41,11 +53,13 @@
 <script lang="ts" setup>
 import type { AdapterWithStatus } from "#shared/schemas/adapter";
 
-defineProps<{
+const { adapter } = defineProps<{
   adapter: AdapterWithStatus;
 }>();
 
-const emit = defineEmits(["click"]);
+const emit = defineEmits<{
+  click: [id: number];
+}>();
 </script>
 
 <style scoped>

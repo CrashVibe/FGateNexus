@@ -2,66 +2,66 @@ import type { GlobalThemeOverrides } from "naive-ui";
 
 /** tailwindcss 字体大小统一至 NaiveUI */
 const componentThemeOverrides: GlobalThemeOverrides = {
-  DataTable: {
-    fontSizeSmall: "12px",
-    fontSizeMedium: "14px",
-    fontSizeLarge: "14px",
-    thFontWeight: "500"
-  },
-  Form: {
-    labelFontSizeTopSmall: "12px",
-    labelFontSizeTopMedium: "14px",
-    labelFontSizeTopLarge: "14px",
-    labelFontSizeLeftSmall: "12px",
-    labelFontSizeLeftMedium: "14px",
-    labelFontSizeLeftLarge: "14px",
-    feedbackFontSizeSmall: "12px",
-    feedbackFontSizeMedium: "12px",
-    feedbackFontSizeLarge: "14px"
-  },
-  Input: {
-    fontSizeSmall: "12px",
-    fontSizeMedium: "14px",
-    fontSizeLarge: "14px"
-  },
   Button: {
-    fontSizeSmall: "12px",
-    fontSizeMedium: "14px",
     fontSizeLarge: "14px",
-    fontSizeTiny: "12px"
+    fontSizeMedium: "14px",
+    fontSizeSmall: "12px",
+    fontSizeTiny: "12px",
   },
   Card: {
-    fontSizeSmall: "14px",
-    fontSizeMedium: "14px",
     fontSizeLarge: "14px",
-    titleFontSizeSmall: "16px",
+    fontSizeMedium: "14px",
+    fontSizeSmall: "14px",
+    titleFontSizeLarge: "18px",
     titleFontSizeMedium: "18px",
-    titleFontSizeLarge: "18px"
+    titleFontSizeSmall: "16px",
   },
-  Tag: {
+  DataTable: {
+    fontSizeLarge: "14px",
+    fontSizeMedium: "14px",
     fontSizeSmall: "12px",
-    fontSizeMedium: "12px",
-    fontSizeLarge: "14px"
+    thFontWeight: "500",
+  },
+  Form: {
+    feedbackFontSizeLarge: "14px",
+    feedbackFontSizeMedium: "12px",
+    feedbackFontSizeSmall: "12px",
+    labelFontSizeLeftLarge: "14px",
+    labelFontSizeLeftMedium: "14px",
+    labelFontSizeLeftSmall: "12px",
+    labelFontSizeTopLarge: "14px",
+    labelFontSizeTopMedium: "14px",
+    labelFontSizeTopSmall: "12px",
+  },
+  Input: {
+    fontSizeLarge: "14px",
+    fontSizeMedium: "14px",
+    fontSizeSmall: "12px",
   },
   Select: {
-    fontSizeSmall: "12px",
+    fontSizeLarge: "14px",
     fontSizeMedium: "14px",
-    fontSizeLarge: "14px"
+    fontSizeSmall: "12px",
   },
   Tabs: {
-    tabFontSizeSmall: "12px",
+    tabFontSizeLarge: "14px",
     tabFontSizeMedium: "14px",
-    tabFontSizeLarge: "14px"
-  }
+    tabFontSizeSmall: "12px",
+  },
+  Tag: {
+    fontSizeLarge: "14px",
+    fontSizeMedium: "12px",
+    fontSizeSmall: "12px",
+  },
 };
 
 /** NaiveUI 主题 */
 export const themeOverrides: GlobalThemeOverrides = {
-  common: {
-    borderRadius: "4px"
-  },
   LoadingBar: {
-    height: "4px"
+    height: "4px",
   },
-  ...componentThemeOverrides
+  common: {
+    borderRadius: "4px",
+  },
+  ...componentThemeOverrides,
 };

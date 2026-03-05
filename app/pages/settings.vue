@@ -1,41 +1,56 @@
 <script lang="ts" setup>
-import { validatePasswordStrength } from "#shared/utils/password";
 import { FetchError } from "ofetch";
 import type { ApiErrorResponse } from "~~/shared/error";
 import type { ApiResponse } from "~~/shared/types";
-import PageHeader from "~/components/Header/PageHeader.vue";
+
+import { validatePasswordStrength } from "#shared/utils/password";
+import PageHeader from "@/components/header/page-header.vue";
 
 definePageMeta({
-  layout: "default"
+  layout: "default",
 });
 
-const checkAuthStatus = useAuthStore().checkAuthStatus;
+const { checkAuthStatus } = useAuthStore();
 const message = useMessage();
 const isLoading = ref(false);
 
 const passwordForm = reactive({
+  confirmPassword: "",
   currentPassword: "",
   newPassword: "",
-  confirmPassword: ""
 });
 
 const passwordStrength = computed(() => {
-  if (!passwordForm.newPassword) return null;
+  if (!passwordForm.newPassword) {
+    return null;
+  }
   return validatePasswordStrength(passwordForm.newPassword);
 });
 
 const strengthColor = computed(() => {
-  if (!passwordStrength.value) return "default";
-  const score = passwordStrength.value.score;
-  if (score === 0) return "error";
-  if (score === 1) return "warning";
-  if (score === 2) return "default";
-  if (score === 3) return "info";
+  if (!passwordStrength.value) {
+    return "default";
+  }
+  const { score } = passwordStrength.value;
+  if (score === 0) {
+    return "error";
+  }
+  if (score === 1) {
+    return "warning";
+  }
+  if (score === 2) {
+    return "default";
+  }
+  if (score === 3) {
+    return "info";
+  }
   return "success";
 });
 
 const strengthText = computed(() => {
-  if (!passwordStrength.value) return "";
+  if (!passwordStrength.value) {
+    return "";
+  }
   const labels = ["很弱", "弱", "一般", "强", "很强"];
   return labels[passwordStrength.value.score] || "";
 });
@@ -43,11 +58,11 @@ const strengthText = computed(() => {
 const twoFAForm = reactive({
   keyuri: "",
   secret: "",
-  token: [] as string[]
+  token: [] as string[],
 });
 
 const deletePasswordForm = reactive({
-  currentPassword: ""
+  currentPassword: "",
 });
 
 const showPasswordForm = ref(false);
@@ -68,15 +83,19 @@ const handleSetPassword = async () => {
   try {
     isLoading.value = true;
     await $fetch<ApiResponse<void>>("/api/auth/password", {
-      method: "POST",
       body: {
         currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
-      }
+        newPassword: passwordForm.newPassword,
+      },
+      method: "POST",
     });
     message.success("密码设置成功，请重新登录");
     showPasswordForm.value = false;
-    Object.assign(passwordForm, { currentPassword: "", newPassword: "", confirmPassword: "" });
+    Object.assign(passwordForm, {
+      confirmPassword: "",
+      currentPassword: "",
+      newPassword: "",
+    });
 
     await useUserSession().clear();
     await navigateTo("/login");
@@ -91,7 +110,9 @@ const handleSetPassword = async () => {
 const setup2FA = async () => {
   try {
     isLoading.value = true;
-    const response = await $fetch<ApiResponse<{ keyuri: string; secret: string }>>("/api/auth/2fa/setup");
+    const response = await $fetch<
+      ApiResponse<{ keyuri: string; secret: string }>
+    >("/api/auth/2fa/setup");
     if (response.data) {
       twoFAForm.keyuri = response.data.keyuri;
       twoFAForm.secret = response.data.secret;
@@ -110,11 +131,11 @@ const verify2FA = async () => {
     isLoading.value = true;
     const tokenString = twoFAForm.token.join("");
     await $fetch<ApiResponse<void>>("/api/auth/2fa/verify", {
-      method: "POST",
       body: {
+        secret: twoFAForm.secret,
         token: tokenString,
-        secret: twoFAForm.secret
-      }
+      },
+      method: "POST",
     });
     message.success("2FA 验证成功");
     showTwoFASetup.value = false;
@@ -156,10 +177,10 @@ const confirmDeletePassword = async () => {
   try {
     isLoading.value = true;
     await $fetch<ApiResponse<void>>("/api/auth/password", {
-      method: "DELETE",
       body: {
-        currentPassword: deletePasswordForm.currentPassword
-      }
+        currentPassword: deletePasswordForm.currentPassword,
+      },
+      method: "DELETE",
     });
     message.success("密码已删除");
     showDeletePasswordModal.value = false;
@@ -169,7 +190,9 @@ const confirmDeletePassword = async () => {
     await checkAuthStatus();
   } catch (error) {
     const errorMessage =
-      error instanceof FetchError ? (error.data as ApiErrorResponse).message || "删除密码失败" : "删除密码失败";
+      error instanceof FetchError
+        ? (error.data as ApiErrorResponse).message || "删除密码失败"
+        : "删除密码失败";
     console.error("Failed to remove password:", error);
     message.error(errorMessage);
   } finally {
@@ -196,17 +219,31 @@ onMounted(async () => {
         <!-- 密码设置 -->
         <n-card title="密码保护" size="large">
           <template #header-extra>
-            <n-tag v-if="useAuthStore().hasPassword" type="success">已设置</n-tag>
+            <n-tag v-if="useAuthStore().hasPassword" type="success"
+              >已设置</n-tag
+            >
             <n-tag v-else type="warning">未设置</n-tag>
           </template>
           <n-space vertical>
-            <n-text depth="3">设置密码以保护你的 FGATE 实例免受未授权访问</n-text>
+            <n-text depth="3"
+              >设置密码以保护你的 FGATE 实例免受未授权访问</n-text
+            >
             <n-space>
-              <n-button v-if="!useAuthStore().hasPassword" type="primary" @click="showPasswordForm = true">
+              <n-button
+                v-if="!useAuthStore().hasPassword"
+                type="primary"
+                @click="showPasswordForm = true"
+              >
                 设置密码
               </n-button>
-              <n-button v-else @click="showPasswordForm = true">修改密码</n-button>
-              <n-button v-if="useAuthStore().hasPassword" type="error" @click="removeAuth('password')">
+              <n-button v-else @click="showPasswordForm = true"
+                >修改密码</n-button
+              >
+              <n-button
+                v-if="useAuthStore().hasPassword"
+                type="error"
+                @click="removeAuth('password')"
+              >
                 删除密码
               </n-button>
             </n-space>
@@ -220,14 +257,29 @@ onMounted(async () => {
             <n-tag v-else type="warning">未启用</n-tag>
           </template>
           <n-space vertical>
-            <n-text depth="3">为你的账户添加额外的安全层，使用 TOTP 应用生成验证码</n-text>
+            <n-text depth="3"
+              >为你的账户添加额外的安全层，使用 TOTP 应用生成验证码</n-text
+            >
             <n-space>
-              <n-button v-if="!useAuthStore().has2FA && useAuthStore().hasPassword" type="primary" @click="setup2FA">
+              <n-button
+                v-if="!useAuthStore().has2FA && useAuthStore().hasPassword"
+                type="primary"
+                @click="setup2FA"
+              >
                 启用 2FA
               </n-button>
-              <n-button v-if="useAuthStore().has2FA" type="error" @click="removeAuth('2fa')">禁用 2FA</n-button>
+              <n-button
+                v-if="useAuthStore().has2FA"
+                type="error"
+                @click="removeAuth('2fa')"
+                >禁用 2FA</n-button
+              >
             </n-space>
-            <n-alert v-if="!useAuthStore().hasPassword" type="info" style="margin-top: 12px">
+            <n-alert
+              v-if="!useAuthStore().hasPassword"
+              type="info"
+              style="margin-top: 12px"
+            >
               需要先设置密码才能启用 2FA
             </n-alert>
           </n-space>
@@ -254,15 +306,30 @@ onMounted(async () => {
               placeholder="输入新密码（至少8位）"
               show-password-on="click"
             />
-            <n-space v-if="passwordForm.newPassword" vertical size="small" style="width: 100%">
+            <n-space
+              v-if="passwordForm.newPassword"
+              vertical
+              size="small"
+              style="width: 100%"
+            >
               <n-space align="center" :size="8">
                 <n-text depth="3">密码强度：</n-text>
-                <n-tag :type="strengthColor" size="small">{{ strengthText }}</n-tag>
+                <n-tag :type="strengthColor" size="small">{{
+                  strengthText
+                }}</n-tag>
               </n-space>
               <n-progress
                 type="line"
-                :percentage="passwordStrength ? (passwordStrength.score / 4) * 100 : 0"
-                :status="strengthColor === 'error' ? 'error' : strengthColor === 'success' ? 'success' : 'default'"
+                :percentage="
+                  passwordStrength ? (passwordStrength.score / 4) * 100 : 0
+                "
+                :status="
+                  strengthColor === 'error'
+                    ? 'error'
+                    : strengthColor === 'success'
+                      ? 'success'
+                      : 'default'
+                "
                 :show-indicator="false"
                 :height="4"
               />
@@ -274,10 +341,15 @@ onMounted(async () => {
               >
                 {{ passwordStrength.error }}
               </n-alert>
-              <n-space v-if="passwordStrength?.feedback?.suggestions?.length" vertical size="small">
+              <n-space
+                v-if="passwordStrength?.feedback?.suggestions?.length"
+                vertical
+                size="small"
+              >
                 <n-text depth="3" style="font-size: 12px">建议：</n-text>
                 <n-text
-                  v-for="(suggestion, index) in passwordStrength.feedback.suggestions"
+                  v-for="(suggestion, index) in passwordStrength.feedback
+                    .suggestions"
                   :key="index"
                   depth="3"
                   style="font-size: 12px"
@@ -308,7 +380,10 @@ onMounted(async () => {
     <!-- 2FA 设置模态框 -->
     <n-modal v-model:show="showTwoFASetup" preset="dialog" title="设置双重验证">
       <n-space vertical>
-        <n-text>使用你的 TOTP 应用（如 Google Authenticator、Authy 等）扫描下方二维码：</n-text>
+        <n-text
+          >使用你的 TOTP 应用（如 Google Authenticator、Authy
+          等）扫描下方二维码：</n-text
+        >
         <div v-if="twoFAForm.keyuri" class="qrcode flex justify-center">
           <n-qr-code :value="twoFAForm.keyuri" :size="200" />
         </div>
@@ -326,7 +401,11 @@ onMounted(async () => {
     </n-modal>
 
     <!-- 删除密码确认模态框 -->
-    <n-modal v-model:show="showDeletePasswordModal" preset="dialog" title="删除密码">
+    <n-modal
+      v-model:show="showDeletePasswordModal"
+      preset="dialog"
+      title="删除密码"
+    >
       <p class="mt-2">此操作会清除 2FA 设置！</p>
       <n-divider />
       <n-form>
@@ -342,7 +421,9 @@ onMounted(async () => {
       <template #action>
         <n-space>
           <n-button @click="showDeletePasswordModal = false">点戳了~</n-button>
-          <n-button type="error" @click="confirmDeletePassword">确认删除</n-button>
+          <n-button type="error" @click="confirmDeletePassword"
+            >确认删除</n-button
+          >
         </n-space>
       </template>
     </n-modal>

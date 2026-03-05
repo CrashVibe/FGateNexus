@@ -1,0 +1,77 @@
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { defineEventHandler, getRouterParam, readBody } from "h3";
+import { StatusCodes } from "http-status-codes";
+import { db } from "~~/server/db/client";
+import { servers, targets } from "~~/server/db/schema";
+import { ChatSyncAPI } from "~~/shared/schemas/server/chat-sync";
+
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
+
+export default defineEventHandler(async (event) => {
+  try {
+    const serverID = Number(getRouterParam(event, "id"));
+    if (Number.isNaN(serverID)) {
+      const apiError = ApiError.validation("参数错误：无效的服务器 ID");
+      return createErrorResponse(event, apiError);
+    }
+
+    const parsed = ChatSyncAPI.PATCH.request.safeParse(await readBody(event));
+    if (!parsed.success) {
+      const apiError = ApiError.validation("参数错误");
+      return createErrorResponse(event, apiError, parsed.error);
+    }
+
+    const { chatsync, targets: items = [] } = parsed.data;
+
+    db.transaction((tx) => {
+      tx.update(servers)
+        .set({ chatSyncConfig: chatsync })
+        .where(eq(servers.id, serverID))
+        .run();
+
+      if (items.length === 0) {
+        return;
+      }
+
+      const ids = items.map((i) => i.id);
+
+      const exists = tx
+        .select()
+        .from(targets)
+        .where(and(eq(targets.serverId, serverID), inArray(targets.id, ids)))
+        .all();
+
+      if (exists.length !== ids.length) {
+        const okSet = new Set(exists.map((e) => e.id));
+        const invalidIds = ids.filter((x) => !okSet.has(x));
+        throw ApiError.validation(
+          `存在与该服务器不匹配或不存在的目标 ID: ${invalidIds.join(", ")}`,
+        );
+      }
+
+      for (const i of items) {
+        tx.update(targets)
+          .set({
+            config: i.config,
+            updatedAt: sql`(unixepoch())`,
+          })
+          .where(and(eq(targets.id, i.id), eq(targets.serverId, serverID)))
+          .run();
+      }
+    });
+
+    return createApiResponse(
+      event,
+      "更新服务器聊天同步配置成功",
+      StatusCodes.OK,
+    );
+  } catch (error: unknown) {
+    logger.error({ error }, "更新服务器聊天同步配置失败");
+    const apiError =
+      error instanceof ApiError
+        ? error
+        : ApiError.internal("更新服务器聊天同步配置失败");
+    return createErrorResponse(event, apiError);
+  }
+});

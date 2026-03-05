@@ -1,23 +1,23 @@
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "..";
+import type { ApiSchemaRegistry } from "#shared/schemas";
 
 export const LoginAPI = {
+  DELETE: {
+    description: "删除密码",
+    request: z.object({
+      currentPassword: z.string().min(1, "当前密码不能为空"),
+    }),
+    response: z.object({}),
+  },
   POST: {
     description: "用户登录",
     request: z.object({
       password: z.string().min(1, "密码不能为空"),
-      twoFactorToken: z.string().optional()
+      twoFactorToken: z.string().optional(),
     }),
-    response: z.object({})
+    response: z.object({}),
   },
-  DELETE: {
-    description: "删除密码",
-    request: z.object({
-      currentPassword: z.string().min(1, "当前密码不能为空")
-    }),
-    response: z.object({})
-  }
 } satisfies ApiSchemaRegistry;
 
 export type LoginBody = z.infer<typeof LoginAPI.POST.request>;

@@ -2,8 +2,18 @@
   <div>
     <ServerHeader back-button-text="服务器列表" back-path="/" class="mb-3" />
 
-    <n-grid v-if="configMenuItems.length > 0" :cols="isMobile ? 1 : '3'" :item-responsive="true" x-gap="12" y-gap="12">
-      <n-gi v-for="menuItem in configMenuItems" :key="menuItem.to" :span="getCardSpan(String(menuItem.label))">
+    <n-grid
+      v-if="configMenuItems.length > 0"
+      :cols="isMobile ? 1 : '3'"
+      :item-responsive="true"
+      x-gap="12"
+      y-gap="12"
+    >
+      <n-gi
+        v-for="menuItem in configMenuItems"
+        :key="menuItem.to"
+        :span="getCardSpan(String(menuItem.label))"
+      >
         <n-card
           :title="String(menuItem.label)"
           class="config-card"
@@ -21,7 +31,9 @@
 
     <n-empty v-else description="暂无可用的配置选项">
       <template #extra>
-        <n-button size="medium" type="primary" @click="router.push('/')">返回服务器列表</n-button>
+        <n-button size="medium" type="primary" @click="router.push('/')"
+          >返回服务器列表</n-button
+        >
       </template>
     </n-empty>
   </div>
@@ -29,32 +41,28 @@
 
 <script lang="ts" setup>
 import { isMobile } from "#imports";
-import ServerHeader from "~/components/Header/ServerHeader.vue";
+import ServerHeader from "@/components/header/server-header.vue";
 import type { Menu } from "~/layouts/default.vue";
 
 definePageMeta({
-  layout: "default"
+  layout: "default",
 });
 
 const router = useRouter();
 const route = useRoute();
 const MenuOptions = inject<Menu>(
   "menuOptions",
-  computed(() => [])
+  computed(() => []),
 );
 
-const configMenuItems = computed(() => {
-  return MenuOptions.value
+const configMenuItems = computed(() =>
+  MenuOptions.value
     .flat()
     .flatMap((item) => item.children || [])
-    .filter((item) => {
-      return !!item.to && item.to !== "/" && item.to !== route.path;
-    });
-});
+    .filter((item) => !!item.to && item.to !== "/" && item.to !== route.path),
+);
 
-const getCardSpan = (title: string) => {
-  return title.length > 4 ? 2 : 1;
-};
+const getCardSpan = (title: string) => (title.length > 4 ? 2 : 1);
 
 const navigateToMenuItem = (key: string | number) => {
   if (typeof key === "string") {

@@ -8,89 +8,149 @@ const isDev = process.env.NODE_ENV !== "production";
 const isBuild = !isDev;
 
 export default defineNuxtConfig({
+  app: {
+    head: {
+      link: [
+        {
+          href: "/favicon.ico",
+          rel: "icon",
+          type: "image/x-icon",
+        },
+      ],
+      meta: [{ content: "noindex, nofollow, noarchive", name: "robots" }],
+      title: "FlowGate Nexus",
+    },
+    pageTransition: {
+      mode: "out-in",
+      name: "page",
+    },
+    rootId: "root",
+    teleportId: "popovers",
+  },
   compatibilityDate: "2025-08-06",
+  css: ["~/assets/css/main.css", "~/assets/css/animate.scss"],
+  devServer: {
+    host: "0.0.0.0",
+    port: 3000,
+  },
   devtools: {
     enabled: true,
     timeline: {
-      enabled: true
-    }
-  },
-  sourcemap: {
-    client: isDev,
-    server: isDev
-  },
-  ssr: false,
-  css: ["~/assets/css/main.css", "~/assets/css/animate.scss"],
-  typescript: {
-    strict: true,
-    typeCheck: "build",
-    tsConfig: {
-      compilerOptions: {
-        types: ["bun-types", "node"],
-        // 支持解析 json 文件
-        resolveJsonModule: true,
-        paths: {
-          "~~/*": ["./*"],
-          "~~": ["."],
-          "~/*": ["./app/*"],
-          "~": ["./app"],
-          "@/*": ["./app/*"],
-          "@": ["./app"],
-          "#shared/*": ["./shared/*"],
-          "#shared": ["./shared"]
-        }
-      },
-      include: ["../drizzle.config.ts", "../entry.ts", "../eslint.config.ts"]
-    }
-  },
-  runtimeConfig: {
-    public: {
-      commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH || undefined,
-      isDev: isDev
-    }
+      enabled: true,
+    },
   },
   experimental: {
-    asyncContext: true
+    asyncContext: true,
   },
-  devServer: {
-    host: "0.0.0.0",
-    port: 3000
+  imports: {
+    presets: [
+      {
+        from: "naive-ui",
+        imports: [
+          "useMessage",
+          "useDialog",
+          "useNotification",
+          "useLoadingBar",
+        ],
+      },
+    ],
   },
   modules: [
     [
       "@pinia/nuxt",
       {
-        AutoImport: ["defineStore", ["defineStore", "definePiniaStore"]]
-      }
+        AutoImport: ["defineStore", ["defineStore", "definePiniaStore"]],
+      },
     ],
     "nuxtjs-naive-ui",
     "@nuxt/eslint",
     "nuxt-auth-utils",
-    "@nuxt/ui"
+    "@nuxt/ui",
   ],
-  imports: {
-    presets: [
-      {
-        from: "naive-ui",
-        imports: ["useMessage", "useDialog", "useNotification", "useLoadingBar"]
-      }
-    ]
+  nitro: {
+    compressPublicAssets: true,
+    esbuild: {
+      options: {
+        target: "esnext",
+      },
+    },
+    experimental: {
+      websocket: true,
+    },
+    externals: {
+      inline: [
+        "vue",
+        "@vue/shared",
+        "@vue/runtime-dom",
+        "@vue/compiler-dom",
+        "@vue/runtime-core",
+        "@vue/reactivity",
+      ],
+    },
+    minify: true,
+    node: true,
+    preset: "bun",
+    serveStatic: "inline",
+  },
+  runtimeConfig: {
+    public: {
+      commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH ?? undefined,
+      isDev: isDev,
+    },
+  },
+  sourcemap: {
+    client: isDev,
+    server: isDev,
+  },
+  ssr: false,
+  typescript: {
+    strict: true,
+    tsConfig: {
+      compilerOptions: {
+        paths: {
+          "#shared": ["./shared"],
+          "#shared/*": ["./shared/*"],
+          "@": ["./app"],
+          "@/*": ["./app/*"],
+          "~": ["./app"],
+          "~/*": ["./app/*"],
+          "~~": ["."],
+          "~~/*": ["./*"],
+        },
+        // 支持解析 json 文件
+        resolveJsonModule: true,
+        strictNullChecks: true,
+        types: ["bun-types", "node"],
+      },
+      include: ["../drizzle.config.ts", "../entry.ts", "../eslint.config.ts"],
+    },
+    typeCheck: "build",
   },
   vite: {
+    build: {
+      cssCodeSplit: true,
+      minify: isBuild,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            highlight: ["highlight.js"],
+            ui: ["naive-ui"],
+            vendor: ["moment-timezone", "uuid", "zod"],
+          },
+        },
+      },
+      sourcemap: isDev,
+      target: "esnext",
+    },
     css: {
       postcss: {
-        plugins: [tailwindcss_postcss(), autoprefixer()]
-      }
+        plugins: [tailwindcss_postcss(), autoprefixer()],
+      },
     },
-    plugins: [
-      Components({
-        resolvers: [NaiveUiResolver()],
-        dts: true
-      }),
-      tailwindcss()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any[],
     optimizeDeps: {
+      esbuildOptions: {
+        target: "esnext",
+      },
       include: [
         "moment-timezone",
         "@vue/devtools-core",
@@ -106,66 +166,21 @@ export default defineNuxtConfig({
         "http-status-codes",
         "@zxcvbn-ts/core",
         "@zxcvbn-ts/language-common",
-        "lodash-es"
+        "lodash-es",
       ],
-      esbuildOptions: {
-        target: "esnext"
-      }
     },
-    build: {
-      target: "esnext",
-      minify: isBuild,
-      sourcemap: isDev,
-      cssCodeSplit: true,
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            ui: ["naive-ui"],
-            highlight: ["highlight.js"],
-            vendor: ["moment-timezone", "uuid", "zod"]
-          }
-        }
-      }
-    },
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    plugins: [
+      Components({
+        dts: true,
+        resolvers: [NaiveUiResolver()],
+      }),
+      tailwindcss(),
+      // oxlint-disable-next-line typescript/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ] as any[],
     worker: {
-      format: "es"
-    }
+      format: "es",
+    },
   },
-  app: {
-    head: {
-      title: "FlowGate Nexus",
-      link: [
-        {
-          rel: "icon",
-          type: "image/x-icon",
-          href: "/favicon.ico"
-        }
-      ],
-      meta: [{ name: "robots", content: "noindex, nofollow, noarchive" }]
-    },
-    pageTransition: {
-      name: "page",
-      mode: "out-in"
-    },
-    rootId: "root",
-    teleportId: "popovers"
-  },
-  nitro: {
-    esbuild: {
-      options: {
-        target: "esnext"
-      }
-    },
-    experimental: {
-      websocket: true
-    },
-    preset: "bun",
-    serveStatic: "inline",
-    minify: true,
-    compressPublicAssets: true,
-    node: true,
-    externals: {
-      inline: ["vue", "@vue/shared", "@vue/runtime-dom", "@vue/compiler-dom", "@vue/runtime-core", "@vue/reactivity"]
-    }
-  }
 });

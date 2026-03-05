@@ -1,6 +1,6 @@
+import { setResponseStatus } from "h3";
+import type { EventHandlerRequest, H3Event } from "h3";
 import type { ZodError } from "zod";
-
-import { type EventHandlerRequest, type H3Event, setResponseStatus } from "h3";
 
 /**
  * API 错误响应模型，用于 OpenAPI 文档
@@ -18,18 +18,18 @@ export interface ApiErrorResponse {
  * API 错误类型枚举
  */
 export enum ApiErrorType {
-  Database = 50001,
-  Validation = 50002,
-  Authentication = 50003,
-  Authorization = 50004,
-  NotFound = 50005,
-  Conflict = 50006,
-  Internal = 50007,
-  BadRequest = 50008,
-  Unauthorized = 50009,
-  Forbidden = 50010,
-  InternalServerError = 50011,
-  TooManyRequests = 50012
+  Database = 50_001,
+  Validation = 50_002,
+  Authentication = 50_003,
+  Authorization = 50_004,
+  NotFound = 50_005,
+  Conflict = 50_006,
+  Internal = 50_007,
+  BadRequest = 50_008,
+  Unauthorized = 50_009,
+  Forbidden = 50_010,
+  InternalServerError = 50_011,
+  TooManyRequests = 50_012,
 }
 
 /**
@@ -40,7 +40,11 @@ export class ApiError extends Error {
   public readonly status: number;
   public readonly errors?: Record<string, string[]>;
 
-  constructor(type: ApiErrorType, message: string, errors?: Record<string, string[]>) {
+  constructor(
+    type: ApiErrorType,
+    message: string,
+    errors?: Record<string, string[]>,
+  ) {
     super(message);
     this.type = type;
     this.name = "ApiError";
@@ -112,13 +116,17 @@ export class ApiError extends Error {
       this.type === ApiErrorType.InternalServerError
     ) {
       console.error(`${this.type} error:`, this.message);
-      errorMessage = this.type === ApiErrorType.Database ? "Database error" : "Internal server error";
+      errorMessage =
+        this.type === ApiErrorType.Database
+          ? "Database error"
+          : "Internal server error";
     }
 
     return {
-      message: errorMessage,
       code: this.type,
-      errors: this.errors // 可选
+      errors: this.errors,
+      // 可选
+      message: errorMessage,
     };
   }
 
@@ -138,7 +146,7 @@ export class ApiError extends Error {
       [ApiErrorType.BadRequest]: 400,
       [ApiErrorType.Unauthorized]: 401,
       [ApiErrorType.Forbidden]: 403,
-      [ApiErrorType.InternalServerError]: 500
+      [ApiErrorType.InternalServerError]: 500,
     };
 
     return statusMap[this.type] || 500;
@@ -150,33 +158,31 @@ export class ApiError extends Error {
  */
 export type ApiResult<T> = Promise<T>;
 
-export function createErrorResponse(
+export const createErrorResponse = (
   event: H3Event<EventHandlerRequest>,
   error: ApiError,
-  zodError?: ZodError
-): ApiErrorResponse {
+  zodError?: ZodError,
+): ApiErrorResponse => {
   setResponseStatus(event, error.status);
   const response = error.toResponse();
 
   if (zodError) {
     const validationErrors: Record<string, string[]> = {};
-    zodError.issues.forEach((issue) => {
+    for (const issue of zodError.issues) {
       const path = issue.path.join(".");
-      if (!validationErrors[path]) {
-        validationErrors[path] = [];
-      }
+      validationErrors[path] ??= [];
       validationErrors[path].push(issue.message);
-    });
+    }
     response.errors = validationErrors;
   }
 
   return response;
-}
+};
 
 /**
  * 错误处理中间件辅助函数
  */
-export function handleApiError(error: unknown): ApiError {
+export const handleApiError = (error: unknown): ApiError => {
   if (error instanceof ApiError) {
     return error;
   }
@@ -186,4 +192,4 @@ export function handleApiError(error: unknown): ApiError {
   }
 
   return ApiError.internal("Unknown error occurred");
-}
+};

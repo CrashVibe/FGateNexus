@@ -62,10 +62,18 @@
               />
             </n-form-item>
             <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <n-form-item label="允许解绑" :show-feedback="false" path="allowUnbind">
+              <n-form-item
+                label="允许解绑"
+                :show-feedback="false"
+                path="allowUnbind"
+              >
                 <n-switch v-model:value="formData.config.allowUnbind" />
               </n-form-item>
-              <n-form-item label="离群自动解绑" :show-feedback="false" path="allowGroupUnbind">
+              <n-form-item
+                label="离群自动解绑"
+                :show-feedback="false"
+                path="allowGroupUnbind"
+              >
                 <n-switch v-model:value="formData.config.allowGroupUnbind" />
               </n-form-item>
             </div>
@@ -73,7 +81,9 @@
             <div class="mb-2">
               <n-text class="mb-2" round type="success">
                 <h1>绑定指令</h1>
-                <p class="text-gray-500">用户在社交平台聊天中发送此指令来绑定游戏账号</p>
+                <p class="text-gray-500">
+                  用户在社交平台聊天中发送此指令来绑定游戏账号
+                </p>
               </n-text>
               <div class="mb-2 p-2">
                 <n-code :code="bindCommandExample" language="text" />
@@ -82,7 +92,9 @@
             <n-collapse-transition :show="formData.config.allowUnbind">
               <n-text class="mb-2" round type="warning">
                 <h1>解绑指令</h1>
-                <p class="text-gray-500">使用专用解绑前缀进行解绑操作，直接输入玩家名称即可</p>
+                <p class="text-gray-500">
+                  使用专用解绑前缀进行解绑操作，直接输入玩家名称即可
+                </p>
               </n-text>
               <div class="mb-2 p-2">
                 <n-code :code="unbindCommandExample" language="text" />
@@ -102,13 +114,23 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip v-for="tag in bindSuccessVariables" :key="tag.value" trigger="hover">
+                    <n-tooltip
+                      v-for="tag in bindSuccessVariables"
+                      :key="tag.value"
+                      trigger="hover"
+                    >
                       <template #trigger>
                         <n-tag
-                          :type="formData.config.bindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="
+                            formData.config.bindSuccessMsg.includes(tag.value)
+                              ? 'primary'
+                              : 'default'
+                          "
                           class="cursor-pointer"
                           size="small"
-                          @click="insertPlaceholder('bindSuccessMsg', tag.value)"
+                          @click="
+                            insertPlaceholder('bindSuccessMsg', tag.value)
+                          "
                         >
                           {{ tag.value }}
                         </n-tag>
@@ -119,7 +141,12 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderBindSuccess(formData.config.bindSuccessMsg, "Steve") }}
+                      {{
+                        renderBindSuccess(
+                          formData.config.bindSuccessMsg,
+                          "Steve",
+                        )
+                      }}
                     </n-text>
                   </div>
                 </div>
@@ -136,10 +163,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip v-for="tag in bindFailVariables" :key="tag.value" trigger="hover">
+                    <n-tooltip
+                      v-for="tag in bindFailVariables"
+                      :key="tag.value"
+                      trigger="hover"
+                    >
                       <template #trigger>
                         <n-tag
-                          :type="formData.config.bindFailMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="
+                            formData.config.bindFailMsg.includes(tag.value)
+                              ? 'primary'
+                              : 'default'
+                          "
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('bindFailMsg', tag.value)"
@@ -153,7 +188,13 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="error">
-                      {{ renderBindFail(formData.config.bindFailMsg, "Steve", "因为某种奇妙の原因") }}
+                      {{
+                        renderBindFail(
+                          formData.config.bindFailMsg,
+                          "Steve",
+                          "因为某种奇妙の原因",
+                        )
+                      }}
                     </n-text>
                   </div>
                 </div>
@@ -170,13 +211,23 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip v-for="tag in unbindSuccessVariables" :key="tag.value" trigger="hover">
+                    <n-tooltip
+                      v-for="tag in unbindSuccessVariables"
+                      :key="tag.value"
+                      trigger="hover"
+                    >
                       <template #trigger>
                         <n-tag
-                          :type="formData.config.unbindSuccessMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="
+                            formData.config.unbindSuccessMsg.includes(tag.value)
+                              ? 'primary'
+                              : 'default'
+                          "
                           class="cursor-pointer"
                           size="small"
-                          @click="insertPlaceholder('unbindSuccessMsg', tag.value)"
+                          @click="
+                            insertPlaceholder('unbindSuccessMsg', tag.value)
+                          "
                         >
                           {{ tag.value }}
                         </n-tag>
@@ -187,7 +238,12 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="success">
-                      {{ renderUnbindSuccess(formData.config.unbindSuccessMsg, "Steve") }}
+                      {{
+                        renderUnbindSuccess(
+                          formData.config.unbindSuccessMsg,
+                          "Steve",
+                        )
+                      }}
                     </n-text>
                   </div>
                 </div>
@@ -204,10 +260,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip v-for="tag in unbindFailVariables" :key="tag.value" trigger="hover">
+                    <n-tooltip
+                      v-for="tag in unbindFailVariables"
+                      :key="tag.value"
+                      trigger="hover"
+                    >
                       <template #trigger>
                         <n-tag
-                          :type="formData.config.unbindFailMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="
+                            formData.config.unbindFailMsg.includes(tag.value)
+                              ? 'primary'
+                              : 'default'
+                          "
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('unbindFailMsg', tag.value)"
@@ -221,7 +285,13 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text type="error">
-                      {{ renderUnbindFail(formData.config.unbindFailMsg, "Steve", "因为某种奇妙の原因") }}
+                      {{
+                        renderUnbindFail(
+                          formData.config.unbindFailMsg,
+                          "Steve",
+                          "因为某种奇妙の原因",
+                        )
+                      }}
                     </n-text>
                   </div>
                 </div>
@@ -235,7 +305,11 @@
               <n-switch v-model:value="formData.config.forceBind" />
             </n-form-item>
 
-            <n-form-item class="mb-2" label="未绑定踢出消息" path="nobindkickMsg">
+            <n-form-item
+              class="mb-2"
+              label="未绑定踢出消息"
+              path="nobindkickMsg"
+            >
               <n-input
                 v-model:value="formData.config.nobindkickMsg"
                 :rows="3"
@@ -247,10 +321,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip v-for="tag in noBindKickVariables" :key="tag.value" trigger="hover">
+                    <n-tooltip
+                      v-for="tag in noBindKickVariables"
+                      :key="tag.value"
+                      trigger="hover"
+                    >
                       <template #trigger>
                         <n-tag
-                          :type="formData.config.nobindkickMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="
+                            formData.config.nobindkickMsg.includes(tag.value)
+                              ? 'primary'
+                              : 'default'
+                          "
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('nobindkickMsg', tag.value)"
@@ -264,7 +346,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text>
-                      <span v-html="noBindKickMsgPreview"></span>
+                      <MinecraftText :text="noBindKickMsgPreview" />
                     </n-text>
                   </div>
                 </div>
@@ -283,10 +365,18 @@
               <template #feedback>
                 <div class="mt-2 space-y-2">
                   <div class="flex flex-wrap gap-1">
-                    <n-tooltip v-for="tag in unbindKickVariables" :key="tag.value" trigger="hover">
+                    <n-tooltip
+                      v-for="tag in unbindKickVariables"
+                      :key="tag.value"
+                      trigger="hover"
+                    >
                       <template #trigger>
                         <n-tag
-                          :type="formData.config.unbindkickMsg.includes(tag.value) ? 'primary' : 'default'"
+                          :type="
+                            formData.config.unbindkickMsg.includes(tag.value)
+                              ? 'primary'
+                              : 'default'
+                          "
                           class="cursor-pointer"
                           size="small"
                           @click="insertPlaceholder('unbindkickMsg', tag.value)"
@@ -300,7 +390,7 @@
                   <div class="text-sm text-gray-500">
                     预览：
                     <n-text>
-                      <span v-html="unbindKickMsgPreview"></span>
+                      <MinecraftText :text="unbindKickMsgPreview" />
                     </n-text>
                   </div>
                 </div>
@@ -312,8 +402,19 @@
     </n-form>
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button
+        :disabled="isAnyLoading || !isDirty"
+        :loading="isAnyLoading"
+        @click="cancelChanges"
+        >取消</n-button
+      >
+      <n-button
+        :disabled="isAnyLoading || !isDirty"
+        :loading="isAnyLoading"
+        ghost
+        type="primary"
+        @click="handleSubmit"
+      >
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -331,13 +432,15 @@
 </template>
 
 <script lang="ts" setup>
-import { isMobile } from "#imports";
+import { isEqual } from "lodash-es";
 import moment from "moment-timezone";
 import type { FormInst } from "naive-ui";
-import type z from "zod";
-import { cloneDeep, isEqual } from "lodash-es";
-import { BindingData, ServerData } from "~/composables/api";
-import { type BindingConfig, BindingConfigSchema, CODE_MODES } from "~~/shared/schemas/server/binding";
+import type { z } from "zod";
+import {
+  BindingConfigSchema,
+  CODE_MODES,
+} from "~~/shared/schemas/server/binding";
+import type { BindingConfig } from "~~/shared/schemas/server/binding";
 import type { ServersAPI } from "~~/shared/schemas/server/servers";
 import {
   renderBindFail,
@@ -345,13 +448,15 @@ import {
   renderNoBindKick,
   renderUnbindFail,
   renderUnbindKick,
-  renderUnbindSuccess
+  renderUnbindSuccess,
 } from "~~/shared/utils/template/binding";
-import { createVariablesArray } from "~/composables/usePlaceholderVariables";
-import ServerHeader from "~/components/Header/ServerHeader.vue";
+
+import { isMobile } from "#imports";
+import ServerHeader from "@/components/header/server-header.vue";
+import { BindingData, ServerData } from "~/composables/api";
+import { createVariablesArray } from "~/composables/use-placeholder-variables";
 
 const { setPageState, clearPageState } = usePageStateStore();
-const { minecraftToHtml, initObfuscatedAnimation, stopObfuscatedAnimation } = useMinecraftFormat();
 
 definePageMeta({ layout: "default" });
 
@@ -364,7 +469,7 @@ interface FormState {
 }
 
 const formData = reactive<FormState>({
-  config: BindingConfigSchema.parse({})
+  config: BindingConfigSchema.parse({}),
 });
 
 let serverData: z.infer<typeof ServersAPI.GET.response> | null = null;
@@ -373,7 +478,7 @@ const originalFormData = ref<FormState | null>(null);
 
 const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false
+  isSubmitting: false,
 });
 
 const isDirty = computed(() => !isEqual(formData, originalFormData.value));
@@ -385,105 +490,117 @@ const codeModeOptions = [
   { label: "纯单词 (小写)", value: CODE_MODES.LOWER },
   { label: "纯单词 (大写)", value: CODE_MODES.UPPER },
   { label: "纯单词 (大小写)", value: CODE_MODES.WORD },
-  { label: "大小写单词和数字", value: CODE_MODES.MIX }
+  { label: "大小写单词和数字", value: CODE_MODES.MIX },
 ];
 
-const bindCommandExample = computed(() => {
-  return formData.config.prefix + generateVerificationCode(formData.config.codeMode, formData.config.codeLength);
-});
+const bindCommandExample = computed(
+  () =>
+    formData.config.prefix +
+    generateVerificationCode(
+      formData.config.codeMode,
+      formData.config.codeLength,
+    ),
+);
 
-const unbindCommandExample = computed(() => {
-  return formData.config.unbindPrefix + "Steve";
-});
+const unbindCommandExample = computed(
+  () => `${formData.config.unbindPrefix}Steve`,
+);
 
 const bindExpireTimeExample = computed(() => {
   const expireTime = formData.config.codeExpire;
   return moment().add(expireTime, "minutes").format("YYYY-MM-DD HH:mm:ss");
 });
 
-const noBindKickMsgPreview = computed(() => {
-  const replaced = renderNoBindKick(
+const noBindKickMsgPreview = computed(() =>
+  renderNoBindKick(
     formData.config.nobindkickMsg,
     "Steve",
     bindCommandExample.value,
-    bindExpireTimeExample.value
-  );
-  return minecraftToHtml(replaced);
-});
+    bindExpireTimeExample.value,
+  ),
+);
 
-const unbindKickMsgPreview = computed(() => {
-  const replaced = renderUnbindKick(formData.config.unbindkickMsg, "114514");
-  return minecraftToHtml(replaced);
-});
+const unbindKickMsgPreview = computed(() =>
+  renderUnbindKick(formData.config.unbindkickMsg, "114514"),
+);
 
 const noBindKickVariables = computed(() =>
   createVariablesArray({
-    "{name}": { label: "玩家名", example: "Steve" },
-    "{message}": { label: "消息", example: bindCommandExample.value },
-    "{time}": { label: "过期时间", example: bindExpireTimeExample.value }
-  })
+    "{message}": { example: bindCommandExample.value, label: "消息" },
+    "{name}": { example: "Steve", label: "玩家名" },
+    "{time}": { example: bindExpireTimeExample.value, label: "过期时间" },
+  }),
 );
 
 const unbindKickVariables = computed(() =>
   createVariablesArray({
-    "{social_account}": { label: "社交账号", example: "114514" }
-  })
+    "{social_account}": { example: "114514", label: "社交账号" },
+  }),
 );
 
 const bindSuccessVariables = computed(() =>
   createVariablesArray({
-    "{user}": { label: "玩家名", example: "Steve" }
-  })
+    "{user}": { example: "Steve", label: "玩家名" },
+  }),
 );
 
 const bindFailVariables = computed(() =>
   createVariablesArray({
-    "{user}": { label: "玩家名", example: "Steve" },
-    "{why}": { label: "原因", example: "因为某种奇妙の原因" }
-  })
+    "{user}": { example: "Steve", label: "玩家名" },
+    "{why}": { example: "因为某种奇妙の原因", label: "原因" },
+  }),
 );
 
 const unbindSuccessVariables = computed(() =>
   createVariablesArray({
-    "{user}": { label: "玩家名", example: "Steve" }
-  })
+    "{user}": { example: "Steve", label: "玩家名" },
+  }),
 );
 
 const unbindFailVariables = computed(() =>
   createVariablesArray({
-    "{user}": { label: "玩家名", example: "Steve" },
-    "{why}": { label: "原因", example: "因为某种奇妙の原因" }
-  })
+    "{user}": { example: "Steve", label: "玩家名" },
+    "{why}": { example: "因为某种奇妙の原因", label: "原因" },
+  }),
 );
 
-function insertPlaceholder(
+const insertPlaceholder = (
   field: keyof Pick<
     BindingConfig,
-    "nobindkickMsg" | "unbindkickMsg" | "bindSuccessMsg" | "bindFailMsg" | "unbindSuccessMsg" | "unbindFailMsg"
+    | "nobindkickMsg"
+    | "unbindkickMsg"
+    | "bindSuccessMsg"
+    | "bindFailMsg"
+    | "unbindSuccessMsg"
+    | "unbindFailMsg"
   >,
-  placeholder: string
-) {
+  placeholder: string,
+) => {
   const current = formData.config[field] || "";
   formData.config[field] = current + placeholder;
-}
+};
 
-async function refreshServerData(): Promise<void> {
-  if (!route.params["id"]) return;
+const refreshServerData = async (): Promise<void> => {
+  if (!route.params["id"]) {
+    return;
+  }
   loadingMap.isLoading = true;
   try {
     const data = await ServerData.get(Number(route.params["id"]));
     serverData = data;
-    formData.config = cloneDeep(data.bindingConfig || BindingConfigSchema.parse({}));
-    originalFormData.value = cloneDeep(formData);
+    formData.config = structuredClone(
+      data.bindingConfig || BindingConfigSchema.parse({}),
+    );
+    originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
     console.error("Failed to refresh server data:", error);
     message.error("刷新服务器数据失败");
   } finally {
     loadingMap.isLoading = false;
   }
-}
+};
 
-async function handleSubmit() {
+const handleSubmit = async () => {
   if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
@@ -497,7 +614,9 @@ async function handleSubmit() {
 
   loadingMap.isSubmitting = true;
   try {
-    await BindingData.patch(serverData?.id ?? Number(route.params["id"]), { config: formData.config });
+    await BindingData.patch(serverData?.id ?? Number(route.params["id"]), {
+      config: formData.config,
+    });
     message.success("绑定配置已保存");
     await refreshServerData();
   } catch (error) {
@@ -506,33 +625,19 @@ async function handleSubmit() {
   } finally {
     loadingMap.isSubmitting = false;
   }
-}
+};
 
-function cancelChanges() {
-  if (originalFormData.value) {
-    formData.config = cloneDeep(originalFormData.value.config);
-  } else {
-    formData.config = BindingConfigSchema.parse({});
-  }
-}
+const cancelChanges = () =>
+  (formData.config = originalFormData.value
+    ? structuredClone(toRaw(originalFormData.value.config))
+    : BindingConfigSchema.parse({}));
 
 onMounted(async () => {
   await refreshServerData();
-  initObfuscatedAnimation();
   setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 
 onUnmounted(() => {
-  stopObfuscatedAnimation();
   clearPageState();
 });
-
-watch(
-  () => [formData.config.nobindkickMsg, formData.config.unbindkickMsg],
-  () => {
-    nextTick(() => {
-      initObfuscatedAnimation();
-    });
-  }
-);
 </script>

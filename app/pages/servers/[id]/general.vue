@@ -4,13 +4,25 @@
     <n-form :model="formData" :rules="rules">
       <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
         <n-gi>
-          <n-card class="h-full cursor-pointer" embedded hoverable size="small" title="基础操作">
+          <n-card
+            class="h-full cursor-pointer"
+            embedded
+            hoverable
+            size="small"
+            title="基础操作"
+          >
             <!-- 删除 -->
             <n-button type="error" @click="handleDelete">删除</n-button>
           </n-card>
         </n-gi>
         <n-gi>
-          <n-card class="h-full cursor-pointer" embedded hoverable size="small" title="Bot 实例">
+          <n-card
+            class="h-full cursor-pointer"
+            embedded
+            hoverable
+            size="small"
+            title="Bot 实例"
+          >
             <n-form-item label="Bot 实例" path="adapterId">
               <n-select
                 v-model:value="formData.adapterId"
@@ -27,8 +39,19 @@
     </n-form>
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="!isDirty" :loading="isAnyLoading" @click="cancelChanges">取消</n-button>
-      <n-button :disabled="!isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button
+        :disabled="!isDirty"
+        :loading="isAnyLoading"
+        @click="cancelChanges"
+        >取消</n-button
+      >
+      <n-button
+        :disabled="!isDirty"
+        :loading="isAnyLoading"
+        ghost
+        type="primary"
+        @click="handleSubmit"
+      >
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -46,18 +69,19 @@
 </template>
 
 <script lang="ts" setup>
-import { isMobile } from "#imports";
-import { cloneDeep, isEqual } from "lodash-es";
+import { isEqual } from "lodash-es";
 import type { SelectMixedOption } from "naive-ui/es/select/src/interface";
-import type z from "zod";
-import { AdapterData, GeneralData, ServerData } from "~/composables/api";
+import type { z } from "zod";
 import { GeneralAPI } from "~~/shared/schemas/server/general";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import { zodToNaiveRules } from "~/composables/useValidation";
-import ServerHeader from "~/components/Header/ServerHeader.vue";
+
+import { isMobile } from "#imports";
+import ServerHeader from "@/components/header/server-header.vue";
+import { AdapterData, GeneralData, ServerData } from "~/composables/api";
+import { zodToNaiveRules } from "~/composables/use-validation";
 
 definePageMeta({
-  layout: "default"
+  layout: "default",
 });
 
 const { setPageState, clearPageState } = usePageStateStore();
@@ -67,25 +91,23 @@ const dialog = useDialog();
 const router = useRouter();
 const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false
+  isSubmitting: false,
 });
 const isAnyLoading = computed(() => loadingMap.isLoading);
-const isDirty = computed(() => !isEqual(formData, original));
 const rules = zodToNaiveRules(GeneralAPI.PATCH.request);
 const adapterOptions = ref<SelectMixedOption[]>([]);
 let serverData: ServerWithStatus | null = null;
 const formData = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
-  adapterId: null
+  adapterId: null,
 });
 const original = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
-  adapterId: null
+  adapterId: null,
 });
+const isDirty = computed(() => !isEqual(formData, original));
 
-async function handleDelete() {
+const handleDelete = () => {
   dialog.warning({
-    title: "确认删除",
     content: "确定要删除此服务器吗？删除后将无法恢复。",
-    positiveText: "确认删除",
     negativeText: "取消",
     onPositiveClick: async () => {
       try {
@@ -97,15 +119,45 @@ async function handleDelete() {
         console.error("Delete failed:", error);
         message.error("删除服务器失败");
       }
-    }
+    },
+    positiveText: "确认删除",
+    title: "确认删除",
   });
-}
+};
 
-async function handleSubmit(): Promise<void> {
+const refreshAll = async (): Promise<void> => {
+  loadingMap.isLoading = true;
+  try {
+    const [adapterData, serverDataResult] = await Promise.all([
+      AdapterData.gets(),
+      ServerData.get(Number(route.params["id"])),
+    ]);
+
+    serverData = serverDataResult;
+
+    adapterOptions.value = adapterData.map((adapter) => ({
+      label: `#${adapter.id} - ${adapter.type} [${adapter.isOnline ? "在线" : "离线"}${adapter.enabled ? "" : " · 已禁用"}]`,
+      value: adapter.id,
+    }));
+
+    formData.adapterId = serverDataResult.adapterId;
+    Object.assign(original, structuredClone(toRaw(formData)));
+  } catch (error) {
+    console.error("Refresh failed:", error);
+    message.error("加载数据失败");
+  } finally {
+    loadingMap.isLoading = false;
+  }
+};
+
+const handleSubmit = async (): Promise<void> => {
   loadingMap.isSubmitting = true;
   try {
-    await GeneralData.patch(serverData?.id ?? Number(route.params["id"]), formData);
-    Object.assign(original, cloneDeep(formData));
+    await GeneralData.patch(
+      serverData?.id ?? Number(route.params["id"]),
+      formData,
+    );
+    Object.assign(original, structuredClone(toRaw(formData)));
     message.success("配置已保存");
     await refreshAll();
   } catch (error) {
@@ -114,42 +166,17 @@ async function handleSubmit(): Promise<void> {
   } finally {
     loadingMap.isSubmitting = false;
   }
-}
+};
 
-async function refreshAll(): Promise<void> {
-  loadingMap.isLoading = true;
-  try {
-    const [adapterData, serverDataResult] = await Promise.all([
-      AdapterData.gets(),
-      ServerData.get(Number(route.params["id"]))
-    ]);
-
-    serverData = serverDataResult;
-
-    adapterOptions.value = adapterData.map((adapter) => ({
-      label: `#${adapter.id} - ${adapter.type} [${adapter.isOnline ? "在线" : "离线"}${adapter.enabled ? "" : " · 已禁用"}]`,
-      value: adapter.id
-    }));
-
-    formData.adapterId = serverDataResult.adapterId;
-    Object.assign(original, cloneDeep(formData));
-  } catch (error) {
-    console.error("Refresh failed:", error);
-    message.error("加载数据失败");
-  } finally {
-    loadingMap.isLoading = false;
-  }
-}
-
-function cancelChanges() {
-  Object.assign(formData, cloneDeep(original));
-}
+const cancelChanges = () => {
+  Object.assign(formData, structuredClone(toRaw(original)));
+};
 
 onMounted(async () => {
   await refreshAll();
   setPageState({
     isDirty: () => isDirty.value,
-    save: handleSubmit
+    save: handleSubmit,
   });
 });
 

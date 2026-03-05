@@ -17,7 +17,10 @@
     "build:all": "NUXT_BUILD_TARGET=binary bun run build && bun run build:mac && bun run build:linux && bun run build:win",
     "build:mac": "bun build --compile --target=bun-darwin-arm64 ./entry.ts --outfile ./dist/FGateNexus-mac-arm64 && bun build --compile --target=bun-darwin-x64 ./entry.ts --outfile ./dist/FGateNexus-mac-x64",
     "build:linux": "bun build --compile --target=bun-linux-arm64 ./entry.ts --outfile ./dist/FGateNexus-linux-arm64 && bun build --compile --target=bun-linux-x64 ./entry.ts --outfile ./dist/FGateNexus-linux-x64",
-    "build:win": "bun build --compile --target=bun-windows-x64 ./entry.ts --outfile ./dist/FGateNexus-win-x64.exe"
+    "build:win": "bun build --compile --target=bun-windows-x64 ./entry.ts --outfile ./dist/FGateNexus-win-x64.exe",
+    "check": "ultracite check",
+    "fix": "ultracite fix",
+    "prepare": "husky"
   },
   "dependencies": {
     "@koishijs/plugin-http": "^0.6.3",
@@ -34,7 +37,6 @@
     "@zxcvbn-ts/core": "^3.0.4",
     "@zxcvbn-ts/language-common": "^3.0.4",
     "bcryptjs": "^3.0.3",
-    "crossws": "0.4.4",
     "drizzle-orm": "^0.45.1",
     "highlight.js": "^11.11.1",
     "http-status-codes": "^2.3.0",
@@ -44,7 +46,7 @@
     "lru-cache": "^11.2.6",
     "moment-timezone": "^0.6.0",
     "naive-ui": "^2.43.2",
-    "nuxt": "4.3.0",
+    "nuxt": "4.3.1",
     "nuxt-auth-utils": "0.5.29",
     "otplib": "^13.3.0",
     "pinia": "^3.0.4",
@@ -64,28 +66,37 @@
     "drizzle-kit": "^0.31.9",
     "eslint": "^10.0.2",
     "eslint-plugin-oxlint": "^1.50.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2",
     "nuxtjs-naive-ui": "1.0.2",
-    "oxfmt": "^0.35.0",
-    "oxlint": "^1.50.0",
-    "oxlint-tsgolint": "^0.15.0",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
+    "oxlint-tsgolint": "^0.16.0",
     "prettier": "^3.8.1",
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
+    "ultracite": "7.2.4",
     "unplugin-vue-components": "^31.0.0",
     "vue-tsc": "^3.2.5"
   },
   "overrides": {
     "@koishijs/loader": "npm:@mrlingxd/loader@^4.6.8-fix.1"
   },
-  "apiVersion": "0.0.1",
-  "minimumClientVersion": "0.0.1",
-  "patchedDependencies": {
-    "nuxt-auth-utils@0.5.26": "patches/nuxt-auth-utils@0.5.26.patch"
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x oxlint --fix --type-aware",
+      "bun x oxfmt --write"
+    ]
   },
+  "apiVersion": "0.0.1",
   "json-comments": {
     "tips": "请安装 JSONComments 插件为 JSON 文件提供注释功能，详见：https://github.com/zhangfisher/json_comments_extension",
     "package.json": {
       "devDependencies.better-sqlite3": "为了了让 Drizzle ORM 能够在开发环境下正常工作"
     }
+  },
+  "minimumClientVersion": "0.0.1",
+  "patchedDependencies": {
+    "nuxt-auth-utils@0.5.26": "patches/nuxt-auth-utils@0.5.26.patch"
   }
 }

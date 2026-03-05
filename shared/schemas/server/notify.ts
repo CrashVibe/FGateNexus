@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "..";
+import type { ApiSchemaRegistry } from "#shared/schemas";
 
 import { TargetConfigSchema } from "./target";
 
@@ -9,9 +9,11 @@ import { TargetConfigSchema } from "./target";
  */
 export const NotifyConfigSchema = z.object({
   /**
-   * 玩家进出通知
+   * 玩家死亡时发送的消息
    */
-  player_notify: z.boolean().default(false),
+  death_notify_message: z
+    .string()
+    .default("[死亡] {playerName} 因 {deathMessage} 死亡了"),
 
   /**
    * 玩家进出时发送的消息
@@ -21,7 +23,9 @@ export const NotifyConfigSchema = z.object({
   /**
    * 玩家离开时发送的消息
    */
-  leave_notify_message: z.string().default("[系统通知] {playerName} 离开了游戏"),
+  leave_notify_message: z
+    .string()
+    .default("[系统通知] {playerName} 离开了游戏"),
 
   /**
    * 玩家死亡通知
@@ -29,9 +33,9 @@ export const NotifyConfigSchema = z.object({
   player_disappoint_notify: z.boolean().default(false),
 
   /**
-   * 玩家死亡时发送的消息
+   * 玩家进出通知
    */
-  death_notify_message: z.string().default("[死亡] {playerName} 因 {deathMessage} 死亡了")
+  player_notify: z.boolean().default(false),
 });
 
 export const NotifyAPI = {
@@ -41,11 +45,11 @@ export const NotifyAPI = {
       notify: NotifyConfigSchema,
       targets: z.array(
         z.object({
+          config: TargetConfigSchema,
           id: z.uuidv4(),
-          config: TargetConfigSchema
-        })
-      )
+        }),
+      ),
     }),
-    response: z.object({})
-  }
+    response: z.object({}),
+  },
 } satisfies ApiSchemaRegistry;

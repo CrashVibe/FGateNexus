@@ -1,21 +1,49 @@
-import type { MigrationMeta } from "drizzle-orm/migrator";
-import type { TablesRelationalConfig } from "drizzle-orm/relations";
-import type { SQLiteSyncDialect } from "drizzle-orm/sqlite-core/dialect";
-import type { SQLiteSession } from "drizzle-orm/sqlite-core/session";
-
 import { Database } from "bun:sqlite";
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-import { getConfigManager } from "./server/utils/config";
+import type { MigrationMeta } from "drizzle-orm/migrator";
+
+import { configManager } from "./server/utils/config";
+
+const MIGRATIONS_TABLE = "__drizzle_migrations";
+
+const applyMigrations = (sqliteDb: Database, migrations: MigrationMeta[]) => {
+  sqliteDb
+    .query(
+      `CREATE TABLE IF NOT EXISTS ${MIGRATIONS_TABLE} (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at INTEGER)`,
+    )
+    .run();
+  const lastMigration = sqliteDb
+    .query<{ created_at: number }, []>(
+      `SELECT created_at FROM ${MIGRATIONS_TABLE} ORDER BY created_at DESC LIMIT 1`,
+    )
+    .get();
+  const pending = migrations.filter(
+    (m) => !lastMigration || lastMigration.created_at < m.folderMillis,
+  );
+  if (pending.length === 0) {
+    return;
+  }
+  const insertStmt = sqliteDb.prepare(
+    `INSERT INTO ${MIGRATIONS_TABLE} (hash, created_at) VALUES (?, ?)`,
+  );
+  sqliteDb.transaction(() => {
+    for (const migration of pending) {
+      for (const stmt of migration.sql) {
+        sqliteDb.run(stmt);
+      }
+      insertStmt.run(migration.hash, migration.folderMillis);
+    }
+  })();
+};
 
 const execDir = path.dirname(path.resolve(process.execPath));
 process.chdir(execDir);
-console.info("工作目录在 ", process.cwd());
+console.info("工作目录在", process.cwd());
 
-async function initDatabase() {
+const initDatabase = async () => {
   const dbFilePath = path.resolve("./sqlite.db");
   const isNewDatabase = await fs
     .access(dbFilePath)
@@ -24,8 +52,6 @@ async function initDatabase() {
 
   const client = new Database(dbFilePath);
 
-  const db = drizzle(client);
-
   if (isNewDatabase) {
     console.info("数据库不存在，正在初始化...");
   } else {
@@ -33,46 +59,46 @@ async function initDatabase() {
   }
 
   try {
-    // @ts-expect-error - This module is generated during build
-    const { embeddedJournal, embeddedSqlFiles } = (await import("./.output/server/migrations/embedded.js")) as {
-      embeddedJournal: { entries: { tag: string; when: number; breakpoints: boolean }[] };
-      embeddedSqlFiles: Record<string, string>;
-    };
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+    const { embeddedJournal, embeddedSqlFiles } =
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+      (await import("./.output/server/migrations/embedded.js")) as {
+        embeddedJournal: {
+          entries: { tag: string; when: number; breakpoints: boolean }[];
+        };
+        embeddedSqlFiles: Record<string, string>;
+      };
     const migrations: MigrationMeta[] = embeddedJournal.entries.map((entry) => {
-      const sql = embeddedSqlFiles[entry.tag]!;
+      const sql = embeddedSqlFiles[entry.tag];
+      if (sql === undefined) {
+        throw new Error(`未找到迁移 SQL 文件，tag: ${entry.tag}`);
+      }
       return {
-        sql: sql.split("--> statement-breakpoint"),
+        bps: entry.breakpoints,
         folderMillis: entry.when,
         hash: createHash("sha256").update(sql).digest("hex"),
-        bps: entry.breakpoints
+        sql: sql.split("--> statement-breakpoint"),
       };
     });
-    const { dialect, session } = db as unknown as {
-      dialect: SQLiteSyncDialect;
-      session: SQLiteSession<"sync", void, Record<string, unknown>, TablesRelationalConfig>;
-    };
-    dialect.migrate(migrations, session, undefined);
-
+    applyMigrations(client, migrations);
     console.info("[SUCCESS] 数据库准备就绪");
-  } catch (e) {
-    console.error("数据库迁移失败：", e);
+  } catch (error) {
+    console.error("数据库迁移失败：", error);
     process.exit(1);
   }
-}
+};
 
-async function startApplication() {
+const startApplication = async () => {
   try {
     await initDatabase();
-    const configManager = await getConfigManager();
-    const config = configManager.getConfig();
+    const { config } = configManager;
     process.env.NITRO_HOST = config.nitro.host;
     process.env.NITRO_PORT = String(config.nitro.port);
-    // @ts-expect-error - This module is generated during build
     await import("./.output/server/index.mjs");
-  } catch (e) {
-    console.error("应用启动失败：", e);
+  } catch (error) {
+    console.error("应用启动失败：", error);
     process.exit(1);
   }
-}
+};
 
 void startApplication();

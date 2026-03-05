@@ -1,22 +1,28 @@
-import type { Session } from "koishi";
-
-import { generateVerificationCode } from "#shared/utils/binding";
 import { and, eq, sql } from "drizzle-orm";
+import type { Session } from "koishi";
 import { db } from "~~/server/db/client";
 import { players, servers, socialAccounts, targets } from "~~/server/db/schema";
+import type { BotConnection } from "~~/server/service/chatbridge";
+import { pluginBridge } from "~~/server/service/mcwsbridge/mcws-bridge";
 import { AdapterType } from "~~/shared/schemas/adapter";
 import {
   renderBindFail,
   renderBindSuccess,
   renderUnbindFail,
   renderUnbindKick,
-  renderUnbindSuccess
+  renderUnbindSuccess,
 } from "~~/shared/utils/template/binding";
 
-import type { BotConnection } from "../chatbridge/chatbridge";
+import { generateVerificationCode } from "#shared/utils/binding";
 
-import { pluginBridge } from "../mcwsbridge/MCWSBridge";
 import { getConfig } from "./config";
+
+const isAdapterType = (
+  value: string | null | undefined,
+): value is AdapterType =>
+  value !== null &&
+  value !== undefined &&
+  (Object.values(AdapterType) as string[]).includes(value);
 
 interface PendingBinding {
   /**
@@ -49,17 +55,16 @@ interface PendingBinding {
   expiresAt: Date;
 }
 
-class BindingService {
+export class BindingService {
   private static instance: BindingService;
-  private pendingBindings: Map<number, Set<PendingBinding>>; // Bot ID -> PendingBinding
+  // Bot ID -> PendingBinding
+  private pendingBindings: Map<number, Set<PendingBinding>>;
   private constructor() {
     this.pendingBindings = new Map();
   }
 
   public static getInstance(): BindingService {
-    if (!BindingService.instance) {
-      BindingService.instance = new BindingService();
-    }
+    BindingService.instance ??= new BindingService();
     return BindingService.instance;
   }
 
@@ -69,14 +74,14 @@ class BindingService {
   public async addPendingBinding(
     serverID: number,
     playerUID: string,
-    playerNickname: string
+    playerNickname: string,
   ): Promise<{ has: boolean; message: string; expiresAt: Date }> {
     const bindingConfig = await getConfig(serverID);
     const serversWithAdapters = await db.query.servers.findFirst({
+      where: eq(servers.id, serverID),
       with: {
-        adapter: true
+        adapter: true,
       },
-      where: eq(servers.id, serverID)
     });
     if (!serversWithAdapters) {
       throw new Error("服务器未找到");
@@ -89,30 +94,42 @@ class BindingService {
     this.cleanUpExpiredBindings();
 
     // 确保 serverID playerUID 唯一性 PendingBinding
-    const existingBindings = this.pendingBindings.get(adapter.id) || new Set();
-    const pendingBinding = Array.from(existingBindings).find(
-      (binding) => binding.serverID === serverID && binding.playerUID === playerUID
+    const existingBindings = this.pendingBindings.get(adapter.id) ?? new Set();
+    const pendingBinding = [...existingBindings].find(
+      (binding) =>
+        binding.serverID === serverID && binding.playerUID === playerUID,
     );
     if (pendingBinding) {
-      return { has: true, message: pendingBinding.message, expiresAt: pendingBinding.expiresAt };
+      return {
+        expiresAt: pendingBinding.expiresAt,
+        has: true,
+        message: pendingBinding.message,
+      };
     }
 
-    const message = bindingConfig.prefix + generateVerificationCode(bindingConfig.codeMode, bindingConfig.codeLength);
-    const expiresAt = new Date(Date.now() + bindingConfig.codeExpire * 60 * 1000);
+    const message =
+      bindingConfig.prefix +
+      generateVerificationCode(
+        bindingConfig.codeMode,
+        bindingConfig.codeLength,
+      );
+    const expiresAt = new Date(
+      Date.now() + bindingConfig.codeExpire * 60 * 1000,
+    );
 
     const newBinding: PendingBinding = {
-      serverID,
-      playerUID,
       botID: adapter.id,
-      playerNickname,
+      expiresAt,
       message: message,
-      expiresAt
+      playerNickname,
+      playerUID,
+      serverID,
     };
 
     existingBindings.add(newBinding);
     this.pendingBindings.set(adapter.id, existingBindings);
 
-    return { has: false, message: message, expiresAt };
+    return { expiresAt, has: false, message: message };
   }
 
   /**
@@ -135,62 +152,101 @@ class BindingService {
   /**
    * 处理消息
    */
-  public async processMessage(connection: BotConnection, ctx: Session): Promise<boolean> {
+  public async processMessage(
+    connection: BotConnection,
+    ctx: Session,
+  ): Promise<boolean> {
     this.cleanUpExpiredBindings();
 
     const bindings = this.pendingBindings.get(connection.adapterID);
     let hit = false;
     if (bindings) {
       for (const binding of bindings) {
-        if (binding.message !== ctx.content) continue;
-        if (!Object.values(AdapterType).includes(ctx.platform as AdapterType) || !ctx.userId || !ctx.channelId) {
+        if (binding.message !== ctx.content) {
+          continue;
+        }
+        const { platform, userId, channelId } = ctx;
+        if (
+          !isAdapterType(platform) ||
+          userId === undefined ||
+          userId === "" ||
+          channelId === undefined ||
+          channelId === ""
+        ) {
           continue;
         }
 
         const server_list = await db.query.targets.findFirst({
-          where: and(eq(targets.serverId, binding.serverID), eq(targets.targetId, ctx.channelId)),
+          where: and(
+            eq(targets.serverId, binding.serverID),
+            eq(targets.targetId, channelId),
+          ),
           with: {
-            server: true
-          }
+            server: true,
+          },
         });
-        if (!server_list?.server) continue;
+        if (!server_list?.server) {
+          continue;
+        }
 
         const bindingConfig = await getConfig(binding.serverID);
         try {
-          await this.performBinding(binding, ctx.platform as AdapterType, ctx.userId, ctx.username);
+          await BindingService.performBinding(
+            binding,
+            platform,
+            userId,
+            ctx.username,
+          );
           // 删除已处理的 pending binding
           bindings.delete(binding);
-          await ctx.send(renderBindSuccess(bindingConfig.bindSuccessMsg, binding.playerNickname));
+          await ctx.send(
+            renderBindSuccess(
+              bindingConfig.bindSuccessMsg,
+              binding.playerNickname,
+            ),
+          );
         } catch (error: unknown) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
           logger.error({ errorMessage }, "无法处理绑定");
-          await ctx.send(renderBindFail(bindingConfig.bindFailMsg, binding.playerNickname, errorMessage));
+          await ctx.send(
+            renderBindFail(
+              bindingConfig.bindFailMsg,
+              binding.playerNickname,
+              errorMessage,
+            ),
+          );
         }
 
         hit = true;
       }
     }
-    if (await this.processUnbindMessage(connection, ctx)) return true;
+    if (await BindingService.processUnbindMessage(connection, ctx)) {
+      return true;
+    }
     return hit;
   }
 
-  public async performBinding(
+  public static async performBinding(
     pendingBinding: PendingBinding,
     adapterType: AdapterType,
     socialUid: string,
-    socialNickname: string | null
+    socialNickname: string | null,
   ): Promise<void> {
     let socialAccount = await db.query.socialAccounts.findFirst({
-      where: and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType))
+      where: and(
+        eq(socialAccounts.uid, socialUid),
+        eq(socialAccounts.adapterType, adapterType),
+      ),
     });
 
     if (!socialAccount) {
       const [newAccount] = await db
         .insert(socialAccounts)
         .values({
-          uid: socialUid,
           adapterType,
-          nickname: socialNickname
+          nickname: socialNickname,
+          uid: socialUid,
         })
         .returning();
       if (!newAccount) {
@@ -198,15 +254,12 @@ class BindingService {
       }
       socialAccount = newAccount;
     }
-    if (!socialAccount) {
-      throw new Error(`社交账号 ${socialUid} 创建失败`);
-    }
 
     const [updatedPlayer] = await db
       .update(players)
       .set({
         socialAccountId: socialAccount.id,
-        updatedAt: sql`(unixepoch())`
+        updatedAt: sql`(unixepoch())`,
       })
       .where(eq(players.uuid, pendingBinding.playerUID))
       .returning();
@@ -216,27 +269,39 @@ class BindingService {
     }
   }
 
-  private async processUnbindMessage(connection: BotConnection, ctx: Session): Promise<boolean> {
-    if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId || !ctx.channelId) {
+  private static async processUnbindMessage(
+    connection: BotConnection,
+    ctx: Session,
+  ): Promise<boolean> {
+    const { platform, userId, channelId } = ctx;
+    if (
+      !isAdapterType(platform) ||
+      userId === undefined ||
+      userId === "" ||
+      channelId === undefined ||
+      channelId === ""
+    ) {
       return false;
     }
 
     const serversWithBindingConfig = await db.query.targets.findMany({
-      where: and(eq(targets.targetId, ctx.channelId)),
+      where: and(eq(targets.targetId, channelId)),
       with: {
         server: {
           with: {
-            playerServers: true
-          }
-        }
-      }
+            playerServers: true,
+          },
+        },
+      },
     });
 
     const matchingServers = serversWithBindingConfig
-      .filter((target) => target.server && target.server.adapterId === connection.adapterID)
-      .map((target) => target.server!)
+      .filter((target) => target.server.adapterId === connection.adapterID)
+      .map((target) => target.server)
       .filter(
-        (server) => server.bindingConfig.allowUnbind && ctx.content?.startsWith(server.bindingConfig.unbindPrefix)
+        (server) =>
+          server.bindingConfig.allowUnbind &&
+          ctx.content?.startsWith(server.bindingConfig.unbindPrefix) === true,
       );
 
     if (matchingServers.length === 0) {
@@ -244,35 +309,52 @@ class BindingService {
     }
 
     const unbindPromises = matchingServers.map(async (server) => {
-      try {
-        const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
-        if (!playerName) {
-          return;
-        }
+      const { content } = ctx;
+      if (content === undefined) {
+        return;
+      }
+      const playerName = content
+        .slice(server.bindingConfig.unbindPrefix.length)
+        .trim();
+      if (!playerName) {
+        return;
+      }
 
-        const { playerUUID, socialUID } = await this.performUnbind(
-          ctx.platform as AdapterType,
-          ctx.userId!,
-          playerName
+      try {
+        const { playerUUID, socialUID } = await BindingService.performUnbind(
+          platform,
+          userId,
+          playerName,
         );
         logger.info(
           {
             playerUUID,
-            socialUID
+            socialUID,
           },
-          "玩家解绑成功"
+          "玩家解绑成功",
         );
         await pluginBridge.kickPlayer(
           server.id,
           playerUUID,
-          renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID)
+          renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID),
         );
-        await ctx.send(renderUnbindSuccess(server.bindingConfig.unbindSuccessMsg, playerName));
+        await ctx.send(
+          renderUnbindSuccess(
+            server.bindingConfig.unbindSuccessMsg,
+            playerName,
+          ),
+        );
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error({ errorMessage }, "无法处理解绑");
-        const playerName = ctx.content!.slice(server.bindingConfig.unbindPrefix.length).trim();
-        await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, playerName, errorMessage));
+        await ctx.send(
+          renderUnbindFail(
+            server.bindingConfig.unbindFailMsg,
+            playerName,
+            errorMessage,
+          ),
+        );
       }
     });
 
@@ -280,25 +362,35 @@ class BindingService {
     return true;
   }
 
-  public async handleGroupLeave(connection: BotConnection, ctx: Session): Promise<boolean> {
-    if (!Object.values(AdapterType).find((key) => key === ctx.platform) || !ctx.userId || !ctx.channelId) {
+  public static async handleGroupLeave(
+    connection: BotConnection,
+    ctx: Session,
+  ): Promise<boolean> {
+    const { platform, userId, channelId } = ctx;
+    if (
+      !isAdapterType(platform) ||
+      userId === undefined ||
+      userId === "" ||
+      channelId === undefined ||
+      channelId === ""
+    ) {
       return false;
     }
 
     const serversWithBindingConfig = await db.query.targets.findMany({
-      where: and(eq(targets.targetId, ctx.channelId)),
+      where: and(eq(targets.targetId, channelId)),
       with: {
         server: {
           with: {
-            playerServers: true
-          }
-        }
-      }
+            playerServers: true,
+          },
+        },
+      },
     });
 
     const matchingServers = serversWithBindingConfig
-      .filter((target) => target.server && target.server.adapterId === connection.adapterID)
-      .map((target) => target.server!)
+      .filter((target) => target.server.adapterId === connection.adapterID)
+      .map((target) => target.server)
       .filter((server) => server.bindingConfig.allowGroupUnbind);
 
     if (matchingServers.length === 0) {
@@ -306,44 +398,59 @@ class BindingService {
     }
 
     const socialAccount = await db.query.socialAccounts.findFirst({
-      where: and(eq(socialAccounts.uid, ctx.userId), eq(socialAccounts.adapterType, ctx.platform as AdapterType)),
+      where: and(
+        eq(socialAccounts.uid, userId),
+        eq(socialAccounts.adapterType, platform),
+      ),
       with: {
-        players: true
-      }
+        players: true,
+      },
     });
     if (!socialAccount) {
       return false;
     }
 
-    const player = socialAccount.players[0];
+    const [player] = socialAccount.players;
     if (!player) {
       return false;
     }
 
     const unbindPromises = matchingServers.map(async (server) => {
       try {
-        const { playerUUID, socialUID } = await this.performUnbind(
-          ctx.platform as AdapterType,
-          ctx.userId!,
-          player.name
+        const { playerUUID, socialUID } = await BindingService.performUnbind(
+          platform,
+          userId,
+          player.name,
         );
         logger.info(
           {
             playerUUID,
-            socialUID
+            socialUID,
           },
-          "玩家解绑成功"
+          "玩家解绑成功",
         );
         await pluginBridge.kickPlayer(
           server.id,
           playerUUID,
-          renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID)
+          renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID),
         );
-        await ctx.send(renderUnbindSuccess(server.bindingConfig.unbindSuccessMsg, player.name));
+        await ctx.send(
+          renderUnbindSuccess(
+            server.bindingConfig.unbindSuccessMsg,
+            player.name,
+          ),
+        );
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         logger.error({ errorMessage }, "无法处理解绑");
-        await ctx.send(renderUnbindFail(server.bindingConfig.unbindFailMsg, player.name, errorMessage));
+        await ctx.send(
+          renderUnbindFail(
+            server.bindingConfig.unbindFailMsg,
+            player.name,
+            errorMessage,
+          ),
+        );
       }
     });
 
@@ -351,19 +458,22 @@ class BindingService {
     return true;
   }
 
-  private async performUnbind(
+  private static async performUnbind(
     adapterType: AdapterType,
     socialUid: string,
-    playerName: string
+    playerName: string,
   ): Promise<{
     playerUUID: string;
     socialUID: string;
   }> {
     const socialAccount = await db.query.socialAccounts.findFirst({
-      where: and(eq(socialAccounts.uid, socialUid), eq(socialAccounts.adapterType, adapterType)),
+      where: and(
+        eq(socialAccounts.uid, socialUid),
+        eq(socialAccounts.adapterType, adapterType),
+      ),
       with: {
-        players: true
-      }
+        players: true,
+      },
     });
 
     if (!socialAccount) {
@@ -379,13 +489,13 @@ class BindingService {
       .update(players)
       .set({
         socialAccountId: null,
-        updatedAt: sql`(unixepoch())`
+        updatedAt: sql`(unixepoch())`,
       })
       .where(eq(players.id, player.id));
 
     return {
       playerUUID: player.uuid,
-      socialUID: socialAccount.uid
+      socialUID: socialAccount.uid,
     };
   }
 }

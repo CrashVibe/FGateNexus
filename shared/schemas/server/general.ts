@@ -1,13 +1,13 @@
-import z from "zod";
+import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "..";
+import type { ApiSchemaRegistry } from "#shared/schemas";
 
 export const GeneralAPI = {
   PATCH: {
     description: "更新服务器基础信息",
     request: z.object({
-      adapterId: z.number().nullish()
+      adapterId: z.number().nullish(),
     }),
-    response: z.object({})
-  }
+    response: z.object({}),
+  },
 } satisfies ApiSchemaRegistry;

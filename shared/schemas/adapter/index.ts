@@ -1,10 +1,10 @@
+import { z } from "zod";
 import type { adapters } from "~~/server/db/schema";
 
-import z from "zod";
+import type { ApiSchemaRegistry } from "#shared/schemas";
 
-import type { ApiSchemaRegistry } from "..";
-
-import { type OneBotConfig, OneBotConfigSchema } from "./onebot";
+import { OneBotConfigSchema } from "./onebot";
+import type { OneBotConfig } from "./onebot";
 
 export const AdapterConfigSchema = OneBotConfigSchema;
 
@@ -15,52 +15,60 @@ export type AdapterWithStatus = z.infer<typeof AdapterAPI.GET.response>;
 export type AdaptersWithStatus = z.infer<typeof AdapterAPI.GETS.response>;
 
 export enum AdapterType {
-  Onebot = "onebot"
+  Onebot = "onebot",
 }
 
 const AdapterResponseSchema = z.object({
+  config: AdapterConfigSchema,
+  enabled: z.boolean(),
   id: z.number(),
+  isOnline: z.boolean(),
   name: z.string(),
   type: z.enum(AdapterType),
-  enabled: z.boolean(),
-  config: AdapterConfigSchema,
-  isOnline: z.boolean()
 });
 
 export const AdapterAPI = {
-  GETS: {
-    description: "获取服务器适配器列表",
-    request: z.object({}),
-    response: z.array(AdapterResponseSchema)
-  },
   GET: {
     description: "获取单个服务器适配器信息",
     request: z.object({}),
-    response: AdapterResponseSchema
+    response: AdapterResponseSchema,
+  },
+  GETS: {
+    description: "获取服务器适配器列表",
+    request: z.object({}),
+    response: z.array(AdapterResponseSchema),
   },
   POST: {
     description: "新增适配器",
     request: z.object({
-      name: z.string().min(0).max(12, "适配器名称长度最多为 12 个字符").default(""),
+      config: AdapterConfigSchema,
+      name: z
+        .string()
+        .min(0)
+        .max(12, "适配器名称长度最多为 12 个字符")
+        .default(""),
       type: z.enum(AdapterType),
-      config: AdapterConfigSchema
     }),
-    response: z.object({})
+    response: z.object({}),
   },
   POSTTOGGLE: {
     description: "启用或禁用适配器",
     request: z.object({
-      enabled: z.boolean()
+      enabled: z.boolean(),
     }),
-    response: z.object({})
+    response: z.object({}),
   },
   PUT: {
     description: "更新适配器信息",
     request: z.object({
-      name: z.string().min(0).max(12, "适配器名称长度最多为 12 个字符").default(""),
+      config: AdapterConfigSchema,
+      name: z
+        .string()
+        .min(0)
+        .max(12, "适配器名称长度最多为 12 个字符")
+        .default(""),
       type: z.enum(AdapterType),
-      config: AdapterConfigSchema
     }),
-    response: z.object({})
-  }
+    response: z.object({}),
+  },
 } satisfies ApiSchemaRegistry;
