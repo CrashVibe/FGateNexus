@@ -1,11 +1,12 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
 import { CommandAPI } from "~~/shared/schemas/server/command";
+
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,15 +18,24 @@ export default defineEventHandler(async (event) => {
 
     const parsed = CommandAPI.PATCH.request.safeParse(await readBody(event));
     if (!parsed.success) {
-      return createErrorResponse(event, ApiError.validation("参数错误"), parsed.error);
+      return createErrorResponse(
+        event,
+        ApiError.validation("参数错误"),
+        parsed.error,
+      );
     }
 
     const { command, targets: items } = parsed.data;
 
     db.transaction((tx) => {
-      tx.update(servers).set({ commandConfig: command }).where(eq(servers.id, serverID)).run();
+      tx.update(servers)
+        .set({ commandConfig: command })
+        .where(eq(servers.id, serverID))
+        .run();
 
-      if (items.length === 0) return;
+      if (items.length === 0) {
+        return;
+      }
 
       const ids = items.map((i) => i.id);
 
@@ -38,14 +48,16 @@ export default defineEventHandler(async (event) => {
       if (exists.length !== ids.length) {
         const okSet = new Set(exists.map((e) => e.id));
         const invalidIds = ids.filter((x) => !okSet.has(x));
-        throw ApiError.validation(`存在与该服务器不匹配或不存在的目标 ID: ${invalidIds.join(", ")}`);
+        throw ApiError.validation(
+          `存在与该服务器不匹配或不存在的目标 ID: ${invalidIds.join(", ")}`,
+        );
       }
 
       for (const i of items) {
         tx.update(targets)
           .set({
             config: i.config,
-            updatedAt: sql`(unixepoch())`
+            updatedAt: sql`(unixepoch())`,
           })
           .where(and(eq(targets.id, i.id), eq(targets.serverId, serverID)))
           .run();
@@ -53,9 +65,12 @@ export default defineEventHandler(async (event) => {
     });
 
     return createApiResponse(event, "更新服务器指令配置成功", StatusCodes.OK);
-  } catch (err: unknown) {
-    logger.error({ err }, "更新服务器指令配置失败");
-    const apiError = (err as ApiError) || ApiError.internal("更新服务器指令配置失败");
+  } catch (error: unknown) {
+    logger.error({ error }, "更新服务器指令配置失败");
+    const apiError =
+      error instanceof ApiError
+        ? error
+        : ApiError.internal("更新服务器指令配置失败");
     return createErrorResponse(event, apiError);
   }
 });

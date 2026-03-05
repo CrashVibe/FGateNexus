@@ -1,9 +1,10 @@
 <script lang="ts" setup>
-import type { AdapterAPI, AdapterWithStatus } from "#shared/schemas/adapter";
 import type { FormInst } from "naive-ui";
-import type z from "zod";
+import type { z } from "zod";
 
-const props = defineProps<{
+import type { AdapterAPI, AdapterWithStatus } from "#shared/schemas/adapter";
+
+const { adapter } = defineProps<{
   adapter: AdapterWithStatus;
 }>();
 
@@ -17,30 +18,28 @@ const formRef = ref<FormInst>();
 const loading = ref(false);
 
 const formData = ref<z.infer<typeof AdapterAPI.POST.request>>({
-  type: props.adapter.type,
-  config: props.adapter.config,
-  name: props.adapter.name
+  config: adapter.config,
+  name: adapter.name,
+  type: adapter.type,
 });
 
 const handleSave = async () => {
   try {
     await formRef.value?.validate();
     loading.value = true;
-    emit("save", props.adapter.id, formData.value);
-  } catch {
-    return;
+    emit("save", adapter.id, formData.value);
   } finally {
     loading.value = false;
   }
 };
 
 const handleDelete = () => {
-  emit("delete", props.adapter.id);
+  emit("delete", adapter.id);
 };
 
 const handleToggle = () => {
   loading.value = true;
-  emit("toggle", props.adapter.id, !props.adapter.enabled);
+  emit("toggle", adapter.id, !adapter.enabled);
   loading.value = false;
 };
 </script>
@@ -51,11 +50,29 @@ const handleToggle = () => {
     </div>
     <template #footer>
       <div class="flex justify-end gap-3">
-        <n-button :disabled="loading" :loading="loading" ghost type="error" @click="handleDelete">删除</n-button>
-        <n-button :disabled="loading" :loading="loading" type="default" @click="handleToggle">
-          {{ props.adapter.enabled ? "禁用" : "启用" }}
+        <n-button
+          :disabled="loading"
+          :loading="loading"
+          ghost
+          type="error"
+          @click="handleDelete"
+          >删除</n-button
+        >
+        <n-button
+          :disabled="loading"
+          :loading="loading"
+          type="default"
+          @click="handleToggle"
+        >
+          {{ adapter.enabled ? "禁用" : "启用" }}
         </n-button>
-        <n-button :disabled="loading" :loading="loading" type="primary" @click="handleSave">保存</n-button>
+        <n-button
+          :disabled="loading"
+          :loading="loading"
+          type="primary"
+          @click="handleSave"
+          >保存</n-button
+        >
       </div>
     </template>
   </n-drawer-content>

@@ -1,40 +1,45 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { pluginBridge } from "~~/server/service/mcwsbridge/MCWSBridge";
+import { pluginBridge } from "~~/server/service/mcwsbridge/mcws-bridge";
+
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
 
 export default defineEventHandler(async (event) => {
   try {
     const serverID = Number(getRouterParam(event, "id"));
-    if (isNaN(serverID)) {
+    if (Number.isNaN(serverID)) {
       const apiError = ApiError.validation("无效服务器 ID");
       return createErrorResponse(event, apiError);
     }
     const result = await db.query.servers.findFirst({
-      where: (server, { eq }) => eq(server.id, serverID)
+      where: (server, { eq: eqFn }) => eqFn(server.id, serverID),
     });
     if (!result) {
       const apiError = ApiError.notFound("服务器不存在");
       return createErrorResponse(event, apiError);
     }
 
-    const deleteResult = await db.delete(servers).where(eq(servers.id, serverID)).returning();
+    const deleteResult = await db
+      .delete(servers)
+      .where(eq(servers.id, serverID))
+      .returning();
 
     if (deleteResult[0]) {
       if (pluginBridge.connectionManager.getConnectionData(serverID)) {
         pluginBridge.connectionManager.removeConnection(undefined, serverID);
       }
-      return createApiResponse(event, "删除服务器成功", StatusCodes.OK, { id: serverID });
-    } else {
-      const apiError = ApiError.database("未能删除服务器");
-      return createErrorResponse(event, apiError);
+      return createApiResponse(event, "删除服务器成功", StatusCodes.OK, {
+        id: serverID,
+      });
     }
-  } catch (err) {
-    logger.error({ err }, "Database error");
+    const apiError = ApiError.database("未能删除服务器");
+    return createErrorResponse(event, apiError);
+  } catch (error) {
+    logger.error({ error }, "Database error");
     return createErrorResponse(event, ApiError.database("获取服务器列表失败"));
   }
 });

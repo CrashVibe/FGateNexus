@@ -1,5 +1,3 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
@@ -8,21 +6,27 @@ import { z } from "zod";
 import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
+
 const bodySchema = z.object({
+  secret: z.string().min(1, "密钥不能为空"),
   token: z.string().min(1, "验证码不能为空"),
-  secret: z.string().min(1, "密钥不能为空")
 });
 
 export default defineEventHandler(async (event) => {
   try {
     // 需要用户已认证
     const session = await requireUserSession(event);
-    if (!session?.user) {
+
+    if (session?.user === undefined) {
       const apiError = ApiError.unauthorized("未认证");
       return createErrorResponse(event, apiError);
     }
 
-    const { token, secret } = await readValidatedBody(event, (data) => bodySchema.parse(data));
+    const { token, secret } = await readValidatedBody(event, (data) =>
+      bodySchema.parse(data),
+    );
 
     // 获取用户
     const user = await db.query.users.findFirst();
@@ -32,8 +36,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证 TOTP 令牌
-    const isValid = verify({ token, secret });
-    if (!isValid) {
+    const result = await verify({ secret, token });
+    if (!result.valid) {
       const apiError = ApiError.validation("验证码错误");
       return createErrorResponse(event, apiError);
     }
@@ -42,13 +46,17 @@ export default defineEventHandler(async (event) => {
     await db
       .update(users)
       .set({
-        twoFactorSecret: secret,
         twoFactorEnabled: true,
-        updatedAt: new Date()
+        twoFactorSecret: secret,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
 
-    return createApiResponse(event, "2FA 验证成功，已启用双重验证", StatusCodes.OK);
+    return createApiResponse(
+      event,
+      "2FA 验证成功，已启用双重验证",
+      StatusCodes.OK,
+    );
   } catch (error) {
     logger.error({ error }, "2FA 验证失败");
     const apiError = ApiError.internal("2FA 验证失败");

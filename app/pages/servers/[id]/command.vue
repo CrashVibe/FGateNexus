@@ -7,11 +7,20 @@
         <n-card class="h-full" size="small" title="配置群聊">
           单独对目标进行配置
           <template #footer>
-            <n-dropdown v-if="options.length" trigger="hover" :options="options" @select="handleSelect">
+            <n-dropdown
+              v-if="options.length"
+              trigger="hover"
+              :options="options"
+              @select="handleSelect"
+            >
               <n-button>配置目标</n-button>
             </n-dropdown>
             <n-alert v-else type="warning">
-              <n-button text dashed @click="router.push(`/servers/${route.params.id}/target`)">
+              <n-button
+                text
+                dashed
+                @click="router.push(`/servers/${route.params.id}/target`)"
+              >
                 你还没有创建目标哦（去创建）
               </n-button>
             </n-alert>
@@ -21,13 +30,28 @@
     </n-grid>
 
     <n-drawer v-model:show="drawerVisible" :width="502">
-      <drawer-command v-if="selectTarget" :adapter-type="adapterData?.type" :target="selectTarget" />
+      <drawer-command
+        v-if="selectTarget"
+        :adapter-type="adapterData?.type"
+        :target="selectTarget"
+      />
     </n-drawer>
 
     <n-divider />
     <div class="flex justify-end gap-2">
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" @click="cancelChanges">取消更改</n-button>
-      <n-button :disabled="isAnyLoading || !isDirty" :loading="isAnyLoading" ghost type="primary" @click="handleSubmit">
+      <n-button
+        :disabled="isAnyLoading || !isDirty"
+        :loading="isAnyLoading"
+        @click="cancelChanges"
+        >取消更改</n-button
+      >
+      <n-button
+        :disabled="isAnyLoading || !isDirty"
+        :loading="isAnyLoading"
+        ghost
+        type="primary"
+        @click="handleSubmit"
+      >
         <template #icon>
           <n-icon>
             <svg viewBox="0 0 24 24">
@@ -45,17 +69,22 @@
 </template>
 
 <script lang="ts" setup>
-import { isMobile } from "#imports";
+import { differenceWith, isEqual, pick } from "lodash-es";
 import type { FormInst } from "naive-ui";
+import type { z } from "zod";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
-import { CommandConfigSchema, type CommandAPI, type CommandConfig } from "~~/shared/schemas/server/command";
-import type { targetResponse } from "~~/shared/schemas/server/target";
-import { cloneDeep, differenceWith, isEqual, pick } from "lodash-es";
-import { AdapterData, CommandData, ServerData } from "~/composables/api";
+import { CommandConfigSchema } from "~~/shared/schemas/server/command";
+import type {
+  CommandAPI,
+  CommandConfig,
+} from "~~/shared/schemas/server/command";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
+import type { targetResponse } from "~~/shared/schemas/server/target";
 import { pickEditableTarget } from "~~/shared/utils/target";
-import type z from "zod";
-import ServerHeader from "~/components/Header/ServerHeader.vue";
+
+import { isMobile } from "#imports";
+import ServerHeader from "@/components/header/server-header.vue";
+import { AdapterData, CommandData, ServerData } from "~/composables/api";
 
 const { setPageState, clearPageState } = usePageStateStore();
 
@@ -73,7 +102,7 @@ interface FormState {
 
 const formData = reactive<FormState>({
   config: CommandConfigSchema.parse({}),
-  targets: []
+  targets: [],
 });
 
 const selectTarget = ref<targetResponse | null>(null);
@@ -85,7 +114,7 @@ const originalFormData = ref<FormState | null>(null);
 
 const loadingMap = reactive({
   isLoading: true,
-  isSubmitting: false
+  isSubmitting: false,
 });
 
 const isDirty = computed(() => !isEqual(formData, originalFormData.value));
@@ -93,35 +122,46 @@ const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
 const options = ref<{ label: string; key: string }[]>([]);
 
-function handleSelect(key: string) {
+const handleSelect = (key: string) => {
   drawerVisible.value = true;
-  const selected = serverData?.targets.find((t) => String(t.id) === String(key));
+  const selected = serverData?.targets.find(
+    (t) => String(t.id) === String(key),
+  );
   if (selected) {
     const editable = pickEditableTarget(selected, formData.targets);
     selectTarget.value = editable;
   }
-}
+};
 
-async function refreshServerData(): Promise<void> {
-  if (!route.params["id"]) return;
+const refreshServerData = async (): Promise<void> => {
+  if (!route.params["id"]) {
+    return;
+  }
   loadingMap.isLoading = true;
   try {
     const data = await ServerData.get(Number(route.params["id"]));
     serverData = data;
-    options.value = data.targets.map((target) => ({ label: target.targetId, key: target.id }));
-    adapterData.value = data.adapterId ? await AdapterData.get(data.adapterId) : null;
-    formData.config = cloneDeep(data.commandConfig || CommandConfigSchema.parse({}));
-    formData.targets = cloneDeep(data.targets || []);
-    originalFormData.value = cloneDeep(formData);
+    options.value = data.targets.map((target) => ({
+      key: target.id,
+      label: target.targetId,
+    }));
+    adapterData.value = data.adapterId
+      ? await AdapterData.get(data.adapterId)
+      : null;
+    formData.config = structuredClone(
+      data.commandConfig || CommandConfigSchema.parse({}),
+    );
+    formData.targets = structuredClone(data.targets || []);
+    originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
     console.error("Failed to refresh server data:", error);
     message.error("刷新服务器数据失败");
   } finally {
     loadingMap.isLoading = false;
   }
-}
+};
 
-async function handleSubmit() {
+const handleSubmit = async () => {
   if (!isDirty.value) {
     message.info("没有需要保存的更改");
     return;
@@ -133,15 +173,19 @@ async function handleSubmit() {
     return;
   }
 
-  const targetsPayload: z.infer<typeof CommandAPI.PATCH.request>["targets"] = differenceWith(
-    formData.targets,
-    originalFormData.value?.targets || [],
-    isEqual
-  ).map((t) => pick(t, ["id", "config"]));
+  const targetsPayload: z.infer<typeof CommandAPI.PATCH.request>["targets"] =
+    differenceWith(
+      formData.targets,
+      originalFormData.value?.targets || [],
+      isEqual,
+    ).map((t) => pick(t, ["id", "config"]));
 
   loadingMap.isSubmitting = true;
   try {
-    await CommandData.patch(Number(route.params["id"]), { command: formData.config, targets: targetsPayload });
+    await CommandData.patch(Number(route.params["id"]), {
+      command: formData.config,
+      targets: targetsPayload,
+    });
     message.success("配置已保存");
     selectTarget.value = null;
     await refreshServerData();
@@ -151,18 +195,17 @@ async function handleSubmit() {
   } finally {
     loadingMap.isSubmitting = false;
   }
-}
+};
 
-function cancelChanges() {
+const cancelChanges = () => {
   if (originalFormData.value) {
-    formData.config = cloneDeep(originalFormData.value.config);
-    formData.targets = cloneDeep(originalFormData.value.targets);
+    Object.assign(formData, structuredClone(toRaw(originalFormData.value)));
   } else {
     formData.config = CommandConfigSchema.parse({});
     formData.targets = [];
   }
   selectTarget.value = null;
-}
+};
 
 onMounted(async () => {
   await refreshServerData();

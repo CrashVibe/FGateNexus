@@ -1,35 +1,44 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { StatusCodes } from "http-status-codes";
 import { verify } from "otplib";
 import { db } from "~~/server/db/client";
-import { checkRateLimit } from "~~/server/utils/rateLimit";
+import { checkRateLimit } from "~~/server/utils/rate-limit";
 import { LoginAPI } from "~~/shared/schemas/auth";
+
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
 
 export default defineEventHandler(async (event) => {
   try {
-    const clientIP = getRequestIP(event, { xForwardedFor: true }) || "unknown";
+    const clientIP = getRequestIP(event, { xForwardedFor: true }) ?? "unknown";
     const rateLimit = await checkRateLimit(clientIP, "login");
 
     if (!rateLimit.allowed) {
       logger.warn({ ip: clientIP }, "登录请求速率超限");
-      const retryMsg = rateLimit.retryAfter
-        ? `请求过于频繁，请 ${rateLimit.retryAfter} 秒后重试`
-        : "请求过于频繁，请稍后再试";
+      const retryMsg =
+        rateLimit.retryAfter === undefined
+          ? "请求过于频繁，请稍后再试"
+          : `请求过于频繁，请 ${rateLimit.retryAfter} 秒后重试`;
       return createErrorResponse(event, ApiError.tooManyRequests(retryMsg));
     }
 
     const parsed = LoginAPI.POST.request.safeParse(await readBody(event));
 
     if (!parsed.success) {
-      return createErrorResponse(event, ApiError.validation("请求参数错误"), parsed.error);
+      return createErrorResponse(
+        event,
+        ApiError.validation("请求参数错误"),
+        parsed.error,
+      );
     }
 
     const { password, twoFactorToken } = parsed.data;
     const user = await db.query.users.findFirst();
 
-    if (!user || !user.passwordHash) {
-      return createErrorResponse(event, ApiError.unauthorized("密码错误"));
+    if (!user || user.passwordHash === null || user.passwordHash === "") {
+      return createErrorResponse(
+        event,
+        ApiError.unauthorized("无密码，无需登陆"),
+      );
     }
 
     const isPasswordValid = await verifyPassword(user.passwordHash, password);
@@ -39,38 +48,48 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证 2FA
-    if (user.twoFactorEnabled && user.twoFactorSecret) {
-      if (!twoFactorToken) {
-        return createErrorResponse(event, ApiError.unauthorized("需要输入 2FA 验证码"));
+    if (
+      user.twoFactorEnabled &&
+      user.twoFactorSecret !== null &&
+      user.twoFactorSecret !== ""
+    ) {
+      if (twoFactorToken === undefined || twoFactorToken === "") {
+        return createErrorResponse(
+          event,
+          ApiError.unauthorized("需要输入 2FA 验证码"),
+        );
       }
 
-      const isValid = verify({
+      const result = await verify({
+        secret: user.twoFactorSecret,
         token: twoFactorToken,
-        secret: user.twoFactorSecret
       });
 
-      if (!isValid) {
+      if (!result.valid) {
         logger.warn({ userId: user.id }, "登录失败：2FA 验证码错误");
-        return createErrorResponse(event, ApiError.unauthorized("2FA 验证码错误"));
+        return createErrorResponse(
+          event,
+          ApiError.unauthorized("2FA 验证码错误"),
+        );
       }
     }
 
     logger.info(
       {
+        ip: getRequestIP(event),
+        userAgent: getHeader(event, "user-agent"),
         userId: user.id,
         username: user.username,
-        ip: getRequestIP(event),
-        userAgent: getHeader(event, "user-agent")
       },
-      "登录成功"
+      "登录成功",
     );
 
     await setUserSession(event, {
       user: {
+        has2FA: user.twoFactorEnabled,
         id: user.id,
         username: user.username,
-        has2FA: user.twoFactorEnabled
-      }
+      },
     });
 
     return createApiResponse(event, "登录成功", StatusCodes.OK);

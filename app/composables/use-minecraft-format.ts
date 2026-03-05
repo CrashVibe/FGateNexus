@@ -1,0 +1,183 @@
+// Minecraft 颜色代码（'f' 由暗色模式决定，在解析时动态处理）
+export const MINECRAFT_COLORS: Record<string, string> = {
+  "0": "#000000",
+  "1": "#0000AA",
+  "2": "#00AA00",
+  "3": "#00AAAA",
+  "4": "#AA0000",
+  "5": "#AA00AA",
+  "6": "#FFAA00",
+  "7": "#AAAAAA",
+  "8": "#555555",
+  "9": "#5555FF",
+  a: "#55FF55",
+  b: "#55FFFF",
+  c: "#FF5555",
+  d: "#FF55FF",
+  e: "#FFFF55",
+};
+
+export interface McSegment {
+  text: string;
+  color: string;
+  bold: boolean;
+  strikethrough: boolean;
+  underline: boolean;
+  italic: boolean;
+  obfuscated: boolean;
+  lineBreak?: true;
+}
+
+/** 颜色/格式代码前缀字符集，`&` 与 `§` 均支持。 */
+const CODE_PREFIXES = new Set(["&", "\u00A7"]);
+
+/** 格式化代码（k/l/m/n/o）到状态修改函数的映射。 */
+const FORMAT_SETTERS: Partial<Record<string, (s: McSegment) => void>> = {
+  k: (s) => {
+    s.obfuscated = true;
+  },
+  l: (s) => {
+    s.bold = true;
+  },
+  m: (s) => {
+    s.strikethrough = true;
+  },
+  n: (s) => {
+    s.underline = true;
+  },
+  o: (s) => {
+    s.italic = true;
+  },
+};
+
+const makeSegment = (overrides: Partial<McSegment> = {}): McSegment => ({
+  bold: false,
+  color: "",
+  italic: false,
+  obfuscated: false,
+  strikethrough: false,
+  text: "",
+  underline: false,
+  ...overrides,
+});
+
+/**
+ * 处理一个格式/颜色代码，返回应前进的字符数（0 表示未识别）。
+ * 副作用：修改 st 状态并调用 flush。
+ */
+const applyCode = (
+  code: string,
+  line: string,
+  i: number,
+  st: McSegment,
+  flush: () => void,
+  defaultColor: string,
+): number => {
+  // 十六进制颜色：&#RRGGBB
+  if (code === "#" && i + 7 < line.length) {
+    const hex = line.slice(i + 1, i + 8);
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      flush();
+      st.color = hex;
+      st.obfuscated = false;
+      return 8;
+    }
+  }
+
+  // 重置所有格式
+  if (code === "r") {
+    flush();
+    Object.assign(st, makeSegment({ color: defaultColor }));
+    return 2;
+  }
+
+  // 预设颜色（'f' 跟随暗色模式）
+  const colorVal = code === "f" ? defaultColor : MINECRAFT_COLORS[code];
+  if (colorVal !== undefined) {
+    flush();
+    st.color = colorVal;
+    st.obfuscated = false;
+    return 2;
+  }
+
+  // 格式化代码（k/l/m/n/o）
+  const setter = FORMAT_SETTERS[code];
+  if (setter !== undefined) {
+    flush();
+    setter(st);
+    return 2;
+  }
+
+  // 未识别的代码
+  return 0;
+};
+
+/**
+ * 将 Minecraft 格式化字符串解析为样式片段列表。
+ * @param text     含 `&` 或 `§` 颜色代码的原始文本
+ * @param darkMode 为 true 时使用白色（#F0F8FF）作为默认文字颜色
+ */
+export const parseMinecraftText = (
+  text: string,
+  darkMode: boolean,
+): McSegment[] => {
+  if (text === "") {
+    return [];
+  }
+
+  const defaultColor = darkMode ? "#F0F8FF" : "#808080";
+  const lines = text.split(/\\n|\n/);
+  const segments: McSegment[] = [];
+
+  const st = makeSegment({ color: defaultColor });
+  let buffer = "";
+
+  const flush = (): void => {
+    if (buffer === "") {
+      return;
+    }
+    segments.push({ ...st, text: buffer });
+    buffer = "";
+  };
+
+  for (let li = 0; li < lines.length; li += 1) {
+    const line = lines[li];
+
+    if (li > 0) {
+      flush();
+      segments.push(makeSegment({ color: st.color, lineBreak: true }));
+    }
+
+    if (line === undefined || line === "") {
+      continue;
+    }
+
+    let i = 0;
+    while (i < line.length) {
+      const ch = line[i];
+      if (ch !== undefined && CODE_PREFIXES.has(ch) && i + 1 < line.length) {
+        const next = line[i + 1];
+        if (next === undefined || next === "") {
+          buffer += ch;
+          i += 1;
+          continue;
+        }
+        const code = next.toLowerCase();
+        const advance = applyCode(code, line, i, st, flush, defaultColor);
+        if (advance > 0) {
+          i += advance;
+        } else {
+          // 未识别的代码，原样输出
+          buffer += ch;
+          i += 1;
+        }
+      } else {
+        buffer += ch ?? "";
+        i += 1;
+      }
+    }
+  }
+
+  flush();
+  return segments;
+};

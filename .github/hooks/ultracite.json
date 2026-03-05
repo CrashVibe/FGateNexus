@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "bun x oxlint --fix --type-aware"
+      }
+    ]
+  }
+}

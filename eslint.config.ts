@@ -1,12 +1,12 @@
 import oxlint from "eslint-plugin-oxlint";
 
-import withNuxt from "./.nuxt/eslint.config.mjs";
+import { withNuxt } from "./.nuxt/eslint.config.mjs";
 
 export default withNuxt(
   {
     rules: {
-      "vue/html-self-closing": 0
-    }
+      "vue/html-self-closing": 0,
+    },
   },
-  ...(oxlint.configs["flat/recommended"] || [])
+  ...(oxlint.configs["flat/recommended"] ?? []),
 );

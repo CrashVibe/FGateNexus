@@ -10,11 +10,17 @@ import { createApiResponse } from "~~/shared/types";
 export default defineEventHandler(async (event) => {
   try {
     const serverID = Number(getRouterParam(event, "id"));
-    if (Number.isNaN(serverID)) return createErrorResponse(event, ApiError.validation("无效的 ID"));
+    if (Number.isNaN(serverID)) {
+      return createErrorResponse(event, ApiError.validation("无效的 ID"));
+    }
 
     const parsed = TargetAPI.PATCH.request.safeParse(await readBody(event));
     if (!parsed.success) {
-      return createErrorResponse(event, ApiError.validation("请求体格式不正确"), parsed.error);
+      return createErrorResponse(
+        event,
+        ApiError.validation("请求体格式不正确"),
+        parsed.error,
+      );
     }
 
     const { items } = parsed.data;
@@ -27,14 +33,14 @@ export default defineEventHandler(async (event) => {
       db
         .update(targets)
         .set({
+          config: data.config,
+          enabled: data.enabled,
           targetId: data.targetId,
           type: data.type,
-          enabled: data.enabled,
-          config: data.config,
-          updatedAt: sql`(unixepoch())`
+          updatedAt: sql`(unixepoch())`,
         })
         .where(and(eq(targets.serverId, serverID), eq(targets.id, id)))
-        .returning()
+        .returning(),
     );
 
     // 并行更新
@@ -45,9 +51,14 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, ApiError.notFound("未匹配到任何目标"));
     }
 
-    return createApiResponse(event, "批量更新成功", StatusCodes.OK, updatedRows);
-  } catch (err) {
-    logger.error({ err }, "Database error");
+    return createApiResponse(
+      event,
+      "批量更新成功",
+      StatusCodes.OK,
+      updatedRows,
+    );
+  } catch (error) {
+    logger.error({ error }, "Database error");
     return createErrorResponse(event, ApiError.database("批量更新失败"));
   }
 });

@@ -1,4 +1,6 @@
-import { type BindingConfig, BindingConfigSchema } from "../../shared/schemas/server/binding";
+import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
+import type { BindingConfig } from "~~/shared/schemas/server/binding";
+
 import { applyDefaults } from "./zod";
 
 /**
@@ -9,9 +11,11 @@ import { applyDefaults } from "./zod";
  * @returns 合并后的完整服务器配置，包含所有默认值
  */
 
-export function mergeServerConfig(
+export const mergeServerConfig = (
   currentServerConfig: BindingConfig,
-  configUpdates?: Partial<BindingConfig>
-): BindingConfig {
-  return applyDefaults(BindingConfigSchema, { ...currentServerConfig, ...configUpdates });
-}
+  configUpdates?: Partial<BindingConfig>,
+): BindingConfig =>
+  applyDefaults(BindingConfigSchema, {
+    ...currentServerConfig,
+    ...configUpdates,
+  });

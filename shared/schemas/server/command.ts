@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "..";
+import type { ApiSchemaRegistry } from "#shared/schemas";
 
 import { TargetConfigSchema } from "./target";
 
@@ -18,11 +18,11 @@ export const CommandAPI = {
       command: CommandConfigSchema,
       targets: z.array(
         z.object({
+          config: TargetConfigSchema,
           id: z.uuidv4(),
-          config: TargetConfigSchema
-        })
-      )
+        }),
+      ),
     }),
-    response: z.object({})
-  }
+    response: z.object({}),
+  },
 } satisfies ApiSchemaRegistry;

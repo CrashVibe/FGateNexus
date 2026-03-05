@@ -1,16 +1,18 @@
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
+import { ApiError, createErrorResponse } from "#shared/error";
+import { createApiResponse } from "#shared/types";
+
 export default defineEventHandler(async (event) => {
   try {
     // 需要用户已认证
     const session = await requireUserSession(event);
-    if (!session?.user) {
+
+    if (session?.user === undefined) {
       const apiError = ApiError.unauthorized("未认证");
       return createErrorResponse(event, apiError);
     }
@@ -26,9 +28,9 @@ export default defineEventHandler(async (event) => {
     await db
       .update(users)
       .set({
-        twoFactorSecret: null,
         twoFactorEnabled: false,
-        updatedAt: new Date()
+        twoFactorSecret: null,
+        updatedAt: new Date(),
       })
       .where(eq(users.id, user.id));
 

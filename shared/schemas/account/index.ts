@@ -2,7 +2,7 @@ import type { players } from "~~/server/db/schema";
 
 type players = typeof players.$inferSelect;
 
-export type SocialAccountWithPlayers = {
+export interface SocialAccountWithPlayers {
   socialAccount: {
     id: number;
     nickname: string | null;
@@ -12,4 +12,4 @@ export type SocialAccountWithPlayers = {
     updatedAt: Date;
   };
   players: players[];
-};
+}
