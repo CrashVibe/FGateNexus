@@ -61,6 +61,7 @@ const initDatabase = async () => {
   try {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const { embeddedJournal, embeddedSqlFiles } =
+      // @ts-expect-error - This module is generated during build
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       (await import("./.output/server/migrations/embedded.js")) as {
         embeddedJournal: {
@@ -94,6 +95,7 @@ const startApplication = async () => {
     const { config } = configManager;
     process.env.NITRO_HOST = config.nitro.host;
     process.env.NITRO_PORT = String(config.nitro.port);
+    // @ts-expect-error - This module is generated during build
     await import("./.output/server/index.mjs");
   } catch (error) {
     console.error("应用启动失败：", error);
