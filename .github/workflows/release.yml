@@ -63,7 +63,7 @@ jobs:
             FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz
             FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip
           body: |
-            ### 下载说明
+            ## 下载说明
 
             | 平台 | 架构 | 文件名 |
             |------|------|--------|
