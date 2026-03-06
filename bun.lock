@@ -10,12 +10,12 @@
         "@koishijs/plugin-server": "^3.2.7",
         "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.8",
         "@nuxt/eslint": "^1.15.2",
+        "@nuxt/icon": "2.2.1",
         "@nuxt/ui": "^4.5.0",
         "@pinia/nuxt": "^0.11.3",
         "@tailwindcss/vite": "^4.2.1",
         "@types/bcryptjs": "^3.0.0",
         "@vicons/ionicons5": "^0.13.0",
-        "@vueuse/core": "^14.2.1",
         "@zxcvbn-ts/core": "^3.0.4",
         "@zxcvbn-ts/language-common": "^3.0.4",
         "bcryptjs": "^3.0.3",
@@ -41,6 +41,7 @@
         "zod": "^4.3.6",
       },
       "devDependencies": {
+        "@iconify-json/material-symbols": "^1.2.60",
         "@types/bun": "^1.3.9",
         "autoprefixer": "^10.4.27",
         "baseline-browser-mapping": "^2.10.0",
@@ -268,6 +269,8 @@
     "@humanwhocodes/module-importer": ["@humanwhocodes/module-importer@1.0.1", "", {}, "sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA=="],
 
     "@humanwhocodes/retry": ["@humanwhocodes/retry@0.4.3", "", {}, "sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ=="],
+
+    "@iconify-json/material-symbols": ["@iconify-json/material-symbols@1.2.60", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-bmVrnz/9KJNh/j+nO3pyxzo0h8iENIKxv5RASDURhjKdPI53rRcKN7E2Gmwi25k9CBJ+IC6L9l0AGgngeqyRuw=="],
 
     "@iconify/collections": ["@iconify/collections@1.0.654", "", { "dependencies": { "@iconify/types": "*" } }, "sha512-xpxyDlrndFo7z6tRyybLA8U/fzX5b+EZThqqudjbfDRknLWpjQykefbCZLFvp/XMRJCWk75JN0jFtG1Cw+Dbsw=="],
 

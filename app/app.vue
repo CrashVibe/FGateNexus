@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { useColorMode } from "@vueuse/core";
 import hljs from "highlight.js/lib/core";
 import typescript from "highlight.js/lib/languages/typescript";
 import { darkTheme } from "naive-ui";
@@ -12,14 +11,12 @@ hljs.registerLanguage("typescript", typescript);
 
 const colorMode = useColorMode();
 
-const theme = ref<GlobalTheme | null>(
-  colorMode.value === "dark" ? darkTheme : null,
-);
+const theme = ref<GlobalTheme | null>(colorMode.value === "dark" ? darkTheme : null);
 
 watch(colorMode, async (mode) => {
   // 不加这个会没有自带的过渡效果
   await nextTick();
-  theme.value = mode === "dark" ? darkTheme : null;
+  theme.value = mode.value === "dark" ? darkTheme : null;
 });
 </script>
 
