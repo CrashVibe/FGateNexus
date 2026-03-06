@@ -20,28 +20,42 @@ export class MessageHandler {
    * @param message - 收到的消息
    */
   public async handleMessage(peer: Peer, message: string): Promise<void> {
+    let data: unknown;
     try {
-      const data: unknown = JSON.parse(message);
-
-      // 检查是否是响应消息
-      const ValidResponse = jsonRpcResponseSchema.safeParse(data);
-      if (ValidResponse.success) {
-        this.handleResponse(ValidResponse.data);
-      }
-
-      const ValidRequest = createJsonRpcRequestSchema(z.unknown()).safeParse(
-        data,
-      );
-
-      if (ValidRequest.success) {
-        await requestDispatcher.dispatch(ValidRequest.data, peer);
-      }
-
-      throw new Error("Invalid JSON-RPC message");
-    } catch (error) {
-      logger.error({ error }, `[ERROR] 处理消息失败：${peer.id}`);
+      data = JSON.parse(message);
+    } catch {
+      logger.error(`[ERROR] JSON 解析失败：${peer.id}`);
       MessageHandler.sendError(peer, null, -32_700, "Parse error");
+      return;
     }
+
+    const ValidResponse = jsonRpcResponseSchema.safeParse(data);
+    if (ValidResponse.success) {
+      this.handleResponse(ValidResponse.data);
+      return;
+    }
+
+    const ValidRequest = createJsonRpcRequestSchema(z.unknown()).safeParse(
+      data,
+    );
+    if (ValidRequest.success) {
+      try {
+        await requestDispatcher.dispatch(ValidRequest.data, peer);
+      } catch (error) {
+        logger.error({ error }, `[ERROR] 处理请求失败：${peer.id}`);
+        MessageHandler.sendError(
+          peer,
+          ValidRequest.data.id ?? null,
+          -32_603,
+          "Internal error",
+        );
+      }
+      return;
+    }
+
+    // 既不是有效响应也不是有效请求
+    logger.warn(`[WARN] 无效的 JSON-RPC 消息：${peer.id}`);
+    MessageHandler.sendError(peer, null, -32_600, "Invalid Request");
   }
 
   /**
