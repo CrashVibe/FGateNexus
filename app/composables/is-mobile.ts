@@ -1,6 +1,6 @@
 import { useBreakpoint } from "vooks";
 
-export const isMobile = computed(() => {
+export const useIsMobile = () => {
   const breakpoint = useBreakpoint();
-  return breakpoint.value === "xs" || breakpoint.value === "s";
-});
+  return computed(() => breakpoint.value === "xs" || breakpoint.value === "s");
+};

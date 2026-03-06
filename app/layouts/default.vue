@@ -1,33 +1,35 @@
 <script lang="ts" setup>
 import type { NavigationMenuItem } from "@nuxt/ui";
-import {
-  ArrowBackOutline,
-  ChatbubbleOutline,
-  LinkOutline,
-  MenuOutline,
-  NotificationsOutline,
-  PeopleOutline,
-  SettingsOutline,
-  LogOutOutline,
-} from "@vicons/ionicons5";
 import { computed, provide } from "vue";
 
 import AppLogo from "@/components/app-logo.vue";
 
 const route = useRoute();
-const dialog = useDialog();
 const { savePage } = usePageStateStore();
-
-const renderIcon = (icon: Component) => () => h(icon);
 
 // 基础菜单
 const basicMenuOptions: NavigationMenuItem[][] = [
   [
-    { icon: renderIcon(MenuOutline), label: "服务器管理", to: "/" },
-    { icon: renderIcon(LinkOutline), label: "Bot 实例", to: "/adapters" },
-    { icon: renderIcon(PeopleOutline), label: "玩家列表", to: "/players" },
+    { icon: "i-lucide-server", label: "服务器管理", to: "/" },
+    { icon: "i-lucide-link", label: "Bot 实例", to: "/adapters" },
+    { icon: "i-lucide-users", label: "玩家列表", to: "/players" },
   ],
-  [{ icon: renderIcon(SettingsOutline), label: "系统设置", to: "/settings" }],
+  [
+    {
+      children: [
+        {
+          desc: "配置系统的安全相关选项，如管理员账号和权限设置。",
+          icon: "i-lucide-shield",
+          label: "安全设置",
+          to: "/settings/security",
+        },
+      ],
+      icon: "i-lucide-settings",
+      key: "settings",
+      label: "系统设置",
+      open: true,
+    },
+  ],
 ];
 
 // 服务器编辑
@@ -37,7 +39,7 @@ const serverMenuOptions = computed(() => {
   const menu: NavigationMenuItem[][] = [[], []];
   menu[0]?.push({
     desc: "返回服务器列表主页。",
-    icon: renderIcon(ArrowBackOutline),
+    icon: "i-lucide-arrow-left",
     label: "返回",
     to: "/",
   });
@@ -45,7 +47,7 @@ const serverMenuOptions = computed(() => {
     const sid = serverId.value;
     menu[0]?.push({
       desc: "查看所有可用的配置选项",
-      icon: renderIcon(MenuOutline),
+      icon: "i-lucide-layout-grid",
       label: "配置概览",
       to: `/servers/${sid}`,
     });
@@ -63,7 +65,7 @@ const serverMenuOptions = computed(() => {
             to: `/servers/${sid}/target`,
           },
         ],
-        icon: renderIcon(SettingsOutline),
+        icon: "i-lucide-settings",
         label: "基础配置",
         open: true,
         type: "label",
@@ -81,7 +83,7 @@ const serverMenuOptions = computed(() => {
             to: `/servers/${sid}/command`,
           },
         ],
-        icon: renderIcon(LinkOutline),
+        icon: "i-lucide-link",
         label: "服务器管理",
         open: true,
         type: "label",
@@ -94,7 +96,7 @@ const serverMenuOptions = computed(() => {
             to: `/servers/${sid}/msgbridge`,
           },
         ],
-        icon: renderIcon(ChatbubbleOutline),
+        icon: "i-lucide-message-circle",
         label: "聊天与消息",
         open: true,
         type: "label",
@@ -107,7 +109,7 @@ const serverMenuOptions = computed(() => {
             to: `/servers/${sid}/notify`,
           },
         ],
-        icon: renderIcon(NotificationsOutline),
+        icon: "i-lucide-bell",
         label: "事件与通知",
         open: true,
         type: "label",
@@ -131,28 +133,30 @@ export type Menu = typeof menuOptions;
 
 const router = useRouter();
 
+const showDirtyModal = ref(false);
+const dirtyNavTarget = ref("");
+
 watch(
   () => usePageStateStore().to,
   (value) => {
     if (value) {
-      dialog.warning({
-        content: "切换页面前请保存更改，或放弃未保存内容。",
-        negativeText: "放弃更改",
-        onNegativeClick: () => {
-          usePageStateStore().clearPageState();
-          router.push(value);
-        },
-        onPositiveClick: async () => {
-          await savePage();
-          router.push(value);
-        },
-        positiveText: "保存并切换",
-        title: "有未保存的更改",
-        transformOrigin: "center",
-      });
+      dirtyNavTarget.value = value;
+      showDirtyModal.value = true;
     }
   },
 );
+
+const onDiscardChanges = () => {
+  usePageStateStore().clearPageState();
+  router.push(dirtyNavTarget.value);
+  showDirtyModal.value = false;
+};
+
+const onSaveAndNavigate = async () => {
+  await savePage();
+  router.push(dirtyNavTarget.value);
+  showDirtyModal.value = false;
+};
 
 const open = ref(false);
 
@@ -199,33 +203,40 @@ provide("menuOptions", menuOptions);
       <template #footer>
         <div class="flex w-full items-center justify-between">
           <UColorModeButton />
-          <n-button
+          <UButton
             v-if="useAuthStore().hasPassword"
-            circle
-            quaternary
+            icon="i-lucide-log-out"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="退出登录"
             @click="handleLogout"
-          >
-            <template #icon>
-              <n-icon :component="LogOutOutline" />
-            </template>
-          </n-button>
+          />
         </div>
       </template>
     </UDashboardSidebar>
 
     <div
-      class="ring-default bg-default/75 m-0 flex min-w-0 flex-1 overflow-hidden rounded-lg shadow ring sm:m-4 lg:ml-0"
+      class="ring-default bg-default/75 m-0 h-full min-w-0 flex-1 overflow-hidden shadow ring"
     >
-      <UDashboardPanel
-        class="scrollbar-custom relative min-h-0 overflow-y-auto"
-        :ui="{ body: 'p-0 sm:p-0 overscroll-none' }"
-      >
-        <template #body>
-          <UContainer class="gap-4 py-8 sm:gap-6">
-            <slot />
-          </UContainer>
-        </template>
-      </UDashboardPanel>
+      <slot />
     </div>
+
+    <!-- 未保存更改提示弹窗 -->
+    <UModal v-model:open="showDirtyModal" title="有未保存的更改">
+      <template #body>
+        <p class="text-muted text-sm">
+          切换页面前请保存更改，或放弃未保存内容。
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2">
+          <UButton color="neutral" variant="subtle" @click="onDiscardChanges"
+            >放弃更改</UButton
+          >
+          <UButton @click="onSaveAndNavigate">保存并切换</UButton>
+        </div>
+      </template>
+    </UModal>
   </UDashboardGroup>
 </template>

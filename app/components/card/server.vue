@@ -7,84 +7,65 @@
       ]"
       @click="router.push(`/servers/${server.id}`)"
     >
-      <n-card hoverable>
+      <UCard>
         <div class="flex flex-col gap-4">
           <!-- 名称 + 状态 与 版本 -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <n-text class="text-lg" strong>{{ server.name }}</n-text>
-              <n-tag
-                :bordered="false"
-                :type="server.isOnline ? 'success' : 'error'"
-                size="small"
+              <span class="text-lg font-semibold">{{ server.name }}</span>
+              <UBadge
+                :color="server.isOnline ? 'success' : 'error'"
+                variant="subtle"
+                size="sm"
               >
                 {{ server.isOnline ? "在线" : "离线" }}
-              </n-tag>
+              </UBadge>
             </div>
-            <n-tag
-              :bordered="false"
-              :type="server.isOnline ? 'default' : 'warning'"
-              size="small"
+            <UBadge
+              :color="server.isOnline ? 'neutral' : 'warning'"
+              variant="subtle"
+              size="sm"
             >
               {{ getVersion(server.minecraft_version) }}
-            </n-tag>
+            </UBadge>
           </div>
 
           <!-- 服务器端 info -->
           <div class="flex items-center gap-2">
-            <n-image
+            <img
               :src="getSoftwareIcon(server.minecraft_software)"
-              class="size-5"
-              preview-disabled
+              class="size-5 object-contain"
+              alt="server software icon"
             />
-            <n-text :depth="3">{{
+            <span class="text-muted text-sm">{{
               server.minecraft_software || "未知服务器端"
-            }}</n-text>
+            }}</span>
           </div>
 
           <!-- Token 框 -->
           <div class="flex flex-col gap-2">
-            <div class="flex items-center gap-2">
-              <n-text :depth="3" class="text-sm">Token:</n-text>
-            </div>
-            <n-input-group>
-              <n-input
-                :depth="showToken ? 3 : 2"
+            <span class="text-muted text-sm">Token:</span>
+            <div class="flex gap-1">
+              <UInput
                 :value="showToken ? server.token : '•'.repeat(16)"
+                class="flex-1"
                 readonly
-                size="medium"
-                @click="copyTokenToClipboard"
-              />
-              <n-button
-                size="medium"
-                tertiary
-                type="primary"
                 @click.stop="copyTokenToClipboard"
-              >
-                <template #icon>
-                  <n-icon>
-                    <svg
-                      height="1em"
-                      viewBox="0 0 24 24"
-                      width="1em"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </n-icon>
-                </template>
-              </n-button>
-            </n-input-group>
+              />
+              <UButton
+                icon="i-lucide-copy"
+                color="neutral"
+                variant="subtle"
+                @click.stop="copyTokenToClipboard"
+              />
+            </div>
           </div>
 
-          <n-text class="text-right text-xs opacity-70 select-none" depth="3"
-            >点击卡片查看更多信息</n-text
+          <span class="text-muted text-right text-xs opacity-70 select-none"
+            >点击卡片查看更多信息</span
           >
         </div>
-      </n-card>
+      </UCard>
     </div>
   </transition>
 </template>
@@ -99,7 +80,7 @@ const { server } = defineProps<{
   server: z.infer<(typeof ServersAPI)["GET"]["response"]>;
 }>();
 
-const message = useMessage();
+const toast = useToast();
 const router = useRouter();
 const showToken = ref(false);
 const isCopying = ref(false);
@@ -126,7 +107,7 @@ const copyTokenToClipboard = async (e?: Event) => {
   }
 
   if (isCopying.value) {
-    message.warning("我**，这么快干什么！");
+    toast.add({ color: "warning", id: "copyed", title: "我*，这么快干什么！" });
     return;
   }
 
@@ -134,14 +115,18 @@ const copyTokenToClipboard = async (e?: Event) => {
 
   try {
     await navigator.clipboard.writeText(server.token);
-    message.success("Token 被剪贴板带跑啦，3 秒后消失~");
+    toast.add({
+      color: "success",
+      duration: 3000,
+      title: "Token 被剪贴板带跑啦，3 秒后消失~",
+    });
     showToken.value = true;
     setTimeout(() => {
       showToken.value = false;
       isCopying.value = false;
     }, 3000);
   } catch {
-    message.error("复制失败，小 clipboard 罢工了！");
+    toast.add({ color: "error", title: "复制失败，小 clipboard 罢工了！" });
     isCopying.value = false;
   }
 };

@@ -41,7 +41,7 @@ export const chatSyncConfigSchema = z.object({
       /**
        * 最小消息长度
        */
-      minMessageLength: z.number().min(0).default(1),
+      minMessageLength: z.number().min(1).default(1),
 
       /**
        * 白名单前缀（仅在白名单模式下使用）

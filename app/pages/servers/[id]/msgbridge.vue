@@ -1,375 +1,411 @@
 <template>
-  <div>
-    <ServerHeader class="mb-3" />
+  <div class="h-full">
+    <UDashboardPanel
+      class="scrollbar-custom h-full"
+      :ui="{ body: 'p-0 sm:p-0 overflow-y-auto overscroll-none' }"
+    >
+      <template #header>
+        <ServerHeader />
+        <UTabs
+          v-model="activeTab"
+          :content="false"
+          :items="tabItems"
+          variant="link"
+        />
+      </template>
+      <template #body>
+        <UContainer class="py-8">
+          <UForm
+            ref="form"
+            :schema="chatSyncConfigSchema"
+            :state="formData.config"
+            @submit="onFormSubmit"
+          >
+            <!-- Tab 1: 基础配置 -->
+            <div
+              v-show="activeTab === 'basic'"
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
+            >
+              <!-- 开关状态总览 -->
+              <UPageCard variant="outline">
+                <template #title>
+                  <div class="flex items-center gap-2">
+                    <span>聊天同步总开关</span>
+                    <UBadge
+                      :color="formData.config.enabled ? 'success' : 'neutral'"
+                      variant="subtle"
+                    >
+                      {{ formData.config.enabled ? "已启用" : "未启用" }}
+                    </UBadge>
+                  </div>
+                </template>
+                <template #description>
+                  <span class="text-muted text-sm"
+                    >控制聊天同步功能的启用状态及消息方向</span
+                  >
+                </template>
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <UFormField name="enabled" label="启用聊天同步">
+                      <USwitch v-model="formData.config.enabled" />
+                    </UFormField>
+                    <USeparator />
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <UFormField
+                        name="mcToPlatformEnabled"
+                        label="MC → 平台"
+                        description="将 Minecraft 聊天消息转发至平台"
+                      >
+                        <USwitch
+                          v-model="formData.config.mcToPlatformEnabled"
+                          :disabled="!formData.config.enabled"
+                        />
+                      </UFormField>
+                      <UFormField
+                        name="platformToMcEnabled"
+                        label="平台 → MC"
+                        description="将平台消息转发至 Minecraft"
+                      >
+                        <USwitch
+                          v-model="formData.config.platformToMcEnabled"
+                          :disabled="!formData.config.enabled"
+                        />
+                      </UFormField>
+                    </div>
+                  </div>
+                </template>
+              </UPageCard>
 
-    <n-form ref="formRef" :model="formData" :rules="rules">
-      <!-- 基础配置区域 -->
-      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
-        <n-grid-item>
-          <!-- 基础设置 -->
-          <n-card class="h-full" size="small" title="基础设置">
-            <template #header-extra>
-              <n-tag
-                :type="formData.config.enabled ? 'success' : 'default'"
-                round
-                size="small"
-              >
-                {{ formData.config.enabled ? "已启用" : "未启用" }}
-              </n-tag>
-            </template>
-
-            <n-form-item label="启用聊天同步" path="enabled">
-              <n-switch v-model:value="formData.config.enabled" />
-            </n-form-item>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <n-form-item label="MC → 平台" path="mcToPlatformEnabled">
-                <n-switch
-                  v-model:value="formData.config.mcToPlatformEnabled"
-                  :disabled="!formData.config.enabled"
-                />
-              </n-form-item>
-
-              <n-form-item label="平台 → MC" path="platformToMcEnabled">
-                <n-switch
-                  v-model:value="formData.config.platformToMcEnabled"
-                  :disabled="!formData.config.enabled"
-                />
-              </n-form-item>
+              <!-- 消息过滤 -->
+              <UPageCard variant="outline">
+                <template #title>消息过滤</template>
+                <template #description>
+                  <span class="text-muted text-sm"
+                    >配置消息长度限制和内容过滤规则</span
+                  >
+                </template>
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <UFormField
+                        name="filters.minMessageLength"
+                        label="最小长度"
+                      >
+                        <UInputNumber
+                          v-model="formData.config.filters.minMessageLength"
+                          class="w-full"
+                          placeholder="最小消息字符数"
+                        />
+                      </UFormField>
+                      <UFormField
+                        name="filters.maxMessageLength"
+                        label="最大长度"
+                      >
+                        <UInputNumber
+                          v-model="formData.config.filters.maxMessageLength"
+                          class="w-full"
+                          placeholder="最大消息字符数"
+                        />
+                      </UFormField>
+                    </div>
+                    <UFormField
+                      name="filters.filterMode"
+                      label="过滤模式"
+                      description="黑名单：转发全部消息但屏蔽指定内容；白名单：仅转发匹配的消息"
+                    >
+                      <URadioGroup
+                        v-model="formData.config.filters.filterMode"
+                        :items="[
+                          { label: '黑名单模式', value: 'blacklist' },
+                          { label: '白名单模式', value: 'whitelist' },
+                        ]"
+                        orientation="horizontal"
+                      />
+                    </UFormField>
+                    <USeparator />
+                    <template
+                      v-if="formData.config.filters.filterMode === 'blacklist'"
+                    >
+                      <UFormField
+                        name="filters.blacklistKeywords"
+                        label="屏蔽关键词"
+                        description="包含这些关键词的消息将被过滤，不会转发"
+                      >
+                        <UInput
+                          v-model="blacklistKeywordsText"
+                          placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
+                          class="w-full"
+                        />
+                      </UFormField>
+                      <UFormField
+                        name="filters.blacklistRegex"
+                        label="屏蔽正则表达式"
+                        description="匹配这些正则表达式的消息将被过滤，不会转发"
+                      >
+                        <UTextarea
+                          v-model="blacklistRegexText"
+                          placeholder="用逗号分隔多个正则表达式，如：^/.*,#spam.*"
+                          :rows="2"
+                          class="w-full"
+                        />
+                      </UFormField>
+                    </template>
+                    <template v-else>
+                      <UFormField
+                        name="filters.whitelistPrefixes"
+                        label="允许前缀"
+                        description="仅转发以这些前缀开头的消息"
+                      >
+                        <UInput
+                          v-model="whitelistPrefixesText"
+                          placeholder="用逗号分隔多个前缀，如：#,!,?"
+                          class="w-full"
+                        />
+                      </UFormField>
+                      <UFormField
+                        name="filters.whitelistRegex"
+                        label="允许正则表达式"
+                        description="仅转发匹配这些正则表达式的消息"
+                      >
+                        <UTextarea
+                          v-model="whitelistRegexText"
+                          placeholder="用逗号分隔多个正则表达式，如：^#.*,#help.*"
+                          :rows="2"
+                          class="w-full"
+                        />
+                      </UFormField>
+                    </template>
+                  </div>
+                </template>
+              </UPageCard>
             </div>
-          </n-card>
-        </n-grid-item>
-        <n-grid-item>
-          <!-- 消息过滤配置 -->
-          <n-card class="h-full" size="small" title="消息过滤">
-            <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
-              <n-grid-item>
-                <n-form-item label="最小长度" path="filters.minMessageLength">
-                  <n-input-number
-                    v-model:value="formData.config.filters.minMessageLength"
-                    :max="1000"
-                    :min="0"
-                    class="w-full"
-                    placeholder="最小消息字符数"
-                  />
-                </n-form-item>
-              </n-grid-item>
-              <n-grid-item>
-                <n-form-item label="最大长度" path="filters.maxMessageLength">
-                  <n-input-number
-                    v-model:value="formData.config.filters.maxMessageLength"
-                    :max="5000"
-                    :min="1"
-                    class="w-full"
-                    placeholder="最大消息字符数"
-                  />
-                </n-form-item>
-              </n-grid-item>
-            </n-grid>
 
-            <n-form-item label="过滤模式" path="filters.filterMode">
-              <n-radio-group v-model:value="formData.config.filters.filterMode">
-                <n-space>
-                  <n-radio value="blacklist">黑名单模式</n-radio>
-                  <n-radio value="whitelist">白名单模式</n-radio>
-                </n-space>
-              </n-radio-group>
-              <template #feedback>
-                <div class="text-sm text-gray-500">
-                  黑名单模式：转发全部消息但屏蔽指定内容
-                  <br />
-                  白名单模式：仅转发匹配的消息
-                </div>
-              </template>
-            </n-form-item>
-
-            <!-- 黑名单模式配置 -->
-            <template v-if="formData.config.filters.filterMode === 'blacklist'">
-              <n-form-item label="屏蔽关键词" path="filters.blacklistKeywords">
-                <n-input
-                  v-model:value="blacklistKeywordsText"
-                  :maxlength="200"
-                  placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
-                  show-count
-                />
-                <template #feedback>
-                  <div class="text-sm text-gray-500">
-                    包含这些关键词的消息将被过滤，不会转发
-                  </div>
-                </template>
-              </n-form-item>
-
-              <n-form-item label="屏蔽正则表达式" path="filters.blacklistRegex">
-                <n-input
-                  v-model:value="blacklistRegexText"
-                  :maxlength="500"
-                  placeholder="用逗号分隔多个正则表达式，如：^/.*,#spam.*"
-                  show-count
-                  type="textarea"
-                  :rows="2"
-                />
-                <template #feedback>
-                  <div class="text-sm text-gray-500">
-                    匹配这些正则表达式的消息将被过滤，不会转发
-                  </div>
-                </template>
-              </n-form-item>
-            </template>
-
-            <!-- 白名单模式配置 -->
-            <template v-else>
-              <n-form-item label="允许前缀" path="filters.whitelistPrefixes">
-                <n-input
-                  v-model:value="whitelistPrefixesText"
-                  :maxlength="200"
-                  placeholder="用逗号分隔多个前缀，如：#,!,?"
-                  show-count
-                />
-                <template #feedback>
-                  <div class="text-sm text-gray-500">
-                    仅转发以这些前缀开头的消息
-                  </div>
-                </template>
-              </n-form-item>
-
-              <n-form-item label="允许正则表达式" path="filters.whitelistRegex">
-                <n-input
-                  v-model:value="whitelistRegexText"
-                  :maxlength="500"
-                  placeholder="用逗号分隔多个正则表达式，如：^#.*,#help.*"
-                  show-count
-                  type="textarea"
-                  :rows="2"
-                />
-                <template #feedback>
-                  <div class="text-sm text-gray-500">
-                    仅转发匹配这些正则表达式的消息
-                  </div>
-                </template>
-              </n-form-item>
-            </template>
-          </n-card>
-        </n-grid-item>
-      </n-grid>
-
-      <!-- 消息模板配置 -->
-      <div class="mt-3">
-        <n-card size="small" title="消息模板配置">
-          <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
-            <n-grid-item>
+            <!-- Tab 2: 消息模板 -->
+            <div
+              v-show="activeTab === 'templates'"
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
+            >
               <!-- MC → 平台模板 -->
-              <n-card embedded size="small">
-                <template #header>
+              <UPageCard variant="outline">
+                <template #title>
                   <div class="flex items-center gap-2">
                     <span>MC → 平台模板</span>
-                    <n-tag size="small" type="primary">游戏到平台</n-tag>
+                    <UBadge color="primary" variant="subtle" size="sm"
+                      >游戏到平台</UBadge
+                    >
                   </div>
                 </template>
-
-                <n-form-item
-                  label="模板内容"
-                  label-placement="top"
-                  path="mcToPlatformTemplate"
-                >
-                  <n-input
-                    v-model:value="formData.config.mcToPlatformTemplate"
-                    :maxlength="200"
-                    :rows="3"
-                    placeholder="MC 消息发送到平台的格式模板"
-                    show-count
-                    type="textarea"
-                  />
-                  <template #feedback>
+                <template #description>
+                  <span class="text-muted text-sm"
+                    >Minecraft 玩家消息发送到平台时的格式</span
+                  >
+                </template>
+                <template #footer>
+                  <UFormField name="mcToPlatformTemplate" label="模板内容">
+                    <UTextarea
+                      v-model="formData.config.mcToPlatformTemplate"
+                      placeholder="MC 消息发送到平台的格式模板"
+                      class="w-full"
+                    />
                     <div class="mt-2 space-y-2">
+                      <p class="text-muted text-xs">点击变量插入到模板</p>
                       <div class="flex flex-wrap gap-1">
-                        <n-tooltip
+                        <UTooltip
                           v-for="tag in mcToPlatformVariables"
                           :key="tag.value"
-                          trigger="hover"
+                          :text="`${tag.label} · [${tag.example}]`"
                         >
-                          <template #trigger>
-                            <n-tag
-                              :type="
-                                formData.config.mcToPlatformTemplate.includes(
-                                  tag.value,
-                                )
-                                  ? 'primary'
-                                  : 'default'
-                              "
-                              class="cursor-pointer"
-                              size="small"
-                              @click="
-                                insertPlaceholder(
-                                  'mcToPlatformTemplate',
-                                  tag.value,
-                                )
-                              "
-                            >
-                              {{ tag.value }}
-                            </n-tag>
-                          </template>
-                          {{ tag.label }} · [{{ tag.example }}]
-                        </n-tooltip>
+                          <UBadge
+                            :color="
+                              formData.config.mcToPlatformTemplate.includes(
+                                tag.value,
+                              )
+                                ? 'primary'
+                                : 'neutral'
+                            "
+                            variant="subtle"
+                            class="cursor-pointer"
+                            @click="
+                              insertPlaceholder(
+                                'mcToPlatformTemplate',
+                                tag.value,
+                              )
+                            "
+                          >
+                            {{ tag.value }}
+                          </UBadge>
+                        </UTooltip>
                       </div>
-                      <div class="text-sm text-gray-500">
+                      <div class="text-muted text-sm">
                         预览：
-                        <n-text type="info">{{ mcToPlatformPreview }}</n-text>
+                        <span class="text-primary">{{
+                          mcToPlatformPreview
+                        }}</span>
                       </div>
                     </div>
-                  </template>
-                </n-form-item>
-              </n-card>
-            </n-grid-item>
-            <n-grid-item>
+                  </UFormField>
+                </template>
+              </UPageCard>
+
               <!-- 平台 → MC 模板 -->
-              <n-card embedded size="small">
-                <template #header>
+              <UPageCard variant="outline">
+                <template #title>
                   <div class="flex items-center gap-2">
                     <span>平台 → MC 模板</span>
-                    <n-tag size="small" type="success">平台到游戏</n-tag>
+                    <UBadge color="success" variant="subtle" size="sm"
+                      >平台到游戏</UBadge
+                    >
                   </div>
                 </template>
-
-                <n-form-item
-                  label="模板内容"
-                  label-placement="top"
-                  path="platformToMcTemplate"
-                >
-                  <n-input
-                    v-model:value="formData.config.platformToMcTemplate"
-                    :maxlength="200"
-                    :rows="3"
-                    placeholder="平台消息发送到 MC 的格式模板"
-                    show-count
-                    type="textarea"
-                  />
-                  <template #feedback>
+                <template #description>
+                  <span class="text-muted text-sm"
+                    >平台消息发送到 Minecraft 时的格式</span
+                  >
+                </template>
+                <template #footer>
+                  <UFormField name="platformToMcTemplate" label="模板内容">
+                    <UTextarea
+                      v-model="formData.config.platformToMcTemplate"
+                      placeholder="平台消息发送到 MC 的格式模板"
+                      class="w-full"
+                    />
                     <div class="mt-2 space-y-2">
+                      <p class="text-muted text-xs">点击变量插入到模板</p>
                       <div class="flex flex-wrap gap-1">
-                        <n-tooltip
+                        <UTooltip
                           v-for="tag in platformToMcVariables"
                           :key="tag.value"
-                          trigger="hover"
+                          :text="`${tag.label} · [${tag.example}]`"
                         >
-                          <template #trigger>
-                            <n-tag
-                              :type="
-                                formData.config.platformToMcTemplate.includes(
-                                  tag.value,
-                                )
-                                  ? 'success'
-                                  : 'default'
-                              "
-                              class="cursor-pointer"
-                              size="small"
-                              @click="
-                                insertPlaceholder(
-                                  'platformToMcTemplate',
-                                  tag.value,
-                                )
-                              "
-                            >
-                              {{ tag.value }}
-                            </n-tag>
-                          </template>
-                          {{ tag.label }} · [{{ tag.example }}]
-                        </n-tooltip>
+                          <UBadge
+                            :color="
+                              formData.config.platformToMcTemplate.includes(
+                                tag.value,
+                              )
+                                ? 'success'
+                                : 'neutral'
+                            "
+                            variant="subtle"
+                            class="cursor-pointer"
+                            @click="
+                              insertPlaceholder(
+                                'platformToMcTemplate',
+                                tag.value,
+                              )
+                            "
+                          >
+                            {{ tag.value }}
+                          </UBadge>
+                        </UTooltip>
                       </div>
-                      <div class="text-sm text-gray-500">
+                      <div class="text-muted text-sm">
                         预览：
-                        <n-text type="success">{{
+                        <span class="text-success">{{
                           platformToMcPreview
-                        }}</n-text>
+                        }}</span>
                       </div>
                     </div>
-                  </template>
-                </n-form-item>
-              </n-card>
-            </n-grid-item>
-          </n-grid>
-        </n-card>
-      </div>
-    </n-form>
+                  </UFormField>
+                </template>
+              </UPageCard>
+            </div>
 
-    <div class="mt-3">
-      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12" class="mb-3">
-        <n-grid-item>
-          <n-card class="h-full" size="small" title="配置群聊">
-            单独对目标进行配置
-            <template #footer>
-              <n-dropdown
-                v-if="options.length"
-                trigger="hover"
-                :options="options"
-                @select="handleSelect"
-              >
-                <n-button>配置目标</n-button>
-              </n-dropdown>
-              <n-alert v-else type="warning">
-                <n-button
-                  text
-                  dashed
-                  @click="router.push(`/servers/${route.params.id}/target`)"
-                >
-                  你还没有创建目标哦（去创建）
-                </n-button>
-              </n-alert>
+            <!-- Tab 3: 群聊目标 -->
+            <div v-show="activeTab === 'targets'">
+              <UPageCard variant="outline">
+                <template #title>群聊目标配置</template>
+                <template #description>
+                  <span class="text-muted text-sm"
+                    >针对不同目标群聊进行单独配置</span
+                  >
+                </template>
+                <template #footer>
+                  <UDropdownMenu
+                    v-if="options.length"
+                    :items="
+                      options.map((o) => ({
+                        label: o.label,
+                        onSelect: () => handleSelect(o.key),
+                      }))
+                    "
+                  >
+                    <UButton icon="i-lucide-settings-2">选择目标配置</UButton>
+                  </UDropdownMenu>
+                  <UAlert
+                    v-else
+                    color="warning"
+                    variant="subtle"
+                    icon="i-lucide-triangle-alert"
+                  >
+                    <template #description>
+                      <UButton
+                        variant="link"
+                        color="warning"
+                        size="sm"
+                        class="p-0"
+                        @click="
+                          router.push(`/servers/${route.params.id}/target`)
+                        "
+                      >
+                        你还没有创建目标哦（去创建）
+                      </UButton>
+                    </template>
+                  </UAlert>
+                </template>
+              </UPageCard>
+            </div>
+          </UForm>
+
+          <!-- 目标配置侧边栏 -->
+          <USlideover
+            v-model:open="drawerVisible"
+            :title="
+              selectTarget
+                ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                : ''
+            "
+          >
+            <template #body>
+              <div v-if="selectTarget">
+                <UFormField label="是否开启此目标的聊天同步" required>
+                  <USwitch
+                    v-model="selectTarget.config.chatSyncConfigSchema.enabled"
+                  />
+                </UFormField>
+              </div>
             </template>
-          </n-card>
-        </n-grid-item>
-      </n-grid>
-    </div>
+          </USlideover>
 
-    <n-drawer v-model:show="drawerVisible" :width="502">
-      <n-drawer-content
-        v-if="selectTarget"
-        closable
-        :title="`目标配置 · ${selectTarget.targetId || selectTarget.id}`"
-      >
-        <n-form :model="selectTarget">
-          <n-form-item label="是否开启此目标的聊天同步" required>
-            <n-switch
-              v-model:value="selectTarget.config.chatSyncConfigSchema.enabled"
-            />
-          </n-form-item>
-        </n-form>
-      </n-drawer-content>
-    </n-drawer>
-
-    <!-- 操作按钮区 -->
-    <n-divider />
-    <div class="flex justify-end gap-2">
-      <n-button
-        :disabled="!isDirty"
-        :loading="isAnyLoading"
-        @click="cancelChanges"
-        >取消更改</n-button
-      >
-      <n-button
-        :disabled="!isDirty"
-        :loading="isAnyLoading"
-        ghost
-        type="primary"
-        @click="handleSubmit"
-      >
-        <template #icon>
-          <n-icon>
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
-                fill="currentColor"
-              />
-            </svg>
-          </n-icon>
-        </template>
-        保存配置
-      </n-button>
-    </div>
+          <!-- 操作按钮区 -->
+          <USeparator class="my-4" />
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              :disabled="!isDirty"
+              :loading="isAnyLoading"
+              @click="cancelChanges"
+              >取消更改</UButton
+            >
+            <UButton
+              :disabled="!isDirty"
+              :loading="isAnyLoading"
+              @click="form?.submit()"
+            >
+              保存配置
+            </UButton>
+          </div>
+        </UContainer>
+      </template>
+    </UDashboardPanel>
   </div>
 </template>
 
 <script lang="ts" setup>
+import type { FormSubmitEvent } from "@nuxt/ui";
 import { differenceWith, isEqual, pick } from "lodash-es";
-import type { FormInst } from "naive-ui";
 import type { z } from "zod";
 import { chatSyncConfigSchema } from "~~/shared/schemas/server/chat-sync";
 import type {
@@ -384,14 +420,15 @@ import {
 } from "~~/shared/utils/chat-sync";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
-import { isMobile } from "#imports";
 import ServerHeader from "@/components/header/server-header.vue";
+import { useIsMobile } from "@/composables/is-mobile";
 import { ChatSyncData, ServerData } from "~/composables/api";
 import {
   createVariablesArray,
   createVariableMap,
 } from "~/composables/use-placeholder-variables";
-import { zodToNaiveRules } from "~/composables/use-validation";
+
+const isMobile = useIsMobile();
 
 const { setPageState, clearPageState } = usePageStateStore();
 
@@ -399,15 +436,22 @@ export type ChatSyncPatchBody = z.infer<typeof ChatSyncAPI.PATCH.request>;
 
 definePageMeta({ layout: "default" });
 
+const tabItems = [
+  { icon: "i-lucide-settings", label: "基础配置", value: "basic" },
+  { icon: "i-lucide-message-square", label: "消息模板", value: "templates" },
+  { icon: "i-lucide-users", label: "群聊目标", value: "targets" },
+];
+
+const activeTab = ref("basic");
+
 const route = useRoute();
 const router = useRouter();
-const message = useMessage();
-const formRef = ref<FormInst>();
+const toast = useToast();
+const form = useTemplateRef("form");
 const formData = reactive<FormState>({
   config: chatSyncConfigSchema.parse({}),
   targets: [],
 });
-const rules = zodToNaiveRules(chatSyncConfigSchema);
 
 const createArrayTextComputed = (
   key:
@@ -533,7 +577,7 @@ const refreshServerData = async (): Promise<void> => {
     }));
   } catch (error) {
     console.error("Failed to refresh server data:", error);
-    message.error("刷新服务器数据失败");
+    toast.add({ color: "error", title: "刷新服务器数据失败" });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -541,13 +585,6 @@ const refreshServerData = async (): Promise<void> => {
 
 const handleSubmit = async () => {
   if (!isDirty.value) {
-    message.info("没有需要保存的更改");
-    return;
-  }
-
-  try {
-    await formRef.value?.validate();
-  } catch {
     return;
   }
 
@@ -564,7 +601,7 @@ const handleSubmit = async () => {
       chatsync: formData.config,
       targets: targetsPayload,
     });
-    message.success("消息同步配置已保存");
+    toast.add({ color: "success", title: "消息同步配置已保存" });
     selectTarget.value = null;
     await refreshServerData();
   } catch (error) {
@@ -572,6 +609,12 @@ const handleSubmit = async () => {
   } finally {
     loadingMap.isSubmitting = false;
   }
+};
+type ChatSyncConfigOutput = z.output<typeof chatSyncConfigSchema>;
+
+const onFormSubmit = async (event: FormSubmitEvent<ChatSyncConfigOutput>) => {
+  formData.config = event.data;
+  await handleSubmit();
 };
 
 const cancelChanges = () => {

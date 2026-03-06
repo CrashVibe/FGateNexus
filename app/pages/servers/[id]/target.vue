@@ -1,95 +1,140 @@
 <template>
-  <div>
-    <ServerHeader class="mb-3" />
-
-    <n-card size="small" title="目标配置">
-      <template #header-extra>
-        <n-button size="small" type="primary" @click="addTarget"
-          >添加目标</n-button
-        >
+  <div class="h-full">
+    <UDashboardPanel
+      class="scrollbar-custom h-full"
+      :ui="{ body: 'p-0 sm:p-0 overflow-y-auto overscroll-none' }"
+    >
+      <template #header>
+        <ServerHeader />
       </template>
-      <n-data-table
-        :columns="columns"
-        :data="formData"
-        :pagination="{
-          pageSizes: pageSizes,
-          showSizePicker: true,
-        }"
-        :scroll-x="600"
-      >
-        <template #empty>
-          <n-empty description="暂无目标配置，请添加目标">
-            <template #extra>
-              <n-button size="medium" type="primary" @click="addTarget"
-                >添加目标</n-button
-              >
+      <template #body>
+        <UContainer class="py-8">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <UInput
+              v-model="globalFilter"
+              class="max-w-xs"
+              icon="i-lucide-search"
+              placeholder="搜索目标 ID / 类型..."
+            />
+            <UButton icon="i-lucide-plus" @click="addTarget">添加目标</UButton>
+          </div>
+          <UTable
+            ref="table"
+            v-model:pagination="pagination"
+            v-model:global-filter="globalFilter"
+            :data="formData"
+            :columns="columns"
+            :pagination-options="{
+              autoResetPageIndex: false,
+              getPaginationRowModel: getPaginationRowModel(),
+            }"
+          >
+            <template #empty>
+              <div class="flex flex-col items-center gap-4 py-8">
+                <template v-if="globalFilter">
+                  <p class="text-muted">
+                    没有找到匹配 "{{ globalFilter }}" 的目标
+                  </p>
+                  <UButton
+                    variant="subtle"
+                    color="neutral"
+                    @click="globalFilter = ''"
+                    >清除搜索</UButton
+                  >
+                </template>
+                <template v-else>
+                  <p class="text-muted">暂无目标配置，请添加目标</p>
+                  <UButton @click="addTarget">添加目标</UButton>
+                </template>
+              </div>
             </template>
-          </n-empty>
-        </template>
-      </n-data-table>
-    </n-card>
-
-    <!-- 操作按钮区 -->
-    <n-divider />
-    <div class="flex justify-end gap-2">
-      <n-button
-        :disabled="!isDirty"
-        :loading="isAnyLoading"
-        @click="cancelChanges"
-        >取消更改</n-button
-      >
-      <n-button
-        :disabled="!isDirty"
-        :loading="isAnyLoading"
-        ghost
-        type="primary"
-        @click="handleSubmit"
-      >
-        <template #icon>
-          <n-icon>
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
-                fill="currentColor"
-              />
-            </svg>
-          </n-icon>
-        </template>
-        保存配置
-      </n-button>
-    </div>
+          </UTable>
+          <div
+            class="border-default mt-4 flex items-center justify-between border-t px-4 pt-4"
+          >
+            <UPagination
+              :page="
+                (table?.tableApi?.getState().pagination.pageIndex || 0) + 1
+              "
+              :items-per-page="table?.tableApi?.getState().pagination.pageSize"
+              :total="table?.tableApi?.getFilteredRowModel().rows.length"
+              @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
+            />
+            <div class="flex gap-2">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                :disabled="!isDirty"
+                :loading="isAnyLoading"
+                @click="cancelChanges"
+                >取消更改</UButton
+              >
+              <UButton
+                :disabled="!isDirty"
+                :loading="isAnyLoading"
+                @click="handleSubmit"
+              >
+                保存配置
+              </UButton>
+            </div>
+          </div>
+        </UContainer>
+      </template>
+    </UDashboardPanel>
   </div>
 </template>
 
-<script lang="tsx" setup>
-import { NButton, NInput, NSelect } from "naive-ui";
+<script lang="ts" setup>
+import type { TableColumn } from "@nuxt/ui";
+import { getPaginationRowModel } from "@tanstack/vue-table";
+import { groupBy, isEqual, keyBy } from "lodash-es";
 import { v4 as uuidv4 } from "uuid";
-import { targetSchema, targetSchemaRequest } from '~~/shared/schemas/server/target';
-import type { targetResponse, targetSchemaRequestType } from '~~/shared/schemas/server/target';
-import { groupBy,isEqual, keyBy } from "lodash-es";
-import { TargetData } from "~/composables/api";
 import { z } from "zod";
+import {
+  targetSchema,
+  targetSchemaRequest,
+} from "~~/shared/schemas/server/target";
+import type {
+  targetResponse,
+  targetSchemaRequestType,
+} from "~~/shared/schemas/server/target";
+
 import ServerHeader from "@/components/header/server-header.vue";
+import { TargetData } from "~/composables/api";
+
+const UInput = resolveComponent("UInput");
+const USelect = resolveComponent("USelect");
+const UButton = resolveComponent("UButton");
+
+const table = useTemplateRef("table");
+const pagination = ref({ pageIndex: 0, pageSize: 10 });
+const globalFilter = ref("");
+
+watch(globalFilter, () => {
+  pagination.value.pageIndex = 0;
+});
 
 const { setPageState, clearPageState } = usePageStateStore();
 definePageMeta({ layout: "default" });
 
 const route = useRoute();
-const message = useMessage();
+const toast = useToast();
 const isSameTarget = (
   a: Pick<targetResponse, "targetId" | "type" | "enabled">,
   b: Pick<targetResponse, "targetId" | "type" | "enabled">,
 ) => a.targetId === b.targetId && a.type === b.type && a.enabled === b.enabled;
 const serverId = Number(route.params?.["id"]);
 
-const buildRequestFromRow = (row: targetResponse): targetSchemaRequestType => targetSchemaRequest.parse({
+const buildRequestFromRow = (row: targetResponse): targetSchemaRequestType =>
+  targetSchemaRequest.parse({
     config: row.config,
     enabled: !!row.enabled,
     targetId: row.targetId.trim(),
     type: row.type,
   });
 
-const getDefaultTarget = (): targetResponse => targetSchema.extend({ targetId: z.string().default("") }).parse({
+const getDefaultTarget = (): targetResponse =>
+  targetSchema.extend({ targetId: z.string().default("") }).parse({
     id: `temp-${uuidv4()}`,
   });
 
@@ -110,85 +155,87 @@ const targetTypeOptions = [
   { label: "私聊", value: "private" },
 ];
 
-const statusFilterOptions = [
+const statusOptions = [
   { label: "已启用", value: "enable" },
   { label: "已禁用", value: "disable" },
 ];
 
-const pageSizes = [
-  { label: "10 每页", value: 10 },
-  { label: "20 每页", value: 20 },
-  { label: "30 每页", value: 30 },
-  { label: "40 每页", value: 40 },
-];
-
 const removeTargetById = (id: string) => {
   const idx = formData.value.findIndex((t) => t.id === id);
-  if (idx !== -1) {formData.value.splice(idx, 1);}
+  if (idx !== -1) {
+    formData.value.splice(idx, 1);
+  }
 };
 
-const columns = [
+const columns: TableColumn<targetResponse>[] = [
   {
-    key: "targetId",
-    render(row: targetResponse, index: number) {
-      return h(NInput, {
-        onUpdateValue(v) {
-          if (formData.value[index]) {formData.value[index].targetId = v;}
+    accessorKey: "targetId",
+    cell: ({ row }) =>
+      h(UInput, {
+        modelValue: row.original.targetId,
+        "onUpdate:modelValue": (v: string) => {
+          const item = formData.value[row.index];
+          if (item) {
+            item.targetId = v;
+          }
         },
         placeholder: "请输入目标 ID",
-        value: row.targetId,
-      });
-    },
-    title: "目标 ID",
-    width: "40%",
+      }),
+    header: "目标 ID",
   },
   {
-    key: "type",
-    render(row: targetResponse, index: number) {
-      return h(NSelect, {
-        onUpdateValue(v) {
-          if (formData.value[index]) {formData.value[index].type = v;}
+    accessorKey: "type",
+    cell: ({ row }) =>
+      h(USelect, {
+        items: targetTypeOptions,
+        modelValue: row.original.type,
+        "onUpdate:modelValue": (v: string) => {
+          const item = formData.value[row.index];
+          if (item) {
+            item.type = v as "group" | "private";
+          }
         },
-        options: targetTypeOptions,
-        value: row.type,
-      });
-    },
-    title: "类型",
-    width: "20%",
+      }),
+    header: "类型",
   },
   {
-    key: "enabled",
-    render(row: targetResponse, index: number) {
-      return h(NSelect, {
-        onUpdateValue(v: string) {
-          if (formData.value[index])
-            {formData.value[index].enabled = v === "enable";}
+    accessorKey: "enabled",
+    cell: ({ row }) =>
+      h(USelect, {
+        items: statusOptions,
+        modelValue: row.original.enabled ? "enable" : "disable",
+        "onUpdate:modelValue": (v: string) => {
+          const item = formData.value[row.index];
+          if (item) {
+            item.enabled = v === "enable";
+          }
         },
-        options: statusFilterOptions,
-        value: row.enabled ? "enable" : "disable",
-      });
-    },
-    title: "状态",
-    width: "20%",
+      }),
+    header: "状态",
   },
   {
-    key: "actions",
-    render(row: targetResponse) {
-      const {id} = row;
-      return (
-        <NButton size="small" onClick={() => id && removeTargetById(id)}>
-          删除
-        </NButton>
+    cell: ({ row }) => {
+      const { id } = row.original;
+      return h(
+        UButton,
+        {
+          color: "error",
+          onClick: () => id && removeTargetById(id),
+          size: "sm",
+          variant: "subtle",
+        },
+        () => "删除",
       );
     },
-    title: "操作",
+    header: "操作",
+    id: "actions",
   },
 ];
 
 const addTarget = () => {
   const list = formData.value;
   if (list.length > 0 && !list.at(-1)?.targetId?.trim()) {
-    message.warning("请先把上一行的目标 ID 填完哦~");
+    toast.add({ color: "warning", title: "请先把上一行的目标 ID 填完哦~" });
     return;
   }
   formData.value.push(getDefaultTarget());
@@ -202,7 +249,7 @@ const refreshAll = async (): Promise<void> => {
     formData.value = structuredClone(targets);
   } catch (error) {
     console.error(error);
-    message.error("刷新目标列表失败");
+    toast.add({ color: "error", title: "刷新目标列表失败" });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -222,13 +269,15 @@ const handleSubmit = async () => {
 
       .map(([, items]) => {
         const [firstItem] = items;
-        if (firstItem === undefined) { return null; }
+        if (firstItem === undefined) {
+          return null;
+        }
         const { targetId, type } = firstItem;
         return `目标 ID "${targetId.trim()}" + 类型 "${type === "group" ? "群聊" : "私聊"}" 出现 ${items.length} 次`;
       })
       .filter(Boolean)
       .join("； ");
-    message.warning(`发现重复目标配置：${msg}`);
+    toast.add({ color: "warning", title: `发现重复目标配置：${msg}` });
     return;
   }
 
@@ -254,7 +303,6 @@ const handleSubmit = async () => {
     (!toCreate.length && !toUpdate.length && !toDelete.length) ||
     !isDirty.value
   ) {
-    message.info("没有需要保存的更改");
     return;
   }
 
@@ -285,10 +333,10 @@ const handleSubmit = async () => {
     }
 
     await refreshAll();
-    message.success("配置已保存");
+    toast.add({ color: "success", title: "配置已保存" });
   } catch (error) {
     console.error("保存失败：", error);
-    message.error("保存配置失败，请稍后再试");
+    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
   } finally {
     loadingMap.isSubmitting = false;
   }

@@ -132,7 +132,7 @@ export const ChatSyncData = {
     serverId: number,
     payloads: z.infer<typeof ChatSyncAPI.PATCH.request>,
   ) {
-    await $fetch<ApiResponse>(`/api/servers/${serverId}/chatSync`, {
+    await $fetch<ApiResponse>(`/api/servers/${serverId}/chat-sync`, {
       body: ChatSyncAPI.PATCH.request.parse(payloads),
       method: "PATCH",
     });

@@ -46,7 +46,9 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const colorMode = useColorMode();
 
-const theme = ref<GlobalTheme | null>(colorMode.value === "dark" ? darkTheme : null);
+const theme = ref<GlobalTheme | null>(
+  colorMode.value === "dark" ? darkTheme : null,
+);
 
 watch(colorMode, async (mode) => {
   // 不加这个会没有自带的过渡效果
