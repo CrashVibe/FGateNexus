@@ -1,5 +1,5 @@
 diff --git a/dist/module.mjs b/dist/module.mjs
-index c1a31c25747b7d0d729f9facdb1cbad05f4af48a..a87412c8170f263ef979caab30f581db2ce77cbd 100644
+index e43d9070c46a4816c3e8c617072735054b397225..f15431021d5f371257a7e6f9d6c351f7de6e7ae8 100644
 --- a/dist/module.mjs
 +++ b/dist/module.mjs
 @@ -85,22 +85,6 @@ const module$1 = defineNuxtModule({

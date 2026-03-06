@@ -64,6 +64,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "nuxt-auth-utils@0.5.29": "patches/nuxt-auth-utils@0.5.29.patch",
+  },
   "overrides": {
     "@koishijs/loader": "npm:@mrlingxd/loader@^4.6.8-fix.1",
   },
