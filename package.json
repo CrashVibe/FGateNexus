@@ -98,6 +98,6 @@
   },
   "minimumClientVersion": "0.0.1",
   "patchedDependencies": {
-    "nuxt-auth-utils@0.5.26": "patches/nuxt-auth-utils@0.5.26.patch"
+    "nuxt-auth-utils@0.5.29": "patches/nuxt-auth-utils@0.5.29.patch"
   }
 }
