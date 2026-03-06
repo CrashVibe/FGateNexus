@@ -1,46 +1,44 @@
 <template>
-  <div>
-    <ServerHeader back-button-text="服务器列表" back-path="/" class="mb-3" />
-
-    <n-grid
-      v-if="configMenuItems.length > 0"
-      :cols="isMobile ? 1 : '3'"
-      :item-responsive="true"
-      x-gap="12"
-      y-gap="12"
+  <div class="h-full">
+    <UDashboardPanel
+      class="scrollbar-custom h-full"
+      :ui="{ body: 'p-0 sm:p-0 overflow-y-auto overscroll-none' }"
     >
-      <n-gi
-        v-for="menuItem in configMenuItems"
-        :key="menuItem.to"
-        :span="getCardSpan(String(menuItem.label))"
-      >
-        <n-card
-          :title="String(menuItem.label)"
-          class="config-card"
-          embedded
-          hoverable
-          @click="navigateToMenuItem(menuItem.to)"
-        >
-          <template v-if="menuItem.icon" #header-extra>
-            <n-icon :component="menuItem.icon" size="20" />
-          </template>
-          <n-text depth="3">{{ menuItem["desc"] }}</n-text>
-        </n-card>
-      </n-gi>
-    </n-grid>
-
-    <n-empty v-else description="暂无可用的配置选项">
-      <template #extra>
-        <n-button size="medium" type="primary" @click="router.push('/')"
-          >返回服务器列表</n-button
-        >
+      <template #header>
+        <ServerHeader />
       </template>
-    </n-empty>
+      <template #body>
+        <UContainer class="gap-4 py-8 sm:gap-6">
+          <UPageGrid v-if="configMenuItems.length > 0" class="gap-6">
+            <UPageCard
+              v-for="menuItem in configMenuItems"
+              :key="menuItem.to"
+              :title="String(menuItem.label)"
+              :description="menuItem['desc']"
+              :icon="menuItem.iconName"
+              variant="outline"
+              class="cursor-pointer"
+              @click="navigateToMenuItem(menuItem.to)"
+            />
+          </UPageGrid>
+
+          <div
+            v-else
+            class="flex flex-col items-center gap-4 py-16 text-center"
+          >
+            <UIcon name="i-lucide-inbox" class="text-muted size-12" />
+            <p class="text-muted">暂无可用的配置选项</p>
+            <UButton variant="subtle" @click="router.push('/')"
+              >返回服务器列表</UButton
+            >
+          </div>
+        </UContainer>
+      </template>
+    </UDashboardPanel>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { isMobile } from "#imports";
 import ServerHeader from "@/components/header/server-header.vue";
 import type { Menu } from "~/layouts/default.vue";
 
@@ -62,27 +60,9 @@ const configMenuItems = computed(() =>
     .filter((item) => !!item.to && item.to !== "/" && item.to !== route.path),
 );
 
-const getCardSpan = (title: string) => (title.length > 4 ? 2 : 1);
-
 const navigateToMenuItem = (key: string | number) => {
   if (typeof key === "string") {
     router.push(key);
   }
 };
 </script>
-
-<style scoped>
-.config-card {
-  height: 100%;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-</style>

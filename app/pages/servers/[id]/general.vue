@@ -1,84 +1,124 @@
 <template>
-  <div>
-    <ServerHeader class="mb-3" />
-    <n-form :model="formData" :rules="rules">
-      <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
-        <n-gi>
-          <n-card
-            class="h-full cursor-pointer"
-            embedded
-            hoverable
-            size="small"
-            title="基础操作"
+  <div class="h-full">
+    <UDashboardPanel
+      class="scrollbar-custom h-full"
+      :ui="{ body: 'p-0 sm:p-0 overflow-y-auto overscroll-none' }"
+    >
+      <template #header>
+        <ServerHeader />
+      </template>
+      <template #body>
+        <UContainer class="py-8">
+          <div
+            class="grid gap-4"
+            :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
           >
-            <!-- 删除 -->
-            <n-button type="error" @click="handleDelete">删除</n-button>
-          </n-card>
-        </n-gi>
-        <n-gi>
-          <n-card
-            class="h-full cursor-pointer"
-            embedded
-            hoverable
-            size="small"
-            title="Bot 实例"
-          >
-            <n-form-item label="Bot 实例" path="adapterId">
-              <n-select
-                v-model:value="formData.adapterId"
-                :options="adapterOptions"
-                clearable
-                filterable
-                placeholder="请选择 Bot 实例"
-                style="width: 100%"
-              />
-            </n-form-item>
-          </n-card>
-        </n-gi>
-      </n-grid>
-    </n-form>
-    <n-divider />
-    <div class="flex justify-end gap-2">
-      <n-button
-        :disabled="!isDirty"
-        :loading="isAnyLoading"
-        @click="cancelChanges"
-        >取消</n-button
-      >
-      <n-button
-        :disabled="!isDirty"
-        :loading="isAnyLoading"
-        ghost
-        type="primary"
-        @click="handleSubmit"
-      >
-        <template #icon>
-          <n-icon>
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
-                fill="currentColor"
-              />
-            </svg>
-          </n-icon>
-        </template>
-        保存设置
-      </n-button>
-    </div>
+            <UPageCard variant="outline">
+              <template #title>基础操作</template>
+              <template #description>
+                <span class="text-muted text-sm">危险操作，请谨慎</span>
+              </template>
+              <template #footer>
+                <UButton
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="showDeleteModal = true"
+                  >删除服务器</UButton
+                >
+              </template>
+            </UPageCard>
+
+            <UPageCard variant="outline">
+              <template #title>Bot 实例</template>
+              <template #description>
+                <span class="text-muted text-sm"
+                  >为此服务器绑定一个 Bot 实例</span
+                >
+              </template>
+              <template #footer>
+                <UFormField name="adapterId">
+                  <div class="flex w-full items-center gap-2">
+                    <USelect
+                      v-model="selectedAdapterId"
+                      :items="adapterOptions"
+                      class="flex-1"
+                      searchable
+                      placeholder="请选择 Bot 实例"
+                    />
+                    <UButton
+                      v-if="selectedAdapterId !== undefined"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="sm"
+                      aria-label="清除选择"
+                      @click="selectedAdapterId = undefined"
+                    />
+                  </div>
+                </UFormField>
+              </template>
+            </UPageCard>
+          </div>
+
+          <USeparator class="my-4" />
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              :disabled="!isDirty"
+              :loading="isAnyLoading"
+              @click="cancelChanges"
+              >取消</UButton
+            >
+            <UButton
+              :disabled="!isDirty"
+              :loading="isAnyLoading"
+              @click="handleSubmit"
+              >保存配置</UButton
+            >
+          </div>
+        </UContainer>
+
+        <UModal v-model:open="showDeleteModal" title="确认删除">
+          <template #body>
+            <p class="text-muted text-sm">
+              确定要删除此服务器吗？删除后将无法恢复。
+            </p>
+          </template>
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                @click="showDeleteModal = false"
+                >取消</UButton
+              >
+              <UButton
+                color="error"
+                :loading="isDeleting"
+                @click="confirmDelete"
+                >确认删除</UButton
+              >
+            </div>
+          </template>
+        </UModal>
+      </template>
+    </UDashboardPanel>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { isEqual } from "lodash-es";
-import type { SelectMixedOption } from "naive-ui/es/select/src/interface";
 import type { z } from "zod";
-import { GeneralAPI } from "~~/shared/schemas/server/general";
+import type { GeneralAPI } from "~~/shared/schemas/server/general";
 import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
-import { isMobile } from "#imports";
 import ServerHeader from "@/components/header/server-header.vue";
+import { useIsMobile } from "@/composables/is-mobile";
 import { AdapterData, GeneralData, ServerData } from "~/composables/api";
-import { zodToNaiveRules } from "~/composables/use-validation";
+
+const isMobile = useIsMobile();
 
 definePageMeta({
   layout: "default",
@@ -86,17 +126,20 @@ definePageMeta({
 
 const { setPageState, clearPageState } = usePageStateStore();
 const route = useRoute();
-const message = useMessage();
-const dialog = useDialog();
 const router = useRouter();
+const toast = useToast();
+
 const loadingMap = reactive({
   isLoading: true,
   isSubmitting: false,
 });
-const isAnyLoading = computed(() => loadingMap.isLoading);
-const rules = zodToNaiveRules(GeneralAPI.PATCH.request);
-const adapterOptions = ref<SelectMixedOption[]>([]);
+const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
+const isDeleting = ref(false);
+const showDeleteModal = ref(false);
+
+const adapterOptions = ref<{ label: string; value: number }[]>([]);
 let serverData: ServerWithStatus | null = null;
+
 const formData = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
   adapterId: null,
 });
@@ -105,24 +148,27 @@ const original = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
 });
 const isDirty = computed(() => !isEqual(formData, original));
 
-const handleDelete = () => {
-  dialog.warning({
-    content: "确定要删除此服务器吗？删除后将无法恢复。",
-    negativeText: "取消",
-    onPositiveClick: async () => {
-      try {
-        await ServerData.delete(Number(serverData?.id ?? route.params["id"]));
-        message.success("服务器已删除～");
-        serverData = null;
-        router.push("/");
-      } catch (error) {
-        console.error("Delete failed:", error);
-        message.error("删除服务器失败");
-      }
-    },
-    positiveText: "确认删除",
-    title: "确认删除",
-  });
+const selectedAdapterId = computed({
+  get: () => formData.adapterId ?? undefined,
+  set: (v: number | undefined) => {
+    formData.adapterId = v ?? null;
+  },
+});
+
+const confirmDelete = async () => {
+  isDeleting.value = true;
+  try {
+    await ServerData.delete(Number(serverData?.id ?? route.params["id"]));
+    toast.add({ color: "success", title: "服务器已删除～" });
+    showDeleteModal.value = false;
+    serverData = null;
+    router.push("/");
+  } catch (error) {
+    console.error("Delete failed:", error);
+    toast.add({ color: "error", title: "删除服务器失败" });
+  } finally {
+    isDeleting.value = false;
+  }
 };
 
 const refreshAll = async (): Promise<void> => {
@@ -144,7 +190,7 @@ const refreshAll = async (): Promise<void> => {
     Object.assign(original, structuredClone(toRaw(formData)));
   } catch (error) {
     console.error("Refresh failed:", error);
-    message.error("加载数据失败");
+    toast.add({ color: "error", title: "加载数据失败" });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -158,11 +204,11 @@ const handleSubmit = async (): Promise<void> => {
       formData,
     );
     Object.assign(original, structuredClone(toRaw(formData)));
-    message.success("配置已保存");
+    toast.add({ color: "success", title: "配置已保存" });
     await refreshAll();
   } catch (error) {
     console.error("Submit failed:", error);
-    message.error("保存配置失败，请稍后再试");
+    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
   } finally {
     loadingMap.isSubmitting = false;
   }

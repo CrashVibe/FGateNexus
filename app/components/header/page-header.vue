@@ -8,21 +8,22 @@ const { title, description = null } = defineProps<PageHeaderProps>();
 </script>
 
 <template>
-  <div
-    class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-  >
-    <div class="flex flex-col gap-2">
-      <div class="flex items-center gap-2">
-        <h1 class="text-2xl font-semibold sm:text-3xl">{{ title }}</h1>
-        <UDashboardSidebarToggle variant="subtle" />
-      </div>
-      <h2 v-if="description" class="text-sm text-gray-400 sm:text-base">
+  <UDashboardNavbar>
+    <template #leading>
+      <UDashboardSidebarCollapse />
+    </template>
+    <template #title>
+      <span class="text-2xl font-bold">{{ title }}</span>
+      <span
+        v-if="description"
+        class="text-muted max-w-xs self-end truncate text-sm font-normal"
+        :title="description"
+      >
         {{ description }}
-      </h2>
-    </div>
-
-    <div>
+      </span>
+    </template>
+    <template v-if="$slots.actions" #right>
       <slot name="actions" />
-    </div>
-  </div>
+    </template>
+  </UDashboardNavbar>
 </template>

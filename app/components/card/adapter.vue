@@ -7,45 +7,45 @@
       ]"
       @click="emit('click', adapter.id)"
     >
-      <n-card hoverable>
+      <UCard>
         <div class="flex flex-col gap-3">
           <!-- head -->
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <n-text class="text-lg" strong># {{ adapter.id }}</n-text>
-              <n-tag
-                :bordered="false"
-                :type="adapter.isOnline ? 'success' : 'error'"
-                size="small"
+              <span class="text-lg font-semibold"># {{ adapter.id }}</span>
+              <UBadge
+                :color="adapter.isOnline ? 'success' : 'error'"
+                variant="subtle"
+                size="sm"
               >
                 {{ adapter.isOnline ? "在线" : "离线" }}
-              </n-tag>
-              <n-text>{{ adapter.type }}</n-text>
+              </UBadge>
+              <span class="text-muted text-sm">{{ adapter.type }}</span>
             </div>
           </div>
 
           <div class="flex items-center justify-center">
-            <n-text class="text-primary text-2xl" strong>{{
+            <span class="text-primary text-2xl font-semibold">{{
               adapter.name || adapter.type
-            }}</n-text>
+            }}</span>
           </div>
 
           <div class="flex items-center justify-between text-sm">
-            <n-text depth="2">适配器开关</n-text>
-            <n-tag
-              :bordered="false"
-              :type="adapter.isOnline ? 'success' : 'warning'"
-              size="small"
+            <span class="text-muted">适配器开关</span>
+            <UBadge
+              :color="adapter.enabled ? 'success' : 'warning'"
+              variant="subtle"
+              size="sm"
             >
               {{ adapter.enabled ? "启用" : "禁用" }}
-            </n-tag>
+            </UBadge>
           </div>
 
-          <n-text class="text-right text-xs opacity-70 select-none" depth="3"
-            >点击卡片修改配置</n-text
+          <span class="text-muted text-right text-xs opacity-70 select-none"
+            >点击卡片修改配置</span
           >
         </div>
-      </n-card>
+      </UCard>
     </div>
   </transition>
 </template>

@@ -11,7 +11,9 @@ hljs.registerLanguage("typescript", typescript);
 
 const colorMode = useColorMode();
 
-const theme = ref<GlobalTheme | null>(colorMode.value === "dark" ? darkTheme : null);
+const theme = ref<GlobalTheme | null>(
+  colorMode.value === "dark" ? darkTheme : null,
+);
 
 watch(colorMode, async (mode) => {
   // 不加这个会没有自带的过渡效果
@@ -21,7 +23,7 @@ watch(colorMode, async (mode) => {
 </script>
 
 <template>
-  <UApp>
+  <UApp :toaster="{ position: 'top-right' }">
     <n-config-provider
       :hljs="hljs"
       :theme="theme"

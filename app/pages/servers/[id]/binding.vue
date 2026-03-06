@@ -1,440 +1,460 @@
 <template>
-  <div>
-    <ServerHeader class="mb-3" />
-    <n-form ref="formRef" :model="formData.config" :rules="rules">
-      <n-grid :x-gap="12" :y-gap="12" :cols="isMobile ? 1 : '2'">
-        <n-grid-item>
-          <n-card class="h-fit" size="small" title="基础设置">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <n-form-item label="绑定数量" path="maxBindCount">
-                <n-input-number
-                  v-model:value="formData.config.maxBindCount"
-                  class="w-full"
-                  placeholder="请输入最大绑定数量"
-                />
-              </n-form-item>
-
-              <n-form-item label="验证码长度" path="codeLength">
-                <n-input-number
-                  v-model:value="formData.config.codeLength"
-                  class="w-full"
-                  placeholder="生成的验证码字符数量，影响验证码复杂度"
-                />
-              </n-form-item>
-
-              <n-form-item label="验证码模式" path="codeMode">
-                <n-select
-                  v-model:value="formData.config.codeMode"
-                  :options="codeModeOptions"
-                  class="w-full"
-                  placeholder="请选择验证码生成模式"
-                />
-              </n-form-item>
-
-              <n-form-item label="验证码过期时间" path="codeExpire">
-                <n-input-number
-                  v-model:value="formData.config.codeExpire"
-                  :min="1"
-                  :step="1"
-                  class="w-full"
-                  placeholder="验证码过期时间（分钟）"
-                >
-                  <template #suffix>分钟</template>
-                </n-input-number>
-              </n-form-item>
-            </div>
-            <n-form-item label="绑定前缀" path="prefix">
-              <n-input
-                v-model:value="formData.config.prefix"
-                :maxlength="50"
-                class="w-full"
-                placeholder="如：/绑定 ，用于绑定账号的指令前缀"
-                show-count
-              />
-            </n-form-item>
-            <n-form-item label="解绑前缀" path="unbindPrefix">
-              <n-input
-                v-model:value="formData.config.unbindPrefix"
-                :maxlength="50"
-                :placeholder="`如：/解绑 ，用于解绑账号的专用指令前缀，留空则用绑定前缀+玩家名`"
-                class="w-full"
-                show-count
-              />
-            </n-form-item>
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <n-form-item
-                label="允许解绑"
-                :show-feedback="false"
-                path="allowUnbind"
-              >
-                <n-switch v-model:value="formData.config.allowUnbind" />
-              </n-form-item>
-              <n-form-item
-                label="离群自动解绑"
-                :show-feedback="false"
-                path="allowGroupUnbind"
-              >
-                <n-switch v-model:value="formData.config.allowGroupUnbind" />
-              </n-form-item>
-            </div>
-            <n-divider title-placement="left">指令示例预览</n-divider>
-            <div class="mb-2">
-              <n-text class="mb-2" round type="success">
-                <h1>绑定指令</h1>
-                <p class="text-gray-500">
-                  用户在社交平台聊天中发送此指令来绑定游戏账号
-                </p>
-              </n-text>
-              <div class="mb-2 p-2">
-                <n-code :code="bindCommandExample" language="text" />
-              </div>
-            </div>
-            <n-collapse-transition :show="formData.config.allowUnbind">
-              <n-text class="mb-2" round type="warning">
-                <h1>解绑指令</h1>
-                <p class="text-gray-500">
-                  使用专用解绑前缀进行解绑操作，直接输入玩家名称即可
-                </p>
-              </n-text>
-              <div class="mb-2 p-2">
-                <n-code :code="unbindCommandExample" language="text" />
-              </div>
-            </n-collapse-transition>
-          </n-card>
-        </n-grid-item>
-        <n-grid-item>
-          <n-card class="h-full" size="small" title="反馈消息配置">
-            <n-form-item class="mb-2" label="绑定成功" path="bindSuccessMsg">
-              <n-input
-                v-model:value="formData.config.bindSuccessMsg"
-                maxlength="200"
-                placeholder="绑定成功时的反馈消息"
-                show-count
-              />
-              <template #feedback>
-                <div class="mt-2 space-y-2">
-                  <div class="flex flex-wrap gap-1">
-                    <n-tooltip
-                      v-for="tag in bindSuccessVariables"
-                      :key="tag.value"
-                      trigger="hover"
-                    >
-                      <template #trigger>
-                        <n-tag
-                          :type="
-                            formData.config.bindSuccessMsg.includes(tag.value)
-                              ? 'primary'
-                              : 'default'
-                          "
-                          class="cursor-pointer"
-                          size="small"
-                          @click="
-                            insertPlaceholder('bindSuccessMsg', tag.value)
-                          "
-                        >
-                          {{ tag.value }}
-                        </n-tag>
-                      </template>
-                      {{ tag.label }} · [{{ tag.example }}]
-                    </n-tooltip>
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    预览：
-                    <n-text type="success">
-                      {{
-                        renderBindSuccess(
-                          formData.config.bindSuccessMsg,
-                          "Steve",
-                        )
-                      }}
-                    </n-text>
-                  </div>
-                </div>
-              </template>
-            </n-form-item>
-
-            <n-form-item class="mb-2" label="绑定失败" path="bindFailMsg">
-              <n-input
-                v-model:value="formData.config.bindFailMsg"
-                maxlength="200"
-                placeholder="绑定失败时的反馈消息"
-                show-count
-              />
-              <template #feedback>
-                <div class="mt-2 space-y-2">
-                  <div class="flex flex-wrap gap-1">
-                    <n-tooltip
-                      v-for="tag in bindFailVariables"
-                      :key="tag.value"
-                      trigger="hover"
-                    >
-                      <template #trigger>
-                        <n-tag
-                          :type="
-                            formData.config.bindFailMsg.includes(tag.value)
-                              ? 'primary'
-                              : 'default'
-                          "
-                          class="cursor-pointer"
-                          size="small"
-                          @click="insertPlaceholder('bindFailMsg', tag.value)"
-                        >
-                          {{ tag.value }}
-                        </n-tag>
-                      </template>
-                      {{ tag.label }} · [{{ tag.example }}]
-                    </n-tooltip>
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    预览：
-                    <n-text type="error">
-                      {{
-                        renderBindFail(
-                          formData.config.bindFailMsg,
-                          "Steve",
-                          "因为某种奇妙の原因",
-                        )
-                      }}
-                    </n-text>
-                  </div>
-                </div>
-              </template>
-            </n-form-item>
-
-            <n-form-item class="mb-2" label="解绑成功" path="unbindSuccessMsg">
-              <n-input
-                v-model:value="formData.config.unbindSuccessMsg"
-                maxlength="200"
-                placeholder="解绑成功时的反馈消息，支持#user占位符"
-                show-count
-              />
-              <template #feedback>
-                <div class="mt-2 space-y-2">
-                  <div class="flex flex-wrap gap-1">
-                    <n-tooltip
-                      v-for="tag in unbindSuccessVariables"
-                      :key="tag.value"
-                      trigger="hover"
-                    >
-                      <template #trigger>
-                        <n-tag
-                          :type="
-                            formData.config.unbindSuccessMsg.includes(tag.value)
-                              ? 'primary'
-                              : 'default'
-                          "
-                          class="cursor-pointer"
-                          size="small"
-                          @click="
-                            insertPlaceholder('unbindSuccessMsg', tag.value)
-                          "
-                        >
-                          {{ tag.value }}
-                        </n-tag>
-                      </template>
-                      {{ tag.label }} · [{{ tag.example }}]
-                    </n-tooltip>
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    预览：
-                    <n-text type="success">
-                      {{
-                        renderUnbindSuccess(
-                          formData.config.unbindSuccessMsg,
-                          "Steve",
-                        )
-                      }}
-                    </n-text>
-                  </div>
-                </div>
-              </template>
-            </n-form-item>
-
-            <n-form-item class="mb-2" label="解绑失败" path="unbindFailMsg">
-              <n-input
-                v-model:value="formData.config.unbindFailMsg"
-                maxlength="200"
-                placeholder="解绑失败时的反馈消息"
-                show-count
-              />
-              <template #feedback>
-                <div class="mt-2 space-y-2">
-                  <div class="flex flex-wrap gap-1">
-                    <n-tooltip
-                      v-for="tag in unbindFailVariables"
-                      :key="tag.value"
-                      trigger="hover"
-                    >
-                      <template #trigger>
-                        <n-tag
-                          :type="
-                            formData.config.unbindFailMsg.includes(tag.value)
-                              ? 'primary'
-                              : 'default'
-                          "
-                          class="cursor-pointer"
-                          size="small"
-                          @click="insertPlaceholder('unbindFailMsg', tag.value)"
-                        >
-                          {{ tag.value }}
-                        </n-tag>
-                      </template>
-                      {{ tag.label }} · [{{ tag.example }}]
-                    </n-tooltip>
-                  </div>
-                  <div class="text-sm text-gray-500">
-                    预览：
-                    <n-text type="error">
-                      {{
-                        renderUnbindFail(
-                          formData.config.unbindFailMsg,
-                          "Steve",
-                          "因为某种奇妙の原因",
-                        )
-                      }}
-                    </n-text>
-                  </div>
-                </div>
-              </template>
-            </n-form-item>
-          </n-card>
-        </n-grid-item>
-        <n-grid-item>
-          <n-card class="h-fit" size="small" title="绑定提示">
-            <n-form-item label="强制绑定" path="forceBind">
-              <n-switch v-model:value="formData.config.forceBind" />
-            </n-form-item>
-
-            <n-form-item
-              class="mb-2"
-              label="未绑定踢出消息"
-              path="nobindkickMsg"
+  <div class="h-full">
+    <UDashboardPanel
+      class="scrollbar-custom h-full"
+      :ui="{ body: 'p-0 sm:p-0 overflow-y-auto overscroll-none' }"
+    >
+      <template #header>
+        <ServerHeader />
+      </template>
+      <template #body>
+        <UContainer class="py-8">
+          <UForm
+            ref="form"
+            :schema="BindingConfigSchema"
+            :state="formData.config"
+            @submit="onFormSubmit"
+          >
+            <div
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
             >
-              <n-input
-                v-model:value="formData.config.nobindkickMsg"
-                :rows="3"
-                maxlength="500"
-                placeholder="当玩家未绑定社交账号时显示的踢出消息，支持颜色代码"
-                show-count
-                type="textarea"
-              />
-              <template #feedback>
-                <div class="mt-2 space-y-2">
-                  <div class="flex flex-wrap gap-1">
-                    <n-tooltip
-                      v-for="tag in noBindKickVariables"
-                      :key="tag.value"
-                      trigger="hover"
-                    >
-                      <template #trigger>
-                        <n-tag
-                          :type="
-                            formData.config.nobindkickMsg.includes(tag.value)
-                              ? 'primary'
-                              : 'default'
-                          "
-                          class="cursor-pointer"
-                          size="small"
-                          @click="insertPlaceholder('nobindkickMsg', tag.value)"
-                        >
-                          {{ tag.value }}
-                        </n-tag>
-                      </template>
-                      {{ tag.label }} · [{{ tag.example }}]
-                    </n-tooltip>
+              <!-- 基础设置 -->
+              <UPageCard variant="outline">
+                <template #title>基础设置</template>
+                <template #description>
+                  <span class="text-muted text-sm">配置绑定功能的基本参数</span>
+                </template>
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <UFormField name="maxBindCount" label="绑定数量">
+                        <UInputNumber
+                          v-model="formData.config.maxBindCount"
+                          class="w-full"
+                          placeholder="最大绑定数量"
+                        />
+                      </UFormField>
+                      <UFormField name="codeLength" label="验证码长度">
+                        <UInputNumber
+                          v-model="formData.config.codeLength"
+                          class="w-full"
+                          placeholder="生成的验证码字符数量"
+                        />
+                      </UFormField>
+                      <UFormField name="codeMode" label="验证码模式">
+                        <USelect
+                          v-model="formData.config.codeMode"
+                          :items="codeModeOptions"
+                          class="w-full"
+                          placeholder="请选择验证码生成模式"
+                        />
+                      </UFormField>
+                      <UFormField
+                        name="codeExpire"
+                        label="验证码过期时间（分钟）"
+                      >
+                        <UInputNumber
+                          v-model="formData.config.codeExpire"
+                          :min="1"
+                          class="w-full"
+                          placeholder="验证码过期时间"
+                        />
+                      </UFormField>
+                    </div>
+                    <UFormField name="prefix" label="绑定前缀">
+                      <UInput
+                        v-model="formData.config.prefix"
+                        :maxlength="50"
+                        class="w-full"
+                        placeholder="如：/绑定 ，用于绑定账号的指令前缀"
+                      />
+                    </UFormField>
+                    <UFormField name="unbindPrefix" label="解绑前缀">
+                      <UInput
+                        v-model="formData.config.unbindPrefix"
+                        :maxlength="50"
+                        class="w-full"
+                        :placeholder="`如：/解绑 ，用于解绑账号的专用指令前缀，留空则用绑定前缀+玩家名`"
+                      />
+                    </UFormField>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <UFormField name="allowUnbind" label="允许解绑">
+                        <USwitch v-model="formData.config.allowUnbind" />
+                      </UFormField>
+                      <UFormField name="allowGroupUnbind" label="离群自动解绑">
+                        <USwitch v-model="formData.config.allowGroupUnbind" />
+                      </UFormField>
+                    </div>
+                    <USeparator label="指令示例预览" />
+                    <div>
+                      <p class="text-success mb-1 font-medium">绑定指令</p>
+                      <p class="text-muted mb-2 text-sm">
+                        用户在社交平台聊天中发送此指令来绑定游戏账号
+                      </p>
+                      <code
+                        class="bg-elevated block rounded p-2 font-mono text-sm"
+                      >
+                        {{ bindCommandExample }}
+                      </code>
+                    </div>
+                    <div v-show="formData.config.allowUnbind">
+                      <p class="text-warning mb-1 font-medium">解绑指令</p>
+                      <p class="text-muted mb-2 text-sm">
+                        使用专用解绑前缀进行解绑操作，直接输入玩家名称即可
+                      </p>
+                      <code
+                        class="bg-elevated block rounded p-2 font-mono text-sm"
+                      >
+                        {{ unbindCommandExample }}
+                      </code>
+                    </div>
                   </div>
-                  <div class="text-sm text-gray-500">
-                    预览：
-                    <n-text>
-                      <MinecraftText :text="noBindKickMsgPreview" />
-                    </n-text>
-                  </div>
-                </div>
-              </template>
-            </n-form-item>
+                </template>
+              </UPageCard>
+              <!-- 反馈消息配置 -->
+              <UPageCard variant="outline">
+                <template #title>反馈消息配置</template>
+                <template #description>
+                  <span class="text-muted text-sm"
+                    >配置绑定/解绑操作的反馈消息内容</span
+                  >
+                </template>
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <!-- 绑定成功 -->
+                    <UFormField name="bindSuccessMsg" label="绑定成功">
+                      <UInput
+                        v-model="formData.config.bindSuccessMsg"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="绑定成功时的反馈消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in bindSuccessVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.bindSuccessMsg.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder('bindSuccessMsg', tag.value)
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-success">
+                            {{
+                              renderBindSuccess(
+                                formData.config.bindSuccessMsg,
+                                "Steve",
+                              )
+                            }}
+                          </span>
+                        </div>
+                      </div>
+                    </UFormField>
 
-            <n-form-item class="mb-2" label="解绑踢出消息" path="unbindkickMsg">
-              <n-input
-                v-model:value="formData.config.unbindkickMsg"
-                :rows="2"
-                maxlength="500"
-                placeholder="当玩家的社交账号被解绑时显示的踢出消息"
-                show-count
-                type="textarea"
-              />
-              <template #feedback>
-                <div class="mt-2 space-y-2">
-                  <div class="flex flex-wrap gap-1">
-                    <n-tooltip
-                      v-for="tag in unbindKickVariables"
-                      :key="tag.value"
-                      trigger="hover"
+                    <!-- 绑定失败 -->
+                    <UFormField name="bindFailMsg" label="绑定失败">
+                      <UInput
+                        v-model="formData.config.bindFailMsg"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="绑定失败时的反馈消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in bindFailVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.bindFailMsg.includes(tag.value)
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder('bindFailMsg', tag.value)
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-error">
+                            {{
+                              renderBindFail(
+                                formData.config.bindFailMsg,
+                                "Steve",
+                                "因为某种奇妙の原因",
+                              )
+                            }}
+                          </span>
+                        </div>
+                      </div>
+                    </UFormField>
+
+                    <!-- 解绑成功 -->
+                    <UFormField name="unbindSuccessMsg" label="解绑成功">
+                      <UInput
+                        v-model="formData.config.unbindSuccessMsg"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="解绑成功时的反馈消息，支持 #user 占位符"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in unbindSuccessVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.unbindSuccessMsg.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder('unbindSuccessMsg', tag.value)
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-success">
+                            {{
+                              renderUnbindSuccess(
+                                formData.config.unbindSuccessMsg,
+                                "Steve",
+                              )
+                            }}
+                          </span>
+                        </div>
+                      </div>
+                    </UFormField>
+
+                    <!-- 解绑失败 -->
+                    <UFormField name="unbindFailMsg" label="解绑失败">
+                      <UInput
+                        v-model="formData.config.unbindFailMsg"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="解绑失败时的反馈消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in unbindFailVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.unbindFailMsg.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder('unbindFailMsg', tag.value)
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-error">
+                            {{
+                              renderUnbindFail(
+                                formData.config.unbindFailMsg,
+                                "Steve",
+                                "因为某种奇妙の原因",
+                              )
+                            }}
+                          </span>
+                        </div>
+                      </div>
+                    </UFormField>
+                  </div>
+                </template>
+              </UPageCard>
+
+              <!-- 绑定提示 -->
+              <UPageCard variant="outline">
+                <template #title>绑定提示</template>
+                <template #description>
+                  <span class="text-muted text-sm">配置强制绑定及踢出消息</span>
+                </template>
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <UFormField name="forceBind" label="强制绑定">
+                      <USwitch v-model="formData.config.forceBind" />
+                    </UFormField>
+
+                    <!-- 未绑定踢出消息 -->
+                    <UFormField
+                      name="nobindkickMsg"
+                      label="未绑定踢出消息"
+                      description="当玩家未绑定社交账号时显示的踢出消息，支持颜色代码"
                     >
-                      <template #trigger>
-                        <n-tag
-                          :type="
-                            formData.config.unbindkickMsg.includes(tag.value)
-                              ? 'primary'
-                              : 'default'
-                          "
-                          class="cursor-pointer"
-                          size="small"
-                          @click="insertPlaceholder('unbindkickMsg', tag.value)"
-                        >
-                          {{ tag.value }}
-                        </n-tag>
-                      </template>
-                      {{ tag.label }} · [{{ tag.example }}]
-                    </n-tooltip>
+                      <UTextarea
+                        v-model="formData.config.nobindkickMsg"
+                        :rows="3"
+                        :maxlength="500"
+                        class="w-full"
+                        placeholder="当玩家未绑定社交账号时显示的踢出消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in noBindKickVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.nobindkickMsg.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder('nobindkickMsg', tag.value)
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <MinecraftText :text="noBindKickMsgPreview" />
+                        </div>
+                      </div>
+                    </UFormField>
+
+                    <!-- 解绑踢出消息 -->
+                    <UFormField
+                      name="unbindkickMsg"
+                      label="解绑踢出消息"
+                      description="当玩家的社交账号被解绑时显示的踢出消息"
+                    >
+                      <UTextarea
+                        v-model="formData.config.unbindkickMsg"
+                        :rows="2"
+                        :maxlength="500"
+                        class="w-full"
+                        placeholder="当玩家的社交账号被解绑时显示的踢出消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in unbindKickVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.unbindkickMsg.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder('unbindkickMsg', tag.value)
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <MinecraftText :text="unbindKickMsgPreview" />
+                        </div>
+                      </div>
+                    </UFormField>
                   </div>
-                  <div class="text-sm text-gray-500">
-                    预览：
-                    <n-text>
-                      <MinecraftText :text="unbindKickMsgPreview" />
-                    </n-text>
-                  </div>
-                </div>
-              </template>
-            </n-form-item>
-          </n-card>
-        </n-grid-item>
-      </n-grid>
-    </n-form>
-    <n-divider />
-    <div class="flex justify-end gap-2">
-      <n-button
-        :disabled="isAnyLoading || !isDirty"
-        :loading="isAnyLoading"
-        @click="cancelChanges"
-        >取消</n-button
-      >
-      <n-button
-        :disabled="isAnyLoading || !isDirty"
-        :loading="isAnyLoading"
-        ghost
-        type="primary"
-        @click="handleSubmit"
-      >
-        <template #icon>
-          <n-icon>
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
-                fill="currentColor"
-              />
-            </svg>
-          </n-icon>
-        </template>
-        保存设置
-      </n-button>
-    </div>
+                </template>
+              </UPageCard>
+            </div>
+          </UForm>
+
+          <USeparator class="my-4" />
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              :disabled="isAnyLoading || !isDirty"
+              :loading="isAnyLoading"
+              @click="cancelChanges"
+            >
+              取消
+            </UButton>
+            <UButton
+              :disabled="isAnyLoading || !isDirty"
+              :loading="isAnyLoading"
+              @click="form?.submit()"
+            >
+              保存设置
+            </UButton>
+          </div>
+        </UContainer>
+      </template>
+    </UDashboardPanel>
   </div>
 </template>
 
 <script lang="ts" setup>
+import type { FormSubmitEvent } from "@nuxt/ui";
 import { isEqual } from "lodash-es";
 import moment from "moment-timezone";
-import type { FormInst } from "naive-ui";
 import type { z } from "zod";
 import {
   BindingConfigSchema,
@@ -451,18 +471,20 @@ import {
   renderUnbindSuccess,
 } from "~~/shared/utils/template/binding";
 
-import { isMobile } from "#imports";
 import ServerHeader from "@/components/header/server-header.vue";
+import { useIsMobile } from "@/composables/is-mobile";
 import { BindingData, ServerData } from "~/composables/api";
 import { createVariablesArray } from "~/composables/use-placeholder-variables";
+
+const isMobile = useIsMobile();
 
 const { setPageState, clearPageState } = usePageStateStore();
 
 definePageMeta({ layout: "default" });
 
 const route = useRoute();
-const message = useMessage();
-const formRef = ref<FormInst>();
+const toast = useToast();
+const form = useTemplateRef("form");
 
 interface FormState {
   config: BindingConfig;
@@ -484,7 +506,6 @@ const loadingMap = reactive({
 const isDirty = computed(() => !isEqual(formData, originalFormData.value));
 const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
-const rules = zodToNaiveRules(BindingConfigSchema);
 const codeModeOptions = [
   { label: "纯数字", value: CODE_MODES.NUMBER },
   { label: "纯单词 (小写)", value: CODE_MODES.LOWER },
@@ -594,7 +615,7 @@ const refreshServerData = async (): Promise<void> => {
     originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
     console.error("Failed to refresh server data:", error);
-    message.error("刷新服务器数据失败");
+    toast.add({ color: "error", title: "刷新服务器数据失败" });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -602,13 +623,6 @@ const refreshServerData = async (): Promise<void> => {
 
 const handleSubmit = async () => {
   if (!isDirty.value) {
-    message.info("没有需要保存的更改");
-    return;
-  }
-
-  try {
-    await formRef.value?.validate();
-  } catch {
     return;
   }
 
@@ -617,20 +631,28 @@ const handleSubmit = async () => {
     await BindingData.patch(serverData?.id ?? Number(route.params["id"]), {
       config: formData.config,
     });
-    message.success("绑定配置已保存");
+    toast.add({ color: "success", title: "绑定配置已保存" });
     await refreshServerData();
   } catch (error) {
     console.error("Submit failed:", error);
-    message.error("保存配置失败，请稍后再试");
+    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
   } finally {
     loadingMap.isSubmitting = false;
   }
 };
 
-const cancelChanges = () =>
-  (formData.config = originalFormData.value
+type BindingConfigOutput = z.output<typeof BindingConfigSchema>;
+
+const onFormSubmit = async (event: FormSubmitEvent<BindingConfigOutput>) => {
+  formData.config = event.data;
+  await handleSubmit();
+};
+
+const cancelChanges = () => {
+  formData.config = originalFormData.value
     ? structuredClone(toRaw(originalFormData.value.config))
-    : BindingConfigSchema.parse({}));
+    : BindingConfigSchema.parse({});
+};
 
 onMounted(async () => {
   await refreshServerData();

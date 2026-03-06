@@ -1,76 +1,101 @@
 <template>
-  <div>
-    <ServerHeader class="mb-3" />
+  <div class="h-full">
+    <UDashboardPanel
+      class="scrollbar-custom h-full"
+      :ui="{ body: 'p-0 sm:p-0 overflow-y-auto overscroll-none' }"
+    >
+      <template #header>
+        <ServerHeader />
+      </template>
+      <template #body>
+        <UContainer class="py-8">
+          <div
+            class="grid gap-4"
+            :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
+          >
+            <UPageCard variant="outline">
+              <template #title>配置群聊</template>
+              <template #description>
+                <span class="text-muted text-sm">单独对目标进行配置</span>
+              </template>
+              <template #footer>
+                <UDropdownMenu
+                  v-if="options.length"
+                  :items="
+                    options.map((o) => ({
+                      label: o.label,
+                      onSelect: () => handleSelect(o.key),
+                    }))
+                  "
+                >
+                  <UButton icon="i-lucide-settings-2">配置目标</UButton>
+                </UDropdownMenu>
+                <UAlert
+                  v-else
+                  color="warning"
+                  variant="subtle"
+                  icon="i-lucide-triangle-alert"
+                >
+                  <template #description>
+                    <UButton
+                      variant="link"
+                      color="warning"
+                      size="sm"
+                      class="p-0"
+                      @click="router.push(`/servers/${route.params.id}/target`)"
+                    >
+                      你还没有创建目标哦（去创建）
+                    </UButton>
+                  </template>
+                </UAlert>
+              </template>
+            </UPageCard>
+          </div>
 
-    <n-grid :cols="isMobile ? 1 : '2'" x-gap="12" y-gap="12">
-      <n-grid-item>
-        <n-card class="h-full" size="small" title="配置群聊">
-          单独对目标进行配置
-          <template #footer>
-            <n-dropdown
-              v-if="options.length"
-              trigger="hover"
-              :options="options"
-              @select="handleSelect"
-            >
-              <n-button>配置目标</n-button>
-            </n-dropdown>
-            <n-alert v-else type="warning">
-              <n-button
-                text
-                dashed
-                @click="router.push(`/servers/${route.params.id}/target`)"
-              >
-                你还没有创建目标哦（去创建）
-              </n-button>
-            </n-alert>
-          </template>
-        </n-card>
-      </n-grid-item>
-    </n-grid>
-
-    <n-drawer v-model:show="drawerVisible" :width="502">
-      <drawer-command
-        v-if="selectTarget"
-        :adapter-type="adapterData?.type"
-        :target="selectTarget"
-      />
-    </n-drawer>
-
-    <n-divider />
-    <div class="flex justify-end gap-2">
-      <n-button
-        :disabled="isAnyLoading || !isDirty"
-        :loading="isAnyLoading"
-        @click="cancelChanges"
-        >取消更改</n-button
-      >
-      <n-button
-        :disabled="isAnyLoading || !isDirty"
-        :loading="isAnyLoading"
-        ghost
-        type="primary"
-        @click="handleSubmit"
-      >
-        <template #icon>
-          <n-icon>
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm2 16H5V5h11.17L19 7.83V19zm-7-7c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3zM6 6h9v4H6z"
-                fill="currentColor"
+          <USlideover
+            v-model:open="drawerVisible"
+            :title="
+              selectTarget
+                ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                : ''
+            "
+          >
+            <template #body>
+              <drawer-command
+                v-if="selectTarget"
+                :adapter-type="adapterData?.type"
+                :target="selectTarget"
               />
-            </svg>
-          </n-icon>
-        </template>
-        保存配置
-      </n-button>
-    </div>
+            </template>
+          </USlideover>
+
+          <USeparator class="my-4" />
+          <div class="flex justify-end gap-2">
+            <UButton
+              color="neutral"
+              variant="subtle"
+              :disabled="isAnyLoading || !isDirty"
+              :loading="isAnyLoading"
+              @click="cancelChanges"
+            >
+              取消更改
+            </UButton>
+            <UButton
+              :disabled="isAnyLoading || !isDirty"
+              :loading="isAnyLoading"
+              @click="handleSubmit"
+            >
+              保存配置
+            </UButton>
+          </div>
+        </UContainer>
+      </template>
+    </UDashboardPanel>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { differenceWith, isEqual, pick } from "lodash-es";
-import type { FormInst } from "naive-ui";
 import type { z } from "zod";
 import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
 import { CommandConfigSchema } from "~~/shared/schemas/server/command";
@@ -82,9 +107,11 @@ import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 import type { targetResponse } from "~~/shared/schemas/server/target";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
-import { isMobile } from "#imports";
 import ServerHeader from "@/components/header/server-header.vue";
+import { useIsMobile } from "@/composables/is-mobile";
 import { AdapterData, CommandData, ServerData } from "~/composables/api";
+
+const isMobile = useIsMobile();
 
 const { setPageState, clearPageState } = usePageStateStore();
 
@@ -92,8 +119,7 @@ definePageMeta({ layout: "default" });
 
 const route = useRoute();
 const router = useRouter();
-const message = useMessage();
-const formRef = ref<FormInst>();
+const toast = useToast();
 
 interface FormState {
   config: CommandConfig;
@@ -155,7 +181,7 @@ const refreshServerData = async (): Promise<void> => {
     originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
     console.error("Failed to refresh server data:", error);
-    message.error("刷新服务器数据失败");
+    toast.add({ color: "error", title: "刷新服务器数据失败" });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -163,13 +189,6 @@ const refreshServerData = async (): Promise<void> => {
 
 const handleSubmit = async () => {
   if (!isDirty.value) {
-    message.info("没有需要保存的更改");
-    return;
-  }
-
-  try {
-    await formRef.value?.validate();
-  } catch {
     return;
   }
 
@@ -186,12 +205,12 @@ const handleSubmit = async () => {
       command: formData.config,
       targets: targetsPayload,
     });
-    message.success("配置已保存");
+    toast.add({ color: "success", title: "配置已保存" });
     selectTarget.value = null;
     await refreshServerData();
   } catch (error) {
     console.error("Submit failed:", error);
-    message.error("保存配置失败，请稍后再试");
+    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
   } finally {
     loadingMap.isSubmitting = false;
   }

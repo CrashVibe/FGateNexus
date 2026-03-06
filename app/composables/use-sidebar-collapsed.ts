@@ -1,8 +1,9 @@
-import { isMobile } from "#imports";
+import { useIsMobile } from "./is-mobile";
 
 const SIDEBAR_STORAGE_KEY = "sidebar-collapsed";
 
 export const useSidebarCollapsed = () => {
+  const isMobile = useIsMobile();
   const collapsed = ref(isMobile.value);
 
   /** 从本地存储读取折叠状态 */
