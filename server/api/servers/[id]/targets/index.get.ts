@@ -15,18 +15,17 @@ export default defineEventHandler(async (event) => {
     const result = await db.query.targets.findMany({
       where: (target, { eq }) => eq(target.serverId, serverID),
     });
-    if (result.length === 0) {
-      const apiError = ApiError.notFound("服务器不存在");
-      return createErrorResponse(event, apiError);
-    }
     return createApiResponse(
       event,
-      "获取服务器列表成功",
+      "获取服务器目标列表成功",
       StatusCodes.OK,
       TargetAPI.GETS.response.parse(result),
     );
   } catch (error) {
     logger.error({ error }, "Database error");
-    return createErrorResponse(event, ApiError.database("获取服务器列表失败"));
+    return createErrorResponse(
+      event,
+      ApiError.database("获取服务器目标列表失败"),
+    );
   }
 });
