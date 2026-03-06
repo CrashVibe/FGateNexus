@@ -38,7 +38,6 @@
 
 <script setup lang="ts">
 import { ArrowBackOutline, HomeOutline } from "@vicons/ionicons5";
-import { useColorMode } from "@vueuse/core";
 import { darkTheme } from "naive-ui";
 import type { GlobalTheme } from "naive-ui";
 
@@ -47,14 +46,12 @@ const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const colorMode = useColorMode();
 
-const theme = ref<GlobalTheme | null>(
-  colorMode.value === "dark" ? darkTheme : null,
-);
+const theme = ref<GlobalTheme | null>(colorMode.value === "dark" ? darkTheme : null);
 
 watch(colorMode, async (mode) => {
   // 不加这个会没有自带的过渡效果
   await nextTick();
-  theme.value = mode === "dark" ? darkTheme : null;
+  theme.value = mode.value === "dark" ? darkTheme : null;
 });
 
 // Canvas 动画相关

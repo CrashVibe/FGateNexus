@@ -198,7 +198,7 @@ provide("menuOptions", menuOptions);
 
       <template #footer>
         <div class="flex w-full items-center justify-between">
-          <ThemeToggle />
+          <UColorModeButton />
           <n-button
             v-if="useAuthStore().hasPassword"
             circle

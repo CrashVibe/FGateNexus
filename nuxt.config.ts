@@ -66,6 +66,7 @@ export default defineNuxtConfig({
     "@nuxt/eslint",
     "nuxt-auth-utils",
     "@nuxt/ui",
+    "@nuxt/icon",
   ],
   nitro: {
     compressPublicAssets: true,
@@ -155,7 +156,6 @@ export default defineNuxtConfig({
         "moment-timezone",
         "@vue/devtools-core",
         "@vue/devtools-kit",
-        "@vueuse/core",
         "@vicons/ionicons5",
         "naive-ui",
         "vooks",
