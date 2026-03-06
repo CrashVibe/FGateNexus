@@ -44,7 +44,7 @@ const serverMenuOptions = computed(() => {
   if (serverId.value) {
     const sid = serverId.value;
     menu[0]?.push({
-      desc: "查看所有可用的配置选项。",
+      desc: "查看所有可用的配置选项",
       icon: renderIcon(MenuOutline),
       label: "配置概览",
       to: `/servers/${sid}`,
@@ -53,12 +53,12 @@ const serverMenuOptions = computed(() => {
       {
         children: [
           {
-            desc: "配置服务器的基础运行参数和常规设置。",
+            desc: "配置服务器的基础运行参数和常规设置",
             label: "基础设置",
             to: `/servers/${sid}/general`,
           },
           {
-            desc: "配置聊天平台的消息目标。",
+            desc: "配置聊天平台的消息目标",
             label: "目标配置",
             to: `/servers/${sid}/target`,
           },
@@ -71,12 +71,12 @@ const serverMenuOptions = computed(() => {
       {
         children: [
           {
-            desc: "设置社交账号与游戏账号的绑定规则。",
+            desc: "设置社交账号与游戏账号的绑定规则",
             label: "账号绑定",
             to: `/servers/${sid}/binding`,
           },
           {
-            desc: "配置服务器的远程指令。",
+            desc: "配置服务器的远程指令",
             label: "远程指令",
             to: `/servers/${sid}/command`,
           },
@@ -89,7 +89,7 @@ const serverMenuOptions = computed(() => {
       {
         children: [
           {
-            desc: "Minecraft 与 聊天平台消息双向同步配置。",
+            desc: "Minecraft 与 聊天平台消息双向同步配置",
             label: "消息互通",
             to: `/servers/${sid}/msgbridge`,
           },
@@ -102,7 +102,7 @@ const serverMenuOptions = computed(() => {
       {
         children: [
           {
-            desc: "配置服务器的事件通知。",
+            desc: "配置服务器的事件通知",
             label: "事件通知",
             to: `/servers/${sid}/notify`,
           },
@@ -171,12 +171,12 @@ provide("menuOptions", menuOptions);
       :min-size="12"
       collapsible
       resizable
-      class="border-r-0 py-4"
+      class="border-r-0 py-2"
     >
       <template #header="{ collapsed }">
         <NuxtLink to="/" class="flex items-center justify-center gap-0.5">
-          <AppLogo class="h-8 w-auto shrink-0" />
-          <span v-if="!collapsed" class="text-highlighted text-xl font-bold"
+          <AppLogo class="h-9 w-auto shrink-0" />
+          <span v-if="!collapsed" class="text-highlighted text-2xl font-bold"
             >FGate</span
           >
         </NuxtLink>

@@ -5,7 +5,7 @@
       <PageHeader
         v-if="found.label"
         :title="found.label"
-        :description="serverData?.name"
+        :description="found.desc"
       />
       <!-- button -->
       <n-button quaternary @click="goBack">
@@ -18,9 +18,6 @@
       </n-button>
     </div>
     <slot name="other" />
-    <n-card v-if="found.desc" size="small">
-      <n-text depth="3">{{ found.desc }}</n-text>
-    </n-card>
   </div>
 </template>
 
