@@ -235,7 +235,11 @@ const columns: TableColumn<targetResponse>[] = [
 const addTarget = () => {
   const list = formData.value;
   if (list.length > 0 && !list.at(-1)?.targetId?.trim()) {
-    toast.add({ color: "warning", title: "请先把上一行的目标 ID 填完哦~" });
+    toast.add({
+      color: "warning",
+      id: "empty-target-id-warning",
+      title: "请先把上一行的目标 ID 填完哦~",
+    });
     return;
   }
   formData.value.push(getDefaultTarget());
