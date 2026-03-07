@@ -70,18 +70,14 @@ export class PlayerLoginHandler implements RequestHandler {
     }
 
     // 是否存在关系
-    const existingRelation = await db
-      .select()
-      .from(playerServers)
-      .where(
-        and(
-          eq(playerServers.playerId, player.id),
-          eq(playerServers.serverId, serverID),
-        ),
-      )
-      .limit(1);
+    const existingRelation = await db.query.playerServers.findFirst({
+      where: and(
+        eq(playerServers.playerId, player.id),
+        eq(playerServers.serverId, serverID),
+      ),
+    });
 
-    if (existingRelation.length === 0) {
+    if (!existingRelation) {
       await db.insert(playerServers).values({
         playerId: player.id,
         serverId: serverID,
