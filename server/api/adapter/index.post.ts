@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
     const apiError = ApiError.database("添加适配器失败：未能插入适配器");
     return createErrorResponse(event, apiError);
   } catch (error) {
-    logger.error({ error }, "添加适配器失败");
+    logger.error(error, "添加适配器失败");
     const apiError = ApiError.database("添加适配器失败");
     return createErrorResponse(event, apiError);
   }

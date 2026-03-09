@@ -67,7 +67,7 @@ export default defineEventHandler(async (event) => {
       StatusCodes.OK,
     );
   } catch (error: unknown) {
-    logger.error({ error }, "更新服务器聊天同步配置失败");
+    logger.error(error, "更新服务器聊天同步配置失败");
     const apiError =
       error instanceof ApiError
         ? error

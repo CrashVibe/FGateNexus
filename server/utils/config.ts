@@ -8,6 +8,14 @@ import { logger } from "./logger";
 import { applyDefaults } from "./zod";
 
 const AppConfigSchema = z.object({
+  browser: z
+    .object({
+      executablePath: z
+        .string()
+        .nonempty("browser.executablePath 不能为空")
+        .optional(),
+    })
+    .default({}),
   koishi: z
     .object({
       host: z.ipv4().nonempty("koishi.host 不能为空").default("127.0.0.1"),
@@ -77,7 +85,6 @@ class AppConfigManager {
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     const configDir = path.dirname(configPath);
     logger.info(`配置文件路径：${configPath}`);
-
     let config: AppConfig;
 
     const fileExists = fs.existsSync(configPath);
@@ -87,15 +94,14 @@ class AppConfigManager {
         const fileContent = fs.readFileSync(configPath, "utf8");
 
         const parsedConfig: unknown = JSON.parse(fileContent);
-
         const { config: merged, changed } = mergeWithDefaults(parsedConfig);
         config = merged;
         if (changed) {
           logger.info("配置文件已补充缺失的默认值");
-          fs.writeFileSync(configPath, JSON.stringify(merged, null, 4), "utf8");
+          fs.writeFileSync(configPath, JSON.stringify(merged, null, 2), "utf8");
         }
       } catch (error) {
-        logger.error({ error }, "配置文件读取或校验失败");
+        logger.error(error, "配置文件读取或校验失败");
         process.exit(1);
       }
     } else {
@@ -103,7 +109,7 @@ class AppConfigManager {
       logger.info("配置文件不存在，创建默认配置...");
       fs.mkdirSync(configDir, { recursive: true });
       ({ config } = mergeWithDefaults({}));
-      fs.writeFileSync(configPath, JSON.stringify(config, null, 4), "utf8");
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
     }
     process.env.NUXT_SESSION_PASSWORD = config.session.password;
     return config;
@@ -126,11 +132,27 @@ class AppConfigManager {
       this._config = mergeWithDefaults(parsedConfig).config;
       logger.info("配置已重新加载");
     } catch (error) {
-      logger.error({ error }, "重新加载配置文件失败");
+      logger.error(error, "重新加载配置文件失败");
+      throw error;
+    }
+  }
+
+  /**
+   * 更新配置并保存到文件
+   */
+  updateConfig(updates: Partial<AppConfig>): void {
+    const newConfig = { ...this._config, ...updates };
+    logger.info({ newConfig }, "准备更新配置");
+    this._config = newConfig;
+    const configPath = path.resolve(process.cwd(), "config/appsettings.json");
+    try {
+      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf8");
+      logger.info("配置已更新并保存到文件");
+    } catch (error) {
+      logger.error(error, "保存配置文件失败");
       throw error;
     }
   }
 }
 
 export const configManager = AppConfigManager.getInstance();
-export { mergeWithDefaults };

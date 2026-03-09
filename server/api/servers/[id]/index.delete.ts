@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     const apiError = ApiError.database("未能删除服务器");
     return createErrorResponse(event, apiError);
   } catch (error) {
-    logger.error({ error }, "Database error");
+    logger.error(error, "Database error");
     return createErrorResponse(event, ApiError.database("获取服务器列表失败"));
   }
 });

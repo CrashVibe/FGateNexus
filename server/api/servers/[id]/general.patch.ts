@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
 
     return createApiResponse(event, "更新服务器对应适配器成功", StatusCodes.OK);
   } catch (error) {
-    logger.error({ error }, "更新服务器对应适配器失败");
+    logger.error(error, "更新服务器对应适配器失败");
     const apiError = ApiError.internal("更新服务器对应适配器失败");
     return createErrorResponse(event, apiError);
   }

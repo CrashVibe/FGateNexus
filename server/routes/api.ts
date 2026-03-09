@@ -31,9 +31,14 @@ export default defineWebSocketHandler({
 
   async message(peer, message) {
     if (!pluginBridge.connectionManager.hasConnection(peer)) {
-      throw new Error("Unauthorized: 该连接未授权或不存在");
+      peer.close(1008, "Unauthorized: 该连接未授权或不存在");
+      return;
     }
-    await pluginBridge.messageHandler.handleMessage(peer, message.text());
+    try {
+      await pluginBridge.messageHandler.handleMessage(peer, message.text());
+    } catch (error) {
+      logger.error(error, "处理 WebSocket 消息时发生未捕获的错误");
+    }
   },
   async open(peer) {
     const token = peer.request.headers
@@ -109,8 +114,11 @@ export default defineWebSocketHandler({
       return;
     }
 
-    await pluginBridge.connectionManager.addConnection(peer, server.id);
-
+    try {
+      await pluginBridge.connectionManager.addConnection(peer, server.id);
+    } catch {
+      return;
+    }
     peer.send(
       JSON.stringify({
         api_version: CURRENT_API_VERSION,

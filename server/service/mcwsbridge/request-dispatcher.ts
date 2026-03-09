@@ -35,7 +35,7 @@ class RequestDispatcher {
       throw new Error(`处理器已存在：${method}`);
     }
     this.handlers.set(method, handler);
-    logger.info(`[REGISTER] 请求处理器已注册：${method}`);
+    logger.debug(`[REGISTER] 请求处理器已注册：${method}`);
   }
 
   /**
@@ -52,7 +52,7 @@ class RequestDispatcher {
     try {
       await handler.handleRequest(request, peer);
     } catch (error) {
-      logger.error({ error }, `[DISPATCH] 处理请求失败：${request.method}`);
+      logger.error(error, `[DISPATCH] 处理请求失败：${request.method}`);
       MessageHandler.sendError(
         peer,
         request.id,

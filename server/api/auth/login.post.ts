@@ -94,7 +94,7 @@ export default defineEventHandler(async (event) => {
 
     return createApiResponse(event, "登录成功", StatusCodes.OK);
   } catch (error) {
-    logger.error({ error }, "登录失败");
+    logger.error(error, "登录失败");
     return createErrorResponse(event, ApiError.internal("登录失败"));
   }
 });

@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       PlayerAPI.GETS.response.parse(result),
     );
   } catch (error) {
-    logger.error({ error }, "Database error");
+    logger.error(error, "Database error");
     return createErrorResponse(event, ApiError.database("获取玩家列表失败"));
   }
 });

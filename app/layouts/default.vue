@@ -23,6 +23,12 @@ const basicMenuOptions: NavigationMenuItem[][] = [
           label: "安全设置",
           to: "/settings/security",
         },
+        {
+          desc: "下载或配置 Chromium 浏览器，用于图片渲染功能。",
+          icon: "i-lucide-chrome",
+          label: "浏览器设置",
+          to: "/settings/browser",
+        },
       ],
       icon: "i-lucide-settings",
       key: "settings",

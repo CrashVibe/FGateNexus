@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       AdapterAPI.GETS.response.parse(adaptersWithStatus),
     );
   } catch (error) {
-    logger.error({ error }, "获取适配器列表失败");
+    logger.error(error, "获取适配器列表失败");
     return createErrorResponse(event, ApiError.database("获取适配器列表失败"));
   }
 });

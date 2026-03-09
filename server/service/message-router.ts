@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
-import type { Session } from "koishi";
+import { h } from "koishi";
+import type { Element, Session } from "koishi";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
+import { renderMinecraftTextToImage } from "~~/server/utils/mc-image-render";
 import {
   formatMCToPlatformMessage,
   formatPlatformToMCMessage,
@@ -143,13 +145,32 @@ export const handlePlatformMessage = async (
           session.content.slice(
             target.config.CommandConfigSchema.prefix.length,
           ),
+          server.commandConfig.imageRender,
         );
-        // NOTE: 图片渲染待实现
+        const resultText = success
+          ? `指令执行成功：\n${message}`
+          : `指令执行失败：\n${message}`;
+
+        let messageToSend: string | Element;
+        if (server.commandConfig.imageRender) {
+          try {
+            const imgBuffer = await renderMinecraftTextToImage(resultText);
+            messageToSend = h.image(
+              `data:image/png;base64,${imgBuffer.toString("base64")}`,
+            );
+          } catch (error) {
+            logger.error(error, "渲染指令结果图片时出错，已回退为文本消息");
+            messageToSend = resultText;
+          }
+        } else {
+          messageToSend = resultText;
+        }
+
         await chatBridge.sendToTarget(
           connection,
           target.targetId,
           target.type,
-          success ? `指令执行成功: ${message}` : `指令执行失败：${message}`,
+          messageToSend,
         );
         // 阻断
         return;
@@ -182,6 +203,6 @@ export const handlePlatformMessage = async (
       logger.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`);
     }
   } catch (error) {
-    logger.error({ error }, `[消息路由] 处理平台消息时出错：`);
+    logger.error(error, `[消息路由] 处理平台消息时出错：`);
   }
 };

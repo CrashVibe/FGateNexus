@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
       secret,
     });
   } catch (error) {
-    logger.error({ error }, "生成 2FA 设置信息失败");
+    logger.error(error, "生成 2FA 设置信息失败");
     const apiError = ApiError.internal("生成 2FA 设置信息失败");
     return createErrorResponse(event, apiError);
   }

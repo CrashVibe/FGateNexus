@@ -42,7 +42,7 @@ export class MessageHandler {
       try {
         await requestDispatcher.dispatch(ValidRequest.data, peer);
       } catch (error) {
-        logger.error({ error }, `[ERROR] 处理请求失败：${peer.id}`);
+        logger.error(error, `[ERROR] 处理请求失败：${peer.id}`);
         MessageHandler.sendError(
           peer,
           ValidRequest.data.id ?? null,
@@ -137,7 +137,7 @@ export class MessageHandler {
       peer.send(JSON.stringify(notification));
       logger.debug(`[NOTIFY] 通知已发送：${peer.id} - ${method}`);
     } catch (error) {
-      logger.error({ error }, `[FAILED] 发送通知失败：${peer.id} - ${method}`);
+      logger.error(error, `[FAILED] 发送通知失败：${peer.id} - ${method}`);
     }
   }
 
@@ -163,7 +163,7 @@ export class MessageHandler {
       peer.send(JSON.stringify(response));
       logger.debug(`[SUCCESS] 响应已发送：${peer.id} - ID: ${id}`);
     } catch (error) {
-      logger.error({ error }, `[FAILED] 发送响应失败：${peer.id}`);
+      logger.error(error, `[FAILED] 发送响应失败：${peer.id}`);
     }
   }
 
@@ -195,7 +195,7 @@ export class MessageHandler {
         `[ERROR] 错误响应已发送：${peer.id} - ${code}: ${message} (ID: ${id})`,
       );
     } catch (error) {
-      logger.error({ error }, `[FAILED] 发送错误响应失败：${peer.id}`);
+      logger.error(error, `[FAILED] 发送错误响应失败：${peer.id}`);
     }
   }
 

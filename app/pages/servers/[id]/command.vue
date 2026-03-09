@@ -14,6 +14,36 @@
             :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
           >
             <UPageCard variant="outline">
+              <template #title>基础设置</template>
+              <template #footer>
+                <UFormField
+                  label="图片渲染"
+                  description="将指令返回结果的颜色代码转换为图片后发送"
+                >
+                  <USwitch v-model="formData.config.imageRender" />
+                </UFormField>
+                <UAlert
+                  v-if="currentConfig.executablePath === null"
+                  color="warning"
+                  variant="subtle"
+                  icon="i-lucide-info"
+                  class="mt-2"
+                >
+                  <template #description>
+                    <UButton
+                      variant="link"
+                      color="warning"
+                      size="sm"
+                      class="p-0"
+                      @click="router.push('/settings/browser')"
+                    >
+                      图片渲染功能需要配置浏览器路径才能使用（去配置）
+                    </UButton>
+                  </template>
+                </UAlert>
+              </template>
+            </UPageCard>
+            <UPageCard variant="outline">
               <template #title>配置群聊</template>
               <template #description>
                 <span class="text-muted text-sm">单独对目标进行配置</span>
@@ -109,7 +139,12 @@ import { pickEditableTarget } from "~~/shared/utils/target";
 
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
-import { AdapterData, CommandData, ServerData } from "~/composables/api";
+import {
+  AdapterData,
+  BrowserData,
+  CommandData,
+  ServerData,
+} from "~/composables/api";
 
 const isMobile = useIsMobile();
 
@@ -135,6 +170,9 @@ const selectTarget = ref<targetResponse | null>(null);
 const drawerVisible = ref(false);
 let serverData: ServerWithStatus | null = null;
 const adapterData = ref<AdapterWithStatus | null>(null);
+const currentConfig = ref<{
+  executablePath: string | null;
+}>({ executablePath: null });
 
 const originalFormData = ref<FormState | null>(null);
 
@@ -226,8 +264,21 @@ const cancelChanges = () => {
   selectTarget.value = null;
 };
 
+const loadConfig = async () => {
+  loadingMap.isLoading = true;
+  try {
+    const data = await BrowserData.get();
+    currentConfig.value = data ?? { executablePath: null };
+  } catch {
+    toast.add({ color: "error", title: "加载配置失败" });
+  } finally {
+    loadingMap.isLoading = false;
+  }
+};
+
 onMounted(async () => {
   await refreshServerData();
+  await loadConfig();
   setPageState({ isDirty: () => isDirty.value, save: handleSubmit });
 });
 

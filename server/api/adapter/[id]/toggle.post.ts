@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     const apiError = ApiError.database("开关适配器失败：未能找到适配器");
     return createErrorResponse(event, apiError);
   } catch (error) {
-    logger.error({ error }, "开关适配器失败");
+    logger.error(error, "开关适配器失败");
     const apiError = ApiError.internal("开关适配器失败");
     return createErrorResponse(event, apiError);
   }

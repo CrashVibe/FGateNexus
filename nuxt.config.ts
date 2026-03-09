@@ -158,6 +158,7 @@ export default defineNuxtConfig({
         "@vue/devtools-kit",
         "@vicons/ionicons5",
         "naive-ui",
+        "@tanstack/vue-table",
         "vooks",
         "highlight.js/lib/core",
         "highlight.js/lib/languages/typescript",

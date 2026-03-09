@@ -1,4 +1,7 @@
-// Minecraft 颜色代码（'f' 由暗色模式决定，在解析时动态处理）
+/**
+ * Minecraft 颜色代码映射
+ * 注意：'f'（白色）由调用方通过 darkMode 参数动态决定，不在此表中。
+ */
 export const MINECRAFT_COLORS: Record<string, string> = {
   "0": "#000000",
   "1": "#0000AA",
@@ -50,7 +53,7 @@ const FORMAT_SETTERS: Partial<Record<string, (s: McSegment) => void>> = {
   },
 };
 
-const makeSegment = (overrides: Partial<McSegment> = {}): McSegment => ({
+export const makeSegment = (overrides: Partial<McSegment> = {}): McSegment => ({
   bold: false,
   color: "",
   italic: false,
@@ -181,3 +184,40 @@ export const parseMinecraftText = (
   flush();
   return segments;
 };
+
+/**
+ * 将 McSegment 列表转为内联样式的 HTML 片段，可用于服务端渲染或前端展示。
+ */
+export const segmentsToHtml = (segments: McSegment[]): string =>
+  segments
+    .map((seg) => {
+      if (seg.lineBreak) {
+        return "<br/>";
+      }
+      const styles: string[] = [`color:${seg.color}`];
+      if (seg.bold) {
+        styles.push("font-weight:bold");
+      }
+      if (seg.italic) {
+        styles.push("font-style:italic");
+      }
+
+      const decorations: string[] = [];
+      if (seg.strikethrough) {
+        decorations.push("line-through");
+      }
+      if (seg.underline) {
+        decorations.push("underline");
+      }
+      if (decorations.length > 0) {
+        styles.push(`text-decoration:${decorations.join(" ")}`);
+      }
+
+      const escaped = seg.text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+
+      return `<span style="${styles.join(";")}">${escaped}</span>`;
+    })
+    .join("");

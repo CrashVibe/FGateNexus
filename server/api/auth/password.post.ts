@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
 
     return createApiResponse(event, "密码设置成功", StatusCodes.OK);
   } catch (error) {
-    logger.error({ error }, "设置密码失败");
+    logger.error(error, "设置密码失败");
     return createErrorResponse(event, ApiError.internal("设置密码失败"));
   }
 });

@@ -1,7 +1,7 @@
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
 import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
-import type { ForkScope, Session, Universal } from "koishi";
+import type { Element, ForkScope, Session, Universal } from "koishi";
 import { Context, Logger as klog } from "koishi";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
@@ -252,7 +252,7 @@ export class ChatBridge {
     botConnection: BotConnection,
     targetId: string,
     targetType: "group" | "private",
-    message: string,
+    message: string | Element,
   ): Promise<void> {
     try {
       const bot = this.findBot(botConnection.adapterID);

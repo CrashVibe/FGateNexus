@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
       StatusCodes.OK,
     );
   } catch (error) {
-    logger.error({ error }, "2FA 验证失败");
+    logger.error(error, "2FA 验证失败");
     const apiError = ApiError.internal("2FA 验证失败");
     return createErrorResponse(event, apiError);
   }

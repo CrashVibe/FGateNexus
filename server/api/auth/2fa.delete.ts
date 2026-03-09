@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
 
     return createApiResponse(event, "2FA 已禁用", StatusCodes.OK);
   } catch (error) {
-    logger.error({ error }, "禁用 2FA 失败");
+    logger.error(error, "禁用 2FA 失败");
     const apiError = ApiError.internal("禁用 2FA 失败");
     return createErrorResponse(event, apiError);
   }

@@ -70,7 +70,7 @@ export default defineEventHandler(async (event) => {
       StatusCodes.OK,
     );
   } catch (error) {
-    logger.error({ error }, "删除密码失败");
+    logger.error(error, "删除密码失败");
     const apiError = ApiError.internal("删除密码失败");
     return createErrorResponse(event, apiError);
   }

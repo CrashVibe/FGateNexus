@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
 
     return createApiResponse(event, "更新服务器通知配置成功", StatusCodes.OK);
   } catch (error: unknown) {
-    logger.error({ error }, "更新服务器通知配置失败");
+    logger.error(error, "更新服务器通知配置失败");
     const apiError =
       error instanceof ApiError
         ? error
