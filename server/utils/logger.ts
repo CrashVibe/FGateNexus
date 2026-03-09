@@ -6,6 +6,7 @@ export const logger = pino(
     colorize: true,
     ignore: "pid,hostname",
     levelFirst: true,
+    sync: false,
     translateTime: "HH:MM:ss",
   }),
 );
