@@ -45,7 +45,7 @@ export default defineEventHandler(async (event) => {
     const apiError = ApiError.database("更新适配器失败：未能更新适配器");
     return createErrorResponse(event, apiError);
   } catch (error) {
-    logger.error({ error }, "更新适配器失败");
+    logger.error(error, "更新适配器失败");
     const apiError = ApiError.internal("更新适配器失败");
     return createErrorResponse(event, apiError);
   }

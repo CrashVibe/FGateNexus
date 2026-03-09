@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       TargetAPI.DELETE.response.parse(deleted),
     );
   } catch (error) {
-    logger.error({ error }, "Database error");
+    logger.error(error, "Database error");
     return createErrorResponse(event, ApiError.database("批量删除目标失败"));
   }
 });

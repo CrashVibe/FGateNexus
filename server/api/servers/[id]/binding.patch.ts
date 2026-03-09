@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     }
     return createApiResponse(event, "更新服务器绑定配置成功", StatusCodes.OK);
   } catch (error) {
-    logger.error({ error }, "更新服务器绑定配置失败");
+    logger.error(error, "更新服务器绑定配置失败");
     const apiError = ApiError.internal("更新服务器绑定配置失败");
     return createErrorResponse(event, apiError);
   }

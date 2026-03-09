@@ -8,6 +8,7 @@ import { GeneralAPI } from "~~/shared/schemas/server/general";
 import type { NotifyAPI } from "~~/shared/schemas/server/notify";
 import { ServersAPI } from "~~/shared/schemas/server/servers";
 import { TargetAPI } from "~~/shared/schemas/server/target";
+import { SettingsAPI } from "~~/shared/schemas/settings";
 import type { ApiResponse } from "~~/shared/types";
 
 export const ServerData = {
@@ -179,5 +180,40 @@ export const PlayerData = {
   async gets() {
     const response = await $fetch<ApiResponse>("/api/players");
     return PlayerAPI.GETS.response.parse(response.data);
+  },
+};
+
+export const BrowserData = {
+  async cancelDownload() {
+    await $fetch<ApiResponse>("/api/settings/browser/download-cancel", {
+      method: "POST",
+    });
+  },
+  async checkUpdate() {
+    const response = await $fetch<ApiResponse>(
+      "/api/settings/browser/check-update",
+    );
+    return SettingsAPI.CHECK_UPDATE_GET.response.parse(response.data);
+  },
+  async get() {
+    const response = await $fetch<ApiResponse>("/api/settings/browser");
+    return SettingsAPI.GET.response.parse(response.data);
+  },
+  async getDownloadProgress() {
+    const response = await $fetch<ApiResponse>(
+      "/api/settings/browser/download-progress",
+    );
+    return SettingsAPI.DOWNLOAD_PROGRESS_GET.response.parse(response.data);
+  },
+  async patch(executablePath: string | null) {
+    await $fetch<ApiResponse>("/api/settings/browser", {
+      body: SettingsAPI.PATCH.request.parse({ executablePath }),
+      method: "PATCH",
+    });
+  },
+  async startDownload() {
+    await $fetch<ApiResponse>("/api/settings/browser/download", {
+      method: "POST",
+    });
   },
 };

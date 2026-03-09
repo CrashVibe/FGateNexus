@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
     return createApiResponse(event, "登出成功", StatusCodes.OK);
   } catch (error) {
-    logger.error({ error }, "登出失败");
+    logger.error(error, "登出失败");
     await clearUserSession(event);
     return createApiResponse(event, "登出成功", StatusCodes.OK);
   }

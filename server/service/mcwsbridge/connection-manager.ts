@@ -64,17 +64,16 @@ export class ConnectionManager {
       throw new Error(`该连接已存在，无法重复添加：${serverId}`);
     }
     this.connectionMap.set(serverId, { peer, serverId });
+    logger.info(`[CONNECTION] 连接已添加：服务器 ID ${serverId}`);
     try {
       await this.bridge.updateClientInfo(peer, serverId);
     } catch (error) {
-      logger.error({ error }, `[ERROR] 更新客户端信息失败：${peer.id}`);
+      logger.error(error, `[ERROR] 更新客户端信息失败：${peer.id}`);
       this.bridge.connectionManager.removeConnection(undefined, serverId);
-      peer.close(1000, "Connection closed due to error");
       throw new Error(`更新客户端信息失败 (已关闭连接): ${peer.id}`, {
         cause: error,
       });
     }
-    logger.info(`[CONNECTION] 连接已添加：服务器 ID ${serverId}`);
   }
 
   /**
@@ -123,7 +122,14 @@ export class ConnectionManager {
         if (!connection) {
           throw new Error(`无法找到对应的连接，服务器 ID: ${serverID}`);
         }
-        connection.peer.close(1000, "Connection closed by server");
+        try {
+          connection.peer.close(1000, "Connection closed by server");
+        } catch (error) {
+          logger.warn(
+            { error },
+            `[CONNECTION] 关闭 peer 时出错，可能已关闭：服务器 ID ${serverID}`,
+          );
+        }
         this.connectionMap.delete(serverID);
         logger.info(`[CONNECTION] 连接已移除：服务器 ID ${serverID}`);
         this.bridge.messageHandler.cleanupByPeer(connection.peer.id);
@@ -135,7 +141,14 @@ export class ConnectionManager {
     if (peer) {
       for (const [serverId, connection] of this.connectionMap.entries()) {
         if (connection.peer === peer) {
-          connection.peer.close(1000, "Connection closed by server");
+          try {
+            connection.peer.close(1000, "Connection closed by server");
+          } catch (error) {
+            logger.warn(
+              { error },
+              `[CONNECTION] 关闭 peer 时出错，可能已关闭：服务器 ID ${serverId}`,
+            );
+          }
           this.connectionMap.delete(serverId);
           logger.info(`[CONNECTION] 连接已移除：服务器 ID ${serverId}`);
           this.bridge.messageHandler.cleanupByPeer(peer.id);

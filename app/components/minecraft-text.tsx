@@ -1,8 +1,7 @@
 import { sample } from "lodash-es";
 import { computed, defineComponent, h, shallowRef, watchEffect } from "vue";
 import type { CSSProperties } from "vue";
-
-import { parseMinecraftText } from "~/composables/use-minecraft-format";
+import { parseMinecraftText } from "~~/shared/utils/minecraft-format";
 
 const OBFUSCATED_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?~`";
 const SEGMENTER = new Intl.Segmenter();

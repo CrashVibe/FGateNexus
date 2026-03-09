@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
       TargetAPI.GETS.response.parse(result),
     );
   } catch (error) {
-    logger.error({ error }, "Database error");
+    logger.error(error, "Database error");
     return createErrorResponse(
       event,
       ApiError.database("获取服务器目标列表失败"),

@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col gap-4">
-    <UFormField label="是否开启此目标的远程指令" required>
+    <UFormField label="远程指令" description="是否开启此目标的远程指令">
       <USwitch v-model="selectedTarget.config.CommandConfigSchema.enabled" />
     </UFormField>
     <UFormField label="指令前缀">

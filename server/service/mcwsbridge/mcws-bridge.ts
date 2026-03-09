@@ -142,11 +142,12 @@ export class MCWSBridge {
   public async executeCommand(
     serverId: number,
     command: string,
+    need_color = false,
   ): Promise<z.infer<typeof executeCommandSchema>> {
     const result = await this.messageHandler.sendRequest(
       this.connectionManager.getConnection(serverId).peer,
       "execute.command",
-      { command },
+      { command, need_color },
     );
 
     const parsed = executeCommandSchema.safeParse(result);

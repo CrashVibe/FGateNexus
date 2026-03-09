@@ -47,7 +47,7 @@ export class ChatMessageHandler implements RequestHandler {
         `[ChatMessageHandler] 处理来自 ${playerName} 的聊天消息，服务器 ID: ${serverId}`,
       );
     } catch (error) {
-      logger.error({ error }, "[ChatMessageHandler] 无法处理聊天消息");
+      logger.error(error, "[ChatMessageHandler] 无法处理聊天消息");
     }
   }
 }
