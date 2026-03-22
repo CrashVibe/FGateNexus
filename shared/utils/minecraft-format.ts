@@ -159,6 +159,7 @@ export const parseMinecraftText = (
     if (li > 0) {
       flush();
       segments.push(makeSegment({ color: st.color, lineBreak: true }));
+      Object.assign(st, makeSegment({ color: defaultColor }));
     }
 
     if (line === undefined || line === "") {
