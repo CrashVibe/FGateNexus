@@ -53,6 +53,12 @@ const FORMAT_SETTERS: Partial<Record<string, (s: McSegment) => void>> = {
   },
 };
 
+/** 匹配 Bungee 的 legacy hex 颜色代码 */
+const BUNGEE_HEX_PATTERN = /^&x(&[0-9a-fA-F]){6}$/;
+
+/** Bungee 的 legacy hex 颜色代码字符串长度 */
+const HEX_LENGTH = 14;
+
 export const makeSegment = (overrides: Partial<McSegment> = {}): McSegment => ({
   bold: false,
   color: "",
@@ -76,14 +82,18 @@ const applyCode = (
   flush: () => void,
   defaultColor: string,
 ): number => {
-  // 十六进制颜色：&#RRGGBB
-  if (code === "#" && i + 7 < line.length) {
-    const hex = line.slice(i + 1, i + 8);
-    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+  // 十六进制颜色：&x&R&R&G&G&B&B
+  if (code === "x" && i + HEX_LENGTH < line.length) {
+    const hex = line.slice(i, i + HEX_LENGTH);
+    if (BUNGEE_HEX_PATTERN.test(hex)) {
       flush();
-      st.color = hex;
+      let hexColor = "#";
+      for (let j = 3; j < HEX_LENGTH; j += 2) {
+        hexColor += hex[j];
+      }
+      st.color = hexColor;
       st.obfuscated = false;
-      return 8;
+      return HEX_LENGTH;
     }
   }
 
@@ -149,6 +159,7 @@ export const parseMinecraftText = (
     if (li > 0) {
       flush();
       segments.push(makeSegment({ color: st.color, lineBreak: true }));
+      Object.assign(st, makeSegment({ color: defaultColor }));
     }
 
     if (line === undefined || line === "") {
