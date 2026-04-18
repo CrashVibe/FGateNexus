@@ -53,24 +53,29 @@ watch([searchName, searchUUID, searchIP, searchSocial], () => {
 
 const data = computed<PlayerRow[]>(() =>
   playerList.value
+    .filter((player) => {
+      const name = player.player.name.toLowerCase();
+      const uuid = player.player.uuid.toLowerCase();
+      const ip = (player.player.ip ?? "").toLowerCase();
+      const social = (player.socialAccount?.uid ?? "").toLowerCase();
+      const sName = searchName.value.toLowerCase();
+      const sUUID = searchUUID.value.toLowerCase();
+      const sIP = searchIP.value.toLowerCase();
+      const sSocial = searchSocial.value.toLowerCase();
+      return (
+        name.includes(sName) &&
+        uuid.includes(sUUID) &&
+        ip.includes(sIP) &&
+        social.includes(sSocial)
+      );
+    })
     .map((player) => ({
       ip: player.player.ip,
       name: player.player.name,
       serversName: player.serversName.join(", "),
       socialAccount: player.socialAccount,
       uuid: player.player.uuid,
-    }))
-    .filter(
-      (player) =>
-        player.name.toLowerCase().includes(searchName.value.toLowerCase()) &&
-        player.uuid.toLowerCase().includes(searchUUID.value.toLowerCase()) &&
-        (player.ip ?? "")
-          .toLowerCase()
-          .includes(searchIP.value.toLowerCase()) &&
-        (player.socialAccount?.uid ?? "")
-          .toLowerCase()
-          .includes(searchSocial.value.toLowerCase()),
-    ),
+    })),
 );
 
 const columns: TableColumn<PlayerRow>[] = [
