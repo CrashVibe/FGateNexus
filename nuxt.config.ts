@@ -71,16 +71,6 @@ export default defineNuxtConfig({
     experimental: {
       websocket: true,
     },
-    externals: {
-      inline: [
-        "vue",
-        "@vue/shared",
-        "@vue/runtime-dom",
-        "@vue/compiler-dom",
-        "@vue/runtime-core",
-        "@vue/reactivity",
-      ],
-    },
     minify: true,
     node: true,
     preset: "bun",
@@ -102,17 +92,6 @@ export default defineNuxtConfig({
     tsConfig: {
       // oxlint-disable-next-line sort-keys
       compilerOptions: {
-        paths: {
-          "#shared": ["./shared"],
-          "#shared/*": ["./shared/*"],
-          "@": ["./app"],
-          "@/*": ["./app/*"],
-          "~": ["./app"],
-          "~/*": ["./app/*"],
-          "~~": ["."],
-          "~~/*": ["./*"],
-        },
-        // 支持解析 json 文件
         resolveJsonModule: true,
         allowImportingTsExtensions: true,
         esModuleInterop: true,
