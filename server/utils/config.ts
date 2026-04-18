@@ -91,14 +91,18 @@ class AppConfigManager {
     if (fileExists) {
       // 文件存在，读取配置
       try {
-        const fileContent = fs.readFileSync(configPath, "utf8");
+        const fileContent = fs.readFileSync(configPath, "utf-8");
 
         const parsedConfig: unknown = JSON.parse(fileContent);
         const { config: merged, changed } = mergeWithDefaults(parsedConfig);
         config = merged;
         if (changed) {
           logger.info("配置文件已补充缺失的默认值");
-          fs.writeFileSync(configPath, JSON.stringify(merged, null, 2), "utf8");
+          fs.writeFileSync(
+            configPath,
+            JSON.stringify(merged, null, 2),
+            "utf-8",
+          );
         }
       } catch (error) {
         logger.error(error, "配置文件读取或校验失败");
@@ -109,7 +113,7 @@ class AppConfigManager {
       logger.info("配置文件不存在，创建默认配置...");
       fs.mkdirSync(configDir, { recursive: true });
       ({ config } = mergeWithDefaults({}));
-      fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
     }
     process.env.NUXT_SESSION_PASSWORD = config.session.password;
     return config;
@@ -125,7 +129,7 @@ class AppConfigManager {
   reloadConfig(): void {
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     try {
-      const fileContent = fs.readFileSync(configPath, "utf8");
+      const fileContent = fs.readFileSync(configPath, "utf-8");
 
       const parsedConfig: unknown = JSON.parse(fileContent);
 
@@ -146,7 +150,7 @@ class AppConfigManager {
     this._config = newConfig;
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     try {
-      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf8");
+      fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf-8");
       logger.info("配置已更新并保存到文件");
     } catch (error) {
       logger.error(error, "保存配置文件失败");

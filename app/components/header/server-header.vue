@@ -8,8 +8,8 @@
 
 <script lang="ts" setup>
 import type { NavigationMenuChildItem, NavigationMenuItem } from "@nuxt/ui";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
+import type { ServerWithStatus } from "#shared/model/server/servers";
 import PageHeader from "@/components/header/page-header.vue";
 import { ServerData } from "~/composables/api";
 import type { Menu } from "~/layouts/default.vue";

@@ -36,8 +36,8 @@
 </template>
 
 <script lang="ts" setup>
-import { AdapterType } from "~~/shared/schemas/adapter";
-import type { targetResponse } from "~~/shared/schemas/server/target";
+import { AdapterType } from "#shared/model/adapter";
+import type { targetResponse } from "#shared/model/server/target";
 
 const { target, adapterType = null } = defineProps<{
   target: targetResponse;

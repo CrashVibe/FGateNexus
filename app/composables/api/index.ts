@@ -1,15 +1,16 @@
 import type { z } from "zod";
-import { AdapterAPI } from "~~/shared/schemas/adapter";
-import { PlayerAPI } from "~~/shared/schemas/player";
-import { BindingAPI } from "~~/shared/schemas/server/binding";
-import { ChatSyncAPI } from "~~/shared/schemas/server/chat-sync";
-import { CommandAPI } from "~~/shared/schemas/server/command";
-import { GeneralAPI } from "~~/shared/schemas/server/general";
-import type { NotifyAPI } from "~~/shared/schemas/server/notify";
-import { ServersAPI } from "~~/shared/schemas/server/servers";
-import { TargetAPI } from "~~/shared/schemas/server/target";
-import { SettingsAPI } from "~~/shared/schemas/settings";
-import type { ApiResponse } from "~~/shared/types";
+
+import type { ApiResponse } from "#shared/model";
+import { AdapterAPI } from "#shared/model/adapter";
+import { PlayerAPI } from "#shared/model/player";
+import { BindingAPI } from "#shared/model/server/binding";
+import { ChatSyncAPI } from "#shared/model/server/chat-sync";
+import { CommandAPI } from "#shared/model/server/command";
+import { GeneralAPI } from "#shared/model/server/general";
+import type { NotifyAPI } from "#shared/model/server/notify";
+import { ServersAPI } from "#shared/model/server/servers";
+import { TargetAPI } from "#shared/model/server/target";
+import { SettingsAPI } from "#shared/model/settings";
 
 export const ServerData = {
   async delete(serverId: number) {
@@ -26,11 +27,10 @@ export const ServerData = {
     return ServersAPI.GETS.response.parse(response.data);
   },
   async post(data: z.infer<typeof ServersAPI.POST.request>) {
-    const response = await $fetch<ApiResponse>("/api/servers", {
+    await $fetch<ApiResponse>("/api/servers", {
       body: ServersAPI.POST.request.parse(data),
       method: "POST",
     });
-    return response;
   },
 };
 

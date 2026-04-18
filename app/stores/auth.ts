@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
 import type { z } from "zod";
-import { LoginAPI } from "~~/shared/schemas/auth";
-import type { AuthStatus } from "~~/shared/schemas/auth";
-import type { ApiResponse } from "~~/shared/types";
+
+import type { ApiResponse } from "#shared/model";
+import type { AuthStatus } from "#shared/model/auth";
+import { LoginAPI } from "#shared/model/auth";
 
 interface State {
   authStatus: AuthStatus;
@@ -57,10 +58,7 @@ export const useAuthStore = defineStore("auth", {
 
       const { loggedIn } = useUserSession();
 
-      if (this.authStatus.hasPassword && !loggedIn.value) {
-        return true;
-      }
-      return false;
+      return this.authStatus.hasPassword && !loggedIn.value;
     },
   },
 

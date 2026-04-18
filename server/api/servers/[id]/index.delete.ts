@@ -3,10 +3,10 @@ import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { pluginBridge } from "~~/server/service/mcwsbridge/mcws-bridge";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -29,8 +29,10 @@ export default defineEventHandler(async (event) => {
       .returning();
 
     if (deleteResult[0]) {
-      if (pluginBridge.connectionManager.getConnectionData(serverID)) {
-        pluginBridge.connectionManager.removeConnection(undefined, serverID);
+      const server_session =
+        connectionManager.getConnectionByServerId(serverID);
+      if (server_session) {
+        connectionManager.removeConnection(server_session);
       }
       return createApiResponse(event, "删除服务器成功", StatusCodes.OK, {
         id: serverID,

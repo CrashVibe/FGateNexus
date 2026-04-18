@@ -111,9 +111,9 @@
 <script lang="ts" setup>
 import { isEqual } from "lodash-es";
 import type { z } from "zod";
-import type { GeneralAPI } from "~~/shared/schemas/server/general";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
+import type { GeneralAPI } from "#shared/model/server/general";
+import type { ServerWithStatus } from "#shared/model/server/servers";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { AdapterData, GeneralData, ServerData } from "~/composables/api";
@@ -162,7 +162,7 @@ const confirmDelete = async () => {
     toast.add({ color: "success", title: "服务器已删除～" });
     showDeleteModal.value = false;
     serverData = null;
-    router.push("/");
+    await router.push("/");
   } catch (error) {
     console.error("Delete failed:", error);
     toast.add({ color: "error", title: "删除服务器失败" });

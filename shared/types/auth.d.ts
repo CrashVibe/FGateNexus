@@ -14,6 +14,3 @@ declare module "#auth-utils" {
     has2FA: boolean;
   }
 }
-
-// oxlint-disable-next-line unicorn/require-module-specifiers - 不能删！！！
-export {};

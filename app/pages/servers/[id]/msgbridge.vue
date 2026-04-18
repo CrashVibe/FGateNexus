@@ -407,25 +407,25 @@
 import type { FormSubmitEvent } from "@nuxt/ui";
 import { differenceWith, isEqual, pick } from "lodash-es";
 import type { z } from "zod";
-import { chatSyncConfigSchema } from "~~/shared/schemas/server/chat-sync";
-import type {
-  ChatSyncAPI,
-  ChatSyncConfig,
-} from "~~/shared/schemas/server/chat-sync";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { targetResponse } from "~~/shared/schemas/server/target";
 import {
   formatMCToPlatformMessage,
   formatPlatformToMCMessage,
 } from "~~/shared/utils/chat-sync";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
+import type {
+  ChatSyncAPI,
+  ChatSyncConfig,
+} from "#shared/model/server/chat-sync";
+import { chatSyncConfigSchema } from "#shared/model/server/chat-sync";
+import type { ServerWithStatus } from "#shared/model/server/servers";
+import type { targetResponse } from "#shared/model/server/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { ChatSyncData, ServerData } from "~/composables/api";
 import {
-  createVariablesArray,
   createVariableMap,
+  createVariablesArray,
 } from "~/composables/use-placeholder-variables";
 
 const isMobile = useIsMobile();
@@ -500,8 +500,7 @@ const handleSelect = (key: string) => {
   drawerVisible.value = true;
   const selected = serverData?.targets.find((t) => t.id === key) || null;
   if (selected) {
-    const editable = pickEditableTarget(selected, formData.targets);
-    selectTarget.value = editable;
+    selectTarget.value = pickEditableTarget(selected, formData.targets);
   }
 };
 

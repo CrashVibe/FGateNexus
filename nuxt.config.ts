@@ -1,6 +1,4 @@
-import tailwindcss_postcss from "@tailwindcss/postcss";
 import tailwindcss from "@tailwindcss/vite";
-import autoprefixer from "autoprefixer";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 import Components from "unplugin-vue-components/vite";
 
@@ -56,12 +54,7 @@ export default defineNuxtConfig({
     ],
   },
   modules: [
-    [
-      "@pinia/nuxt",
-      {
-        AutoImport: ["defineStore", ["defineStore", "definePiniaStore"]],
-      },
-    ],
+    "@pinia/nuxt",
     "nuxtjs-naive-ui",
     "@nuxt/eslint",
     "nuxt-auth-utils",
@@ -91,12 +84,12 @@ export default defineNuxtConfig({
     minify: true,
     node: true,
     preset: "bun",
-    serveStatic: "inline",
+    serveStatic: true,
   },
   runtimeConfig: {
     public: {
-      commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH ?? undefined,
-      isDev: isDev,
+      commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH,
+      isDev,
     },
   },
   sourcemap: {
@@ -107,6 +100,7 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     tsConfig: {
+      // oxlint-disable-next-line sort-keys
       compilerOptions: {
         paths: {
           "#shared": ["./shared"],
@@ -120,33 +114,36 @@ export default defineNuxtConfig({
         },
         // 支持解析 json 文件
         resolveJsonModule: true,
+        allowImportingTsExtensions: true,
+        esModuleInterop: true,
         strictNullChecks: true,
         types: ["bun-types", "node"],
       },
-      include: ["../drizzle.config.ts", "../entry.ts", "../eslint.config.ts"],
+      include: [
+        "../drizzle.config.ts",
+        "../entry.ts",
+        "../eslint.config.ts",
+        "../oxlint.config.ts",
+        "../oxfmt.config.ts",
+      ],
     },
-    typeCheck: "build",
   },
   vite: {
     build: {
       cssCodeSplit: true,
-      minify: isBuild,
+      minify: isBuild ? "esbuild" : false,
       rollupOptions: {
         output: {
           manualChunks: {
             highlight: ["highlight.js"],
+            "moment-tz": ["moment-timezone"],
             ui: ["naive-ui"],
-            vendor: ["moment-timezone", "uuid", "zod"],
+            utils: ["uuid", "zod"],
           },
         },
       },
       sourcemap: isDev,
       target: "esnext",
-    },
-    css: {
-      postcss: {
-        plugins: [tailwindcss_postcss(), autoprefixer()],
-      },
     },
     optimizeDeps: {
       esbuildOptions: {
@@ -170,16 +167,13 @@ export default defineNuxtConfig({
         "lodash-es",
       ],
     },
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     plugins: [
       Components({
         dts: true,
         resolvers: [NaiveUiResolver()],
       }),
       tailwindcss(),
-      // oxlint-disable-next-line typescript/no-explicit-any
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any[],
+    ],
     worker: {
       format: "es",
     },

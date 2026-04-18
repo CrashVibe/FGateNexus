@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import type { z } from "zod";
 
-import { AdapterType } from "#shared/schemas/adapter";
-import type { AdapterAPI } from "#shared/schemas/adapter";
+import type { AdapterAPI } from "#shared/model/adapter";
+import { AdapterType } from "#shared/model/adapter";
 
 const modelValue = defineModel<
   Partial<z.infer<typeof AdapterAPI.POST.request>>

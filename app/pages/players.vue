@@ -2,8 +2,8 @@
 import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { z } from "zod";
-import type { PlayerAPI } from "~~/shared/schemas/player";
 
+import type { PlayerAPI } from "#shared/model/player";
 import PageHeader from "@/components/header/page-header.vue";
 import { PlayerData } from "~/composables/api";
 
@@ -185,7 +185,7 @@ const columns: TableColumn<PlayerRow>[] = [
               "
               :items-per-page="table?.tableApi?.getState().pagination.pageSize"
               :total="table?.tableApi?.getFilteredRowModel().rows.length"
-              @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
+              @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
             />
           </div>
         </UContainer>

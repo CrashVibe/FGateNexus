@@ -8,17 +8,11 @@ body {
   --sans-font:
     "Segoe UI", "Helvetica Neue", sans-serif, -apple-system, system-ui;
 
-  font-family: var(--sans-font);
-}
-
-@layer base {
-  body {
-    @apply bg-neutral-50 dark:bg-neutral-950;
-  }
+  font-family: var(--sans-font), serif;
 }
 
 :root {
-  --ui-container: var(--container-12xl);
+  --ui-container: unset;
 }
 
 @layer utilities {

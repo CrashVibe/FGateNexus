@@ -1,8 +1,10 @@
-import { eq } from "drizzle-orm";
-import { h } from "koishi";
 import type { Element, Session } from "koishi";
-import { db } from "~~/server/db/client";
-import { servers } from "~~/server/db/schema";
+import { h } from "koishi";
+import {
+  getServerByIdWithAdapterAndTargets,
+  getServersByAdapterIdWithTargets,
+} from "~~/server/db/queries/server";
+import type { ServerWithTargets } from "~~/server/db/queries/server";
 import { renderMinecraftTextToImage } from "~~/server/utils/mc-image-render";
 import {
   formatMCToPlatformMessage,
@@ -10,9 +12,10 @@ import {
   shouldForwardMessage,
 } from "~~/shared/utils/chat-sync";
 
+import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+
 import type { BotConnection } from "./chatbridge";
 import { chatBridge } from "./chatbridge";
-import { pluginBridge } from "./mcwsbridge/mcws-bridge";
 
 /**
  * MC 聊天消息数据
@@ -32,25 +35,24 @@ export const handleMCMessage = async (
   mcMessage: MCChatMessage,
 ): Promise<void> => {
   try {
-    const server = await db.query.servers.findFirst({
-      where: eq(servers.id, serverId),
-      with: {
-        adapter: true,
-        targets: true,
-      },
-    });
+    const server = await getServerByIdWithAdapterAndTargets(serverId);
 
-    if (!server || !server.adapter) {
+    if (!server?.adapter) {
       logger.warn(`服务器 ${serverId} 或其适配器未找到`);
       return;
     }
-    const { chatSyncConfig } = server;
 
-    // 过滤
+    const { chatSyncConfig } = server;
     if (!chatSyncConfig.mcToPlatformEnabled) {
       return;
     }
     if (!shouldForwardMessage(mcMessage.message, chatSyncConfig)) {
+      return;
+    }
+
+    const botConnection = chatBridge.getConnectionData(server.adapter.id);
+    if (!botConnection || !chatBridge.isOnline(server.adapter.id)) {
+      logger.warn(`机器人 ${server.adapter.id} 未上线`);
       return;
     }
 
@@ -65,34 +67,136 @@ export const handleMCMessage = async (
       },
     );
 
-    const botConnection = chatBridge.getConnectionData(server.adapter.id);
-    if (!botConnection || !chatBridge.isOnline(server.adapter.id)) {
-      logger.warn(`机器人 ${server.adapter.id} 未上线`);
-      return;
-    }
-
-    const sendPromises = server.targets
-      .filter((target) => target.config.chatSyncConfigSchema.enabled)
-      .map(async (target) =>
+    const enabledTargets = server.targets.filter(
+      (t) => t.config.chatSyncConfigSchema.enabled,
+    );
+    await Promise.allSettled(
+      enabledTargets.map(async (t) =>
         chatBridge.sendToTarget(
           botConnection,
-          target.targetId,
-          target.type,
+          t.targetId,
+          t.type,
           formattedMessage,
         ),
-      );
-
-    await Promise.allSettled(sendPromises);
+      ),
+    );
 
     logger.info(
-      `[消息路由] 已将 MC 消息从服务器 ${serverId} 转发到 ${sendPromises.length} 个目标`,
+      `[消息路由] MC 消息已从服务器 ${serverId} 转发到 ${enabledTargets.length} 个目标`,
     );
   } catch (error) {
     logger.error(
       { error },
-      `[消息路由] 处理来自服务器 ${serverId} 的 MC 消息时出错：`,
+      `[消息路由] 处理来自服务器 ${serverId} 的 MC 消息时出错`,
     );
   }
+};
+
+type ServerSession = ReturnType<
+  typeof connectionManager.getConnectionByServerId
+>;
+
+const handlePlatformCommand = async (
+  connection: BotConnection,
+  session: Session,
+  server: ServerWithTargets,
+  serverSession: ServerSession,
+): Promise<boolean> => {
+  const commandTarget = server.targets.find((t) => {
+    const isMatch =
+      t.type === "group"
+        ? t.targetId === session.channelId
+        : t.targetId === session.userId;
+    return (
+      isMatch &&
+      t.config.CommandConfigSchema.enabled &&
+      session.content!.startsWith(t.config.CommandConfigSchema.prefix)
+    );
+  });
+
+  if (!commandTarget) {
+    return false;
+  }
+
+  const roles = session.event.member?.roles ?? [];
+  const hasPermission = roles.some(
+    (r) =>
+      r.name &&
+      commandTarget.config.CommandConfigSchema.permissions.includes(r.name),
+  );
+
+  if (!hasPermission) {
+    return false;
+  }
+
+  if (!serverSession) {
+    logger.warn(`服务器 ${server.id} 没有活动的 MCWS 连接，无法执行指令`);
+    return false;
+  }
+
+  const { prefix } = commandTarget.config.CommandConfigSchema;
+  const { success, message } = await serverSession.executeCommand(
+    session.content!.slice(prefix.length),
+    server.commandConfig.imageRender,
+  );
+  const resultText = `指令执行${success ? "成功" : "失败"}：\n${message}`;
+
+  let messageToSend: string | Element = resultText;
+  if (server.commandConfig.imageRender) {
+    try {
+      const imgBuffer = await renderMinecraftTextToImage(resultText);
+      messageToSend = h.image(
+        `data:image/png;base64,${imgBuffer.toString("base64")}`,
+      );
+    } catch (error) {
+      logger.error(error, "渲染指令结果图片时出错，已回退为文本消息");
+    }
+  }
+
+  await chatBridge.sendToTarget(
+    connection,
+    commandTarget.targetId,
+    commandTarget.type,
+    messageToSend,
+  );
+  return true;
+};
+
+const handlePlatformChatSync = (
+  session: Session,
+  server: ServerWithTargets,
+  serverSession: ServerSession,
+): void => {
+  const { chatSyncConfig } = server;
+  if (
+    !chatSyncConfig.platformToMcEnabled ||
+    !shouldForwardMessage(session.content!, chatSyncConfig)
+  ) {
+    return;
+  }
+
+  if (!serverSession) {
+    logger.warn(`服务器 ${server.id} 没有活动的 MCWS 连接，无法广播`);
+    return;
+  }
+
+  if (!session.userId) {
+    throw new Error("消息格式化时用户 ID 不存在");
+  }
+
+  const formattedMessage = formatPlatformToMCMessage(
+    chatSyncConfig.platformToMcTemplate,
+    {
+      message: session.content!,
+      nickname: session.username,
+      platform: session.platform,
+      timestamp: session.timestamp,
+      userId: session.userId,
+    },
+  );
+
+  serverSession.broadcastMessageToServer(formattedMessage);
+  logger.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`);
 };
 
 /**
@@ -102,105 +206,33 @@ export const handlePlatformMessage = async (
   connection: BotConnection,
   session: Session,
 ): Promise<void> => {
+  if (session.content === undefined) {
+    return;
+  }
+
   try {
-    const serversWithConfig = await db.query.servers.findMany({
-      where: eq(servers.adapterId, connection.adapterID),
-      with: {
-        targets: true,
-      },
-    });
-    if (session.content === undefined) {
-      return;
-    }
+    const serversWithConfig = await getServersByAdapterIdWithTargets(
+      connection.adapterID,
+    );
 
     for (const server of serversWithConfig) {
-      for (const target of server.targets) {
-        if (!target.config.CommandConfigSchema.enabled) {
-          continue;
-        }
-        if (
-          target.type === "group"
-            ? target.targetId !== session.channelId
-            : target.targetId !== session.userId
-        ) {
-          continue;
-        }
-        if (
-          !session.content.startsWith(target.config.CommandConfigSchema.prefix)
-        ) {
-          continue;
-        }
-        const role = session.event.member?.roles;
-        if (
-          !role ||
-          !role.some((r) =>
-            target.config.CommandConfigSchema.permissions.includes(r),
-          )
-        ) {
-          continue;
-        }
-
-        const { success, message } = await pluginBridge.executeCommand(
-          server.id,
-          session.content.slice(
-            target.config.CommandConfigSchema.prefix.length,
-          ),
-          server.commandConfig.imageRender,
-        );
-        const resultText = success
-          ? `指令执行成功：\n${message}`
-          : `指令执行失败：\n${message}`;
-
-        let messageToSend: string | Element;
-        if (server.commandConfig.imageRender) {
-          try {
-            const imgBuffer = await renderMinecraftTextToImage(resultText);
-            messageToSend = h.image(
-              `data:image/png;base64,${imgBuffer.toString("base64")}`,
-            );
-          } catch (error) {
-            logger.error(error, "渲染指令结果图片时出错，已回退为文本消息");
-            messageToSend = resultText;
-          }
-        } else {
-          messageToSend = resultText;
-        }
-
-        await chatBridge.sendToTarget(
-          connection,
-          target.targetId,
-          target.type,
-          messageToSend,
-        );
-        // 阻断
-        return;
-      }
-      const { chatSyncConfig } = server;
-      if (!chatSyncConfig.platformToMcEnabled) {
-        continue;
-      }
-      if (!shouldForwardMessage(session.content, chatSyncConfig)) {
-        continue;
-      }
-
-      const formattedMessage = formatPlatformToMCMessage(
-        chatSyncConfig.platformToMcTemplate,
-        {
-          message: session.content,
-          nickname: session.username,
-          platform: session.platform,
-          timestamp: session.timestamp,
-          userId: (() => {
-            if (session.userId === undefined) {
-              throw new Error("消息格式化时用户 ID 不存在");
-            }
-            return session.userId;
-          })(),
-        },
+      const serverSession = connectionManager.getConnectionByServerId(
+        server.id,
       );
 
-      pluginBridge.broadcastMessageToServer(server.id, formattedMessage);
-      logger.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`);
+      // 1. 处理指令匹配
+      const isCommandHandled = await handlePlatformCommand(
+        connection,
+        session,
+        server,
+        serverSession,
+      );
+      if (isCommandHandled) {
+        return;
+      } // 阻断不处理
+
+      // 2. 处理聊天消息同步
+      handlePlatformChatSync(session, server, serverSession);
     }
   } catch (error) {
     logger.error(error, `[消息路由] 处理平台消息时出错：`);

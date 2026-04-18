@@ -127,16 +127,13 @@
 <script lang="ts" setup>
 import { differenceWith, isEqual, pick } from "lodash-es";
 import type { z } from "zod";
-import type { AdapterWithStatus } from "~~/shared/schemas/adapter";
-import { CommandConfigSchema } from "~~/shared/schemas/server/command";
-import type {
-  CommandAPI,
-  CommandConfig,
-} from "~~/shared/schemas/server/command";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { targetResponse } from "~~/shared/schemas/server/target";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
+import type { AdapterWithStatus } from "#shared/model/adapter";
+import type { CommandAPI, CommandConfig } from "#shared/model/server/command";
+import { CommandConfigSchema } from "#shared/model/server/command";
+import type { ServerWithStatus } from "#shared/model/server/servers";
+import type { targetResponse } from "#shared/model/server/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import {
@@ -192,8 +189,7 @@ const handleSelect = (key: string) => {
     (t) => String(t.id) === String(key),
   );
   if (selected) {
-    const editable = pickEditableTarget(selected, formData.targets);
-    selectTarget.value = editable;
+    selectTarget.value = pickEditableTarget(selected, formData.targets);
   }
 };
 

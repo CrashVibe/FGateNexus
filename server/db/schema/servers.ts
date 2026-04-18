@@ -1,11 +1,13 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { z } from "zod";
-import type { BindingConfig } from "~~/shared/schemas/server/binding";
-import type { ChatSyncConfig } from "~~/shared/schemas/server/chat-sync";
-import type { CommandConfig } from "~~/shared/schemas/server/command";
-import type { NotifyConfigSchema } from "~~/shared/schemas/server/notify";
+
+import type { BindingConfig } from "#shared/model/server/binding";
+import type { ChatSyncConfig } from "#shared/model/server/chat-sync";
+import type { CommandConfig } from "#shared/model/server/command";
+import type { NotifyConfigSchema } from "#shared/model/server/notify";
 
 import { adapters } from "./adapters";
+
 export const servers = sqliteTable("servers", {
   adapterId: integer("adapter_id").references(() => adapters.id, {
     onDelete: "set null",

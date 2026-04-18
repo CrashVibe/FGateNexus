@@ -3,10 +3,10 @@ import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
-import { NotifyAPI } from "~~/shared/schemas/server/notify";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
+import { NotifyAPI } from "#shared/model/server/notify";
 
 export default defineEventHandler(async (event) => {
   try {

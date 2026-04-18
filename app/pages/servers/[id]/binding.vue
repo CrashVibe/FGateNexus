@@ -457,12 +457,6 @@ import { isEqual } from "lodash-es";
 import moment from "moment-timezone";
 import type { z } from "zod";
 import {
-  BindingConfigSchema,
-  CODE_MODES,
-} from "~~/shared/schemas/server/binding";
-import type { BindingConfig } from "~~/shared/schemas/server/binding";
-import type { ServersAPI } from "~~/shared/schemas/server/servers";
-import {
   renderBindFail,
   renderBindSuccess,
   renderNoBindKick,
@@ -471,6 +465,9 @@ import {
   renderUnbindSuccess,
 } from "~~/shared/utils/template/binding";
 
+import type { BindingConfig } from "#shared/model/server/binding";
+import { BindingConfigSchema, CODE_MODES } from "#shared/model/server/binding";
+import type { ServersAPI } from "#shared/model/server/servers";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { BindingData, ServerData } from "~/composables/api";

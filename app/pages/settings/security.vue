@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import { FetchError } from "ofetch";
-import type { ApiErrorResponse } from "~~/shared/error";
-import type { ApiResponse } from "~~/shared/types";
 
+import type { ApiResponse } from "#shared/model";
+import type { ApiErrorResponse } from "#shared/model/error";
 import { validatePasswordStrength } from "#shared/utils/password";
 
 const { checkAuthStatus } = useAuthStore();

@@ -1,11 +1,11 @@
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { pluginBridge } from "~~/server/service/mcwsbridge/mcws-bridge";
-import { ServersAPI } from "~~/shared/schemas/server/servers";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
+import { ServersAPI } from "#shared/model/server/servers";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -18,15 +18,12 @@ export default defineEventHandler(async (event) => {
     // 为每个服务器获取状态信息
     const serversWithStatus = ServersAPI.GETS.response.parse(
       result.map((server) => {
-        const connectionData = pluginBridge.connectionManager.getConnectionData(
-          server.id,
-        );
+        const connection = connectionManager.getConnectionByServerId(server.id);
         return {
           ...server,
-          isOnline: !!connectionData,
-          player_count: connectionData?.player_count ?? null,
-          supports_command: connectionData?.supports_command ?? null,
-          supports_papi: connectionData?.supports_papi ?? null,
+          isOnline: !!connection,
+          supports_command: connection?.supports_command ?? null,
+          supports_papi: connection?.supports_papi ?? null,
         };
       }),
     );

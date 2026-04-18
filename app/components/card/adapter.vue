@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { AdapterWithStatus } from "#shared/schemas/adapter";
+import type { AdapterWithStatus } from "#shared/model/adapter";
 
 const { adapter } = defineProps<{
   adapter: AdapterWithStatus;

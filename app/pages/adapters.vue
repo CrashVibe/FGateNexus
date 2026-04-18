@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import { cloneDeep } from "lodash-es";
 import type { z } from "zod";
-import { AdapterAPI, AdapterType } from "~~/shared/schemas/adapter";
+
+import { CardAdapter } from "#components";
 import type {
   AdaptersWithStatus,
   AdapterWithStatus,
-} from "~~/shared/schemas/adapter";
-
-import { CardAdapter } from "#components";
+} from "#shared/model/adapter";
+import { AdapterAPI, AdapterType } from "#shared/model/adapter";
 import PageHeader from "@/components/header/page-header.vue";
 import { AdapterData } from "~/composables/api";
 

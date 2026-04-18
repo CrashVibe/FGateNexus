@@ -56,14 +56,14 @@ export default defineNuxtModule({
 
         await fs.mkdir(outputDir, { recursive: true });
 
-        const journal = parseJournal(await fs.readFile(journalPath, "utf8"));
+        const journal = parseJournal(await fs.readFile(journalPath, "utf-8"));
         const sqlLines: string[] = [];
         const mapEntries: string[] = [];
 
         for (const entry of journal.entries) {
           const sql = await fs.readFile(
             path.join(migrationsDir, `${entry.tag}.sql`),
-            "utf8",
+            "utf-8",
           );
           const varName = `sql_${entry.tag.replaceAll(/[^a-zA-Z0-9]/g, "_")}`;
           sqlLines.push(`const ${varName} = ${JSON.stringify(sql)};`);

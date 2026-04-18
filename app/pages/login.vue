@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { FetchError } from "ofetch";
-import type { ApiErrorResponse } from "~~/shared/error";
-import { LoginAPI } from "~~/shared/schemas/auth";
-import type { LoginBody } from "~~/shared/schemas/auth";
 
 import { useAuthStore } from "#imports";
+import type { LoginBody } from "#shared/model/auth";
+import { LoginAPI } from "#shared/model/auth";
+import type { ApiErrorResponse } from "#shared/model/error";
 
 definePageMeta({
   layout: false,
@@ -41,7 +41,7 @@ const handleLogin = async () => {
 
     await authStore.login(validation.data);
     toast.add({ color: "success", title: "登录成功" });
-    router.push("/");
+    await router.push("/");
   } catch (error: unknown) {
     console.error("Login failed:", error);
 
@@ -62,7 +62,7 @@ const handleLogin = async () => {
 
 onMounted(async () => {
   if (!(await authStore.requireAuth())) {
-    router.push("/");
+    await router.push("/");
   }
 });
 </script>

@@ -1,21 +1,22 @@
 import { eq } from "drizzle-orm";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { pluginBridge } from "~~/server/service/mcwsbridge/mcws-bridge";
 import {
   checkClientVersion,
   CURRENT_API_VERSION,
   isValidVersion,
 } from "~~/server/utils/version";
 
+import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+
 export default defineWebSocketHandler({
   close(peer) {
-    if (pluginBridge.connectionManager.hasConnection(peer)) {
-      const data = pluginBridge.connectionManager.removeConnection(peer);
+    if (connectionManager.hasConnection(peer)) {
+      const data = connectionManager.onClose(peer);
       logger.info(
         {
-          peerId: peer.id,
-          serverId: data.serverId,
+          peerId: data?.peer.id,
+          serverId: data?.serverId,
         },
         "WebSocket 连接已移除",
       );
@@ -30,12 +31,17 @@ export default defineWebSocketHandler({
   },
 
   async message(peer, message) {
-    if (!pluginBridge.connectionManager.hasConnection(peer)) {
+    if (!connectionManager.hasConnection(peer)) {
       peer.close(1008, "Unauthorized: 该连接未授权或不存在");
       return;
     }
     try {
-      await pluginBridge.messageHandler.handleMessage(peer, message.text());
+      const server_session = connectionManager.getConnectionByPeer(peer);
+      if (!server_session) {
+        logger.error(peer, "该连接从未被登记！");
+        return;
+      }
+      await server_session.handleMessage(message.text());
     } catch (error) {
       logger.error(error, "处理 WebSocket 消息时发生未捕获的错误");
     }
@@ -103,7 +109,7 @@ export default defineWebSocketHandler({
       return;
     }
 
-    if (pluginBridge.connectionManager.hasConnection(undefined, server.id)) {
+    if (connectionManager.hasConnection(undefined, server.id)) {
       peer.close(1008, "Unauthorized: Connection already exists");
       logger.warn(
         {
@@ -115,7 +121,7 @@ export default defineWebSocketHandler({
     }
 
     try {
-      await pluginBridge.connectionManager.addConnection(peer, server.id);
+      await connectionManager.addConnection(peer, server.id);
     } catch {
       return;
     }
