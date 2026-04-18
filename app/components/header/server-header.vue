@@ -9,17 +9,10 @@
 <script lang="ts" setup>
 import type { NavigationMenuChildItem, NavigationMenuItem } from "@nuxt/ui";
 
-import type { ServerWithStatus } from "#shared/model/server/servers";
 import PageHeader from "@/components/header/page-header.vue";
-import { ServerData } from "~/composables/api";
 import type { Menu } from "~/layouts/default.vue";
 
 const route = useRoute();
-const serverData = ref<ServerWithStatus | null>(null);
-
-onMounted(async () => {
-  serverData.value = await ServerData.get(Number(route.params["id"]));
-});
 
 const menuOptions = inject<Menu>(
   "menuOptions",
@@ -27,10 +20,10 @@ const menuOptions = inject<Menu>(
 );
 
 const findMenuItem = (
-  menu: NavigationMenuItem[][] | NavigationMenuChildItem[],
+  items: (NavigationMenuItem | NavigationMenuChildItem)[],
   key: string,
-): NavigationMenuItem | null => {
-  for (const item of menu.flat()) {
+): NavigationMenuItem | NavigationMenuChildItem | null => {
+  for (const item of items) {
     if (item.to === key) {
       return item;
     }
@@ -44,12 +37,7 @@ const findMenuItem = (
   return null;
 };
 
-const found = computed(() => {
-  const foundItem = findMenuItem(menuOptions.value, route.path);
-  if (!foundItem) {
-    console.warn(`Menu item not found for path: ${route.path}`);
-    return { desc: "", label: "" };
-  }
-  return foundItem;
-});
+const found = computed(() =>
+  findMenuItem(menuOptions.value.flat(), route.path),
+);
 </script>
