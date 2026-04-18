@@ -1,12 +1,12 @@
-import {
-  TargetConfigSchema,
-  targetSchemaRequest,
-} from "#shared/schemas/server/target";
 import type {
   TargetConfig,
   targetResponse,
   targetSchemaRequestType,
-} from "#shared/schemas/server/target";
+} from "#shared/model/server/target";
+import {
+  TargetConfigSchema,
+  targetSchemaRequest,
+} from "#shared/model/server/target";
 
 // 获取默认的绑定配置
 export const getDefaultTargetConfig = (): TargetConfig =>

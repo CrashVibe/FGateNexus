@@ -3,8 +3,9 @@ import * as fs from "node:fs";
 import { StatusCodes } from "http-status-codes";
 import { getLatestInstalledChromiumPath } from "~~/server/service/browser-downloader";
 import { imageRenderer } from "~~/server/service/imgae-renderer";
-import { SettingsAPI } from "~~/shared/schemas/settings";
-import { createApiResponse } from "~~/shared/types";
+
+import { createApiResponse } from "#shared/model";
+import { SettingsAPI } from "#shared/model/settings";
 
 export default defineEventHandler(async (event) => {
   const body: unknown = await readBody(event);

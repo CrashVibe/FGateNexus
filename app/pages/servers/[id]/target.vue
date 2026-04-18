@@ -58,7 +58,7 @@
               "
               :items-per-page="table?.tableApi?.getState().pagination.pageSize"
               :total="table?.tableApi?.getFilteredRowModel().rows.length"
-              @update:page="(p) => table?.tableApi?.setPageIndex(p - 1)"
+              @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
             />
             <div class="flex gap-2">
               <UButton
@@ -90,15 +90,12 @@ import { getPaginationRowModel } from "@tanstack/vue-table";
 import { groupBy, isEqual, keyBy } from "lodash-es";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
-import {
-  targetSchema,
-  targetSchemaRequest,
-} from "~~/shared/schemas/server/target";
+
 import type {
   targetResponse,
   targetSchemaRequestType,
-} from "~~/shared/schemas/server/target";
-
+} from "#shared/model/server/target";
+import { targetSchema, targetSchemaRequest } from "#shared/model/server/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { TargetData } from "~/composables/api";
 
@@ -128,7 +125,7 @@ const serverId = Number(route.params?.["id"]);
 const buildRequestFromRow = (row: targetResponse): targetSchemaRequestType =>
   targetSchemaRequest.parse({
     config: row.config,
-    enabled: !!row.enabled,
+    enabled: row.enabled,
     targetId: row.targetId.trim(),
     type: row.type,
   });

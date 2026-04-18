@@ -1,5 +1,6 @@
 import { StatusCodes } from "http-status-codes";
-import { createApiResponse } from "~~/shared/types";
+
+import { createApiResponse } from "#shared/model";
 
 export default defineEventHandler(async (event) => {
   try {

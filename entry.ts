@@ -5,7 +5,7 @@ import * as path from "node:path";
 
 import type { MigrationMeta } from "drizzle-orm/migrator";
 
-import { configManager } from "./server/utils/config";
+import { configManager } from "#server/utils/config";
 
 const MIGRATIONS_TABLE = "__drizzle_migrations";
 

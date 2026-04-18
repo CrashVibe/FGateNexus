@@ -284,12 +284,8 @@
 </template>
 
 <script lang="ts" setup>
-import { isEqual, differenceWith, pick } from "lodash-es";
+import { differenceWith, isEqual, pick } from "lodash-es";
 import type { z } from "zod";
-import { NotifyConfigSchema } from "~~/shared/schemas/server/notify";
-import type { NotifyAPI } from "~~/shared/schemas/server/notify";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
-import type { targetResponse } from "~~/shared/schemas/server/target";
 import { pickEditableTarget } from "~~/shared/utils/target";
 import {
   renderDeathMessage,
@@ -297,12 +293,16 @@ import {
   renderLeaveMessage,
 } from "~~/shared/utils/template/notify";
 
+import type { NotifyAPI } from "#shared/model/server/notify";
+import { NotifyConfigSchema } from "#shared/model/server/notify";
+import type { ServerWithStatus } from "#shared/model/server/servers";
+import type { targetResponse } from "#shared/model/server/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { NotifyData, ServerData } from "~/composables/api";
 import {
-  createVariablesArray,
   createVariableMap,
+  createVariablesArray,
 } from "~/composables/use-placeholder-variables";
 
 const isMobile = useIsMobile();
@@ -402,8 +402,7 @@ const handleSelect = (key: string) => {
   drawerVisible.value = true;
   const selected = serverData?.targets.find((t) => t.id === key) || null;
   if (selected) {
-    const editable = pickEditableTarget(selected, formData.targets);
-    selectTarget.value = editable;
+    selectTarget.value = pickEditableTarget(selected, formData.targets);
   }
 };
 

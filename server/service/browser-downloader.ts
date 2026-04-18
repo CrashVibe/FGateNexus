@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import type { InstalledBrowser } from "@puppeteer/browsers";
 import {
   Browser,
   BrowserPlatform,
@@ -9,7 +10,6 @@ import {
   install,
   resolveBuildId,
 } from "@puppeteer/browsers";
-import type { InstalledBrowser } from "@puppeteer/browsers";
 
 import { imageRenderer } from "./imgae-renderer";
 
@@ -48,8 +48,6 @@ const state: DownloadState = {
 };
 
 let abortController: AbortController | null = null;
-
-export const getDownloadState = (): Readonly<DownloadState> => ({ ...state });
 
 const getInstalledChromes = async (): Promise<InstalledBrowser[]> => {
   if (!fs.existsSync(BROWSER_CACHE_DIR)) {

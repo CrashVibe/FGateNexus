@@ -3,8 +3,6 @@ import type { Session } from "koishi";
 import { db } from "~~/server/db/client";
 import { players, servers, socialAccounts, targets } from "~~/server/db/schema";
 import type { BotConnection } from "~~/server/service/chatbridge";
-import { pluginBridge } from "~~/server/service/mcwsbridge/mcws-bridge";
-import { AdapterType } from "~~/shared/schemas/adapter";
 import {
   renderBindFail,
   renderBindSuccess,
@@ -13,6 +11,8 @@ import {
   renderUnbindSuccess,
 } from "~~/shared/utils/template/binding";
 
+import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+import { AdapterType } from "#shared/model/adapter";
 import { generateVerificationCode } from "#shared/utils/binding";
 
 import { getConfig } from "./config";
@@ -58,7 +58,7 @@ interface PendingBinding {
 export class BindingService {
   private static instance: BindingService;
   // Bot ID -> PendingBinding
-  private pendingBindings: Map<number, Set<PendingBinding>>;
+  private readonly pendingBindings: Map<number, Set<PendingBinding>>;
   private constructor() {
     this.pendingBindings = new Map();
   }
@@ -120,7 +120,7 @@ export class BindingService {
     const newBinding: PendingBinding = {
       botID: adapter.id,
       expiresAt,
-      message: message,
+      message,
       playerNickname,
       playerUID,
       serverID,
@@ -129,7 +129,7 @@ export class BindingService {
     existingBindings.add(newBinding);
     this.pendingBindings.set(adapter.id, existingBindings);
 
-    return { expiresAt, has: false, message: message };
+    return { expiresAt, has: false, message };
   }
 
   /**
@@ -269,99 +269,6 @@ export class BindingService {
     }
   }
 
-  private static async processUnbindMessage(
-    connection: BotConnection,
-    ctx: Session,
-  ): Promise<boolean> {
-    const { platform, userId, channelId } = ctx;
-    if (
-      !isAdapterType(platform) ||
-      userId === undefined ||
-      userId === "" ||
-      channelId === undefined ||
-      channelId === ""
-    ) {
-      return false;
-    }
-
-    const serversWithBindingConfig = await db.query.targets.findMany({
-      where: and(eq(targets.targetId, channelId)),
-      with: {
-        server: {
-          with: {
-            playerServers: true,
-          },
-        },
-      },
-    });
-
-    const matchingServers = serversWithBindingConfig
-      .filter((target) => target.server.adapterId === connection.adapterID)
-      .map((target) => target.server)
-      .filter(
-        (server) =>
-          server.bindingConfig.allowUnbind &&
-          ctx.content?.startsWith(server.bindingConfig.unbindPrefix) === true,
-      );
-
-    if (matchingServers.length === 0) {
-      return false;
-    }
-
-    const unbindPromises = matchingServers.map(async (server) => {
-      const { content } = ctx;
-      if (content === undefined) {
-        return;
-      }
-      const playerName = content
-        .slice(server.bindingConfig.unbindPrefix.length)
-        .trim();
-      if (!playerName) {
-        return;
-      }
-
-      try {
-        const { playerUUID, socialUID } = await BindingService.performUnbind(
-          platform,
-          userId,
-          playerName,
-        );
-        logger.info(
-          {
-            playerUUID,
-            socialUID,
-          },
-          "玩家解绑成功",
-        );
-        await pluginBridge.kickPlayer(
-          server.id,
-          playerUUID,
-          renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID),
-        );
-        await ctx.send(
-          renderUnbindSuccess(
-            server.bindingConfig.unbindSuccessMsg,
-            playerName,
-          ),
-        );
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        logger.error({ errorMessage }, "无法处理解绑");
-        await ctx.send(
-          renderUnbindFail(
-            server.bindingConfig.unbindFailMsg,
-            playerName,
-            errorMessage,
-          ),
-        );
-      }
-    });
-
-    await Promise.all(unbindPromises);
-    return true;
-  }
-
   public static async handleGroupLeave(
     connection: BotConnection,
     ctx: Session,
@@ -429,11 +336,21 @@ export class BindingService {
           },
           "玩家解绑成功",
         );
-        await pluginBridge.kickPlayer(
+
+        const server_session = connectionManager.getConnectionByServerId(
           server.id,
-          playerUUID,
-          renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID),
         );
+
+        if (server_session) {
+          await server_session.kickPlayer(
+            playerUUID,
+            renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID),
+          );
+        } else {
+          logger.warn(
+            `服务器 ${server.name} 不在线，无法踢出玩家 ${player.name}`,
+          );
+        }
         await ctx.send(
           renderUnbindSuccess(
             server.bindingConfig.unbindSuccessMsg,
@@ -448,6 +365,108 @@ export class BindingService {
           renderUnbindFail(
             server.bindingConfig.unbindFailMsg,
             player.name,
+            errorMessage,
+          ),
+        );
+      }
+    });
+
+    await Promise.all(unbindPromises);
+    return true;
+  }
+
+  private static async processUnbindMessage(
+    connection: BotConnection,
+    ctx: Session,
+  ): Promise<boolean> {
+    const { platform, userId, channelId } = ctx;
+    if (
+      !isAdapterType(platform) ||
+      userId === undefined ||
+      userId === "" ||
+      channelId === undefined ||
+      channelId === ""
+    ) {
+      return false;
+    }
+
+    const serversWithBindingConfig = await db.query.targets.findMany({
+      where: and(eq(targets.targetId, channelId)),
+      with: {
+        server: {
+          with: {
+            playerServers: true,
+          },
+        },
+      },
+    });
+
+    const matchingServers = serversWithBindingConfig
+      .filter((target) => target.server.adapterId === connection.adapterID)
+      .map((target) => target.server)
+      .filter(
+        (server) =>
+          server.bindingConfig.allowUnbind &&
+          ctx.content?.startsWith(server.bindingConfig.unbindPrefix) === true,
+      );
+
+    if (matchingServers.length === 0) {
+      return false;
+    }
+
+    const unbindPromises = matchingServers.map(async (server) => {
+      const { content } = ctx;
+      if (content === undefined) {
+        return;
+      }
+      const playerName = content
+        .slice(server.bindingConfig.unbindPrefix.length)
+        .trim();
+      if (!playerName) {
+        return;
+      }
+
+      try {
+        const { playerUUID, socialUID } = await BindingService.performUnbind(
+          platform,
+          userId,
+          playerName,
+        );
+        logger.info(
+          {
+            playerUUID,
+            socialUID,
+          },
+          "玩家解绑成功",
+        );
+
+        const server_session = connectionManager.getConnectionByServerId(
+          server.id,
+        );
+        if (server_session) {
+          await server_session.kickPlayer(
+            playerUUID,
+            renderUnbindKick(server.bindingConfig.unbindkickMsg, socialUID),
+          );
+        } else {
+          logger.warn(
+            `服务器 ${server.name} 不在线，无法踢出玩家 ${playerName}`,
+          );
+        }
+        await ctx.send(
+          renderUnbindSuccess(
+            server.bindingConfig.unbindSuccessMsg,
+            playerName,
+          ),
+        );
+      } catch (error: unknown) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logger.error({ errorMessage }, "无法处理解绑");
+        await ctx.send(
+          renderUnbindFail(
+            server.bindingConfig.unbindFailMsg,
+            playerName,
             errorMessage,
           ),
         );

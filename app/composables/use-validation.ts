@@ -35,12 +35,3 @@ export const zodToNaiveRules = <T extends z.ZodRawShape>(
   }
   return rules;
 };
-
-export const createDynamicZodRules =
-  (
-    getSchema: () => z.ZodObject<z.ZodRawShape> | null,
-  ): (() => Record<string, ValidationRule[]>) =>
-  () => {
-    const schema = getSchema();
-    return schema ? zodToNaiveRules(schema) : {};
-  };

@@ -1,217 +1,137 @@
 import type { Peer } from "crossws";
+import { eq } from "drizzle-orm";
 
-import type { MCWSBridge } from "./mcws-bridge";
-
-/**
- * 服务器连接信息
- */
-export interface ServerConnection {
-  /**
-   * 实际连接
-   */
-  peer: Peer;
-  /**
-   * 服务器的 id
-   *
-   * 服务器在数据库中的 ID
-   */
-  serverId: number;
-  /**
-   * 客户端信息
-   */
-  data?: GetClientInfoResult;
-}
-
-/**
- * 获取客户端信息的结果
- *
- * @description 包含客户端支持的功能和玩家数量等信息
- */
-export interface GetClientInfoResult {
-  /**
-   * 是否支持 PAPI
-   */
-  supports_papi: boolean | null;
-  /**
-   * 是否支持 Command
-   */
-  supports_command: boolean | null;
-  /**
-   * 玩家数量
-   */
-  player_count: number | null;
-}
+import { db } from "#server/db/client";
+import { servers } from "#server/db/schema";
+import { clientInfoSchema } from "#server/service/mcwsbridge/model";
+import ServerSession from "#server/service/mcwsbridge/server-session";
 
 /**
  * 连接管理器
  * 负责管理所有 WebSocket 连接的生命周期
  */
-export class ConnectionManager {
-  private connectionMap = new Map<number, ServerConnection>();
-  private bridge: MCWSBridge;
-  constructor(bridge: MCWSBridge) {
-    this.bridge = bridge;
-  }
+class ConnectionManager {
+  private readonly byServerId = new Map<number, ServerSession>();
+  private readonly byPeerId = new Map<string, ServerSession>();
+
   /**
-   * 添加连接到管理器
-   *
-   * @param peer - WebSocket 连接
-   * @param serverId - 对应的服务器 ID
-   * @throws 如果连接已存在，则抛出错误
+   * 添加一个连接
    */
   public async addConnection(peer: Peer, serverId: number): Promise<void> {
-    if (this.connectionMap.has(serverId)) {
-      throw new Error(`该连接已存在，无法重复添加：${serverId}`);
+    if (this.byServerId.has(serverId)) {
+      throw new Error(`连接已存在，无法重复添加：serverId=${serverId}`);
     }
-    this.connectionMap.set(serverId, { peer, serverId });
-    logger.info(`[CONNECTION] 连接已添加：服务器 ID ${serverId}`);
+
+    const session = new ServerSession(peer, serverId);
+    this.add(session);
+    logger.info(`[CONNECTION] 已添加：serverId=${serverId}`);
+
     try {
-      await this.bridge.updateClientInfo(peer, serverId);
+      await ConnectionManager.initSession(session);
     } catch (error) {
-      logger.error(error, `[ERROR] 更新客户端信息失败：${peer.id}`);
-      this.bridge.connectionManager.removeConnection(undefined, serverId);
-      throw new Error(`更新客户端信息失败 (已关闭连接): ${peer.id}`, {
+      logger.error(error, `[ERROR] 更新客户端信息失败：peerId=${peer.id}`);
+      this.removeConnection(session);
+      throw new Error(`更新客户端信息失败 (已关闭连接): peerId=${peer.id}`, {
         cause: error,
       });
     }
   }
 
   /**
-   * 检查是否存在连接
-   *
-   * 两种方式检查连接：
-   * - 根据服务器 ID 检查是否存在连接。
-   * - 根据 Peer 对象检查是否存在连接。
-   *
-   * @param serverId - 服务器 ID
-   * @param peer - WebSocket 连接
-   * @returns 如果存在连接则返回 true，否则返回 false
-   * @throws 如果参数无效，则抛出错误
+   * 根据 serverId 或 peer 判断连接是否存在
    */
   public hasConnection(peer?: Peer, serverId?: number): boolean {
     if (serverId !== undefined) {
-      return this.connectionMap.has(serverId);
+      return this.byServerId.has(serverId);
     }
     if (peer) {
-      for (const connection of this.connectionMap.values()) {
-        if (connection.peer === peer) {
-          return true;
-        }
-      }
-      return false;
+      return this.byPeerId.has(peer.id);
     }
     throw new Error("必须提供 peer 或 serverId 参数之一");
   }
 
   /**
-   * 移除连接
-   *
-   * @description 根据服务器 ID 或 Peer 对象移除连接，并返回对应的服务器 ID。
-   * @param peer - WebSocket 连接
-   * @param serverID - 服务器 ID
-   * @returns 被移除的服务器 ID
-   * @throws 如果参数无效或无法找到对应的连接，则抛出错误
+   * 在连接关闭时执行
    */
-  public removeConnection(
-    peer?: Peer,
-    serverID?: number,
-  ): { peer: Peer; serverId: number } {
-    if (serverID !== undefined) {
-      if (this.connectionMap.has(serverID)) {
-        const connection = this.connectionMap.get(serverID);
-        if (!connection) {
-          throw new Error(`无法找到对应的连接，服务器 ID: ${serverID}`);
-        }
-        try {
-          connection.peer.close(1000, "Connection closed by server");
-        } catch (error) {
-          logger.warn(
-            { error },
-            `[CONNECTION] 关闭 peer 时出错，可能已关闭：服务器 ID ${serverID}`,
-          );
-        }
-        this.connectionMap.delete(serverID);
-        logger.info(`[CONNECTION] 连接已移除：服务器 ID ${serverID}`);
-        this.bridge.messageHandler.cleanupByPeer(connection.peer.id);
-        return { peer: connection.peer, serverId: serverID };
-      }
-      throw new Error(`无法找到对应的连接，服务器 ID: ${serverID}`);
+  public onClose(
+    peer: Peer,
+  ): ReturnType<typeof this.removeConnection> | undefined {
+    const session = this.byPeerId.get(peer.id);
+    if (!session) {
+      return undefined;
+    }
+    return this.removeConnection(session);
+  }
+
+  /** 根据 serverId 取 session */
+  public getConnectionByServerId(serverId: number): ServerSession | undefined {
+    return this.byServerId.get(serverId);
+  }
+
+  /** 根据 peer 取 session */
+  public getConnectionByPeer(peer: Peer): ServerSession | undefined {
+    return this.byPeerId.get(peer.id);
+  }
+
+  public removeConnection(session: ServerSession): {
+    peer: Peer;
+    serverId: number;
+  } {
+    this.delete(session);
+
+    try {
+      session.peer.close(1000, "Connection closed by server");
+    } catch (error) {
+      logger.warn(
+        { error },
+        `[CONNECTION] 关闭 peer 时出错：serverId=${session.serverId}`,
+      );
     }
 
-    if (peer) {
-      for (const [serverId, connection] of this.connectionMap.entries()) {
-        if (connection.peer === peer) {
-          try {
-            connection.peer.close(1000, "Connection closed by server");
-          } catch (error) {
-            logger.warn(
-              { error },
-              `[CONNECTION] 关闭 peer 时出错，可能已关闭：服务器 ID ${serverId}`,
-            );
-          }
-          this.connectionMap.delete(serverId);
-          logger.info(`[CONNECTION] 连接已移除：服务器 ID ${serverId}`);
-          this.bridge.messageHandler.cleanupByPeer(peer.id);
-          return { peer: connection.peer, serverId: serverId };
-        }
-      }
-      throw new Error(`无法找到对应的 peer 连接：${peer.id}`);
-    }
+    logger.info(`[CONNECTION] 已移除：serverId=${session.serverId}`);
+    session.cleanup();
+    return { peer: session.peer, serverId: session.serverId };
+  }
 
-    throw new Error("必须提供 peer 或 serverID 参数之一");
+  private add(session: ServerSession): void {
+    this.byServerId.set(session.serverId, session);
+    this.byPeerId.set(session.peer.id, session);
+  }
+
+  private delete(session: ServerSession): void {
+    this.byServerId.delete(session.serverId);
+    this.byPeerId.delete(session.peer.id);
   }
 
   /**
-   * 根据服务器 ID 获取连接
-   *
-   * @param serverId - 服务器 ID
-   * @returns 对应的连接，如果不存在则返回 undefined
+   * 初始化服务器会话
+   * @param session 服务器会话
    */
-  public getConnection(serverId: number): ServerConnection {
-    const connection = this.connectionMap.get(serverId);
-    if (!connection) {
-      throw new Error(`无法找到对应的连接，服务器 ID: ${serverId}`);
-    }
-    return connection;
-  }
+  private static async initSession(session: ServerSession): Promise<void> {
+    const result = await session.sendRequest("get.client.info");
 
-  /**
-   * 根据 Peer 获取服务器 ID
-   *
-   * @param peer - WebSocket 连接
-   * @returns 对应的服务器 ID
-   */
-  public getServerId(peer: Peer): number {
-    for (const [serverId, connection] of this.connectionMap.entries()) {
-      if (connection.peer === peer) {
-        return serverId;
-      }
+    const parsed = clientInfoSchema.safeParse(result);
+    if (!parsed.success) {
+      session.sendError(null, -32_603, "Invalid client info response", result);
+      throw new Error(`[WARNING] 客户端信息不完整：${session.peer.id}`);
     }
-    throw new Error(`无法找到对应的 peer 连接：${peer.id}`);
-  }
 
-  /**
-   * 根据服务器 ID 获取连接的 data
-   *
-   * @param serverId - 服务器 ID
-   * @returns 对应的连接的 data，如果不存在则返回 undefined
-   */
-  public getConnectionData(serverId: number): GetClientInfoResult | undefined {
-    const connection = this.connectionMap.get(serverId);
-    return connection ? connection.data : undefined;
-  }
+    const {
+      minecraft_software,
+      minecraft_version,
+      supports_command,
+      supports_papi,
+    } = parsed.data;
 
-  /**
-   * 设置连接的 data
-   *
-   * @param serverId - 服务器 ID
-   * @param data - 要设置的连接数据
-   */
-  public setConnectionData(serverId: number, data: ServerConnection): void {
-    if (!this.connectionMap.has(serverId)) {
-      throw new Error(`无法找到对应的连接，服务器 ID: ${serverId}`);
-    }
-    this.connectionMap.set(serverId, data);
-    logger.info(`[CONNECTION] 连接数据已更新：服务器 ID ${serverId}`);
+    session.supports_command = supports_command;
+    session.supports_papi = supports_papi;
+
+    await db
+      .update(servers)
+      .set({ minecraft_software, minecraft_version })
+      .where(eq(servers.id, session.serverId))
+      .execute();
   }
 }
+
+export const connectionManager = new ConnectionManager();

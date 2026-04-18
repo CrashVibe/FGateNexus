@@ -160,7 +160,7 @@ const onDiscardChanges = () => {
 
 const onSaveAndNavigate = async () => {
   await savePage();
-  router.push(dirtyNavTarget.value);
+  await router.push(dirtyNavTarget.value);
   showDirtyModal.value = false;
 };
 
@@ -181,7 +181,8 @@ provide("menuOptions", menuOptions);
       :min-size="12"
       collapsible
       resizable
-      class="border-r-0 py-2"
+      class="bg-elevated/25"
+      :ui="{ footer: 'lg:border-t lg:border-default' }"
     >
       <template #header="{ collapsed }">
         <NuxtLink to="/" class="flex items-center justify-center gap-0.5">

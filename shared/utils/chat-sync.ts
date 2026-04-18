@@ -1,4 +1,4 @@
-import type { ChatSyncConfig } from "#shared/schemas/server/chat-sync";
+import type { ChatSyncConfig } from "#shared/model/server/chat-sync";
 
 export const formatPlatformToMCMessage = (
   msg: string,
@@ -65,18 +65,13 @@ export const shouldForwardMessage = (
     ) {
       return false;
     }
-    if (
-      filters.blacklistRegex.some((regex) => {
-        try {
-          return new RegExp(regex, "i").test(message);
-        } catch {
-          return false;
-        }
-      })
-    ) {
-      return false;
-    }
-    return true;
+    return !filters.blacklistRegex.some((regex) => {
+      try {
+        return new RegExp(regex, "i").test(message);
+      } catch {
+        return false;
+      }
+    });
   } else if (filters.filterMode === "whitelist") {
     // 白名单模式：检查是否以指定前缀开头或匹配正则表达式
     const hasPrefix = filters.whitelistPrefixes.some((prefix) =>

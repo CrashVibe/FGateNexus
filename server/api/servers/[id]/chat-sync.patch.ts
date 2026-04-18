@@ -3,10 +3,10 @@ import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers, targets } from "~~/server/db/schema";
-import { ChatSyncAPI } from "~~/shared/schemas/server/chat-sync";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
+import { ChatSyncAPI } from "#shared/model/server/chat-sync";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
       return createErrorResponse(event, apiError, parsed.error);
     }
 
-    const { chatsync, targets: items = [] } = parsed.data;
+    const { chatsync, targets: items } = parsed.data;
 
     db.transaction((tx) => {
       tx.update(servers)

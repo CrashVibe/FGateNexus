@@ -1,7 +1,8 @@
 import { StatusCodes } from "http-status-codes";
 import { getLatestInstalledChromiumPath } from "~~/server/service/browser-downloader";
-import { SettingsAPI } from "~~/shared/schemas/settings";
-import { createApiResponse } from "~~/shared/types";
+
+import { createApiResponse } from "#shared/model";
+import { SettingsAPI } from "#shared/model/settings";
 
 export default defineEventHandler(async (event) => {
   const { browser } = configManager.config;

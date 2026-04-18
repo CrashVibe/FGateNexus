@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import { v4 as uuidv4 } from "uuid";
 import type { z } from "zod";
-import type { ServerWithStatus } from "~~/shared/schemas/server/servers";
 
-import { ServersAPI } from "#shared/schemas/server/servers";
+import type { ServerWithStatus } from "#shared/model/server/servers";
+import { ServersAPI } from "#shared/model/server/servers";
 import PageHeader from "@/components/header/page-header.vue";
 import { ServerData } from "~/composables/api";
 

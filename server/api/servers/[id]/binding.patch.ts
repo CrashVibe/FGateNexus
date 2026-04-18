@@ -3,10 +3,10 @@ import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
+import { BindingConfigSchema } from "#shared/model/server/binding";
 
 export default defineEventHandler(async (event) => {
   try {

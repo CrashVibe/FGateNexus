@@ -2,14 +2,14 @@ import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
-import { BindingConfigSchema } from "~~/shared/schemas/server/binding";
-import { chatSyncConfigSchema } from "~~/shared/schemas/server/chat-sync";
-import { CommandConfigSchema } from "~~/shared/schemas/server/command";
-import { NotifyConfigSchema } from "~~/shared/schemas/server/notify";
-import { ServersAPI } from "~~/shared/schemas/server/servers";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
+import { BindingConfigSchema } from "#shared/model/server/binding";
+import { chatSyncConfigSchema } from "#shared/model/server/chat-sync";
+import { CommandConfigSchema } from "#shared/model/server/command";
+import { NotifyConfigSchema } from "#shared/model/server/notify";
+import { ServersAPI } from "#shared/model/server/servers";
 
 export default defineEventHandler(async (event) => {
   try {

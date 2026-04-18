@@ -1,9 +1,9 @@
-import { launch } from "puppeteer-core";
 import type {
   Browser,
   PuppeteerLifeCycleEvent,
   ScreenshotOptions,
 } from "puppeteer-core";
+import { launch } from "puppeteer-core";
 
 import { getLatestInstalledChromiumPath } from "./browser-downloader";
 

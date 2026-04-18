@@ -3,9 +3,10 @@ import type { z } from "zod";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge";
-import { ApiError, createErrorResponse } from "~~/shared/error";
-import { AdapterAPI } from "~~/shared/schemas/adapter";
-import { createApiResponse } from "~~/shared/types";
+
+import { createApiResponse } from "#shared/model";
+import { AdapterAPI } from "#shared/model/adapter";
+import { ApiError, createErrorResponse } from "#shared/model/error";
 
 export default defineEventHandler(async (event) => {
   try {

@@ -4,8 +4,8 @@ import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { createApiResponse } from "#shared/types";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
 
 export default defineEventHandler(async (event) => {
   try {

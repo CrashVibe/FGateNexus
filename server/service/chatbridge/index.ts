@@ -1,8 +1,8 @@
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
 import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
-import type { Element, ForkScope, Session, Universal } from "koishi";
-import { Context, Logger as klog } from "koishi";
+import type { Element, ForkScope, Session } from "koishi";
+import { Context, Logger as log } from "koishi";
 import { db } from "~~/server/db/client";
 import { adapters } from "~~/server/db/schema";
 import {
@@ -11,10 +11,10 @@ import {
 } from "~~/server/service/bindingmanager";
 import { handlePlatformMessage } from "~~/server/service/message-router";
 import { configManager } from "~~/server/utils/config";
-import { AdapterType } from "~~/shared/schemas/adapter";
 
-import type { AdapterConfig } from "#shared/schemas/adapter";
-import type { OneBotConfig } from "#shared/schemas/adapter/onebot.ts";
+import type { AdapterConfig } from "#shared/model/adapter";
+import { AdapterType } from "#shared/model/adapter";
+import type { OneBotConfig } from "#shared/model/adapter/onebot.ts";
 
 /**
  * Bot 连接信息
@@ -41,12 +41,12 @@ export interface BotConnection {
 /**
  * 聊天桥接
  */
-export class ChatBridge {
+class ChatBridge {
   static instance: ChatBridge | null = null;
   // Bot ID -> Bot Connection
-  private connectionMap = new Map<number, BotConnection>();
-  private app: Context;
-  private pluginsContext: ForkScope[] = [];
+  private readonly connectionMap = new Map<number, BotConnection>();
+  private readonly app: Context;
+  private readonly pluginsContext: ForkScope[] = [];
 
   private constructor() {
     this.app = new Context();
@@ -59,9 +59,8 @@ export class ChatBridge {
 
   public async init(): Promise<void> {
     const { config } = configManager;
-    klog.levels.base = 1;
+    log.levels.base = 1;
     this.pluginsContext.push(
-      // oxlint-disable-next-line typescript/no-unsafe-argument, typescript/no-unsafe-type-assertion, typescript/no-explicit-any
       // @ts-expect-error -- @cordisjs/plugin-server 与 Koishi plugin() 重载存在 Function.prototype.apply 结构性误匹配
       this.app.plugin(Server, {
         host: config.koishi.host,
@@ -157,7 +156,7 @@ export class ChatBridge {
     if (adapterType === AdapterType.Onebot) {
       const bot = this.createOnebot(config);
       this.connectionMap.set(adapterID, {
-        adapterID: adapterID,
+        adapterID,
         adapterType,
         config,
         pluginInstance: bot,
@@ -182,7 +181,7 @@ export class ChatBridge {
    */
   public isOnline(adapterID: number): boolean {
     const bot = this.findBot(adapterID);
-    return bot.status === (1 as Universal.Status.ONLINE);
+    return bot.status === 1;
   }
 
   /**
@@ -252,7 +251,7 @@ export class ChatBridge {
     botConnection: BotConnection,
     targetId: string,
     targetType: "group" | "private",
-    message: string | Element,
+    message: Element.Fragment,
   ): Promise<void> {
     try {
       const bot = this.findBot(botConnection.adapterID);

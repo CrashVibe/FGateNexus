@@ -7,4 +7,6 @@ export default defineNuxtRouteMiddleware((to, _from) => {
     triggerDirty(to.path);
     return abortNavigation();
   }
+
+  return true;
 });

@@ -1,4 +1,4 @@
-import { CODE_MODES } from "#shared/schemas/server/binding";
+import { CODE_MODES } from "#shared/model/server/binding";
 
 // 生成验证码
 export const generateVerificationCode = (

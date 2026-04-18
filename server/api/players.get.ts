@@ -2,9 +2,9 @@ import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 
-import { ApiError, createErrorResponse } from "#shared/error";
-import { PlayerAPI } from "#shared/schemas/player";
-import { createApiResponse } from "#shared/types";
+import { createApiResponse } from "#shared/model";
+import { ApiError, createErrorResponse } from "#shared/model/error";
+import { PlayerAPI } from "#shared/model/player";
 
 export default defineEventHandler(async (event) => {
   try {
