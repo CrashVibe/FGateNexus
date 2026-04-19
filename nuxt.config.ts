@@ -90,11 +90,10 @@ export default defineNuxtConfig({
   typescript: {
     strict: true,
     tsConfig: {
-      // oxlint-disable-next-line sort-keys
       compilerOptions: {
-        resolveJsonModule: true,
         allowImportingTsExtensions: true,
         esModuleInterop: true,
+        resolveJsonModule: true,
         strictNullChecks: true,
         types: ["bun-types", "node"],
       },
