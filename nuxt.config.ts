@@ -74,7 +74,7 @@ export default defineNuxtConfig({
     minify: true,
     node: true,
     preset: "bun",
-    serveStatic: true,
+    serveStatic: "inline",
   },
   runtimeConfig: {
     public: {
