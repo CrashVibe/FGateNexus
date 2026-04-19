@@ -453,8 +453,8 @@
 
 <script lang="ts" setup>
 import type { FormSubmitEvent } from "@nuxt/ui";
+import dayjs from "dayjs";
 import { isEqual } from "lodash-es";
-import moment from "moment-timezone";
 import type { z } from "zod";
 import {
   renderBindFail,
@@ -468,6 +468,7 @@ import {
 import type { BindingConfig } from "#shared/model/server/binding";
 import { BindingConfigSchema, CODE_MODES } from "#shared/model/server/binding";
 import type { ServersAPI } from "#shared/model/server/servers";
+import { generateVerificationCode } from "#shared/utils/binding";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { BindingData, ServerData } from "~/composables/api";
@@ -526,7 +527,7 @@ const unbindCommandExample = computed(
 
 const bindExpireTimeExample = computed(() => {
   const expireTime = formData.config.codeExpire;
-  return moment().add(expireTime, "minutes").format("YYYY-MM-DD HH:mm:ss");
+  return dayjs().add(expireTime, "minutes").format("YYYY-MM-DD HH:mm:ss");
 });
 
 const noBindKickMsgPreview = computed(() =>

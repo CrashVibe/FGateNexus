@@ -1,59 +1,56 @@
 <template>
-  <n-config-provider :theme="theme">
-    <div class="error-page">
-      <canvas ref="canvasRef" class="background-canvas" />
+  <div class="error-page">
+    <canvas ref="canvasRef" class="background-canvas" />
 
-      <n-result
-        status="404"
-        title="404 资源不存在"
-        description="这里！什么也没有...一片虚无，去别处转转吧"
-      >
-        <template #footer>
-          <n-space>
-            <n-button
-              type="primary"
-              ghost
-              size="large"
-              :loading="navigating"
-              @click="handleGoHome"
-            >
-              <template #icon>
-                <n-icon :component="HomeOutline" />
-              </template>
-              返回首页
-            </n-button>
+    <div
+      class="z-10 flex flex-col items-center justify-center space-y-6 rounded-2xl bg-white/10 p-10 shadow-xl backdrop-blur-sm dark:bg-black/10"
+    >
+      <h1 class="text-6xl font-bold text-gray-900 dark:text-gray-100">404</h1>
+      <h2 class="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+        资源不存在
+      </h2>
+      <p class="max-w-md text-center text-gray-600 dark:text-gray-400">
+        这里！什么也没有...一片虚无，去别处转转吧
+      </p>
 
-            <n-button size="large" @click="handleGoBack">
-              <template #icon>
-                <n-icon :component="ArrowBackOutline" />
-              </template>
-              返回上一页
-            </n-button>
-          </n-space>
-        </template>
-      </n-result>
+      <div class="flex items-center space-x-4 pt-4">
+        <UButton
+          :loading="navigating"
+          color="primary"
+          icon="i-heroicons-home"
+          size="xl"
+          variant="solid"
+          @click="handleGoHome"
+        >
+          返回首页
+        </UButton>
+
+        <UButton
+          color="neutral"
+          icon="i-heroicons-arrow-left"
+          size="xl"
+          variant="ghost"
+          @click="handleGoBack"
+        >
+          返回上一页
+        </UButton>
+      </div>
     </div>
-  </n-config-provider>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ArrowBackOutline, HomeOutline } from "@vicons/ionicons5";
-import { darkTheme } from "naive-ui";
-import type { GlobalTheme } from "naive-ui";
+import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
 
 const navigating = ref(false);
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 
 const colorMode = useColorMode();
-
-const theme = ref<GlobalTheme | null>(
-  colorMode.value === "dark" ? darkTheme : null,
-);
+const isDark = ref(colorMode.value === "dark");
 
 watch(colorMode, async (mode) => {
-  // 不加这个会没有自带的过渡效果
   await nextTick();
-  theme.value = mode.value === "dark" ? darkTheme : null;
+  isDark.value = mode.value === "dark";
 });
 
 // Canvas 动画相关
@@ -106,7 +103,8 @@ const initCanvas = () => {
     return;
   }
 
-  // 设置 Canvas 尺寸
+  const getParticleColor = () => (isDark.value ? "#18a058" : "#36ad6a");
+
   const resizeCanvas = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -115,7 +113,6 @@ const initCanvas = () => {
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
 
-  // 创建粒子
   const createParticles = () => {
     particles.length = 0;
     const particleCount = Math.min(
@@ -125,7 +122,7 @@ const initCanvas = () => {
 
     for (let i = 0; i < particleCount; i += 1) {
       particles.push({
-        color: theme.value === darkTheme ? "#18a058" : "#36ad6a",
+        color: getParticleColor(),
         opacity: Math.random() * 0.5 + 0.1,
         size: Math.random() * 3 + 1,
         vx: (Math.random() - 0.5) * 0.5,
@@ -141,13 +138,10 @@ const initCanvas = () => {
   const animate = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 更新和绘制粒子
     for (const [index, particle] of particles.entries()) {
-      // 更新位置
       particle.x += particle.vx;
       particle.y += particle.vy;
 
-      // 边界检查
       if (particle.x < 0 || particle.x > canvas.width) {
         particle.vx *= -1;
       }
@@ -155,11 +149,9 @@ const initCanvas = () => {
         particle.vy *= -1;
       }
 
-      // 确保粒子在画布内
       particle.x = Math.max(0, Math.min(canvas.width, particle.x));
       particle.y = Math.max(0, Math.min(canvas.height, particle.y));
 
-      // 绘制粒子
       ctx.save();
       ctx.globalAlpha = particle.opacity;
       ctx.fillStyle = particle.color;
@@ -168,15 +160,15 @@ const initCanvas = () => {
       ctx.fill();
       ctx.restore();
 
-      // 绘制连线
       for (const [otherIndex, otherParticle] of particles.entries()) {
         if (index >= otherIndex) {
           continue;
         }
 
-        const dx = particle.x - otherParticle.x;
-        const dy = particle.y - otherParticle.y;
-        const distance = Math.hypot(dx, dy);
+        const distance = Math.hypot(
+          particle.x - otherParticle.x,
+          particle.y - otherParticle.y,
+        );
 
         if (distance < 100) {
           ctx.save();
@@ -197,17 +189,12 @@ const initCanvas = () => {
 
   animate();
 
-  // 更新粒子颜色
-  watch(
-    () => theme.value,
-    () => {
-      for (const particle of particles) {
-        particle.color = theme.value === darkTheme ? "#18a058" : "#36ad6a";
-      }
-    },
-  );
+  watch(isDark, () => {
+    for (const particle of particles) {
+      particle.color = getParticleColor();
+    }
+  });
 
-  // 清理函数
   return () => {
     if (animationId) {
       cancelAnimationFrame(animationId);
@@ -216,12 +203,10 @@ const initCanvas = () => {
   };
 };
 
-// 页面进入动画
 onMounted(() => {
   initCanvas();
 });
 
-// 清理动画
 onUnmounted(() => {
   if (animationId) {
     cancelAnimationFrame(animationId);
@@ -241,6 +226,10 @@ onUnmounted(() => {
   justify-content: center;
   padding: 2rem;
   overflow: hidden;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .background-canvas {
