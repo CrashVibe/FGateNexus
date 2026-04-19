@@ -79,9 +79,6 @@
     "unplugin-vue-components": "^31.1.0",
     "vue-tsc": "^3.2.6"
   },
-  "overrides": {
-    "@koishijs/loader": "npm:@mrlingxd/loader@^4.6.8-fix.1"
-  },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "oxlint --fix --quiet",
@@ -100,6 +97,7 @@
   },
   "minimumClientVersion": "0.0.1",
   "patchedDependencies": {
-    "nuxt-auth-utils@0.5.29": "patches/nuxt-auth-utils@0.5.29.patch"
+    "nuxt-auth-utils@0.5.29": "patches/nuxt-auth-utils@0.5.29.patch",
+    "@koishijs/loader@4.6.11": "patches/@koishijs%2Floader@4.6.11.patch"
   }
 }

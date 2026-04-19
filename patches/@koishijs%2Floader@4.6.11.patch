@@ -1,0 +1,26 @@
+diff --git a/lib/index.js b/lib/index.js
+index 53e8e68db841294cd8ccf6f5e82f28c644f6a098..c95f9ee2e643bb49bde895be3785d3e38b3801f9 100644
+--- a/lib/index.js
++++ b/lib/index.js
+@@ -43,7 +43,7 @@ var import_module = require("module");
+ __reExport(index_exports, require("./shared"), module.exports);
+ var logger = new import_core.Logger("app");
+ for (const key in require.extensions) {
+-  import_shared.default.extensions.add(key);
++  import_shared.Loader.extensions.add(key);
+ }
+ var initialKeys = Object.getOwnPropertyNames(process.env);
+ var NodeLoader = class extends import_shared.default {
+diff --git a/lib/index.mjs b/lib/index.mjs
+index 4c9d4a07344c201f405fca24e615dfd53841d8c9..c398637d44bc000c35d9a6d1fe5b39ba972995d9 100644
+--- a/lib/index.mjs
++++ b/lib/index.mjs
+@@ -12,7 +12,7 @@ import { Logger } from "@koishijs/core";
+ import { promises as fs } from "fs";
+ import * as dotenv from "dotenv";
+ import ns from "ns-require";
+-import Loader from "./shared.js";
++import { Loader } from "./shared.js";
+ import { createRequire } from "module";
+ export * from "./shared.js";
+ var logger = new Logger("app");
