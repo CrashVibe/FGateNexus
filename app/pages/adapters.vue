@@ -2,12 +2,12 @@
 import { cloneDeep } from "lodash-es";
 import type { z } from "zod";
 
-import { CardAdapter } from "#components";
 import type {
   AdaptersWithStatus,
   AdapterWithStatus,
 } from "#shared/model/adapter";
 import { AdapterAPI, AdapterType } from "#shared/model/adapter";
+import CardAdapter from "@/components/card/adapter.vue";
 import PageHeader from "@/components/header/page-header.vue";
 import { AdapterData } from "~/composables/api";
 

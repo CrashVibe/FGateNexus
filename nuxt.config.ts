@@ -40,22 +40,9 @@ export default defineNuxtConfig({
   experimental: {
     asyncContext: true,
   },
-  imports: {
-    presets: [
-      {
-        from: "naive-ui",
-        imports: [
-          "useMessage",
-          "useDialog",
-          "useNotification",
-          "useLoadingBar",
-        ],
-      },
-    ],
-  },
+  imports: {},
   modules: [
     "@pinia/nuxt",
-    "nuxtjs-naive-ui",
     "@nuxt/eslint",
     "nuxt-auth-utils",
     "@nuxt/ui",
@@ -109,14 +96,38 @@ export default defineNuxtConfig({
   vite: {
     build: {
       cssCodeSplit: true,
-      minify: isBuild ? "esbuild" : false,
+      minify: isBuild ? "oxc" : false,
       rollupOptions: {
         output: {
-          manualChunks: {
-            highlight: ["highlight.js"],
-            "moment-tz": ["moment-timezone"],
-            ui: ["naive-ui"],
-            utils: ["uuid", "zod"],
+          codeSplitting: {
+            groups: [
+              {
+                name: "highlight",
+                test: /highlight\.js/,
+              },
+              {
+                name: "moment-tz",
+                test: /moment-timezone/,
+              },
+              {
+                name: "icons",
+                test: /@vicons|@iconify/,
+              },
+              {
+                name: "zxcvbn",
+                test: /@zxcvbn-ts/,
+              },
+              {
+                name: "utils",
+                test: /uuid|zod|lodash-es|nanoid/,
+              },
+              {
+                name: "vue-vendor",
+                test: /vue|@vue|vue-router/,
+              },
+            ],
+            maxSize: 500_000,
+            minSize: 30_000,
           },
         },
       },
@@ -128,11 +139,9 @@ export default defineNuxtConfig({
         target: "esnext",
       },
       include: [
-        "moment-timezone",
         "@vue/devtools-core",
         "@vue/devtools-kit",
         "@vicons/ionicons5",
-        "naive-ui",
         "@tanstack/vue-table",
         "vooks",
         "highlight.js/lib/core",
@@ -143,6 +152,7 @@ export default defineNuxtConfig({
         "@zxcvbn-ts/core",
         "@zxcvbn-ts/language-common",
         "lodash-es",
+        "nanoid",
       ],
     },
     plugins: [

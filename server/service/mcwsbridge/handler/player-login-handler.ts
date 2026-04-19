@@ -1,5 +1,7 @@
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { and, eq, sql } from "drizzle-orm";
-import moment from "moment-timezone";
 import { z } from "zod";
 import { db } from "~~/server/db/client";
 import { players, playerServers, servers } from "~~/server/db/schema";
@@ -11,6 +13,9 @@ import { createJsonRpcRequestSchema } from "~~/server/service/mcwsbridge/types";
 
 import type ServerSession from "#server/service/mcwsbridge/server-session";
 import { renderNoBindKick } from "#shared/utils/template/binding";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 class PlayerLoginHandler implements RequestHandler {
   method = "player.login";
@@ -92,7 +97,7 @@ class PlayerLoginHandler implements RequestHandler {
           player.uuid,
           player.name,
         );
-        const formattedTime = moment(bindingResult.expiresAt)
+        const formattedTime = dayjs(bindingResult.expiresAt)
           .tz("Asia/Shanghai")
           .format("YYYY-MM-DD HH:mm:ss");
         const bindKickMsg = renderNoBindKick(
