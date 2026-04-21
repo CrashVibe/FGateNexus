@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
     const { password, twoFactorToken } = parsed.data;
     const user = await db.query.users.findFirst();
 
-    if (!user || user.passwordHash === null || user.passwordHash === "") {
+    if (!user || user.passwordHash === null) {
       return createErrorResponse(
         event,
         ApiError.unauthorized("无密码，无需登陆"),
@@ -48,21 +48,18 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证 2FA
-    if (
-      user.twoFactorEnabled &&
-      user.twoFactorSecret !== null &&
-      user.twoFactorSecret !== ""
-    ) {
-      if (twoFactorToken === undefined || twoFactorToken === "") {
+    if (user.twoFactorEnabled && user.twoFactorSecret !== null) {
+      if (twoFactorToken === undefined) {
+        logger.warn({ userId: user.id }, "登录失败：缺少 2FA 验证码");
         return createErrorResponse(
           event,
-          ApiError.unauthorized("需要输入 2FA 验证码"),
+          ApiError.unauthorized("需要 2FA 验证码"),
         );
       }
 
       const result = await verify({
         secret: user.twoFactorSecret,
-        token: twoFactorToken,
+        token: twoFactorToken.join(""),
       });
 
       if (!result.valid) {

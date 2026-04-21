@@ -1,5 +1,6 @@
 import type { EventHandlerRequest, H3Event } from "h3";
 import { setResponseStatus } from "h3";
+import { FetchError } from "ofetch";
 import type { ZodError } from "zod";
 
 /**
@@ -7,7 +8,7 @@ import type { ZodError } from "zod";
  */
 export interface ApiErrorResponse {
   /** HTTP 状态码 */
-  code: number;
+  code: ApiErrorType;
   /** 错误信息 */
   message: string;
   /** 错误详情 */
@@ -153,11 +154,6 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * API 结果类型
- */
-export type ApiResult<T> = Promise<T>;
-
 export const createErrorResponse = (
   event: H3Event<EventHandlerRequest>,
   error: ApiError,
@@ -179,17 +175,6 @@ export const createErrorResponse = (
   return response;
 };
 
-/**
- * 错误处理中间件辅助函数
- */
-export const handleApiError = (error: unknown): ApiError => {
-  if (error instanceof ApiError) {
-    return error;
-  }
-
-  if (error instanceof Error) {
-    return ApiError.internal(error.message);
-  }
-
-  return ApiError.internal("Unknown error occurred");
-};
+export const isFetchError = (
+  err: unknown,
+): err is FetchError<ApiErrorResponse> => err instanceof FetchError;
