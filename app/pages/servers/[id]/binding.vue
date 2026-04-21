@@ -603,13 +603,12 @@ const refreshServerData = async (): Promise<void> => {
   if (!route.params["id"]) {
     return;
   }
+
   loadingMap.isLoading = true;
   try {
     const data = await ServerData.get(Number(route.params["id"]));
     serverData = data;
-    formData.config = structuredClone(
-      data.bindingConfig || BindingConfigSchema.parse({}),
-    );
+    formData.config = structuredClone(data.bindingConfig);
     originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
     console.error("Failed to refresh server data:", error);

@@ -6,7 +6,7 @@ import { servers } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { BindingConfigSchema } from "#shared/model/server/binding";
+import { BindingAPI } from "#shared/model/server/binding";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,9 +16,7 @@ export default defineEventHandler(async (event) => {
       const apiError = ApiError.validation("参数错误：无效的服务器 ID");
       return createErrorResponse(event, apiError);
     }
-
-    const parsed = BindingConfigSchema.safeParse(await readBody(event));
-
+    const parsed = BindingAPI.PATCH.request.safeParse(await readBody(event));
     if (!parsed.success) {
       const apiError = ApiError.validation("参数错误");
       return createErrorResponse(event, apiError, parsed.error);
@@ -27,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const result = await db
       .update(servers)
       .set({
-        bindingConfig: parsed.data,
+        bindingConfig: parsed.data.config,
       })
       .where(eq(servers.id, serverID))
       .returning();
