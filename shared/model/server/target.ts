@@ -59,7 +59,7 @@ export type targetResponse = z.infer<typeof targetSchema>;
 export const targetSchemaRequest = z.object({
   config: TargetConfigSchema.default(TargetConfigSchema.parse({})),
   enabled: z.boolean().default(true),
-  targetId: z.string().default(""),
+  targetId: z.string().nonempty("目标 ID 不能为空"),
   type: z.enum(["group", "private"]).default("group"),
 });
 
