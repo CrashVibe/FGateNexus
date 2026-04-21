@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js 22
         uses: actions/setup-node@v4
@@ -48,13 +50,22 @@ jobs:
           tar -czf ../FGateNexus-v${VERSION}-mac-arm64.tar.gz FGateNexus-mac-arm64
           zip -r ../FGateNexus-v${VERSION}-win.zip FGateNexus-win-x64.exe
 
+      - name: Generate Changelog
+        uses: orhun/git-cliff-action@v4
+        id: git_cliff
+        with:
+          config: .github/cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
+
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.package_version.outputs.version }}
           name: v${{ steps.package_version.outputs.version }}
           draft: false
-          generate_release_notes: true
+          generate_release_notes: false
           prerelease: false
           files: |
             FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64.tar.gz
@@ -63,7 +74,7 @@ jobs:
             FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz
             FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip
           body: |
-            ## 下载说明
+            ## 📦 下载说明
 
             | 平台 | 架构 | 文件名 |
             |------|------|--------|
@@ -72,3 +83,7 @@ jobs:
             | macOS | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-x64.tar.gz` |
             | macOS | ARM64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz` |
             | Windows | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip` |
+
+            ## What's Changed
+
+            ${{ steps.git_cliff.outputs.content }}
