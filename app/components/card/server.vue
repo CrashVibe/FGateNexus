@@ -2,7 +2,7 @@
   <transition appear name="card-appear">
     <div
       :class="[
-        'cursor-pointer transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-xl',
+        'cursor-pointer transition-all duration-300 ease-in-out hover:scale-[0.99] hover:opacity-80',
         { 'grayscale-[0.8]': !server.isOnline },
       ]"
       @click="router.push(`/servers/${server.id}`)"
