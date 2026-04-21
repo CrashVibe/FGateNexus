@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { FetchError } from "ofetch";
-import QrcodeVue from "qrcode.vue";
 
 import type { ApiResponse } from "#shared/model";
 import type { ApiErrorResponse } from "#shared/model/error";
@@ -412,7 +411,7 @@ onMounted(async () => {
             等）扫描下方二维码：
           </p>
           <div v-if="twoFAForm.keyuri" class="flex justify-center">
-            <qrcode-vue :size="200" :value="twoFAForm.keyuri" level="M" />
+            <Qrcode :height="200" :value="twoFAForm.keyuri" :width="200" />
           </div>
           <p class="text-muted text-sm">
             或手动输入密钥：{{ twoFAForm.secret }}
@@ -472,10 +471,3 @@ onMounted(async () => {
     </UModal>
   </div>
 </template>
-
-<style lang="scss" scoped>
-:deep(.n-qr-code) {
-  width: auto !important;
-  height: auto !important;
-}
-</style>
