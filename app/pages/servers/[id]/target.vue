@@ -58,7 +58,7 @@
               "
               :items-per-page="table?.tableApi?.getState().pagination.pageSize"
               :total="table?.tableApi?.getFilteredRowModel().rows.length"
-              @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
+              @update:page="updatePage"
             />
             <div class="flex gap-2">
               <UButton
@@ -70,7 +70,7 @@
                 >取消更改</UButton
               >
               <UButton
-                :disabled="!isDirty"
+                :disabled="!isDirty || hasErrors"
                 :loading="isAnyLoading"
                 @click="handleSubmit"
               >
@@ -78,34 +78,114 @@
               </UButton>
             </div>
           </div>
+
+          <UModal v-model:open="showAddModal" title="添加目标">
+            <template #body>
+              <UForm
+                :schema="formSchema"
+                :state="newTargetForm"
+                class="space-y-4"
+                @submit="handleAddTargetSubmit"
+              >
+                <UFormField label="目标 ID" name="targetId">
+                  <UInput
+                    v-model="newTargetForm.targetId"
+                    class="w-full"
+                    placeholder="请输入目标 ID"
+                  />
+                </UFormField>
+                <UFormField label="类型" name="type">
+                  <USelect
+                    v-model="newTargetForm.type"
+                    :items="targetTypeOptions"
+                    class="w-full"
+                  />
+                </UFormField>
+                <UFormField label="状态" name="enabled">
+                  <USelect
+                    v-model="newTargetForm.enabled"
+                    :items="statusOptions"
+                    class="w-full"
+                  />
+                </UFormField>
+                <div class="mt-6 flex justify-end gap-2">
+                  <UButton
+                    color="neutral"
+                    variant="subtle"
+                    @click="showAddModal = false"
+                  >
+                    取消
+                  </UButton>
+                  <UButton type="submit"> 添加 </UButton>
+                </div>
+              </UForm>
+            </template>
+          </UModal>
+
+          <UModal v-model:open="showDeleteModal" title="确认删除">
+            <template #body>
+              <p>确定要删除这个目标吗？此操作不可逆。</p>
+              <div class="mt-6 flex justify-end gap-2">
+                <UButton
+                  color="neutral"
+                  variant="subtle"
+                  @click="showDeleteModal = false"
+                >
+                  取 消
+                </UButton>
+                <UButton
+                  :loading="loadingMap.isSubmitting"
+                  color="error"
+                  @click="confirmDelete"
+                >
+                  确认删除
+                </UButton>
+              </div>
+            </template>
+          </UModal>
         </UContainer>
       </template>
     </UDashboardPanel>
   </div>
 </template>
 
-<script lang="ts" setup>
+<script lang="tsx" setup>
 import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
-import { groupBy, isEqual, keyBy } from "lodash-es";
-import { v4 as uuidv4 } from "uuid";
+import {isEqual, keyBy} from "lodash-es";
 import { z } from "zod";
 
 import type {
   targetResponse,
   targetSchemaRequestType,
 } from "#shared/model/server/target";
-import { targetSchema, targetSchemaRequest } from "#shared/model/server/target";
+import {targetSchemaRequest} from "#shared/model/server/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { TargetData } from "~/composables/api";
-
-const UInput = resolveComponent("UInput");
-const USelect = resolveComponent("USelect");
-const UButton = resolveComponent("UButton");
+import {UButton, USelect, UInput, UFormField} from "#components";
 
 const table = useTemplateRef("table");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
 const globalFilter = ref("");
+const showAddModal = ref(false);
+const showDeleteModal = ref(false);
+const targetToDelete = ref<string | null>(null);
+
+const updatePage = (p: number) => {
+  table.value?.tableApi?.setPageIndex(p - 1);
+};
+
+const newTargetForm = reactive({
+  enabled: "enable" as "enable" | "disable",
+  targetId: "",
+  type: "group" as "group" | "private",
+});
+
+const formSchema = z.object({
+  enabled: z.enum(['enable', 'disable']),
+  targetId: z.string().nonempty('目标 ID 不能为空'),
+  type: z.enum(['group', 'private']),
+});
 
 watch(globalFilter, () => {
   pagination.value.pageIndex = 0;
@@ -130,11 +210,6 @@ const buildRequestFromRow = (row: targetResponse): targetSchemaRequestType =>
     type: row.type,
   });
 
-const getDefaultTarget = (): targetResponse =>
-  targetSchema.extend({ targetId: z.string().default("") }).parse({
-    id: `temp-${uuidv4()}`,
-  });
-
 let originalTargets: targetResponse[] = [];
 
 const formData = ref<targetResponse[]>([]);
@@ -157,90 +232,32 @@ const statusOptions = [
   { label: "已禁用", value: "disable" },
 ];
 
-const removeTargetById = (id: string) => {
-  const idx = formData.value.findIndex((t) => t.id === id);
-  if (idx !== -1) {
-    formData.value.splice(idx, 1);
-  }
+const openDeleteModal = (id: string) => {
+  targetToDelete.value = id;
+  showDeleteModal.value = true;
 };
 
-const columns: TableColumn<targetResponse>[] = [
-  {
-    accessorKey: "targetId",
-    cell: ({ row }) =>
-      h(UInput, {
-        modelValue: row.original.targetId,
-        "onUpdate:modelValue": (v: string) => {
-          const item = formData.value[row.index];
-          if (item) {
-            item.targetId = v;
-          }
-        },
-        placeholder: "请输入目标 ID",
-      }),
-    header: "目标 ID",
-  },
-  {
-    accessorKey: "type",
-    cell: ({ row }) =>
-      h(USelect, {
-        items: targetTypeOptions,
-        modelValue: row.original.type,
-        "onUpdate:modelValue": (v: string) => {
-          const item = formData.value[row.index];
-          if (item) {
-            item.type = v as "group" | "private";
-          }
-        },
-      }),
-    header: "类型",
-  },
-  {
-    accessorKey: "enabled",
-    cell: ({ row }) =>
-      h(USelect, {
-        items: statusOptions,
-        modelValue: row.original.enabled ? "enable" : "disable",
-        "onUpdate:modelValue": (v: string) => {
-          const item = formData.value[row.index];
-          if (item) {
-            item.enabled = v === "enable";
-          }
-        },
-      }),
-    header: "状态",
-  },
-  {
-    cell: ({ row }) => {
-      const { id } = row.original;
-      return h(
-        UButton,
-        {
-          color: "error",
-          onClick: () => id && removeTargetById(id),
-          size: "sm",
-          variant: "subtle",
-        },
-        () => "删除",
-      );
-    },
-    header: "操作",
-    id: "actions",
-  },
-];
-
-const addTarget = () => {
-  const list = formData.value;
-  if (list.length > 0 && !list.at(-1)?.targetId?.trim()) {
-    toast.add({
-      color: "warning",
-      id: "empty-target-id-warning",
-      title: "请先把上一行的目标 ID 填完哦~",
-    });
-    return;
+const getRowTargetIdError = (index: number): string | undefined => {
+  const item = formData.value[index];
+  if (!item) {
+    return undefined;
   }
-  formData.value.push(getDefaultTarget());
+  const tid = item.targetId?.trim();
+  if (!tid) {
+    return "目标 ID 不能为空";
+  }
+
+  const isDup = formData.value.some(
+    (t, i) => i !== index && t.targetId.trim() === tid && t.type === item.type
+  );
+  if (isDup) {
+    return "该组合已存在";
+  }
+
+  return undefined;
 };
+
+const hasErrors = computed(() => formData.value.some((_, idx) => !!getRowTargetIdError(idx)));
 
 const refreshAll = async (): Promise<void> => {
   loadingMap.isLoading = true;
@@ -250,48 +267,157 @@ const refreshAll = async (): Promise<void> => {
     formData.value = structuredClone(targets);
   } catch (error) {
     console.error(error);
-    toast.add({ color: "error", title: "刷新目标列表失败" });
+    toast.add({color: "error", title: "刷新目标列表失败"});
   } finally {
     loadingMap.isLoading = false;
   }
 };
 
-const handleSubmit = async () => {
-  // 1) 组合唯一性校验
-  const keyToItems = groupBy(
-    formData.value,
-    (t) => `${t.targetId.trim()}::${t.type}`,
-  );
-  const dup = Object.entries(keyToItems).filter(
-    ([, items]) => items.length > 1,
-  );
-  if (dup.length) {
-    const msg = dup
+const confirmDelete = async () => {
+  if (!targetToDelete.value) {
+    return;
+  }
+  loadingMap.isSubmitting = true;
+  try {
+    await TargetData.deletes(serverId, {ids: [targetToDelete.value]});
+    toast.add({color: "success", title: "目标已删除"});
+    await refreshAll();
+  } catch (error) {
+    console.error("删除失败：", error);
+    toast.add({color: "error", title: "删除失败，请稍后再试"});
+  } finally {
+    showDeleteModal.value = false;
+    targetToDelete.value = null;
+    loadingMap.isSubmitting = false;
+  }
+};
 
-      .map(([, items]) => {
-        const [firstItem] = items;
-        if (firstItem === undefined) {
-          return null;
-        }
-        const { targetId, type } = firstItem;
-        return `目标 ID "${targetId.trim()}" + 类型 "${type === "group" ? "群聊" : "私聊"}" 出现 ${items.length} 次`;
-      })
-      .filter(Boolean)
-      .join("； ");
-    toast.add({ color: "warning", title: `发现重复目标配置：${msg}` });
+const columns: TableColumn<targetResponse>[] = [
+  {
+    accessorKey: "targetId",
+    cell: ({row}) => {
+      const errorMsg = getRowTargetIdError(row.index);
+      return (
+        <UFormField error={errorMsg}>
+          <UInput
+            color={errorMsg ? "error" : undefined}
+            modelValue={row.original.targetId ? String(row.original.targetId) : ""}
+            onUpdate:modelValue={(v: string | number | undefined | boolean) => {
+              const item = formData.value[row.index];
+              if (item) {
+                item.targetId = String(v ?? "");
+              }
+            }}
+            placeholder="请输入目标 ID"
+          />
+        </UFormField>
+      );
+    },
+    header: "目标 ID",
+  },
+  {
+    accessorKey: "type",
+    cell: ({row}) => (
+      <USelect
+        items={targetTypeOptions}
+        modelValue={row.original.type}
+        onUpdate:modelValue={(v: string | number | boolean | undefined) => {
+          const item = formData.value[row.index];
+          if (item) {
+            item.type = String(v) as "group" | "private";
+          }
+        }}
+      />
+    ),
+    header: "类型",
+  },
+  {
+    accessorKey: "enabled",
+    cell: ({row}) => (
+      <USelect
+        items={statusOptions}
+        modelValue={row.original.enabled ? "enable" : "disable"}
+        onUpdate:modelValue={(v: string | number | boolean | undefined) => {
+          const item = formData.value[row.index];
+          if (item) {
+            item.enabled = String(v) === "enable";
+          }
+        }}
+      />
+    ),
+    header: "状态",
+  },
+  {
+    cell: ({ row }) => {
+      const { id } = row.original;
+      return (
+        <UButton
+          color="error"
+          size="sm"
+          variant="subtle"
+          onClick={() => {
+            if (id) {
+              openDeleteModal(id);
+            }
+          }}
+        >
+          删除
+        </UButton>
+      );
+    },
+    header: "操作",
+    id: "actions",
+  },
+];
+
+const addTarget = () => {
+  newTargetForm.targetId = "";
+  newTargetForm.type = "group";
+  newTargetForm.enabled = "enable";
+  showAddModal.value = true;
+};
+
+const handleAddTargetSubmit = async () => {
+  const targetId = newTargetForm.targetId.trim();
+  const {type} = newTargetForm;
+
+  const isDuplicate = formData.value.some(
+    (t) => t.targetId.trim() === targetId && t.type === type
+  );
+  if (isDuplicate) {
+    toast.add({
+      color: "warning",
+      title: `目标 ID "${targetId}" + 类型 "${type === "group" ? "群聊" : "私聊"}" 已经存在`,
+    });
     return;
   }
 
-  // 2) 差异对比
-  const originalById = keyBy(originalTargets, "id");
-  const currentById = keyBy(formData.value, "id");
+  loadingMap.isSubmitting = true;
+  try {
+    const req = targetSchemaRequest.parse({
+      config: {},
+      enabled: newTargetForm.enabled === "enable",
+      targetId,
+      type,
+    });
 
-  const toCreate = formData.value.filter((t) => t.id.startsWith("temp-"));
-  const toDelete = originalTargets.filter((t) => !currentById[t.id]);
+    await TargetData.creates(serverId, [req]);
+    toast.add({color: "success", title: "目标已添加"});
+    showAddModal.value = false;
+    await refreshAll();
+  } catch (error) {
+    console.error("添加失败：", error);
+    toast.add({color: "error", title: "添加失败，请稍后再试"});
+  } finally {
+    loadingMap.isSubmitting = false;
+  }
+};
+
+const handleSubmit = async () => {
+  const originalById = keyBy(originalTargets, "id");
   const toUpdate = formData.value.filter((t) => {
     const ori = originalById[t.id];
     return (
-      !t.id.startsWith("temp-") &&
       ori &&
       !isSameTarget(
         { enabled: t.enabled, targetId: t.targetId, type: t.type },
@@ -300,38 +426,18 @@ const handleSubmit = async () => {
     );
   });
 
-  if (
-    (!toCreate.length && !toUpdate.length && !toDelete.length) ||
-    !isDirty.value
-  ) {
+  if (!toUpdate.length || !isDirty.value) {
     return;
   }
 
-  // 3) 提交
   loadingMap.isSubmitting = true;
   try {
-    // 3.1 批量创建
-    if (toCreate.length > 0) {
-      await TargetData.creates(
-        serverId,
-        toCreate.map((row) => buildRequestFromRow(row)),
-      );
-    }
-
-    // 3.2 更新
-    if (toUpdate.length > 0) {
-      await TargetData.updates(serverId, {
-        items: toUpdate.map((row) => ({
-          data: buildRequestFromRow(row),
-          id: row.id,
-        })),
-      });
-    }
-
-    // 3.3 删除
-    if (toDelete.length > 0) {
-      await TargetData.deletes(serverId, { ids: toDelete.map((r) => r.id) });
-    }
+    await TargetData.updates(serverId, {
+      items: toUpdate.map((row) => ({
+        data: buildRequestFromRow(row),
+        id: row.id,
+      })),
+    });
 
     await refreshAll();
     toast.add({ color: "success", title: "配置已保存" });
@@ -344,7 +450,7 @@ const handleSubmit = async () => {
 };
 
 const cancelChanges = () => {
-  formData.value = structuredClone(toRaw(originalTargets));
+  formData.value = structuredClone(originalTargets);
 };
 
 onMounted(async () => {
