@@ -1,10 +1,10 @@
 <script lang="ts" setup>
-import { FetchError } from "ofetch";
+import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 
 import { useAuthStore } from "#imports";
 import type { LoginBody } from "#shared/model/auth";
 import { LoginAPI } from "#shared/model/auth";
-import type { ApiErrorResponse } from "#shared/model/error";
+import { ApiErrorType, isFetchError } from "#shared/model/error";
 
 definePageMeta({
   layout: false,
@@ -15,46 +15,73 @@ const router = useRouter();
 const authStore = useAuthStore();
 const isLoading = ref(false);
 
-const credentials = reactive<LoginBody>({
-  password: "",
-  twoFactorToken: undefined,
+const fields = computed(() => {
+  const f: AuthFormField[] = [
+    {
+      disabled: isLoading.value,
+      label: "密码",
+      name: "password",
+      placeholder: "输入密码",
+      required: true,
+      type: "password",
+    },
+  ];
+
+  if (authStore.has2FA) {
+    f.push({
+      disabled: isLoading.value,
+      label: "双重验证码",
+      length: 6,
+      name: "twoFactorToken",
+      required: true,
+      type: "otp",
+    });
+  }
+
+  return f;
 });
 
-const twoFactorInput = ref<string[]>([]);
+const failMessages = [
+  "……不对。重新来。",
+  "错了，再试一次。不是因为我宽容，只是规则如此。",
+  "验证失败。别以为我会手软。",
+];
 
-const handleLogin = async () => {
+const successMessages = [
+  "验证通过。别误会，只是例行检查而已。",
+  "身份确认完毕，可以进来了。",
+  "……通过了。进来吧。",
+  "识别成功。久等了。",
+  "凭证有效。门已为你开着。",
+];
+
+const handleLogin = async (event: FormSubmitEvent<LoginBody>) => {
   try {
     isLoading.value = true;
 
-    if (twoFactorInput.value.length > 0) {
-      credentials.twoFactorToken = twoFactorInput.value.join("");
-    }
+    await authStore.login(event.data);
 
-    const validation = LoginAPI.POST.request.safeParse(credentials);
-    if (!validation.success) {
-      toast.add({
-        color: "error",
-        title: validation.error.issues[0]?.message || "请求参数错误",
-      });
-      return;
-    }
-
-    await authStore.login(validation.data);
-    toast.add({ color: "success", title: "登录成功" });
+    const randomSuccess =
+      successMessages[Math.floor(Math.random() * successMessages.length)];
+    toast.add({ color: "success", title: randomSuccess });
     await router.push("/");
   } catch (error: unknown) {
-    console.error("Login failed:", error);
-
-    const errorMessage =
-      error instanceof FetchError
-        ? (error.data as ApiErrorResponse).message
-        : "无效的凭据，请重试。";
-
-    if (errorMessage.includes("2FA") || errorMessage.includes("双重")) {
-      await authStore.requireAuth();
+    if (isFetchError(error) && error.data) {
+      const { data } = error;
+      if (data.code === ApiErrorType.Unauthorized) {
+        const randomFail =
+          failMessages[Math.floor(Math.random() * failMessages.length)];
+        toast.add({ color: "error", title: randomFail });
+        return;
+      } else if (data.code === ApiErrorType.TooManyRequests) {
+        toast.add({ color: "error", id: "rate", title: data.message });
+        return;
+      }
+      toast.add({ color: "error", title: data.message });
+      return;
     }
-
-    toast.add({ color: "error", title: errorMessage });
+    console.error("Login failed:", error);
+    toast.add({ color: "error", title: "发生未知错误，请联系开发者～" });
   } finally {
     isLoading.value = false;
   }
@@ -71,51 +98,26 @@ onMounted(async () => {
   <div
     class="flex h-screen min-h-[calc(100vh-var(--header-height))] items-center justify-center"
   >
-    <UCard class="w-full max-w-md">
-      <template #header>
-        <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-lock" />
-          <span>登录验证</span>
-        </div>
-      </template>
-
-      <div class="flex flex-col gap-4">
-        <UAlert
-          color="info"
-          variant="soft"
-          title="此实例已启用密码保护，请输入密码以继续访问。"
-        />
-
-        <UFormField label="密码">
-          <UInput
-            v-model="credentials.password"
-            class="w-full"
-            type="password"
-            placeholder="输入密码"
-            :disabled="isLoading"
-            @keydown.enter="handleLogin"
-          />
-        </UFormField>
-
-        <UFormField v-if="authStore.has2FA" label="双重验证码">
-          <UPinInput
-            v-model="twoFactorInput"
-            :length="6"
-            otp
-            :disabled="isLoading"
-          />
-        </UFormField>
-
-        <UButton
-          block
-          :loading="isLoading"
-          :disabled="!credentials.password || isLoading"
-          icon="i-lucide-log-in"
-          @click="handleLogin"
-        >
-          登录
-        </UButton>
-      </div>
-    </UCard>
+    <UPageCard class="w-full max-w-md">
+      <UAuthForm
+        :fields="fields"
+        :schema="LoginAPI.POST.request"
+        :submit="{
+          label: '登录',
+          icon: 'i-lucide-log-in',
+          block: true,
+          loading: isLoading,
+        }"
+        icon="i-lucide-lock"
+        title="登录验证"
+        @submit="handleLogin"
+      >
+        <template #description>
+          <p class="text-muted-foreground text-sm">
+            哼，你以为随便什么人都能进来吗……确认一下身份再说。
+          </p>
+        </template>
+      </UAuthForm>
+    </UPageCard>
   </div>
 </template>

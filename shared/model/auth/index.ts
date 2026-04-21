@@ -6,15 +6,18 @@ export const LoginAPI = {
   DELETE: {
     description: "删除密码",
     request: z.object({
-      currentPassword: z.string().min(1, "当前密码不能为空"),
+      currentPassword: z.string().nonempty("当前密码不能为空"),
     }),
     response: z.object({}),
   },
   POST: {
     description: "用户登录",
     request: z.object({
-      password: z.string().min(1, "密码不能为空"),
-      twoFactorToken: z.string().optional(),
+      password: z.string("密码不能为空"),
+      twoFactorToken: z
+        .array(z.string())
+        .length(6, "2FA 验证码必须为 6 位")
+        .optional(),
     }),
     response: z.object({}),
   },
