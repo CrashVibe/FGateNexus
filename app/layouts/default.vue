@@ -203,8 +203,13 @@ provide("menuOptions", menuOptions);
         </transition>
       </template>
 
-      <template #footer>
-        <div class="flex w-full items-center justify-between">
+      <template #footer="{ collapsed }">
+        <div
+          :class="[
+            'flex w-full items-center',
+            collapsed ? 'flex-col gap-2' : 'justify-between',
+          ]"
+        >
           <UColorModeButton />
           <UButton
             v-if="useAuthStore().hasPassword"
