@@ -74,7 +74,6 @@ const serverMenuOptions = computed(() => {
         icon: "i-lucide-settings",
         label: "基础配置",
         open: true,
-        type: "label",
       },
       {
         children: [
@@ -92,7 +91,6 @@ const serverMenuOptions = computed(() => {
         icon: "i-lucide-link",
         label: "服务器管理",
         open: true,
-        type: "label",
       },
       {
         children: [
@@ -105,7 +103,6 @@ const serverMenuOptions = computed(() => {
         icon: "i-lucide-message-circle",
         label: "聊天与消息",
         open: true,
-        type: "label",
       },
       {
         children: [
@@ -118,7 +115,6 @@ const serverMenuOptions = computed(() => {
         icon: "i-lucide-bell",
         label: "事件与通知",
         open: true,
-        type: "label",
       },
     );
   }
