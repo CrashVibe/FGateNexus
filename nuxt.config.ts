@@ -41,7 +41,13 @@ export default defineNuxtConfig({
     asyncContext: true,
   },
   imports: {},
-  modules: ["@pinia/nuxt", "nuxt-auth-utils", "@nuxt/ui", "@nuxt/icon"],
+  modules: [
+    "@pinia/nuxt",
+    "nuxt-auth-utils",
+    "@nuxt/ui",
+    "@nuxt/icon",
+    "nuxt-qrcode",
+  ],
   nitro: {
     compressPublicAssets: true,
     esbuild: {
