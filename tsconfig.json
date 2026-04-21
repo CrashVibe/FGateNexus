@@ -13,5 +13,17 @@
     {
       "path": "./.nuxt/tsconfig.node.json"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "paths": {
+      "#shared": ["./shared"],
+      "#shared/*": ["./shared/*"],
+      "@": ["./app"],
+      "@/*": ["./app/*"],
+      "~": ["./app"],
+      "~/*": ["./app/*"],
+      "~~": ["."],
+      "~~/*": ["./*"]
+    }
+  }
 }
