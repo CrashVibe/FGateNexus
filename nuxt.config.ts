@@ -41,13 +41,7 @@ export default defineNuxtConfig({
     asyncContext: true,
   },
   imports: {},
-  modules: [
-    "@pinia/nuxt",
-    "@nuxt/eslint",
-    "nuxt-auth-utils",
-    "@nuxt/ui",
-    "@nuxt/icon",
-  ],
+  modules: ["@pinia/nuxt", "nuxt-auth-utils", "@nuxt/ui", "@nuxt/icon"],
   nitro: {
     compressPublicAssets: true,
     esbuild: {
