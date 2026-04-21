@@ -1,0 +1,71 @@
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}
+- {{ commit.message | trim }}
+{% endfor %}
+{% endfor %}
+"""
+trim = true
+
+[git]
+conventional_commits = false
+filter_commits = false
+tag_pattern = "v[0-9].*"
+commit_parsers = [
+  # 跳过 release commit
+  { message = "^release", skip = true },
+  { message = "^Release", skip = true },
+  # ✨ 新功能
+  { message = "^✨|^:sparkles:", group = "✨ 新功能" },
+  { message = "^(feat|feature)", group = "✨ 新功能" },
+  # 🐛 Bug 修复
+  { message = "^🐛|^:bug:", group = "🐛 Bug 修复" },
+  { message = "^🚑|^:ambulance:", group = "🐛 Bug 修复" },
+  { message = "^🩹|^:adhesive_bandage:", group = "🐛 Bug 修复" },
+  { message = "^fix", group = "🐛 Bug 修复" },
+  # ♻️ 重构
+  { message = "^♻️|^:recycle:", group = "♻️ 重构" },
+  { message = "^refactor", group = "♻️ 重构" },
+  # ⚡ 性能优化
+  { message = "^⚡|^:zap:", group = "⚡ 性能优化" },
+  { message = "^perf", group = "⚡ 性能优化" },
+  # 🎨 代码风格 / UI
+  { message = "^🎨|^:art:", group = "🎨 样式 / 格式" },
+  { message = "^💄|^:lipstick:", group = "🎨 样式 / 格式" },
+  { message = "^style", group = "🎨 样式 / 格式" },
+  # 📝 文档
+  { message = "^📝|^:memo:", group = "📝 文档" },
+  { message = "^📖|^:book:", group = "📝 文档" },
+  { message = "^docs", group = "📝 文档" },
+  # ✅ 测试
+  { message = "^✅|^:white_check_mark:", group = "✅ 测试" },
+  { message = "^🧪|^:test_tube:", group = "✅ 测试" },
+  { message = "^test", group = "✅ 测试" },
+  # 🔒 安全
+  { message = "^🔒|^:lock:", group = "🔒 安全" },
+  # 🌐 国际化
+  { message = "^🌐|^:globe_with_meridians:", group = "🌐 国际化" },
+  # 🔧 配置 / 构建
+  { message = "^🔧|^:wrench:", group = "🔧 配置" },
+  { message = "^🔨|^:hammer:", group = "🔧 配置" },
+  { message = "^👷|^:construction_worker:", group = "🔧 配置" },
+  { message = "^📦|^:package:", group = "🔧 配置" },
+  { message = "^build|^ci", group = "🔧 配置" },
+  # ⬆️ 依赖升级
+  { message = "^⬆️|^:arrow_up:", group = "⬆️ 依赖升级" },
+  { message = "^⬇️|^:arrow_down:", group = "⬆️ 依赖升级" },
+  { message = "^bump", group = "⬆️ 依赖升级" },
+  # 🔥 删除 / 清理
+  { message = "^🔥|^:fire:", group = "🔥 清理" },
+  { message = "^🗑️|^:wastebasket:", group = "🔥 清理" },
+  { message = "^clean|^chore", group = "🔥 清理" },
+  # 🚧 WIP
+  { message = "^🚧|^:construction:", group = "🚧 进行中" },
+  # 🎉 初始化
+  { message = "^🎉|^:tada:", group = "🎉 初始化" },
+  # 其他未匹配的
+  { message = ".*", group = "🔩 其他" },
+]
