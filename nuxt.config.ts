@@ -40,7 +40,6 @@ export default defineNuxtConfig({
   experimental: {
     asyncContext: true,
   },
-  imports: {},
   modules: [
     "@pinia/nuxt",
     "nuxt-auth-utils",
@@ -102,14 +101,6 @@ export default defineNuxtConfig({
           codeSplitting: {
             groups: [
               {
-                name: "highlight",
-                test: /highlight\.js/,
-              },
-              {
-                name: "moment-tz",
-                test: /moment-timezone/,
-              },
-              {
                 name: "icons",
                 test: /@vicons|@iconify/,
               },
@@ -126,8 +117,6 @@ export default defineNuxtConfig({
                 test: /vue|@vue|vue-router/,
               },
             ],
-            maxSize: 500_000,
-            minSize: 30_000,
           },
         },
       },
@@ -144,8 +133,6 @@ export default defineNuxtConfig({
         "@vicons/ionicons5",
         "@tanstack/vue-table",
         "vooks",
-        "highlight.js/lib/core",
-        "highlight.js/lib/languages/typescript",
         "uuid",
         "zod",
         "http-status-codes",
@@ -153,6 +140,7 @@ export default defineNuxtConfig({
         "@zxcvbn-ts/language-common",
         "lodash-es",
         "nanoid",
+        "dayjs",
       ],
     },
     plugins: [
