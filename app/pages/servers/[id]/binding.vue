@@ -6,6 +6,12 @@
     >
       <template #header>
         <ServerHeader />
+        <UTabs
+          v-model="activeTab"
+          :content="false"
+          :items="tabItems"
+          variant="link"
+        />
       </template>
       <template #body>
         <UContainer class="py-8">
@@ -16,52 +22,61 @@
             @submit="onFormSubmit"
           >
             <div
+              v-show="activeTab === 'basic'"
               class="grid gap-4"
               :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
             >
-              <!-- 基础设置 -->
-              <UPageCard variant="outline">
-                <template #title>基础设置</template>
-                <template #description>
-                  <span class="text-muted text-sm">配置绑定功能的基本参数</span>
-                </template>
-                <template #footer>
+              <UPageCard
+                variant="outline"
+                title="绑定参数"
+                description="验证码与绑定数量配置"
+              >
+                <div class="flex flex-col gap-4">
+                  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <UFormField name="maxBindCount" label="绑定数量">
+                      <UInputNumber
+                        v-model="formData.config.maxBindCount"
+                        class="w-full"
+                        placeholder="最大绑定数量"
+                      />
+                    </UFormField>
+                    <UFormField name="codeLength" label="验证码长度">
+                      <UInputNumber
+                        v-model="formData.config.codeLength"
+                        class="w-full"
+                        placeholder="生成的验证码字符数量"
+                      />
+                    </UFormField>
+                    <UFormField name="codeMode" label="验证码模式">
+                      <USelect
+                        v-model="formData.config.codeMode"
+                        :items="codeModeOptions"
+                        class="w-full"
+                        placeholder="请选择验证码生成模式"
+                      />
+                    </UFormField>
+                    <UFormField
+                      name="codeExpire"
+                      label="验证码过期时间（分钟）"
+                    >
+                      <UInputNumber
+                        v-model="formData.config.codeExpire"
+                        :min="1"
+                        class="w-full"
+                        placeholder="验证码过期时间"
+                      />
+                    </UFormField>
+                  </div>
+                </div>
+              </UPageCard>
+
+              <UPageCard
+                variant="outline"
+                title="指令配置"
+                description="绑定/解绑前缀与开关"
+              >
+                <template #default>
                   <div class="flex flex-col gap-4">
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <UFormField name="maxBindCount" label="绑定数量">
-                        <UInputNumber
-                          v-model="formData.config.maxBindCount"
-                          class="w-full"
-                          placeholder="最大绑定数量"
-                        />
-                      </UFormField>
-                      <UFormField name="codeLength" label="验证码长度">
-                        <UInputNumber
-                          v-model="formData.config.codeLength"
-                          class="w-full"
-                          placeholder="生成的验证码字符数量"
-                        />
-                      </UFormField>
-                      <UFormField name="codeMode" label="验证码模式">
-                        <USelect
-                          v-model="formData.config.codeMode"
-                          :items="codeModeOptions"
-                          class="w-full"
-                          placeholder="请选择验证码生成模式"
-                        />
-                      </UFormField>
-                      <UFormField
-                        name="codeExpire"
-                        label="验证码过期时间（分钟）"
-                      >
-                        <UInputNumber
-                          v-model="formData.config.codeExpire"
-                          :min="1"
-                          class="w-full"
-                          placeholder="验证码过期时间"
-                        />
-                      </UFormField>
-                    </div>
                     <UFormField name="prefix" label="绑定前缀">
                       <UInput
                         v-model="formData.config.prefix"
@@ -112,17 +127,20 @@
                   </div>
                 </template>
               </UPageCard>
-              <!-- 反馈消息配置 -->
+            </div>
+
+            <div
+              v-show="activeTab === 'messages'"
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
+            >
               <UPageCard variant="outline">
-                <template #title>反馈消息配置</template>
+                <template #title>绑定反馈</template>
                 <template #description>
-                  <span class="text-muted text-sm"
-                    >配置绑定/解绑操作的反馈消息内容</span
-                  >
+                  <span class="text-muted text-sm">绑定成功/失败时的消息</span>
                 </template>
-                <template #footer>
+                <template #default>
                   <div class="flex flex-col gap-4">
-                    <!-- 绑定成功 -->
                     <UFormField name="bindSuccessMsg" label="绑定成功">
                       <UInput
                         v-model="formData.config.bindSuccessMsg"
@@ -170,7 +188,6 @@
                       </div>
                     </UFormField>
 
-                    <!-- 绑定失败 -->
                     <UFormField name="bindFailMsg" label="绑定失败">
                       <UInput
                         v-model="formData.config.bindFailMsg"
@@ -216,8 +233,17 @@
                         </div>
                       </div>
                     </UFormField>
+                  </div>
+                </template>
+              </UPageCard>
 
-                    <!-- 解绑成功 -->
+              <UPageCard variant="outline">
+                <template #title>解绑反馈</template>
+                <template #description>
+                  <span class="text-muted text-sm">解绑成功/失败时的消息</span>
+                </template>
+                <template #default>
+                  <div class="flex flex-col gap-4">
                     <UFormField name="unbindSuccessMsg" label="解绑成功">
                       <UInput
                         v-model="formData.config.unbindSuccessMsg"
@@ -265,7 +291,6 @@
                       </div>
                     </UFormField>
 
-                    <!-- 解绑失败 -->
                     <UFormField name="unbindFailMsg" label="解绑失败">
                       <UInput
                         v-model="formData.config.unbindFailMsg"
@@ -316,20 +341,92 @@
                   </div>
                 </template>
               </UPageCard>
+            </div>
 
-              <!-- 绑定提示 -->
+            <div
+              v-show="activeTab === 'autorename'"
+              class="grid grid-cols-1 gap-4"
+            >
               <UPageCard variant="outline">
-                <template #title>绑定提示</template>
+                <template #title>改名配置</template>
                 <template #description>
-                  <span class="text-muted text-sm">配置强制绑定及踢出消息</span>
+                  <span class="text-muted text-sm">开关与群昵称模板</span>
                 </template>
-                <template #footer>
+                <template #default>
+                  <div class="flex flex-col gap-4">
+                    <UFormField name="autoRenameEnabled" label="绑定后自动改名">
+                      <USwitch v-model="formData.config.autoRenameEnabled" />
+                    </UFormField>
+
+                    <UFormField
+                      name="autoRenameNameTemplate"
+                      label="改名模板"
+                      description="用于生成新名字，支持占位符"
+                    >
+                      <UInput
+                        v-model="formData.config.autoRenameNameTemplate"
+                        :maxlength="32"
+                        class="w-full"
+                        placeholder="例如：{socialNickname}"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到模板</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in renameNameVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.autoRenameNameTemplate.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder(
+                                  'autoRenameNameTemplate',
+                                  tag.value,
+                                )
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-primary">{{
+                            autoRenameNamePreview
+                          }}</span>
+                        </div>
+                      </div>
+                    </UFormField>
+                  </div>
+                </template>
+              </UPageCard>
+            </div>
+
+            <div
+              v-show="activeTab === 'kick'"
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
+            >
+              <UPageCard variant="outline">
+                <template #title>强制绑定</template>
+                <template #description>
+                  <span class="text-muted text-sm">未绑定玩家的处理方式</span>
+                </template>
+                <template #default>
                   <div class="flex flex-col gap-4">
                     <UFormField name="forceBind" label="强制绑定">
                       <USwitch v-model="formData.config.forceBind" />
                     </UFormField>
 
-                    <!-- 未绑定踢出消息 -->
                     <UFormField
                       name="nobindkickMsg"
                       label="未绑定踢出消息"
@@ -374,8 +471,17 @@
                         </div>
                       </div>
                     </UFormField>
+                  </div>
+                </template>
+              </UPageCard>
 
-                    <!-- 解绑踢出消息 -->
+              <UPageCard variant="outline">
+                <template #title>解绑踢出</template>
+                <template #description>
+                  <span class="text-muted text-sm">解绑后的踢出消息配置</span>
+                </template>
+                <template #default>
+                  <div class="flex flex-col gap-4">
                     <UFormField
                       name="unbindkickMsg"
                       label="解绑踢出消息"
@@ -458,6 +564,7 @@ import { isEqual } from "lodash-es";
 import type { z } from "zod";
 import {
   renderBindFail,
+  renderBindRenameName,
   renderBindSuccess,
   renderNoBindKick,
   renderUnbindFail,
@@ -479,6 +586,15 @@ const isMobile = useIsMobile();
 const { setPageState, clearPageState } = usePageStateStore();
 
 definePageMeta({ layout: "default" });
+
+const tabItems = [
+  { icon: "i-lucide-settings", label: "基础设置", value: "basic" },
+  { icon: "i-lucide-message-square", label: "反馈消息", value: "messages" },
+  { icon: "i-lucide-user-pen", label: "自动改名", value: "autorename" },
+  { icon: "i-lucide-shield-alert", label: "绑定提示", value: "kick" },
+];
+
+const activeTab = ref("basic");
 
 const route = useRoute();
 const toast = useToast();
@@ -530,6 +646,15 @@ const bindExpireTimeExample = computed(() => {
   return dayjs().add(expireTime, "minutes").format("YYYY-MM-DD HH:mm:ss");
 });
 
+const autoRenameNamePreview = computed(() =>
+  renderBindRenameName(formData.config.autoRenameNameTemplate, {
+    platform: "onebot",
+    playerName: "Steve",
+    socialNickname: "小明",
+    socialUid: "114514",
+  }),
+);
+
 const noBindKickMsgPreview = computed(() =>
   renderNoBindKick(
     formData.config.nobindkickMsg,
@@ -563,6 +688,15 @@ const bindSuccessVariables = computed(() =>
   }),
 );
 
+const renameNameVariables = computed(() =>
+  createVariablesArray({
+    "{platform}": { example: "onebot", label: "平台类型" },
+    "{playerName}": { example: "Steve", label: "玩家名" },
+    "{socialNickname}": { example: "小明", label: "社交昵称" },
+    "{socialUid}": { example: "114514", label: "社交 ID" },
+  }),
+);
+
 const bindFailVariables = computed(() =>
   createVariablesArray({
     "{user}": { example: "Steve", label: "玩家名" },
@@ -588,6 +722,7 @@ const insertPlaceholder = (
     BindingConfig,
     | "nobindkickMsg"
     | "unbindkickMsg"
+    | "autoRenameNameTemplate"
     | "bindSuccessMsg"
     | "bindFailMsg"
     | "unbindSuccessMsg"

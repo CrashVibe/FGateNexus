@@ -36,6 +36,22 @@ export const renderBindFail = (
   why: string,
 ): string => renderTemplate(msg, { user, why });
 
+export const renderBindRenameName = (
+  template: string,
+  params: {
+    platform: string;
+    playerName: string;
+    socialNickname: string;
+    socialUid: string;
+  },
+): string =>
+  renderTemplate(template, {
+    platform: params.platform,
+    playerName: params.playerName,
+    socialNickname: params.socialNickname,
+    socialUid: params.socialUid,
+  });
+
 // 解绑成功消息
 export const renderUnbindSuccess = (msg: string, user: string): string =>
   renderTemplate(msg, { user });

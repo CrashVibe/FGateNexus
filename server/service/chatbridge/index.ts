@@ -38,6 +38,19 @@ export interface BotConnection {
   config: AdapterConfig;
 }
 
+type AdapterBot = Session["bot"];
+
+interface SetGroupCardHandlerContext {
+  bot: AdapterBot;
+  groupId: number;
+  userId: number;
+  card: string;
+}
+
+type SetGroupCardHandler = (
+  context: SetGroupCardHandlerContext,
+) => Promise<void>;
+
 /**
  * 聊天桥接
  */
@@ -45,6 +58,16 @@ class ChatBridge {
   static instance: ChatBridge | null = null;
   // Bot ID -> Bot Connection
   private readonly connectionMap = new Map<number, BotConnection>();
+  private readonly setGroupCardHandlers: Partial<
+    Record<AdapterType, SetGroupCardHandler>
+  > = {
+    [AdapterType.Onebot]: async ({ bot, groupId, userId, card }) => {
+      if (!(bot instanceof OneBot)) {
+        throw new Error("OneBot 机器人实例类型不匹配，无法修改群名片");
+      }
+      await bot.internal.setGroupCard(groupId, userId, card);
+    },
+  };
   private readonly app: Context;
   private readonly pluginsContext: ForkScope[] = [];
 
@@ -131,37 +154,37 @@ class ChatBridge {
   /**
    * 移除 Bot 连接
    */
-  public removeBot(adapterID: number): void {
-    const connection = this.connectionMap.get(adapterID);
+  public removeBot(botID: number): void {
+    const connection = this.connectionMap.get(botID);
     if (connection) {
       connection.pluginInstance.dispose();
-      this.connectionMap.delete(adapterID);
-      logger.info(`已移除 Bot 连接：${adapterID}`);
+      this.connectionMap.delete(botID);
+      logger.info(`已移除 Bot 连接：${botID}`);
       return;
     }
-    throw new Error(`找不到 Bot 连接：${adapterID}`);
+    throw new Error(`找不到 Bot 连接：${botID}`);
   }
 
   /**
    * 添加 Bot 连接
    */
   public addBot(
-    adapterID: number,
+    botID: number,
     adapterType: AdapterType,
     config: OneBotConfig,
   ): void {
-    if (this.connectionMap.has(adapterID)) {
-      throw new Error(`Bot 连接已存在：${adapterID}`);
+    if (this.connectionMap.has(botID)) {
+      throw new Error(`Bot 连接已存在：${botID}`);
     }
     if (adapterType === AdapterType.Onebot) {
       const bot = this.createOnebot(config);
-      this.connectionMap.set(adapterID, {
-        adapterID,
+      this.connectionMap.set(botID, {
+        adapterID: botID,
         adapterType,
         config,
         pluginInstance: bot,
       });
-      logger.info(`已添加 Bot 连接：${adapterID}`);
+      logger.info(`已添加 Bot 连接：${botID}`);
     } else {
       throw new Error(
         `不支持的适配器类型 (可能版本太低了吧？): ${String(adapterType)}`,
@@ -172,25 +195,25 @@ class ChatBridge {
   /**
    * 获取 Bot 连接数据
    */
-  public getConnectionData(adapterID: number): BotConnection | undefined {
-    return this.connectionMap.get(adapterID);
+  public getConnectionData(botID: number): BotConnection | undefined {
+    return this.connectionMap.get(botID);
   }
 
   /**
    * 检查 Bot 是否在线
    */
-  public isOnline(adapterID: number): boolean {
-    const bot = this.findBot(adapterID);
+  public isOnline(botID: number): boolean {
+    const bot = this.findBot(botID);
     return bot.status === 1;
   }
 
   /**
    * 查找 Bot 实例
    */
-  public findBot(adapterID: number): (typeof this.app.bots)[0] {
-    const connection = this.connectionMap.get(adapterID);
+  public findBot(botID: number): (typeof this.app.bots)[0] {
+    const connection = this.connectionMap.get(botID);
     if (!connection) {
-      throw new Error(`找不到 Bot 连接：${adapterID}`);
+      throw new Error(`找不到 Bot 连接：${botID}`);
     }
     let bot: (typeof this.app.bots)[0] | undefined;
 
@@ -267,6 +290,31 @@ class ChatBridge {
         `[MessageRouter] 发送消息失败`,
       );
     }
+  }
+
+  /**
+   * 修改群成员名片
+   */
+  public async setGroupCard(
+    botID: number,
+    groupId: number,
+    userId: number,
+    card: string,
+  ): Promise<void> {
+    const connection = this.getConnectionData(botID);
+    if (!connection) {
+      throw new Error(`找不到 Bot 连接：${botID}`);
+    }
+
+    const handler = this.setGroupCardHandlers[connection.adapterType];
+    if (!handler) {
+      throw new Error(
+        `当前适配器不支持修改群名片：${String(connection.adapterType)}`,
+      );
+    }
+
+    const bot = this.findBot(botID);
+    await handler({ bot, card, groupId, userId });
   }
 }
 

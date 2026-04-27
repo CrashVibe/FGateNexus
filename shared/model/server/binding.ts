@@ -15,6 +15,12 @@ export enum CODE_MODES {
 export const BindingConfigSchema = z.object({
   allowGroupUnbind: z.boolean().default(true),
   allowUnbind: z.boolean().default(true),
+  autoRenameEnabled: z.boolean().default(false),
+  autoRenameNameTemplate: z
+    .string()
+    .min(1, "改名模板不能为空")
+    .max(32, "改名模板长度不能超过 32 个字符")
+    .default("{socialNickname}"),
   bindFailMsg: z
     .string()
     .max(200, "绑定失败消息长度不能超过 200 个字符")

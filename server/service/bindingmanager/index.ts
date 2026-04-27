@@ -3,8 +3,10 @@ import type { Session } from "koishi";
 import { db } from "~~/server/db/client";
 import { players, servers, socialAccounts, targets } from "~~/server/db/schema";
 import type { BotConnection } from "~~/server/service/chatbridge";
+import { chatBridge } from "~~/server/service/chatbridge";
 import {
   renderBindFail,
+  renderBindRenameName,
   renderBindSuccess,
   renderUnbindFail,
   renderUnbindKick,
@@ -193,9 +195,11 @@ export class BindingService {
         try {
           await BindingService.performBinding(
             binding,
+            ctx,
             platform,
             userId,
             ctx.username,
+            bindingConfig,
           );
           // 删除已处理的 pending binding
           bindings.delete(binding);
@@ -229,9 +233,11 @@ export class BindingService {
 
   public static async performBinding(
     pendingBinding: PendingBinding,
+    ctx: Session,
     adapterType: AdapterType,
     socialUid: string,
     socialNickname: string | null,
+    bindingConfig: Awaited<ReturnType<typeof getConfig>>,
   ): Promise<void> {
     let socialAccount = await db.query.socialAccounts.findFirst({
       where: and(
@@ -266,6 +272,70 @@ export class BindingService {
 
     if (!updatedPlayer) {
       throw new Error(`Player with UUID ${pendingBinding.playerUID} not found`);
+    }
+
+    // 这个不着急所以放在最后
+    await BindingService.performAutoRename(
+      pendingBinding,
+      ctx,
+      adapterType,
+      socialUid,
+      socialNickname,
+      updatedPlayer.name,
+      bindingConfig,
+    );
+  }
+
+  private static async performAutoRename(
+    pendingBinding: PendingBinding,
+    ctx: Session,
+    adapterType: AdapterType,
+    socialUid: string,
+    socialNickname: string | null,
+    playerName: string,
+    bindingConfig: Awaited<ReturnType<typeof getConfig>>,
+  ): Promise<void> {
+    if (!bindingConfig.autoRenameEnabled) {
+      return;
+    }
+
+    const resolvedNickname = socialNickname?.trim() ?? socialUid;
+    const newName = renderBindRenameName(bindingConfig.autoRenameNameTemplate, {
+      platform: adapterType,
+      playerName,
+      socialNickname: resolvedNickname,
+      socialUid,
+    }).trim();
+
+    if (newName.length === 0) {
+      logger.warn("自动改名失败：改名模板渲染结果为空");
+      return;
+    }
+
+    const guildId = ctx.guildId?.trim();
+    if (!guildId) {
+      logger.warn("自动改名失败：当前消息不在群聊上下文");
+      return;
+    }
+
+    const guildNumber = Number(guildId);
+    const userNumber = Number(socialUid);
+    if (!Number.isFinite(guildNumber) || !Number.isFinite(userNumber)) {
+      logger.warn("自动改名失败：群组 ID 或用户 ID 非法");
+      return;
+    }
+
+    try {
+      await chatBridge.setGroupCard(
+        pendingBinding.botID,
+        guildNumber,
+        userNumber,
+        newName,
+      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.warn({ errorMessage }, "自动改名失败：调用群名片接口失败");
     }
   }
 

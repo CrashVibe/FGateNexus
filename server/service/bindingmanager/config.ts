@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
 
+import { BindingConfigSchema } from "#shared/model/server/binding";
 import type { BindingConfig } from "#shared/model/server/binding";
 
 export const getConfig = async (serverId: number): Promise<BindingConfig> => {
@@ -12,5 +13,5 @@ export const getConfig = async (serverId: number): Promise<BindingConfig> => {
     throw new Error("Server not found");
   }
 
-  return result.bindingConfig;
+  return BindingConfigSchema.parse(result.bindingConfig);
 };
