@@ -65,9 +65,6 @@ export default defineNuxtConfig({
     preset: "bun",
     serveStatic: "inline",
   },
-  routeRules: {
-    "/": { prerender: true },
-  },
   runtimeConfig: {
     public: {
       commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH,

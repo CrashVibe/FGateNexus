@@ -18,6 +18,11 @@ export default defineNuxtModule({
     name: "graceful-shutdown-dev",
   },
   async setup(_options, nuxt) {
+    // dev only
+    if (!nuxt.options.dev) {
+      return;
+    }
+
     process.stdin.resume();
     readline.emitKeypressEvents(process.stdin);
     process.stdin.setRawMode(true);
