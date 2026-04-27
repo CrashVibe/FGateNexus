@@ -134,11 +134,11 @@
               class="grid gap-4"
               :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
             >
-              <UPageCard variant="outline">
-                <template #title>绑定反馈</template>
-                <template #description>
-                  <span class="text-muted text-sm">绑定成功/失败时的消息</span>
-                </template>
+              <UPageCard
+                variant="outline"
+                title="绑定反馈"
+                description="绑定成功/失败时的消息"
+              >
                 <template #default>
                   <div class="flex flex-col gap-4">
                     <UFormField name="bindSuccessMsg" label="绑定成功">

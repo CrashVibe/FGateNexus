@@ -13,51 +13,45 @@
             class="grid gap-4"
             :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
           >
-            <UPageCard variant="outline">
-              <template #title>基础操作</template>
-              <template #description>
-                <span class="text-muted text-sm">危险操作，请谨慎</span>
-              </template>
-              <template #footer>
-                <UButton
-                  color="error"
-                  variant="subtle"
-                  icon="i-lucide-trash-2"
-                  @click="showDeleteModal = true"
-                  >删除服务器</UButton
-                >
-              </template>
+            <UPageCard
+              variant="outline"
+              title="基础操作"
+              description="危险操作，请谨慎"
+            >
+              <UButton
+                color="error"
+                variant="subtle"
+                icon="i-lucide-trash-2"
+                @click="showDeleteModal = true"
+                >删除服务器
+              </UButton>
             </UPageCard>
 
-            <UPageCard variant="outline">
-              <template #title>Bot 实例</template>
-              <template #description>
-                <span class="text-muted text-sm"
-                  >为此服务器绑定一个 Bot 实例</span
-                >
-              </template>
-              <template #footer>
-                <UFormField name="adapterId">
-                  <div class="flex w-full items-center gap-2">
-                    <USelect
-                      v-model="selectedAdapterId"
-                      :items="adapterOptions"
-                      class="flex-1"
-                      searchable
-                      placeholder="请选择 Bot 实例"
-                    />
-                    <UButton
-                      v-if="selectedAdapterId !== undefined"
-                      color="neutral"
-                      variant="ghost"
-                      icon="i-lucide-x"
-                      size="sm"
-                      aria-label="清除选择"
-                      @click="selectedAdapterId = undefined"
-                    />
-                  </div>
-                </UFormField>
-              </template>
+            <UPageCard
+              variant="outline"
+              title="Bot 实例"
+              description="为此服务器绑定一个 Bot 实例"
+            >
+              <UFormField name="adapterId">
+                <div class="flex w-full items-center gap-2">
+                  <USelect
+                    v-model="selectedAdapterId"
+                    :items="adapterOptions"
+                    class="flex-1"
+                    searchable
+                    placeholder="请选择 Bot 实例"
+                  />
+                  <UButton
+                    v-if="selectedAdapterId !== undefined"
+                    color="neutral"
+                    variant="ghost"
+                    icon="i-lucide-x"
+                    size="sm"
+                    aria-label="清除选择"
+                    @click="selectedAdapterId = undefined"
+                  />
+                </div>
+              </UFormField>
             </UPageCard>
           </div>
 

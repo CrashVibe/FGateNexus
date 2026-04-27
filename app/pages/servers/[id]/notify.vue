@@ -11,13 +11,12 @@
         <UContainer class="py-8">
           <div class="mb-4" :class="isMobile ? 'columns-1' : 'columns-2'">
             <!-- 玩家进出事件 -->
-            <UPageCard variant="outline" class="mb-4 break-inside-avoid">
-              <template #title>玩家进出事件</template>
-              <template #description>
-                <span class="text-muted text-sm"
-                  >玩家加入/离开服务器时发送通知</span
-                >
-              </template>
+            <UPageCard
+              variant="outline"
+              class="mb-4 break-inside-avoid"
+              title="玩家进出事件"
+              description="玩家加入/离开服务器时发送通知"
+            >
               <template #footer>
                 <div class="flex flex-col gap-4">
                   <UFormField name="player_notify" label="是否启用">
@@ -130,11 +129,12 @@
             </UPageCard>
 
             <!-- 死亡事件 -->
-            <UPageCard variant="outline" class="mb-4 break-inside-avoid">
-              <template #title>死亡事件</template>
-              <template #description>
-                <span class="text-muted text-sm">玩家死亡时发送通知</span>
-              </template>
+            <UPageCard
+              variant="outline"
+              class="mb-4 break-inside-avoid"
+              title="死亡事件"
+              description="玩家死亡时发送通知"
+            >
               <template #footer>
                 <div class="flex flex-col gap-4">
                   <UFormField name="player_disappoint_notify" label="是否启用">
@@ -199,12 +199,13 @@
             </UPageCard>
 
             <!-- 配置群聊 -->
-            <UPageCard variant="outline" class="mb-4 break-inside-avoid">
-              <template #title>配置群聊</template>
-              <template #description>
-                <span class="text-muted text-sm">单独对目标进行配置</span>
-              </template>
-              <template #footer>
+            <UPageCard
+              variant="outline"
+              class="mb-4 break-inside-avoid"
+              title="配置群聊"
+              description="单独对目标进行配置"
+            >
+              <template #default>
                 <UDropdownMenu
                   v-if="options.length"
                   :items="

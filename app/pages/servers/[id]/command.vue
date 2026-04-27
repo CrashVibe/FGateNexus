@@ -13,72 +13,67 @@
             class="grid gap-4"
             :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
           >
-            <UPageCard variant="outline">
-              <template #title>基础设置</template>
-              <template #footer>
-                <UFormField
-                  label="图片渲染"
-                  description="将指令返回结果的颜色代码转换为图片后发送"
-                >
-                  <USwitch v-model="formData.config.imageRender" />
-                </UFormField>
-                <UAlert
-                  v-if="currentConfig.executablePath === null"
-                  color="warning"
-                  variant="subtle"
-                  icon="i-lucide-info"
-                  class="mt-2"
-                >
-                  <template #description>
-                    <UButton
-                      variant="link"
-                      color="warning"
-                      size="sm"
-                      class="p-0"
-                      @click="router.push('/settings/browser')"
-                    >
-                      图片渲染功能需要配置浏览器路径才能使用（去配置）
-                    </UButton>
-                  </template>
-                </UAlert>
-              </template>
+            <UPageCard variant="outline" title="基础设置">
+              <UFormField
+                label="图片渲染"
+                description="将指令返回结果的颜色代码转换为图片后发送"
+              >
+                <USwitch v-model="formData.config.imageRender" />
+              </UFormField>
+              <UAlert
+                v-if="currentConfig.executablePath === null"
+                color="warning"
+                variant="subtle"
+                icon="i-lucide-info"
+                class="mt-2"
+              >
+                <template #description>
+                  <UButton
+                    variant="link"
+                    color="warning"
+                    size="sm"
+                    class="p-0"
+                    @click="router.push('/settings/browser')"
+                  >
+                    图片渲染功能需要配置浏览器路径才能使用（去配置）
+                  </UButton>
+                </template>
+              </UAlert>
             </UPageCard>
-            <UPageCard variant="outline">
-              <template #title>配置群聊</template>
-              <template #description>
-                <span class="text-muted text-sm">单独对目标进行配置</span>
-              </template>
-              <template #footer>
-                <UDropdownMenu
-                  v-if="options.length"
-                  :items="
-                    options.map((o) => ({
-                      label: o.label,
-                      onSelect: () => handleSelect(o.key),
-                    }))
-                  "
-                >
-                  <UButton icon="i-lucide-settings-2">配置目标</UButton>
-                </UDropdownMenu>
-                <UAlert
-                  v-else
-                  color="warning"
-                  variant="subtle"
-                  icon="i-lucide-triangle-alert"
-                >
-                  <template #description>
-                    <UButton
-                      variant="link"
-                      color="warning"
-                      size="sm"
-                      class="p-0"
-                      @click="router.push(`/servers/${route.params.id}/target`)"
-                    >
-                      你还没有创建目标哦（去创建）
-                    </UButton>
-                  </template>
-                </UAlert>
-              </template>
+            <UPageCard
+              variant="outline"
+              title="配置群聊"
+              description="单独对目标进行配置"
+            >
+              <UDropdownMenu
+                v-if="options.length"
+                :items="
+                  options.map((o) => ({
+                    label: o.label,
+                    onSelect: () => handleSelect(o.key),
+                  }))
+                "
+              >
+                <UButton icon="i-lucide-settings-2">配置目标</UButton>
+              </UDropdownMenu>
+              <UAlert
+                v-else
+                color="warning"
+                variant="subtle"
+                icon="i-lucide-triangle-alert"
+              >
+                <template #description>
+                  <UButton
+                    variant="link"
+                    color="warning"
+                    size="sm"
+                    class="p-0"
+                    @click="router.push(`/servers/${route.params.id}/target`)"
+                  >
+                    你还没有创建目标哦（去创建）
+                  </UButton>
+                </template>
+              </UAlert>
             </UPageCard>
           </div>
 

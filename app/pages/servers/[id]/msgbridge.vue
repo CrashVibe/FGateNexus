@@ -45,7 +45,7 @@
                     >控制聊天同步功能的启用状态及消息方向</span
                   >
                 </template>
-                <template #footer>
+                <template #default>
                   <div class="flex flex-col gap-4">
                     <UFormField name="enabled" label="启用聊天同步">
                       <USwitch v-model="formData.config.enabled" />
@@ -78,8 +78,7 @@
               </UPageCard>
 
               <!-- 消息过滤 -->
-              <UPageCard variant="outline">
-                <template #title>消息过滤</template>
+              <UPageCard variant="outline" title="消息过滤">
                 <template #description>
                   <span class="text-muted text-sm"
                     >配置消息长度限制和内容过滤规则</span
@@ -250,7 +249,10 @@
               </UPageCard>
 
               <!-- 平台 → MC 模板 -->
-              <UPageCard variant="outline">
+              <UPageCard
+                variant="outline"
+                description="平台消息发送到 Minecraft 时的格式"
+              >
                 <template #title>
                   <div class="flex items-center gap-2">
                     <span>平台 → MC 模板</span>
@@ -258,11 +260,6 @@
                       >平台到游戏</UBadge
                     >
                   </div>
-                </template>
-                <template #description>
-                  <span class="text-muted text-sm"
-                    >平台消息发送到 Minecraft 时的格式</span
-                  >
                 </template>
                 <template #footer>
                   <UFormField name="platformToMcTemplate" label="模板内容">
