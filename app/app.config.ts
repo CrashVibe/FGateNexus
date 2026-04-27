@@ -59,7 +59,8 @@ export default defineAppConfig({
     },
     pageCard: {
       slots: {
-        wrapper: "items-stretch",
+        container: "lg:block",
+        wrapper: "items-stretch flex-none mb-3",
       },
     },
     pinInput: {

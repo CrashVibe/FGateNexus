@@ -15,7 +15,10 @@ export default defineNuxtConfig({
           type: "image/x-icon",
         },
       ],
-      meta: [{ content: "noindex, nofollow, noarchive", name: "robots" }],
+      meta: [
+        { content: "width=device-width, initial-scale=1", name: "viewport" },
+        { content: "noindex, nofollow, noarchive", name: "robots" },
+      ],
       title: "FlowGate Nexus",
     },
     pageTransition: {
@@ -62,6 +65,9 @@ export default defineNuxtConfig({
     preset: "bun",
     serveStatic: "inline",
   },
+  routeRules: {
+    "/": { prerender: true },
+  },
   runtimeConfig: {
     public: {
       commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH,
@@ -80,6 +86,7 @@ export default defineNuxtConfig({
         allowImportingTsExtensions: true,
         esModuleInterop: true,
         resolveJsonModule: true,
+        skipLibCheck: true,
         strictNullChecks: true,
         types: ["bun-types", "node"],
       },
@@ -130,7 +137,6 @@ export default defineNuxtConfig({
       include: [
         "@vue/devtools-core",
         "@vue/devtools-kit",
-        "@vicons/ionicons5",
         "@tanstack/vue-table",
         "vooks",
         "uuid",
@@ -141,6 +147,7 @@ export default defineNuxtConfig({
         "lodash-es",
         "nanoid",
         "dayjs",
+        "vue-qrcode-reader",
       ],
     },
     plugins: [
