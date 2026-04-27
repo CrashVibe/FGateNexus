@@ -1,13 +1,13 @@
 import { zxcvbn, zxcvbnOptions } from "@zxcvbn-ts/core";
-import * as zxcvbnCommonPackage from "@zxcvbn-ts/language-common";
+import { adjacencyGraphs, dictionary } from "@zxcvbn-ts/language-common";
 
 import translations from "./translations";
 
 const options = {
   dictionary: {
-    ...zxcvbnCommonPackage.dictionary,
+    ...dictionary,
   },
-  graphs: zxcvbnCommonPackage.adjacencyGraphs,
+  graphs: adjacencyGraphs,
   translations,
 };
 zxcvbnOptions.setOptions(options);
