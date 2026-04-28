@@ -121,8 +121,8 @@ const handlePlatformCommand = async (
   const roles = session.event.member?.roles ?? [];
   const hasPermission = roles.some(
     (r) =>
-      r.name &&
-      commandTarget.config.CommandConfigSchema.permissions.includes(r.name),
+      r.id &&
+      commandTarget.config.CommandConfigSchema.permissions.includes(r.id),
   );
 
   if (!hasPermission) {
