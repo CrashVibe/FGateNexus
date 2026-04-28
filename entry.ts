@@ -2,10 +2,14 @@ import { Database } from "bun:sqlite";
 import { createHash } from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import readline from "node:readline/promises";
 
 import type { MigrationMeta } from "drizzle-orm/migrator";
 
 import { configManager } from "./server/utils/config";
+
+const execDir = path.dirname(path.resolve(process.execPath));
+process.chdir(execDir);
 
 const MIGRATIONS_TABLE = "__drizzle_migrations";
 
@@ -39,10 +43,6 @@ const applyMigrations = (sqliteDb: Database, migrations: MigrationMeta[]) => {
   })();
 };
 
-const execDir = path.dirname(path.resolve(process.execPath));
-process.chdir(execDir);
-console.info("工作目录在", process.cwd());
-
 const initDatabase = async () => {
   const dbFilePath = path.resolve("./sqlite.db");
   const isNewDatabase = await fs
@@ -61,7 +61,6 @@ const initDatabase = async () => {
   try {
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const { embeddedJournal, embeddedSqlFiles } =
-      // @ts-expect-error - This module is generated during build
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       (await import("./.output/server/migrations/embedded.js")) as {
         embeddedJournal: {
@@ -93,9 +92,38 @@ const startApplication = async () => {
   try {
     await initDatabase();
     const { config } = configManager;
+    let sentryEnabled = config.sentry.enabled;
+
+    if (
+      process.stdin.isTTY &&
+      process.stdout.isTTY &&
+      config.sentry.enabled === null
+    ) {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      const answer = await rl.question(
+        "是否启用 Sentry 统计并将错误报告发送给 CrashVibe 团队？(y/N) ",
+      );
+      rl.close();
+      sentryEnabled = answer.trim().toLowerCase().startsWith("y");
+
+      if (config.sentry.enabled !== sentryEnabled) {
+        configManager.updateConfig({
+          sentry: {
+            ...config.sentry,
+            enabled: sentryEnabled,
+          },
+        });
+      }
+    }
+
     process.env.NITRO_HOST = config.nitro.host;
     process.env.NITRO_PORT = String(config.nitro.port);
-    // @ts-expect-error - This module is generated during build
+    process.env.SENTRY_ENABLED = String(config.sentry.enabled);
+    process.env.SENTRY_INSTANCE_ID = config.sentry.instanceId;
+    await import("./.output/server/sentry.server.config.mjs");
     await import("./.output/server/index.mjs");
   } catch (error) {
     console.error("应用启动失败：", error);

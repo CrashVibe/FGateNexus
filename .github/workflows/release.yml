@@ -37,6 +37,11 @@ jobs:
 
       - name: Build for All Platforms
         run: bun run build:all
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_URL: ${{ secrets.SENTRY_URL }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_RELEASE: v${{ steps.package_version.outputs.version }}
 
       - name: Archive artifacts with version
         run: |

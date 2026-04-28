@@ -49,6 +49,7 @@ export default defineNuxtConfig({
     "@nuxt/ui",
     "@nuxt/icon",
     "nuxt-qrcode",
+    "@sentry/nuxt/module",
   ],
   nitro: {
     compressPublicAssets: true,
@@ -63,17 +64,28 @@ export default defineNuxtConfig({
     minify: true,
     node: true,
     preset: "bun",
-    serveStatic: "inline",
   },
   runtimeConfig: {
     public: {
-      commitHash: process.env.NUXT_PUBLIC_COMMIT_HASH,
       isDev,
+      sentry: {
+        dsn: process.env.SENTRY_DSN,
+        enabled: !isDev,
+        release: process.env.SENTRY_RELEASE ?? "development",
+      },
+    },
+  },
+  sentry: {
+    enabled: !isDev,
+    org: "crashvibe",
+    project: "flowgate",
+    release: {
+      name: process.env.SENTRY_RELEASE ?? "development",
     },
   },
   sourcemap: {
-    client: isDev,
-    server: isDev,
+    client: true,
+    server: true,
   },
   ssr: false,
   typescript: {
@@ -93,6 +105,8 @@ export default defineNuxtConfig({
         "../eslint.config.ts",
         "../oxlint.config.ts",
         "../oxfmt.config.ts",
+        "../sentry.server.config.ts",
+        "../sentry.client.config.ts",
       ],
     },
   },
@@ -124,7 +138,6 @@ export default defineNuxtConfig({
           },
         },
       },
-      sourcemap: isDev,
       target: "esnext",
     },
     optimizeDeps: {

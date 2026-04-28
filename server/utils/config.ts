@@ -2,10 +2,14 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
 import { logger } from "./logger";
 import { applyDefaults } from "./zod";
+
+const execDir = path.dirname(path.resolve(process.execPath));
+process.chdir(execDir);
 
 const AppConfigSchema = z.object({
   browser: z
@@ -33,6 +37,18 @@ const AppConfigSchema = z.object({
     .default({
       host: "127.0.0.1",
       port: 3000,
+    }),
+  sentry: z
+    .object({
+      enabled: z.boolean().nullable().default(null),
+      instanceId: z
+        .string()
+        .nonempty("sentry.instanceId 不能为空")
+        .default(uuidv4()),
+    })
+    .default({
+      enabled: null,
+      instanceId: uuidv4(),
     }),
   session: z
     .object({
