@@ -7,7 +7,7 @@
       "dependencies": {
         "@koishijs/plugin-http": "^0.6.3",
         "@koishijs/plugin-server": "^3.2.9",
-        "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.8",
+        "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.10",
         "@nuxt/icon": "2.2.1",
         "@nuxt/ui": "^4.7.0",
         "@pinia/nuxt": "^0.11.3",
@@ -283,7 +283,7 @@
 
     "@mapbox/node-pre-gyp": ["@mapbox/node-pre-gyp@2.0.3", "", { "dependencies": { "consola": "^3.2.3", "detect-libc": "^2.0.0", "https-proxy-agent": "^7.0.5", "node-fetch": "^2.6.7", "nopt": "^8.0.0", "semver": "^7.5.3", "tar": "^7.4.0" }, "bin": { "node-pre-gyp": "bin/node-pre-gyp" } }, "sha512-uwPAhccfFJlsfCxMYTwOdVfOz3xqyj8xYL3zJj8f0pb30tLohnnFPhLuqp4/qoEz8sNxe4SESZedcBojRefIzg=="],
 
-    "@mrlingxd/koishi-plugin-adapter-onebot": ["@mrlingxd/koishi-plugin-adapter-onebot@0.2.8", "", { "dependencies": { "qface": "^1.4.1" }, "peerDependencies": { "koishi": "^4.18.6" } }, "sha512-pV654hycEww9hgQFpaM/SaAtKn+1/wlKpduBPmfm0gn3hIpHwEUO4gW/K1hGi+9afB8myr89CGQYs0DrkAxevw=="],
+    "@mrlingxd/koishi-plugin-adapter-onebot": ["@mrlingxd/koishi-plugin-adapter-onebot@0.2.10", "", { "dependencies": { "qface": "^1.4.1" }, "peerDependencies": { "koishi": "^4.18.11" } }, "sha512-kfH8zwZn2TNdZ4CMhKKbpjFx14s9CFb1mzQRIkL9O/rQL/Zg3Hjl/tZsPSVA9fXYR1E1yXYojlloQWymnKP+4g=="],
 
     "@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.1.4", "", { "dependencies": { "@tybys/wasm-util": "^0.10.1" }, "peerDependencies": { "@emnapi/core": "^1.7.1", "@emnapi/runtime": "^1.7.1" } }, "sha512-3NQNNgA1YSlJb/kMH1ildASP9HW7/7kYnRI2szWJaofaS1hWmbGI4H+d3+22aGzXXN9IJ+n+GiFVcGipJP18ow=="],
 
