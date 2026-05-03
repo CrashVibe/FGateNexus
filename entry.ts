@@ -12,6 +12,36 @@ const execDir = path.dirname(path.resolve(process.execPath));
 process.chdir(execDir);
 
 const MIGRATIONS_TABLE = "__drizzle_migrations";
+const DB_DIR = "data";
+const DB_PATH = path.join(DB_DIR, "sqlite.db");
+const LEGACY_PATH = "sqlite.db";
+
+const prepareDatabase = async (): Promise<void> => {
+  await fs.mkdir(DB_DIR, { recursive: true });
+
+  const [legacyExists, newExists] = await Promise.all([
+    fs
+      .access(LEGACY_PATH)
+      .then(() => true)
+      .catch(() => false),
+    fs
+      .access(DB_PATH)
+      .then(() => true)
+      .catch(() => false),
+  ]);
+
+  if (legacyExists && newExists) {
+    console.warn(
+      `检测到根目录和 ${DB_DIR} 目录下同时存在数据库，将继续使用 ${DB_PATH}。如有需要，请手动将 ${LEGACY_PATH} 覆盖到 ${DB_PATH}，或删除 ${DB_PATH} 后重启。`,
+    );
+    return;
+  }
+
+  if (legacyExists) {
+    await fs.rename(LEGACY_PATH, DB_PATH);
+    console.info(`发现老地方还有数据库，已经帮你搬到 ${DB_PATH} 了，放心吧。`);
+  }
+};
 
 const applyMigrations = (sqliteDb: Database, migrations: MigrationMeta[]) => {
   sqliteDb
@@ -44,13 +74,14 @@ const applyMigrations = (sqliteDb: Database, migrations: MigrationMeta[]) => {
 };
 
 const initDatabase = async () => {
-  const dbFilePath = path.resolve("./sqlite.db");
+  await prepareDatabase();
+
   const isNewDatabase = await fs
-    .access(dbFilePath)
+    .access(DB_PATH)
     .then(() => false)
     .catch(() => true);
 
-  const client = new Database(dbFilePath);
+  const client = new Database(DB_PATH);
 
   if (isNewDatabase) {
     console.info("数据库不存在，正在初始化...");
@@ -59,9 +90,7 @@ const initDatabase = async () => {
   }
 
   try {
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const { embeddedJournal, embeddedSqlFiles } =
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       (await import("./.output/server/migrations/embedded.js")) as {
         embeddedJournal: {
           entries: { tag: string; when: number; breakpoints: boolean }[];

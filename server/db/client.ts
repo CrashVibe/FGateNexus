@@ -1,3 +1,5 @@
+import * as path from "node:path";
+
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import type { BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
 
@@ -7,12 +9,15 @@ type DatabaseInstance =
   | BetterSQLite3Database<typeof schema>
   | BunSQLiteDatabase<typeof schema>;
 
+const DB_DIR = "data";
+const DB_PATH = path.join(DB_DIR, "sqlite.db");
+
 const createDatabaseInstance = async (): Promise<DatabaseInstance> => {
   if (typeof Bun !== "undefined") {
     const { Database } = await import("bun:sqlite");
     const { drizzle } = await import("drizzle-orm/bun-sqlite");
 
-    const sqlite = new Database("sqlite.db");
+    const sqlite = new Database(DB_PATH);
     sqlite.run("PRAGMA journal_mode = WAL;");
     sqlite.run("PRAGMA synchronous = NORMAL;");
     sqlite.run("PRAGMA foreign_keys = ON;");
@@ -21,11 +26,12 @@ const createDatabaseInstance = async (): Promise<DatabaseInstance> => {
     sqlite.run("PRAGMA temp_store = MEMORY;");
     return drizzle(sqlite, { schema });
   }
+
   const betterSqlite3Module = await import("better-sqlite3");
   const Database = betterSqlite3Module.default;
   const { drizzle } = await import("drizzle-orm/better-sqlite3");
 
-  const sqlite = new Database("sqlite.db");
+  const sqlite = new Database(DB_PATH);
   sqlite.pragma("journal_mode = WAL");
   sqlite.pragma("synchronous = NORMAL");
   sqlite.pragma("foreign_keys = ON");
