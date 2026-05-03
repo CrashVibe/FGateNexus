@@ -23,6 +23,17 @@ export const LoginAPI = {
   },
 } satisfies ApiSchemaRegistry;
 
+export const PasswordAPI = {
+  POST: {
+    description: "设置密码",
+    request: z.object({
+      currentPassword: z.string().optional(),
+      newPassword: z.string().min(8, "新密码至少 8 位"),
+    }),
+    response: z.object({}),
+  },
+} satisfies ApiSchemaRegistry;
+
 export type LoginBody = z.infer<typeof LoginAPI.POST.request>;
 
 /**

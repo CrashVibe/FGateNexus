@@ -4,7 +4,6 @@ import * as path from "node:path";
 import type { InstalledBrowser } from "@puppeteer/browsers";
 import {
   Browser,
-  BrowserPlatform,
   detectBrowserPlatform,
   getInstalledBrowsers,
   install,
@@ -49,6 +48,25 @@ const state: DownloadState = {
 
 let abortController: AbortController | null = null;
 
+const resetState = (): void => {
+  Object.assign(state, {
+    buildId: "",
+    downloadedBytes: 0,
+    error: undefined,
+    executablePath: undefined,
+    platform: "",
+    status: "idle",
+    totalBytes: 0,
+  });
+};
+
+const classifyNetworkError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return "网络问题，请稍后重试";
+};
+
 const getInstalledChromes = async (): Promise<InstalledBrowser[]> => {
   if (!fs.existsSync(BROWSER_CACHE_DIR)) {
     return [];
@@ -77,7 +95,11 @@ export const checkChromiumUpdate = async (): Promise<{
   hasUpdate: boolean;
   latestBuildId: string;
 }> => {
-  const platform = detectBrowserPlatform() ?? BrowserPlatform.LINUX;
+  const platform = detectBrowserPlatform();
+  if (!platform) {
+    throw new Error("无法检测当前平台");
+  }
+
   const [latestBuildId, chromes] = await Promise.all([
     resolveBuildId(Browser.CHROME, platform, "latest"),
     getInstalledChromes(),
@@ -99,11 +121,13 @@ export const getEnrichedDownloadState = async (): Promise<
   if (state.status !== "idle") {
     return { ...state };
   }
+
   const chromes = await getInstalledChromes();
   const [latest] = chromes;
   if (!latest) {
     return { ...state };
   }
+
   return {
     buildId: latest.buildId,
     downloadedBytes: 0,
@@ -122,45 +146,60 @@ export const startChromiumDownload = async (): Promise<void> => {
   abortController = new AbortController();
   const { signal } = abortController;
 
-  Object.assign(state, {
-    buildId: "",
-    downloadedBytes: 0,
-    error: undefined,
-    executablePath: undefined,
-    platform: "",
-    status: "resolving",
-    totalBytes: 0,
-  });
+  resetState();
+  state.status = "resolving";
 
   try {
-    const platform = detectBrowserPlatform() ?? BrowserPlatform.LINUX;
+    const platform = detectBrowserPlatform();
+    if (!platform) {
+      throw new Error("无法检测当前平台");
+    }
     state.platform = platform;
 
-    const buildId = await resolveBuildId(Browser.CHROME, platform, "latest");
+    let buildId: string;
+    try {
+      buildId = await resolveBuildId(Browser.CHROME, platform, "latest");
+    } catch (error) {
+      throw new Error(`获取最新版本号失败：${classifyNetworkError(error)}`, {
+        cause: error,
+      });
+    }
+
+    if (signal.aborted) {
+      state.status = "idle";
+      return;
+    }
+
     state.buildId = buildId;
     state.status = "downloading";
     logger.info(`开始下载 Chromium buildId=${buildId} platform=${platform}`);
 
     await fs.promises.mkdir(BROWSER_CACHE_DIR, { recursive: true });
 
-    const installed = await install({
-      browser: Browser.CHROME,
-      buildId,
-      cacheDir: BROWSER_CACHE_DIR,
-      downloadProgressCallback: (downloaded, total) => {
-        state.downloadedBytes = downloaded;
-        state.totalBytes = total;
-        // 进度达到 100% 后进入解压阶段
-        if (
-          total > 0 &&
-          downloaded >= total &&
-          state.status === "downloading"
-        ) {
-          state.status = "unpacking";
-        }
-      },
-      platform,
-    });
+    let installed: InstalledBrowser;
+    try {
+      installed = await install({
+        browser: Browser.CHROME,
+        buildId,
+        cacheDir: BROWSER_CACHE_DIR,
+        downloadProgressCallback: (downloaded, total) => {
+          state.downloadedBytes = downloaded;
+          state.totalBytes = total;
+          if (
+            total > 0 &&
+            downloaded >= total &&
+            state.status === "downloading"
+          ) {
+            state.status = "unpacking";
+          }
+        },
+        platform,
+      });
+    } catch (error) {
+      throw new Error(`下载 Chromium 失败：${classifyNetworkError(error)}`, {
+        cause: error,
+      });
+    }
 
     if (signal.aborted) {
       state.status = "idle";
@@ -170,6 +209,7 @@ export const startChromiumDownload = async (): Promise<void> => {
     state.status = "done";
     state.executablePath = installed.executablePath;
     logger.info(`Chromium 安装完成：${installed.executablePath}`);
+
     try {
       await imageRenderer.start();
     } catch (error) {
@@ -190,5 +230,5 @@ export const startChromiumDownload = async (): Promise<void> => {
 export const cancelDownload = (): void => {
   abortController?.abort();
   abortController = null;
-  state.status = "idle";
+  resetState();
 };

@@ -1,18 +1,13 @@
 import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
-import { z } from "zod";
 import { db } from "~~/server/db/client";
 import { users } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
+import { PasswordAPI } from "#shared/model/auth";
 import { ApiError, createErrorResponse } from "#shared/model/error";
 import { validatePasswordStrength } from "#shared/utils/password";
-
-const bodySchema = z.object({
-  currentPassword: z.string().optional(),
-  newPassword: z.string().min(1, "新密码不能为空"),
-});
 
 export default defineEventHandler(async (event) => {
   try {
@@ -33,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
     const { currentPassword, newPassword } = await readValidatedBody(
       event,
-      async (body) => bodySchema.parseAsync(body),
+      async (body) => PasswordAPI.POST.request.parseAsync(body),
     );
 
     // 密码强度验证

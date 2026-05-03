@@ -1,11 +1,14 @@
 <script lang="ts" setup>
 import { FetchError } from "ofetch";
+import { z } from "zod";
 
 import type { ApiResponse } from "#shared/model";
+import { PasswordAPI } from "#shared/model/auth";
 import type { ApiErrorResponse } from "#shared/model/error";
 import { validatePasswordStrength } from "#shared/utils/password";
 
-const { checkAuthStatus } = useAuthStore();
+const authStore = useAuthStore();
+const { checkAuthStatus } = authStore;
 const toast = useToast();
 const isLoading = ref(false);
 
@@ -14,6 +17,29 @@ const passwordForm = reactive({
   currentPassword: "",
   newPassword: "",
 });
+
+const passwordSchema = computed(() =>
+  PasswordAPI.POST.request
+    .extend({
+      confirmPassword: z.string().min(1, "请确认密码"),
+    })
+    .superRefine((data, ctx) => {
+      if (authStore.hasPassword && !data.currentPassword) {
+        ctx.addIssue({
+          code: "custom",
+          message: "请输入当前密码",
+          path: ["currentPassword"],
+        });
+      }
+      if (data.newPassword !== data.confirmPassword) {
+        ctx.addIssue({
+          code: "custom",
+          message: "两次输入的密码不一致",
+          path: ["confirmPassword"],
+        });
+      }
+    }),
+);
 
 const passwordStrength = computed(() => {
   if (!passwordForm.newPassword) {
@@ -56,10 +82,22 @@ const twoFAForm = reactive({
   keyuri: "",
   secret: "",
 });
-const twoFAToken = ref<string[]>([]);
+const twoFAState = reactive({
+  token: [] as string[],
+});
+
+const twoFASchema = z.object({
+  token: z
+    .array(z.string().nonempty("请输入验证码"))
+    .length(6, "请输入 6 位验证码"),
+});
 
 const deletePasswordForm = reactive({
   currentPassword: "",
+});
+
+const deletePasswordSchema = z.object({
+  currentPassword: z.string().nonempty("请输入当前密码"),
 });
 
 const showPasswordForm = ref(false);
@@ -129,7 +167,7 @@ const setup2FA = async () => {
 const verify2FA = async () => {
   try {
     isLoading.value = true;
-    const tokenString = twoFAToken.value.join("");
+    const tokenString = twoFAState.token.join("");
     await $fetch<ApiResponse<void>>("/api/auth/2fa/verify", {
       body: {
         secret: twoFAForm.secret,
@@ -140,7 +178,7 @@ const verify2FA = async () => {
     toast.add({ color: "success", title: "2FA 验证成功" });
     showTwoFASetup.value = false;
     Object.assign(twoFAForm, { keyuri: "", secret: "" });
-    twoFAToken.value = [];
+    twoFAState.token = [];
     await checkAuthStatus();
   } catch (error) {
     console.error("Failed to verify 2FA:", error);
@@ -326,78 +364,84 @@ onMounted(async () => {
     <!-- 密码设置模态框 -->
     <UModal v-model:open="showPasswordForm" title="设置密码">
       <template #body>
-        <div class="flex flex-col gap-3">
-          <UFormField v-if="useAuthStore().hasPassword" label="当前密码">
-            <UInput
-              v-model="passwordForm.currentPassword"
-              type="password"
-              placeholder="输入当前密码"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField label="新密码">
-            <div class="flex w-full flex-col gap-2">
+        <UForm
+          id="password-form"
+          :schema="passwordSchema"
+          :state="passwordForm"
+          @submit="handleSetPassword"
+        >
+          <div class="flex flex-col gap-3">
+            <UFormField
+              v-if="useAuthStore().hasPassword"
+              name="currentPassword"
+              label="当前密码"
+            >
               <UInput
-                v-model="passwordForm.newPassword"
+                v-model="passwordForm.currentPassword"
                 type="password"
-                placeholder="输入新密码（至少8位）"
+                placeholder="输入当前密码"
                 class="w-full"
               />
-              <template v-if="passwordForm.newPassword">
-                <div class="flex items-center gap-2">
-                  <span class="text-muted text-sm">密码强度：</span>
-                  <UBadge :color="strengthColor" variant="subtle" size="sm">{{
-                    strengthText
-                  }}</UBadge>
-                </div>
-                <UProgress
-                  :model-value="
-                    passwordStrength ? (passwordStrength.score / 4) * 100 : 0
-                  "
-                  :color="strengthColor"
-                  size="xs"
+            </UFormField>
+            <UFormField name="newPassword" label="新密码">
+              <div class="flex w-full flex-col gap-2">
+                <UInput
+                  v-model="passwordForm.newPassword"
+                  type="password"
+                  placeholder="输入新密码（至少8位）"
+                  class="w-full"
                 />
-                <UAlert
-                  v-if="passwordStrength && !passwordStrength.isValid"
-                  color="warning"
-                  variant="subtle"
-                  :description="passwordStrength.error"
-                />
-                <div
-                  v-if="passwordStrength?.feedback?.suggestions?.length"
-                  class="flex flex-col gap-0.5"
-                >
-                  <span class="text-muted text-xs">建议：</span>
-                  <span
-                    v-for="(suggestion, index) in passwordStrength.feedback
-                      .suggestions"
-                    :key="index"
-                    class="text-muted text-xs"
-                    >• {{ suggestion }}</span
+                <template v-if="passwordForm.newPassword">
+                  <div class="flex items-center gap-2">
+                    <span class="text-muted text-sm">密码强度：</span>
+                    <UBadge :color="strengthColor" variant="subtle" size="sm">{{
+                      strengthText
+                    }}</UBadge>
+                  </div>
+                  <UProgress
+                    :model-value="
+                      passwordStrength ? (passwordStrength.score / 4) * 100 : 0
+                    "
+                    :color="strengthColor"
+                    size="xs"
+                  />
+                  <div
+                    v-if="passwordStrength?.feedback?.suggestions?.length"
+                    class="flex flex-col gap-0.5"
                   >
-                </div>
-              </template>
-            </div>
-          </UFormField>
-          <UFormField label="确认密码">
-            <UInput
-              v-model="passwordForm.confirmPassword"
-              type="password"
-              placeholder="再次输入新密码"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
+                    <span class="text-muted text-xs">建议：</span>
+                    <span
+                      v-for="(suggestion, index) in passwordStrength.feedback
+                        .suggestions"
+                      :key="index"
+                      class="text-muted text-xs"
+                      >• {{ suggestion }}</span
+                    >
+                  </div>
+                </template>
+              </div>
+            </UFormField>
+            <UFormField name="confirmPassword" label="确认密码">
+              <UInput
+                v-model="passwordForm.confirmPassword"
+                type="password"
+                placeholder="再次输入新密码"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+        </UForm>
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton
+            type="button"
             color="neutral"
             variant="subtle"
             @click="showPasswordForm = false"
             >取消</UButton
           >
-          <UButton @click="handleSetPassword">确认</UButton>
+          <UButton type="submit" form="password-form">确认</UButton>
         </div>
       </template>
     </UModal>
@@ -405,31 +449,44 @@ onMounted(async () => {
     <!-- 2FA 设置模态框 -->
     <UModal v-model:open="showTwoFASetup" title="设置双重验证">
       <template #body>
-        <div class="flex flex-col gap-4">
-          <p class="text-sm">
-            使用你的 TOTP 应用（如 Google Authenticator、Authy
-            等）扫描下方二维码：
-          </p>
-          <div v-if="twoFAForm.keyuri" class="flex justify-center">
-            <Qrcode :height="200" :value="twoFAForm.keyuri" :width="200" />
+        <UForm
+          id="twofa-form"
+          :schema="twoFASchema"
+          :state="twoFAState"
+          @submit="verify2FA"
+        >
+          <div class="flex flex-col gap-4">
+            <p class="text-sm">
+              使用你的 TOTP 应用（如 Google Authenticator、Authy
+              等）扫描下方二维码：
+            </p>
+            <div v-if="twoFAForm.keyuri" class="flex justify-center">
+              <Qrcode :height="200" :value="twoFAForm.keyuri" :width="200" />
+            </div>
+            <p class="text-muted text-sm">
+              或手动输入密钥：{{ twoFAForm.secret }}
+            </p>
+            <UFormField name="token" label="验证码">
+              <UPinInput
+                v-model="twoFAState.token"
+                :length="6"
+                otp
+                placeholder="○"
+              />
+            </UFormField>
           </div>
-          <p class="text-muted text-sm">
-            或手动输入密钥：{{ twoFAForm.secret }}
-          </p>
-          <UFormField label="验证码">
-            <UPinInput v-model="twoFAToken" :length="6" otp placeholder="○" />
-          </UFormField>
-        </div>
+        </UForm>
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton
+            type="button"
             color="neutral"
             variant="subtle"
             @click="showTwoFASetup = false"
             >取消</UButton
           >
-          <UButton @click="verify2FA">验证</UButton>
+          <UButton type="submit" form="twofa-form">验证</UButton>
         </div>
       </template>
     </UModal>
@@ -437,33 +494,41 @@ onMounted(async () => {
     <!-- 删除密码确认模态框 -->
     <UModal v-model:open="showDeletePasswordModal" title="删除密码">
       <template #body>
-        <div class="flex flex-col gap-4">
-          <UAlert
-            color="error"
-            variant="subtle"
-            description="此操作会清除 2FA 设置！"
-            icon="i-lucide-triangle-alert"
-          />
-          <USeparator />
-          <UFormField label="当前密码" required>
-            <UInput
-              v-model="deletePasswordForm.currentPassword"
-              type="password"
-              placeholder="输入当前密码以确认"
-              class="w-full"
+        <UForm
+          id="delete-password-form"
+          :schema="deletePasswordSchema"
+          :state="deletePasswordForm"
+          @submit="confirmDeletePassword"
+        >
+          <div class="flex flex-col gap-4">
+            <UAlert
+              color="error"
+              variant="subtle"
+              description="此操作会清除 2FA 设置！"
+              icon="i-lucide-triangle-alert"
             />
-          </UFormField>
-        </div>
+            <USeparator />
+            <UFormField name="currentPassword" label="当前密码" required>
+              <UInput
+                v-model="deletePasswordForm.currentPassword"
+                type="password"
+                placeholder="输入当前密码以确认"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+        </UForm>
       </template>
       <template #footer>
         <div class="flex justify-end gap-2">
           <UButton
+            type="button"
             color="neutral"
             variant="subtle"
             @click="showDeletePasswordModal = false"
             >点戳了~</UButton
           >
-          <UButton color="error" @click="confirmDeletePassword"
+          <UButton type="submit" form="delete-password-form" color="error"
             >确认删除</UButton
           >
         </div>
