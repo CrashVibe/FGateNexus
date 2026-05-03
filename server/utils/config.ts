@@ -8,9 +8,6 @@ import { z } from "zod";
 import { logger } from "./logger";
 import { applyDefaults } from "./zod";
 
-const execDir = path.dirname(path.resolve(process.execPath));
-process.chdir(execDir);
-
 const AppConfigSchema = z.object({
   browser: z
     .object({
@@ -83,18 +80,22 @@ const mergeWithDefaults = (
 
 class AppConfigManager {
   private static instance: AppConfigManager | null = null;
-  private _config: AppConfig;
+  private _config: AppConfig | null = null;
 
-  private constructor(config: AppConfig) {
-    this._config = config;
+  private constructor() {
+    /* empty */
   }
 
   public static getInstance(): AppConfigManager {
-    if (!AppConfigManager.instance) {
-      const config = AppConfigManager.loadConfig();
-      AppConfigManager.instance = new AppConfigManager(config);
-    }
+    AppConfigManager.instance ??= new AppConfigManager();
     return AppConfigManager.instance;
+  }
+
+  public init(): void {
+    if (this._config) {
+      return;
+    }
+    this._config = AppConfigManager.loadConfig();
   }
 
   private static loadConfig(): AppConfig {
@@ -136,6 +137,9 @@ class AppConfigManager {
   }
 
   get config(): AppConfig {
+    if (!this._config) {
+      throw new Error("配置未初始化");
+    }
     return this._config;
   }
 
@@ -161,7 +165,7 @@ class AppConfigManager {
    * 更新配置并保存到文件
    */
   updateConfig(updates: Partial<AppConfig>): void {
-    const newConfig = { ...this._config, ...updates };
+    const newConfig = { ...this.config, ...updates };
     logger.info({ newConfig }, "准备更新配置");
     this._config = newConfig;
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");

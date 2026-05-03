@@ -10,6 +10,7 @@ import { configManager } from "./server/utils/config";
 
 const execDir = path.dirname(path.resolve(process.execPath));
 process.chdir(execDir);
+configManager.init();
 
 const MIGRATIONS_TABLE = "__drizzle_migrations";
 const DB_DIR = "data";
