@@ -120,7 +120,22 @@ const initDatabase = async () => {
 const startApplication = async () => {
   try {
     await initDatabase();
-    const { config } = configManager;
+    let { config } = configManager;
+
+    const envChromiumPath = process.env.CHROMIUM_PATH?.trim();
+    if (envChromiumPath) {
+      const currentChromiumPath = config.browser.executablePath ?? null;
+      if (currentChromiumPath !== envChromiumPath) {
+        configManager.updateConfig({
+          browser: {
+            ...config.browser,
+            executablePath: envChromiumPath,
+          },
+        });
+        ({ config } = configManager);
+      }
+    }
+
     let sentryEnabled = config.sentry.enabled;
 
     if (

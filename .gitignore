@@ -22,7 +22,6 @@ logs
 .env.*
 !.env.example
 /config
-*.db*
 app/auto-imports.d.ts
 app/components.d.ts
 
