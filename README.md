@@ -24,11 +24,9 @@
   > 如果你需要特定适配器的支持，可以在 issue 中提出
 - 欢迎各位大佬 Star ❤️
 
-## 快速开始
+## 安装
 
-[Github Release](https://github.com/CrashVibe/FGateNexus/releases/latest) 下最新的版本直接使用
-
-如要更新，直接覆盖即可
+详细安装教程请参考文档：[安装教程](https://fgate.crashvibe.cn/docs/core)
 
 ## 🎉 功能
 
