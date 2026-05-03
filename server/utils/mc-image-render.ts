@@ -1,4 +1,4 @@
-import { imageRenderer } from "~~/server/service/imgae-renderer";
+import { imageRenderer } from "~~/server/service/image-renderer";
 import {
   parseMinecraftText,
   segmentsToHtml,

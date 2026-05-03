@@ -10,7 +10,7 @@ import {
   resolveBuildId,
 } from "@puppeteer/browsers";
 
-import { imageRenderer } from "./imgae-renderer";
+import { imageRenderer } from "./image-renderer";
 
 const BROWSER_CACHE_DIR = path.resolve(process.cwd(), "data/browsers");
 

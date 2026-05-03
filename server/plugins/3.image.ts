@@ -1,5 +1,5 @@
 import { getLatestInstalledChromiumPath } from "~~/server/service/browser-downloader";
-import { imageRenderer } from "~~/server/service/imgae-renderer";
+import { imageRenderer } from "~~/server/service/image-renderer";
 
 export default defineNitroPlugin((nitro) => {
   void (async () => {
