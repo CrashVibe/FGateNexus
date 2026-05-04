@@ -2,6 +2,7 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+import { mergeWith } from "lodash-es";
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
@@ -63,19 +64,10 @@ type AppConfig = z.infer<typeof AppConfigSchema>;
 
 /**
  * 合并用户配置与默认配置
- * @param userConfig 用户提供的配置（可能不完整）
- * @returns 合并后的完整配置和是否有变化的标志
  */
-const mergeWithDefaults = (
-  userConfig: unknown = {},
-): {
-  config: AppConfig;
-  changed: boolean;
-} => {
+const mergeWithDefaults = (userConfig: unknown = {}): AppConfig => {
   const validatedConfig = AppConfigSchema.partial().parse(userConfig);
-  const merged = applyDefaults(AppConfigSchema, validatedConfig);
-  const changed = JSON.stringify(merged) !== JSON.stringify(validatedConfig);
-  return { changed, config: merged };
+  return applyDefaults(AppConfigSchema, validatedConfig);
 };
 
 class AppConfigManager {
@@ -102,38 +94,33 @@ class AppConfigManager {
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     const configDir = path.dirname(configPath);
     logger.info(`配置文件路径：${configPath}`);
-    let config: AppConfig;
 
-    const fileExists = fs.existsSync(configPath);
-    if (fileExists) {
-      // 文件存在，读取配置
-      try {
-        const fileContent = fs.readFileSync(configPath, "utf-8");
-
-        const parsedConfig: unknown = JSON.parse(fileContent);
-        const { config: merged, changed } = mergeWithDefaults(parsedConfig);
-        config = merged;
-        if (changed) {
-          logger.info("配置文件已补充缺失的默认值");
-          fs.writeFileSync(
-            configPath,
-            JSON.stringify(merged, null, 2),
-            "utf-8",
-          );
-        }
-      } catch (error) {
-        logger.error(error, "配置文件读取或校验失败");
-        process.exit(1);
-      }
-    } else {
-      // 文件不存在，创建默认配置
+    if (!fs.existsSync(configPath)) {
       logger.info("配置文件不存在，创建默认配置...");
       fs.mkdirSync(configDir, { recursive: true });
-      ({ config } = mergeWithDefaults({}));
+      const config = mergeWithDefaults({});
       fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+      process.env.NUXT_SESSION_PASSWORD = config.session.password;
+      return config;
     }
-    process.env.NUXT_SESSION_PASSWORD = config.session.password;
-    return config;
+
+    try {
+      const raw = fs.readFileSync(configPath, "utf-8");
+      const parsed: unknown = JSON.parse(raw);
+      const config = mergeWithDefaults(parsed);
+
+      // 与原始文件内容对比，检测是否真正补充了默认值
+      if (JSON.stringify(config, null, 2) !== JSON.stringify(parsed, null, 2)) {
+        logger.info("配置文件已补充缺失的默认值");
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf-8");
+      }
+
+      process.env.NUXT_SESSION_PASSWORD = config.session.password;
+      return config;
+    } catch (error) {
+      logger.error(error, "配置文件读取或校验失败");
+      return mergeWithDefaults({});
+    }
   }
 
   get config(): AppConfig {
@@ -149,11 +136,8 @@ class AppConfigManager {
   reloadConfig(): void {
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     try {
-      const fileContent = fs.readFileSync(configPath, "utf-8");
-
-      const parsedConfig: unknown = JSON.parse(fileContent);
-
-      this._config = mergeWithDefaults(parsedConfig).config;
+      const raw = fs.readFileSync(configPath, "utf-8");
+      this._config = mergeWithDefaults(JSON.parse(raw));
       logger.info("配置已重新加载");
     } catch (error) {
       logger.error(error, "重新加载配置文件失败");
@@ -165,9 +149,13 @@ class AppConfigManager {
    * 更新配置并保存到文件
    */
   updateConfig(updates: Partial<AppConfig>): void {
-    const newConfig = { ...this.config, ...updates };
-    logger.info({ newConfig }, "准备更新配置");
+    const newConfig = mergeWith({}, this.config, updates, (_, srcVal) =>
+      srcVal === null ? null : undefined,
+    );
+
     this._config = newConfig;
+    logger.info({ newConfig }, "准备更新配置");
+
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     try {
       fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf-8");
