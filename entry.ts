@@ -138,8 +138,11 @@ const startApplication = async () => {
     }
 
     let sentryEnabled = config.sentry.enabled;
+    const envSentryEnabled = process.env.SENTRY_ENABLED?.trim().toLowerCase();
 
-    if (
+    if (envSentryEnabled === "true" || envSentryEnabled === "false") {
+      sentryEnabled = envSentryEnabled === "true";
+    } else if (
       process.stdin.isTTY &&
       process.stdout.isTTY &&
       config.sentry.enabled === null
@@ -153,21 +156,19 @@ const startApplication = async () => {
       );
       rl.close();
       sentryEnabled = answer.trim().toLowerCase().startsWith("y");
+    }
 
-      if (config.sentry.enabled !== sentryEnabled) {
-        configManager.updateConfig({
-          sentry: {
-            ...config.sentry,
-            enabled: sentryEnabled,
-          },
-        });
-      }
+    if (config.sentry.enabled !== sentryEnabled) {
+      configManager.updateConfig({
+        sentry: { ...config.sentry, enabled: sentryEnabled },
+      });
     }
 
     process.env.NITRO_HOST = config.nitro.host;
     process.env.NITRO_PORT = String(config.nitro.port);
-    process.env.SENTRY_ENABLED = String(config.sentry.enabled);
+    process.env.SENTRY_ENABLED = String(sentryEnabled);
     process.env.SENTRY_INSTANCE_ID = config.sentry.instanceId;
+
     await import("./.output/server/sentry.server.config.mjs");
     await import("./.output/server/index.mjs");
   } catch (error) {
