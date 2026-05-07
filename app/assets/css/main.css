@@ -12,7 +12,7 @@ body {
 }
 
 :root {
-  --ui-container: unset;
+  --ui-container: 1440px;
 }
 
 @layer utilities {
