@@ -79,8 +79,8 @@ export default defineNuxtConfig({
     },
   },
   sourcemap: {
-    client: isBuild,
-    server: false,
+    client: isBuild ? "hidden" : false,
+    server: isBuild ? "hidden" : false,
   },
   ssr: false,
   typescript: {
