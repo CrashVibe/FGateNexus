@@ -17,7 +17,7 @@
         <UContainer class="py-8">
           <UForm
             ref="form"
-            :schema="chatSyncConfigSchema"
+            :schema="ChatSyncConfigSchema"
             :state="formData.config"
             @submit="onFormSubmit"
           >
@@ -410,13 +410,11 @@ import {
 } from "~~/shared/utils/chat-sync";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
-import type {
-  ChatSyncAPI,
-  ChatSyncConfig,
-} from "#shared/model/server/chat-sync";
-import { chatSyncConfigSchema } from "#shared/model/server/chat-sync";
-import type { ServerWithStatus } from "#shared/model/server/servers";
-import type { targetResponse } from "#shared/model/server/target";
+import { ChatSyncAPI } from "#shared/model/server/api";
+import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
+import { ChatSyncConfigSchema } from "#shared/model/server/schema/chat-sync";
+import type { ServerWithStatus } from "#shared/model/server/schema/servers";
+import type { targetResponse } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { ChatSyncData, ServerData } from "~/composables/api";
@@ -446,7 +444,7 @@ const router = useRouter();
 const toast = useToast();
 const form = useTemplateRef("form");
 const formData = reactive<FormState>({
-  config: chatSyncConfigSchema.parse({}),
+  config: ChatSyncConfigSchema.parse({}),
   targets: [],
 });
 
@@ -606,7 +604,7 @@ const handleSubmit = async () => {
     loadingMap.isSubmitting = false;
   }
 };
-type ChatSyncConfigOutput = z.output<typeof chatSyncConfigSchema>;
+type ChatSyncConfigOutput = z.output<typeof ChatSyncConfigSchema>;
 
 const onFormSubmit = async (event: FormSubmitEvent<ChatSyncConfigOutput>) => {
   formData.config = event.data;
@@ -618,7 +616,7 @@ const cancelChanges = () => {
     formData.config = structuredClone(toRaw(originalFormData.value.config));
     formData.targets = structuredClone(toRaw(originalFormData.value.targets));
   } else {
-    formData.config = chatSyncConfigSchema.parse({});
+    formData.config = ChatSyncConfigSchema.parse({});
     formData.targets = [];
   }
   selectTarget.value = null;

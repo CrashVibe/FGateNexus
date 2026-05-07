@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import type { z } from "zod";
+import type { AdapterAPI } from "~~/shared/model/adapter/api";
 
-import type { AdapterAPI, AdapterWithStatus } from "#shared/model/adapter";
+import type { AdapterWithStatus } from "#shared/model/adapter/schema";
 
 const { adapter } = defineProps<{
   adapter: AdapterWithStatus;

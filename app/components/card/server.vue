@@ -73,7 +73,7 @@
 <script lang="ts" setup>
 import type { z } from "zod";
 
-import type { ServersAPI } from "#shared/model/server/servers";
+import { ServersAPI } from "#shared/model/server/api";
 import MinecraftDefaultIcon from "@/assets/icon/software/minecraft.svg";
 
 const { server } = defineProps<{

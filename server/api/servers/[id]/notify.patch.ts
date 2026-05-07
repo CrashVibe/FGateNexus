@@ -6,7 +6,7 @@ import { servers, targets } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { NotifyAPI } from "#shared/model/server/notify";
+import { NotifyAPI } from "#shared/model/server/api";
 
 export default defineEventHandler(async (event) => {
   try {

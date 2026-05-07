@@ -6,8 +6,7 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-
-import { AdapterType } from "#shared/model/adapter";
+import { AdapterType } from "~~/shared/model/adapter/schema";
 
 export const socialAccounts = sqliteTable(
   "social_accounts",

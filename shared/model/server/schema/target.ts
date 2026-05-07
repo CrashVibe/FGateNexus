@@ -1,8 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "#shared/model";
-
 /**
  * 目标配置
  */
@@ -74,37 +72,3 @@ export const targetSchema = z.object({
 });
 
 export type targetSchemaRequestType = z.infer<typeof targetSchemaRequest>;
-
-export const TargetAPI = {
-  DELETE: {
-    description: "批量删除目标",
-    request: z.object({
-      ids: z.array(z.string()).nonempty(),
-    }),
-    response: z.array(targetSchema).nonempty(),
-  },
-  GETS: {
-    description: "获取目标信息",
-    request: z.object({}),
-    response: z.array(targetSchema),
-  },
-  PATCH: {
-    description: "批量更新目标",
-    request: z.object({
-      items: z
-        .array(
-          z.object({
-            data: targetSchemaRequest,
-            id: z.string().min(1, "缺少目标 ID"),
-          }),
-        )
-        .nonempty("至少需要一条更新项"),
-    }),
-    response: z.array(targetSchema).nonempty(),
-  },
-  POST: {
-    description: "批量创建目标",
-    request: z.array(targetSchemaRequest).nonempty(),
-    response: z.array(targetSchema).nonempty(),
-  },
-} satisfies ApiSchemaRegistry;

@@ -563,6 +563,11 @@ import dayjs from "dayjs";
 import { isEqual } from "lodash-es";
 import type { z } from "zod";
 import {
+  CODE_MODES,
+  BindingConfigSchema,
+} from "~~/shared/model/server/schema/binding";
+import type { BindingConfig } from "~~/shared/model/server/schema/binding";
+import {
   renderBindFail,
   renderBindRenameName,
   renderBindSuccess,
@@ -572,9 +577,7 @@ import {
   renderUnbindSuccess,
 } from "~~/shared/utils/template/binding";
 
-import type { BindingConfig } from "#shared/model/server/binding";
-import { BindingConfigSchema, CODE_MODES } from "#shared/model/server/binding";
-import type { ServersAPI } from "#shared/model/server/servers";
+import { ServersAPI } from "#shared/model/server/api";
 import { generateVerificationCode } from "#shared/utils/binding";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";

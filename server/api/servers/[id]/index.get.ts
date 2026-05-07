@@ -5,7 +5,7 @@ import { db } from "~~/server/db/client";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { ServersAPI } from "#shared/model/server/servers";
+import { ServersAPI } from "#shared/model/server/api";
 
 export default defineEventHandler(async (event) => {
   try {

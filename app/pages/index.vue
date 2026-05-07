@@ -1,18 +1,20 @@
 <script lang="ts" setup>
 import { v4 as uuidv4 } from "uuid";
-import type { z } from "zod";
+import { z } from "zod";
 
-import type { ServerWithStatus } from "#shared/model/server/servers";
-import { ServersAPI } from "#shared/model/server/servers";
+import { ServersAPI } from "#shared/model/server/api";
+import type { ServerWithStatus } from "#shared/model/server/schema/servers";
 import PageHeader from "@/components/header/page-header.vue";
 import { ServerData } from "~/composables/api";
 
 type FormData = z.infer<(typeof ServersAPI)["POST"]["request"]>;
 
 const formData = ref<FormData>(
-  ServersAPI.POST.request.parse({ token: uuidv4() }),
+  ServersAPI.POST.request
+    .extend({ servername: z.string().default("") })
+    .parse({ token: uuidv4() }),
 );
-
+const form = useTemplateRef("form");
 const isSubmitting = ref(false);
 const toast = useToast();
 const showModal = ref(false);
@@ -34,7 +36,9 @@ const fetchServerList = async () => {
 };
 
 const openModal = () => {
-  formData.value = ServersAPI.POST.request.parse({ token: uuidv4() });
+  formData.value = ServersAPI.POST.request
+    .extend({ servername: z.string().default("") })
+    .parse({ token: uuidv4() });
   showModal.value = true;
 };
 
@@ -86,6 +90,7 @@ onMounted(() => {
           <UModal v-model:open="showModal" title="创建服务器">
             <template #body>
               <UForm
+                ref="form"
                 :schema="ServersAPI.POST.request"
                 :state="formData"
                 class="space-y-4"
@@ -138,7 +143,7 @@ onMounted(() => {
                 <UButton
                   :loading="isSubmitting"
                   :disabled="isSubmitting"
-                  @click="handleSubmit"
+                  @click="form?.submit()"
                 >
                   确认创建
                 </UButton>

@@ -158,8 +158,8 @@ import { z } from "zod";
 import type {
   targetResponse,
   targetSchemaRequestType,
-} from "#shared/model/server/target";
-import {targetSchemaRequest} from "#shared/model/server/target";
+} from "#shared/model/server/schema/target";
+import {targetSchemaRequest} from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { TargetData } from "~/composables/api";
 import {UButton, USelect, UInput, UFormField} from "#components";

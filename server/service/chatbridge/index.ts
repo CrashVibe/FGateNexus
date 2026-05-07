@@ -12,9 +12,9 @@ import {
 import { handlePlatformMessage } from "~~/server/service/message-router";
 import { configManager } from "~~/server/utils/config";
 
-import type { AdapterConfig } from "#shared/model/adapter";
-import { AdapterType } from "#shared/model/adapter";
-import type { OneBotConfig } from "#shared/model/adapter/onebot.ts";
+import type { AdapterConfig } from "#shared/model/adapter/schema";
+import { AdapterType } from "#shared/model/adapter/schema";
+import type { OneBotConfig } from "#shared/model/adapter/schema/onebot";
 
 /**
  * Bot 连接信息

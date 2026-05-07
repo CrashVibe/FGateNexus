@@ -3,9 +3,10 @@ import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { z } from "zod";
 
-import type { PlayerAPI } from "#shared/model/player";
 import PageHeader from "@/components/header/page-header.vue";
 import { PlayerData } from "~/composables/api";
+
+import type { PlayerAPI } from "../../shared/model/player/api";
 
 const UBadge = resolveComponent("UBadge");
 

@@ -4,7 +4,8 @@ import { db } from "~~/server/db/client";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { PlayerAPI } from "#shared/model/player";
+
+import { PlayerAPI } from "../../shared/model/player/api";
 
 export default defineEventHandler(async (event) => {
   try {

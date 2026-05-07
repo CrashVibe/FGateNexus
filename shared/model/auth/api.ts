@@ -8,7 +8,7 @@ export const LoginAPI = {
     request: z.object({
       currentPassword: z.string().nonempty("当前密码不能为空"),
     }),
-    response: z.object({}),
+    response: z.void(),
   },
   POST: {
     description: "用户登录",
@@ -19,7 +19,7 @@ export const LoginAPI = {
         .length(6, "2FA 验证码必须为 6 位")
         .optional(),
     }),
-    response: z.object({}),
+    response: z.void(),
   },
 } satisfies ApiSchemaRegistry;
 
@@ -30,23 +30,11 @@ export const PasswordAPI = {
       currentPassword: z.string().optional(),
       newPassword: z.string().min(8, "新密码至少 8 位"),
     }),
-    response: z.object({}),
+    response: z.void(),
   },
 } satisfies ApiSchemaRegistry;
-
-export type LoginBody = z.infer<typeof LoginAPI.POST.request>;
 
 /**
  * 登陆状态接口
  */
-export interface AuthStatus {
-  /**
-   * 是否已设置密码
-   */
-  hasPassword: boolean;
-
-  /**
-   * 是否启用两步验证
-   */
-  has2FA: boolean;
-}
+export type LoginBody = z.infer<typeof LoginAPI.POST.request>;

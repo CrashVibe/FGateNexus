@@ -14,12 +14,12 @@ export const DownloadStatus = z.enum([
 export const SettingsAPI = {
   CANCEL_POST: {
     description: "取消下载",
-    request: z.object({}),
-    response: z.object({}),
+    request: z.void(),
+    response: z.void(),
   },
   CHECK_UPDATE_GET: {
     description: "检查 Chromium 更新",
-    request: z.object({}),
+    request: z.void(),
     response: z.object({
       currentBuildId: z.string().nullable(),
       hasUpdate: z.boolean(),
@@ -28,12 +28,12 @@ export const SettingsAPI = {
   },
   DOWNLOAD_POST: {
     description: "开始下载 Chromium",
-    request: z.object({}),
-    response: z.object({}),
+    request: z.void(),
+    response: z.void(),
   },
   DOWNLOAD_PROGRESS_GET: {
     description: "获取下载进度",
-    request: z.object({}),
+    request: z.void(),
     response: z.object({
       buildId: z.string(),
       downloadedBytes: z.number(),
@@ -46,7 +46,7 @@ export const SettingsAPI = {
   },
   GET: {
     description: "获取浏览器设置",
-    request: z.object({}),
+    request: z.void(),
     response: z.object({
       executablePath: z.string().nullable(),
     }),
@@ -56,6 +56,6 @@ export const SettingsAPI = {
     request: z.object({
       executablePath: z.string().nullable(),
     }),
-    response: z.object({}),
+    response: z.void(),
   },
 } satisfies ApiSchemaRegistry;

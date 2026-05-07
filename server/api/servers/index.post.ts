@@ -2,15 +2,14 @@ import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { servers } from "~~/server/db/schema";
+import { BindingConfigSchema } from "~~/shared/model/server/schema/binding";
+import { ChatSyncConfigSchema } from "~~/shared/model/server/schema/chat-sync";
+import { CommandConfigSchema } from "~~/shared/model/server/schema/command";
+import { NotifyConfigSchema } from "~~/shared/model/server/schema/notify";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { BindingConfigSchema } from "#shared/model/server/binding";
-import { chatSyncConfigSchema } from "#shared/model/server/chat-sync";
-import { CommandConfigSchema } from "#shared/model/server/command";
-import { NotifyConfigSchema } from "#shared/model/server/notify";
-import { ServersAPI } from "#shared/model/server/servers";
-
+import { ServersAPI } from "#shared/model/server/api";
 export default defineEventHandler(async (event) => {
   try {
     const parsed = ServersAPI.POST.request.safeParse(await readBody(event));
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
     };
     await db.insert(servers).values({
       bindingConfig: BindingConfigSchema.parse({}),
-      chatSyncConfig: chatSyncConfigSchema.parse({}),
+      chatSyncConfig: ChatSyncConfigSchema.parse({}),
       commandConfig: CommandConfigSchema.parse({}),
       name: serverData.name,
       notifyConfig: NotifyConfigSchema.parse({}),

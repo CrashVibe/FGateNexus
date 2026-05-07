@@ -14,7 +14,7 @@ import {
 } from "~~/shared/utils/template/binding";
 
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
-import { AdapterType } from "#shared/model/adapter";
+import { AdapterType } from "#shared/model/adapter/schema";
 import { generateVerificationCode } from "#shared/utils/binding";
 
 import { getConfig } from "./config";

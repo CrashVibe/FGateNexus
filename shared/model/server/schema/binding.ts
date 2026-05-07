@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "#shared/model";
-
 // 验证码模式枚举值
 export enum CODE_MODES {
   MIX = "mix",
@@ -81,13 +79,3 @@ export const BindingConfigSchema = z.object({
 });
 
 export type BindingConfig = z.infer<typeof BindingConfigSchema>;
-
-export const BindingAPI = {
-  PATCH: {
-    description: "更新服务器绑定配置",
-    request: z.object({
-      config: BindingConfigSchema,
-    }),
-    response: z.object({}),
-  },
-} satisfies ApiSchemaRegistry;

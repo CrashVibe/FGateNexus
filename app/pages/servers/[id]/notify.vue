@@ -294,10 +294,10 @@ import {
   renderLeaveMessage,
 } from "~~/shared/utils/template/notify";
 
-import type { NotifyAPI } from "#shared/model/server/notify";
-import { NotifyConfigSchema } from "#shared/model/server/notify";
-import type { ServerWithStatus } from "#shared/model/server/servers";
-import type { targetResponse } from "#shared/model/server/target";
+import { NotifyAPI } from "#shared/model/server/api";
+import { NotifyConfigSchema } from "#shared/model/server/schema/notify";
+import type { ServerWithStatus } from "#shared/model/server/schema/servers";
+import type { targetResponse } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { NotifyData, ServerData } from "~/composables/api";

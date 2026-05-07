@@ -6,7 +6,7 @@ import { servers, targets } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { CommandAPI } from "#shared/model/server/command";
+import { CommandAPI } from "#shared/model/server/api";
 
 export default defineEventHandler(async (event) => {
   try {

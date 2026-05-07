@@ -3,10 +3,11 @@ import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "~~/server/db/client";
 import { targets } from "~~/server/db/schema";
+import { TargetConfigSchema } from "~~/shared/model/server/schema/target";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { TargetAPI, TargetConfigSchema } from "#shared/model/server/target";
+import { TargetAPI } from "#shared/model/server/api";
 
 export default defineEventHandler(async (event) => {
   try {

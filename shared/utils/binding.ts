@@ -1,6 +1,5 @@
 import { customAlphabet } from "nanoid";
-
-import { CODE_MODES } from "#shared/model/server/binding";
+import { CODE_MODES } from "~~/shared/model/server/schema/binding";
 
 const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER = "abcdefghijklmnopqrstuvwxyz";

@@ -1,10 +1,9 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import type { z } from "zod";
-
-import type { BindingConfig } from "#shared/model/server/binding";
-import type { ChatSyncConfig } from "#shared/model/server/chat-sync";
-import type { CommandConfig } from "#shared/model/server/command";
-import type { NotifyConfigSchema } from "#shared/model/server/notify";
+import type { BindingConfig } from "~~/shared/model/server/schema/binding";
+import type { ChatSyncConfig } from "~~/shared/model/server/schema/chat-sync";
+import type { CommandConfig } from "~~/shared/model/server/schema/command";
+import type { NotifyConfigSchema } from "~~/shared/model/server/schema/notify";
 
 import { adapters } from "./adapters";
 

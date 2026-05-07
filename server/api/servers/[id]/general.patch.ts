@@ -6,7 +6,7 @@ import { servers } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-import { GeneralAPI } from "#shared/model/server/general";
+import { GeneralAPI } from "#shared/model/server/api";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -26,27 +26,45 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    if (parsed.data.adapterId !== undefined) {
-      const result = await db
-        .update(servers)
-        .set({
-          adapterId: parsed.data.adapterId,
-        })
-        .where(eq(servers.id, serverId))
-        .returning();
+    const updatePayload: Partial<{
+      adapterId: number | null;
+      name: string;
+      token: string;
+    }> = {};
 
-      if (result.length === 0) {
-        const apiError = ApiError.database(
-          "更新服务器对应适配器失败：未能找到服务器",
-        );
-        return createErrorResponse(event, apiError);
-      }
+    if (parsed.data.adapterId !== undefined) {
+      updatePayload.adapterId = parsed.data.adapterId ?? null;
     }
 
-    return createApiResponse(event, "更新服务器对应适配器成功", StatusCodes.OK);
+    if (parsed.data.name !== undefined) {
+      updatePayload.name = parsed.data.name;
+    }
+
+    if (parsed.data.token !== undefined) {
+      updatePayload.token = parsed.data.token;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return createApiResponse(event, "无需更新", StatusCodes.OK);
+    }
+
+    const result = await db
+      .update(servers)
+      .set(updatePayload)
+      .where(eq(servers.id, serverId))
+      .returning();
+
+    if (result.length === 0) {
+      const apiError = ApiError.database(
+        "更新服务器基础信息失败：未能找到服务器",
+      );
+      return createErrorResponse(event, apiError);
+    }
+
+    return createApiResponse(event, "更新服务器基础信息成功", StatusCodes.OK);
   } catch (error) {
-    logger.error(error, "更新服务器对应适配器失败");
-    const apiError = ApiError.internal("更新服务器对应适配器失败");
+    logger.error(error, "更新服务器基础信息失败");
+    const apiError = ApiError.internal("更新服务器基础信息失败");
     return createErrorResponse(event, apiError);
   }
 });

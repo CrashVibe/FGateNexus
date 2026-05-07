@@ -124,11 +124,12 @@ import { differenceWith, isEqual, pick } from "lodash-es";
 import type { z } from "zod";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
-import type { AdapterWithStatus } from "#shared/model/adapter";
-import type { CommandAPI, CommandConfig } from "#shared/model/server/command";
-import { CommandConfigSchema } from "#shared/model/server/command";
-import type { ServerWithStatus } from "#shared/model/server/servers";
-import type { targetResponse } from "#shared/model/server/target";
+import type { AdapterWithStatus } from "#shared/model/adapter/schema";
+import { CommandAPI } from "#shared/model/server/api";
+import type { CommandConfig } from "#shared/model/server/schema/command";
+import { CommandConfigSchema } from "#shared/model/server/schema/command";
+import type { ServerWithStatus } from "#shared/model/server/schema/servers";
+import type { targetResponse } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import {

@@ -5,7 +5,7 @@ import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge";
 
 import { createApiResponse } from "#shared/model";
-import { AdapterAPI } from "#shared/model/adapter";
+import { AdapterAPI } from "#shared/model/adapter/api";
 import { ApiError, createErrorResponse } from "#shared/model/error";
 
 export default defineEventHandler(async (event) => {

@@ -3,9 +3,10 @@ import { FetchError } from "ofetch";
 import { z } from "zod";
 
 import type { ApiResponse } from "#shared/model";
-import { PasswordAPI } from "#shared/model/auth";
 import type { ApiErrorResponse } from "#shared/model/error";
 import { validatePasswordStrength } from "#shared/utils/password";
+
+import { PasswordAPI } from "../../../shared/model/auth/api";
 
 const authStore = useAuthStore();
 const { checkAuthStatus } = authStore;

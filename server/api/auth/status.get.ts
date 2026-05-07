@@ -3,8 +3,9 @@ import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 
 import { createApiResponse } from "#shared/model";
-import type { AuthStatus } from "#shared/model/auth";
 import { ApiError, createErrorResponse } from "#shared/model/error";
+
+import type { AuthStatus } from "../../../shared/model/auth/api";
 
 export default defineEventHandler(async (event) => {
   try {

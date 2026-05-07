@@ -1,16 +1,19 @@
 import type { z } from "zod";
+import { AdapterAPI } from "~~/shared/model/adapter/api";
 
 import type { ApiResponse } from "#shared/model";
-import { AdapterAPI } from "#shared/model/adapter";
-import { PlayerAPI } from "#shared/model/player";
-import { BindingAPI } from "#shared/model/server/binding";
-import { ChatSyncAPI } from "#shared/model/server/chat-sync";
-import { CommandAPI } from "#shared/model/server/command";
-import { GeneralAPI } from "#shared/model/server/general";
-import type { NotifyAPI } from "#shared/model/server/notify";
-import { ServersAPI } from "#shared/model/server/servers";
-import { TargetAPI } from "#shared/model/server/target";
+import type { NotifyAPI } from "#shared/model/server/api";
+import {
+  BindingAPI,
+  ChatSyncAPI,
+  CommandAPI,
+  GeneralAPI,
+  ServersAPI,
+  TargetAPI,
+} from "#shared/model/server/api";
 import { SettingsAPI } from "#shared/model/settings";
+
+import { PlayerAPI } from "../../../shared/model/player/api";
 
 export const ServerData = {
   async delete(serverId: number) {

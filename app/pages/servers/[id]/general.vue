@@ -15,16 +15,23 @@
           >
             <UPageCard
               variant="outline"
-              title="基础操作"
-              description="危险操作，请谨慎"
+              title="基础设置"
+              description="修改服务器基础信息"
             >
-              <UButton
-                color="error"
-                variant="subtle"
-                icon="i-lucide-trash-2"
-                @click="showDeleteModal = true"
-                >删除服务器
-              </UButton>
+              <UFormField label="服务器名字" name="name">
+                <UInput
+                  v-model="formData.name"
+                  class="w-full"
+                  placeholder="请输入服务器名称"
+                />
+              </UFormField>
+              <UFormField label="Token" name="token">
+                <UInput
+                  v-model="formData.token"
+                  class="w-full"
+                  placeholder="请输入服务器 Token"
+                />
+              </UFormField>
             </UPageCard>
 
             <UPageCard
@@ -52,6 +59,20 @@
                   />
                 </div>
               </UFormField>
+            </UPageCard>
+
+            <UPageCard
+              variant="outline"
+              title="基础操作"
+              description="危险操作，请谨慎"
+            >
+              <UButton
+                color="error"
+                variant="subtle"
+                icon="i-lucide-trash-2"
+                @click="showDeleteModal = true"
+                >删除服务器
+              </UButton>
             </UPageCard>
           </div>
 
@@ -106,8 +127,8 @@
 import { isEqual } from "lodash-es";
 import type { z } from "zod";
 
-import type { GeneralAPI } from "#shared/model/server/general";
-import type { ServerWithStatus } from "#shared/model/server/servers";
+import { GeneralAPI } from "#shared/model/server/api";
+import type { ServerWithStatus } from "#shared/model/server/schema/servers";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import { AdapterData, GeneralData, ServerData } from "~/composables/api";
@@ -136,9 +157,13 @@ let serverData: ServerWithStatus | null = null;
 
 const formData = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
   adapterId: null,
+  name: "",
+  token: "",
 });
 const original = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
   adapterId: null,
+  name: "",
+  token: "",
 });
 const isDirty = computed(() => !isEqual(formData, original));
 
@@ -181,6 +206,8 @@ const refreshAll = async (): Promise<void> => {
     }));
 
     formData.adapterId = serverDataResult.adapterId;
+    formData.name = serverDataResult.name;
+    formData.token = serverDataResult.token;
     Object.assign(original, structuredClone(toRaw(formData)));
   } catch (error) {
     console.error("Refresh failed:", error);

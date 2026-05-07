@@ -4,8 +4,9 @@ import { db } from "~~/server/db/client";
 import { checkRateLimit } from "~~/server/utils/rate-limit";
 
 import { createApiResponse } from "#shared/model";
-import { LoginAPI } from "#shared/model/auth";
 import { ApiError, createErrorResponse } from "#shared/model/error";
+
+import { LoginAPI } from "../../../shared/model/auth/api";
 
 export default defineEventHandler(async (event) => {
   try {

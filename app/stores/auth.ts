@@ -2,8 +2,9 @@ import { defineStore } from "pinia";
 import type { z } from "zod";
 
 import type { ApiResponse } from "#shared/model";
-import type { AuthStatus } from "#shared/model/auth";
-import { LoginAPI } from "#shared/model/auth";
+
+import { LoginAPI } from "../../shared/model/auth/api";
+import type { AuthStatus } from "../../shared/model/auth/schema";
 
 interface State {
   authStatus: AuthStatus;

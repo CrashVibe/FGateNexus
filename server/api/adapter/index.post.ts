@@ -5,7 +5,7 @@ import { adapters } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge";
 
 import { createApiResponse } from "#shared/model";
-import { AdapterAPI } from "#shared/model/adapter";
+import { AdapterAPI } from "#shared/model/adapter/api";
 import { ApiError, createErrorResponse } from "#shared/model/error";
 
 export default defineEventHandler(async (event) => {
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       .insert(adapters)
       .values({
         config: parsed.data.config,
-        name: parsed.data.name || "",
+        name: parsed.data.name ?? "",
         type: parsed.data.type,
       })
       .returning();

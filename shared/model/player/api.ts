@@ -1,12 +1,12 @@
 import { z } from "zod";
 
 import type { ApiSchemaRegistry } from "#shared/model";
-import { ServersAPI } from "#shared/model/server/servers";
+import { ServersAPI } from "#shared/model/server/api";
 
 export const PlayerAPI = {
   GETS: {
     description: "获取玩家信息",
-    request: z.object({}),
+    request: z.void(),
     response: z.array(
       z.object({
         player: z.object({

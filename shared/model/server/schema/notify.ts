@@ -1,9 +1,5 @@
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "#shared/model";
-
-import { TargetConfigSchema } from "./target";
-
 /**
  * 系统通知配置
  */
@@ -37,19 +33,3 @@ export const NotifyConfigSchema = z.object({
    */
   player_notify: z.boolean().default(false),
 });
-
-export const NotifyAPI = {
-  PATCH: {
-    description: "更新服务器通知配置",
-    request: z.object({
-      notify: NotifyConfigSchema,
-      targets: z.array(
-        z.object({
-          config: TargetConfigSchema,
-          id: z.uuidv4(),
-        }),
-      ),
-    }),
-    response: z.object({}),
-  },
-} satisfies ApiSchemaRegistry;

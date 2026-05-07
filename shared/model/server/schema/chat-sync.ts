@@ -1,13 +1,9 @@
 import { z } from "zod";
 
-import type { ApiSchemaRegistry } from "#shared/model";
-
-import { TargetConfigSchema } from "./target";
-
 /**
  * 聊天同步配置
  */
-export const chatSyncConfigSchema = z.object({
+export const ChatSyncConfigSchema = z.object({
   /**
    * 是否启用聊天同步
    */
@@ -88,20 +84,4 @@ export const chatSyncConfigSchema = z.object({
     .default("[{platform}] {nickname}: {message}"),
 });
 
-export type ChatSyncConfig = z.infer<typeof chatSyncConfigSchema>;
-
-export const ChatSyncAPI = {
-  PATCH: {
-    description: "更新服务器聊天同步配置",
-    request: z.object({
-      chatsync: chatSyncConfigSchema,
-      targets: z.array(
-        z.object({
-          config: TargetConfigSchema,
-          id: z.uuidv4(),
-        }),
-      ),
-    }),
-    response: z.object({}),
-  },
-} satisfies ApiSchemaRegistry;
+export type ChatSyncConfig = z.infer<typeof ChatSyncConfigSchema>;

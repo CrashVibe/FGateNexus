@@ -1,7 +1,6 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-
-import type { AdapterConfig } from "#shared/model/adapter";
-import { AdapterType } from "#shared/model/adapter";
+import type { AdapterConfig } from "~~/shared/model/adapter/schema";
+import { AdapterType } from "~~/shared/model/adapter/schema";
 
 export const adapters = sqliteTable("adapters", {
   config: text("config", { mode: "json" }).notNull().$type<AdapterConfig>(),

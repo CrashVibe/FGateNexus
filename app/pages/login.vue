@@ -2,9 +2,10 @@
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 
 import { useAuthStore } from "#imports";
-import type { LoginBody } from "#shared/model/auth";
-import { LoginAPI } from "#shared/model/auth";
 import { ApiErrorType, isFetchError } from "#shared/model/error";
+
+import type { LoginBody } from "../../shared/model/auth/api";
+import { LoginAPI } from "../../shared/model/auth/api";
 
 definePageMeta({
   layout: false,

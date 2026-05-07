@@ -1,4 +1,4 @@
-import type { ChatSyncConfig } from "#shared/model/server/chat-sync";
+import type { ChatSyncConfig } from "~~/shared/model/server/schema/chat-sync";
 
 export const formatPlatformToMCMessage = (
   msg: string,
