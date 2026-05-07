@@ -1,6 +1,4 @@
 import tailwindcss from "@tailwindcss/vite";
-import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
-import Components from "unplugin-vue-components/vite";
 
 const isDev = process.env.NODE_ENV !== "production";
 const isBuild = !isDev;
@@ -36,9 +34,6 @@ export default defineNuxtConfig({
   },
   devtools: {
     enabled: true,
-    timeline: {
-      enabled: true,
-    },
   },
   experimental: {
     asyncContext: true,
@@ -161,13 +156,7 @@ export default defineNuxtConfig({
         "vue-qrcode-reader",
       ],
     },
-    plugins: [
-      Components({
-        dts: true,
-        resolvers: [NaiveUiResolver()],
-      }),
-      tailwindcss(),
-    ],
+    plugins: [tailwindcss()],
     worker: {
       format: "es",
     },

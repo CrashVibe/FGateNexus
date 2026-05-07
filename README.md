@@ -12,7 +12,7 @@
 
 ## 说明
 
-- 本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Naïve UI](https://www.naiveui.com/)
+- 本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Nuxt UI](https://ui.nuxt.com/)
   开发
 - 需要配合 [FGATE Client](https://github.com/CrashVibe/FGateClient) 一起使用
 - 跨平台支持，适用于 Windows、Linux、macOS 等操作系统

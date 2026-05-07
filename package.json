@@ -68,8 +68,7 @@
     "oxlint-tsgolint": "^0.16.0",
     "sass-embedded": "^1.99.0",
     "typescript": "^5.9.3",
-    "ultracite": "7.6.0",
-    "unplugin-vue-components": "^31.1.0"
+    "ultracite": "7.6.0"
   },
   "overrides": {
     "vite": "^8.0.8"
