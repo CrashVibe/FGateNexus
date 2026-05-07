@@ -26,7 +26,7 @@ export default defineNuxtConfig({
     rootId: "root",
     teleportId: "popovers",
   },
-  compatibilityDate: "2025-08-06",
+  compatibilityDate: "2026-05-07",
   css: ["~/assets/css/main.css", "~/assets/css/animate.scss"],
   devServer: {
     host: "0.0.0.0",
@@ -57,7 +57,6 @@ export default defineNuxtConfig({
       websocket: true,
     },
     minify: true,
-    node: true,
     preset: "bun",
     serveStatic: "inline",
   },
@@ -80,8 +79,8 @@ export default defineNuxtConfig({
     },
   },
   sourcemap: {
-    client: true,
-    server: true,
+    client: isBuild,
+    server: false,
   },
   ssr: false,
   typescript: {
