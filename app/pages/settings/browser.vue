@@ -46,6 +46,7 @@ type Mode = "download" | "custom";
 const toast = useToast();
 const mode = ref<Mode>("download");
 const isLoading = ref(false);
+const isInitializing = ref(true);
 const currentConfig = ref<{
   executablePath: string | null;
 }>({ executablePath: null });
@@ -252,8 +253,8 @@ const checkUpdate = async () => {
 // ─── 生命周期 ─────────────────────────────────────────────────────────────────
 
 onMounted(async () => {
-  await loadConfig();
   try {
+    await loadConfig();
     const initialData = await BrowserData.getDownloadProgress();
     if (initialData) {
       downloadState.value = initialData;
@@ -264,6 +265,8 @@ onMounted(async () => {
     }
   } catch {
     // ignore
+  } finally {
+    isInitializing.value = false;
   }
 });
 
@@ -274,251 +277,260 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <!-- 当前状态 -->
-    <UPageCard icon="i-lucide-chrome" title="Chromium 浏览器" variant="outline">
-      <template #description>
-        <span
-          class="text-muted inline-flex flex-wrap items-center gap-1.5 text-sm"
-        >
-          图片渲染功能需要 Chromium。当前状态：
-          <UBadge
-            v-if="currentConfig.executablePath"
-            color="success"
-            variant="subtle"
-          >
-            已配置
-          </UBadge>
-          <UBadge v-else color="warning" variant="subtle"> 未配置 </UBadge>
-        </span>
-      </template>
-      <template #footer>
-        <div class="flex w-full flex-col gap-2">
-          <div
-            v-if="currentConfig.executablePath"
-            class="bg-muted/30 flex items-start gap-2 overflow-hidden rounded-md px-3 py-2 font-mono text-sm"
-          >
-            <UIcon
-              name="i-lucide-file-cog"
-              class="text-muted mt-0.5 shrink-0"
-            />
-            <span class="text-muted min-w-0 break-all">{{
-              currentConfig.executablePath
-            }}</span>
-          </div>
-          <UAlert
-            v-else
-            color="info"
-            variant="subtle"
-            icon="i-lucide-info"
-            description="未设置自定义路径。系统将自动检测已下载的 Chromium，或你可以在下方下载/设置。"
-          />
-        </div>
-      </template>
-    </UPageCard>
-
-    <!-- 模式选择 -->
-    <UTabs
-      v-model="mode"
-      :items="[
-        { label: '自动下载', value: 'download', icon: 'i-lucide-download' },
-        {
-          label: '手动指定路径',
-          value: 'custom',
-          icon: 'i-lucide-folder-open',
-        },
-      ]"
-    />
-
-    <!-- 下载模式 -->
-    <template v-if="mode === 'download'">
+    <LoadingState v-if="isInitializing" />
+    <template v-else>
+      <!-- 当前状态 -->
       <UPageCard
-        icon="i-lucide-download-cloud"
-        title="下载 Chromium"
+        icon="i-lucide-chrome"
+        title="Chromium 浏览器"
         variant="outline"
       >
         <template #description>
-          <span class="text-muted text-sm">
-            自动下载适合当前系统的 Chromium，并保存至
-            <code class="bg-muted/50 rounded px-1 text-xs"
-              >./data/browsers/</code
+          <span
+            class="text-muted inline-flex flex-wrap items-center gap-1.5 text-sm"
+          >
+            图片渲染功能需要 Chromium。当前状态：
+            <UBadge
+              v-if="currentConfig.executablePath"
+              color="success"
+              variant="subtle"
             >
-            。检测到已安装时可重新下载以获取最新版本。
+              已配置
+            </UBadge>
+            <UBadge v-else color="warning" variant="subtle"> 未配置 </UBadge>
           </span>
         </template>
-
         <template #footer>
-          <div class="flex w-full flex-col gap-4">
-            <!-- 进度区 -->
-            <template
-              v-if="
-                isDownloading ||
-                (wasActiveDownload &&
-                  (downloadState.status === 'done' ||
-                    downloadState.status === 'error'))
-              "
+          <div class="flex w-full flex-col gap-2">
+            <div
+              v-if="currentConfig.executablePath"
+              class="bg-muted/30 flex items-start gap-2 overflow-hidden rounded-md px-3 py-2 font-mono text-sm"
             >
-              <div class="flex flex-col gap-2">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-muted">{{ downloadStatusText }}</span>
-                  <span
-                    v-if="
-                      downloadState.status === 'downloading' &&
-                      downloadState.totalBytes > 0
-                    "
-                    class="text-muted font-mono text-xs"
-                  >
-                    {{ downloadProgress }}%
-                  </span>
-                </div>
-                <UProgress
-                  :model-value="
-                    downloadState.status === 'unpacking'
-                      ? null
-                      : downloadProgress
-                  "
-                  :color="downloadProgressColor"
-                  size="sm"
-                  :animation="
-                    downloadState.status === 'unpacking'
-                      ? 'carousel'
-                      : undefined
-                  "
-                />
-                <div
-                  v-if="downloadState.buildId"
-                  class="text-muted flex gap-4 text-xs"
-                >
-                  <span>版本：{{ downloadState.buildId }}</span>
-                  <span>平台：{{ downloadState.platform }}</span>
-                </div>
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="text-muted text-sm">
-                将自动选择适合当前系统的版本下载并安装，速度取决于网络环境。
-              </div>
-            </template>
-
-            <!-- 按钮组 -->
-            <div class="flex flex-wrap gap-2">
-              <UButton
-                v-if="!isDownloading"
-                icon="i-lucide-download"
-                :loading="isStartingDownload"
-                @click="startDownload"
-              >
-                {{ downloadState.status === "done" ? "重新下载" : "开始下载" }}
-              </UButton>
-              <UButton
-                v-if="isDownloading"
-                color="error"
-                variant="subtle"
-                icon="i-lucide-x"
-                @click="cancelDownload"
-              >
-                取消
-              </UButton>
-              <UButton
-                color="neutral"
-                variant="subtle"
-                icon="i-lucide-refresh-cw"
-                :loading="isCheckingUpdate"
-                @click="checkUpdate"
-              >
-                检查更新
-              </UButton>
+              <UIcon
+                name="i-lucide-file-cog"
+                class="text-muted mt-0.5 shrink-0"
+              />
+              <span class="text-muted min-w-0 break-all">{{
+                currentConfig.executablePath
+              }}</span>
             </div>
+            <UAlert
+              v-else
+              color="info"
+              variant="subtle"
+              icon="i-lucide-info"
+              description="未设置自定义路径。系统将自动检测已下载的 Chromium，或你可以在下方下载/设置。"
+            />
+          </div>
+        </template>
+      </UPageCard>
 
-            <!-- 更新信息 -->
-            <template v-if="updateInfo">
-              <UAlert
-                v-if="updateInfo.hasUpdate"
-                color="warning"
-                variant="subtle"
-                icon="i-lucide-arrow-up-circle"
+      <!-- 模式选择 -->
+      <UTabs
+        v-model="mode"
+        :items="[
+          { label: '自动下载', value: 'download', icon: 'i-lucide-download' },
+          {
+            label: '手动指定路径',
+            value: 'custom',
+            icon: 'i-lucide-folder-open',
+          },
+        ]"
+      />
+
+      <!-- 下载模式 -->
+      <template v-if="mode === 'download'">
+        <UPageCard
+          icon="i-lucide-download-cloud"
+          title="下载 Chromium"
+          variant="outline"
+        >
+          <template #description>
+            <span class="text-muted text-sm">
+              自动下载适合当前系统的 Chromium，并保存至
+              <code class="bg-muted/50 rounded px-1 text-xs"
+                >./data/browsers/</code
               >
-                <template #description>
-                  <div class="flex flex-col gap-1 text-sm">
+              。检测到已安装时可重新下载以获取最新版本。
+            </span>
+          </template>
+
+          <template #footer>
+            <div class="flex w-full flex-col gap-4">
+              <!-- 进度区 -->
+              <template
+                v-if="
+                  isDownloading ||
+                  (wasActiveDownload &&
+                    (downloadState.status === 'done' ||
+                      downloadState.status === 'error'))
+                "
+              >
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-muted">{{ downloadStatusText }}</span>
                     <span
-                      >发现新版本
-                      <strong>{{ updateInfo.latestBuildId }}</strong></span
+                      v-if="
+                        downloadState.status === 'downloading' &&
+                        downloadState.totalBytes > 0
+                      "
+                      class="text-muted font-mono text-xs"
                     >
-                    <span
-                      v-if="updateInfo.currentBuildId"
-                      class="text-muted text-xs"
-                    >
-                      当前版本：{{ updateInfo.currentBuildId }}
+                      {{ downloadProgress }}%
                     </span>
                   </div>
-                </template>
-              </UAlert>
-              <UAlert
-                v-else
-                color="success"
-                variant="subtle"
-                icon="i-lucide-check-circle"
-              >
-                <template #description>
-                  <span class="text-sm">
-                    已是最新版本
-                    <strong>{{ updateInfo.latestBuildId }}</strong>
-                  </span>
-                </template>
-              </UAlert>
-            </template>
-          </div>
-        </template>
-      </UPageCard>
-    </template>
+                  <UProgress
+                    :model-value="
+                      downloadState.status === 'unpacking'
+                        ? null
+                        : downloadProgress
+                    "
+                    :color="downloadProgressColor"
+                    size="sm"
+                    :animation="
+                      downloadState.status === 'unpacking'
+                        ? 'carousel'
+                        : undefined
+                    "
+                  />
+                  <div
+                    v-if="downloadState.buildId"
+                    class="text-muted flex gap-4 text-xs"
+                  >
+                    <span>版本：{{ downloadState.buildId }}</span>
+                    <span>平台：{{ downloadState.platform }}</span>
+                  </div>
+                </div>
+              </template>
 
-    <!-- 自定义路径模式 -->
-    <template v-if="mode === 'custom'">
-      <UPageCard
-        icon="i-lucide-folder-open"
-        title="手动指定浏览器路径"
-        variant="outline"
-      >
-        <template #description>
-          <span class="text-muted text-sm">
-            填写系统中已安装的 Chromium / Chrome 可执行文件的绝对路径。
-            留空将使用自动检测。
-          </span>
-        </template>
-        <template #footer>
-          <div class="flex w-full flex-col gap-4">
-            <UFormField label="可执行文件路径">
-              <div class="flex w-full gap-2">
-                <UInput
-                  v-model="customPath"
-                  placeholder="例如：/usr/bin/chromium-browser"
-                  class="flex-1"
-                  icon="i-lucide-file-cog"
-                />
+              <template v-else>
+                <div class="text-muted text-sm">
+                  将自动选择适合当前系统的版本下载并安装，速度取决于网络环境。
+                </div>
+              </template>
+
+              <!-- 按钮组 -->
+              <div class="flex flex-wrap gap-2">
+                <UButton
+                  v-if="!isDownloading"
+                  icon="i-lucide-download"
+                  :loading="isStartingDownload"
+                  @click="startDownload"
+                >
+                  {{
+                    downloadState.status === "done" ? "重新下载" : "开始下载"
+                  }}
+                </UButton>
+                <UButton
+                  v-if="isDownloading"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-x"
+                  @click="cancelDownload"
+                >
+                  取消
+                </UButton>
+                <UButton
+                  color="neutral"
+                  variant="subtle"
+                  icon="i-lucide-refresh-cw"
+                  :loading="isCheckingUpdate"
+                  @click="checkUpdate"
+                >
+                  检查更新
+                </UButton>
               </div>
-            </UFormField>
-            <div class="flex gap-2">
-              <UButton
-                icon="i-lucide-save"
-                :loading="isSavingPath"
-                @click="saveCustomPath"
-              >
-                保存路径
-              </UButton>
-              <UButton
-                v-if="currentConfig.executablePath"
-                color="error"
-                variant="subtle"
-                icon="i-lucide-trash-2"
-                :loading="isSavingPath"
-                @click="clearPath"
-              >
-                清除
-              </UButton>
+
+              <!-- 更新信息 -->
+              <template v-if="updateInfo">
+                <UAlert
+                  v-if="updateInfo.hasUpdate"
+                  color="warning"
+                  variant="subtle"
+                  icon="i-lucide-arrow-up-circle"
+                >
+                  <template #description>
+                    <div class="flex flex-col gap-1 text-sm">
+                      <span
+                        >发现新版本
+                        <strong>{{ updateInfo.latestBuildId }}</strong></span
+                      >
+                      <span
+                        v-if="updateInfo.currentBuildId"
+                        class="text-muted text-xs"
+                      >
+                        当前版本：{{ updateInfo.currentBuildId }}
+                      </span>
+                    </div>
+                  </template>
+                </UAlert>
+                <UAlert
+                  v-else
+                  color="success"
+                  variant="subtle"
+                  icon="i-lucide-check-circle"
+                >
+                  <template #description>
+                    <span class="text-sm">
+                      已是最新版本
+                      <strong>{{ updateInfo.latestBuildId }}</strong>
+                    </span>
+                  </template>
+                </UAlert>
+              </template>
             </div>
-          </div>
-        </template>
-      </UPageCard>
+          </template>
+        </UPageCard>
+      </template>
+
+      <!-- 自定义路径模式 -->
+      <template v-if="mode === 'custom'">
+        <UPageCard
+          icon="i-lucide-folder-open"
+          title="手动指定浏览器路径"
+          variant="outline"
+        >
+          <template #description>
+            <span class="text-muted text-sm">
+              填写系统中已安装的 Chromium / Chrome 可执行文件的绝对路径。
+              留空将使用自动检测。
+            </span>
+          </template>
+          <template #footer>
+            <div class="flex w-full flex-col gap-4">
+              <UFormField label="可执行文件路径">
+                <div class="flex w-full gap-2">
+                  <UInput
+                    v-model="customPath"
+                    placeholder="例如：/usr/bin/chromium-browser"
+                    class="flex-1"
+                    icon="i-lucide-file-cog"
+                  />
+                </div>
+              </UFormField>
+              <div class="flex gap-2">
+                <UButton
+                  icon="i-lucide-save"
+                  :loading="isSavingPath"
+                  @click="saveCustomPath"
+                >
+                  保存路径
+                </UButton>
+                <UButton
+                  v-if="currentConfig.executablePath"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  :loading="isSavingPath"
+                  @click="clearPath"
+                >
+                  清除
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UPageCard>
+      </template>
     </template>
   </div>
 </template>

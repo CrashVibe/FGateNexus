@@ -38,7 +38,7 @@ const openModal = () => {
 };
 
 // 适配器列表逻辑
-const adapterList = ref<AdaptersWithStatus>([]);
+const adapterList = ref<AdaptersWithStatus | null>(null);
 const isLoadingList = ref(false);
 
 const fetchAdapterList = async () => {
@@ -47,6 +47,7 @@ const fetchAdapterList = async () => {
     adapterList.value = await AdapterData.gets();
   } catch (error) {
     console.error("Failed to fetch adapter list:", error);
+    adapterList.value = [];
     toast.add({ color: "error", title: "获取适配器列表失败" });
   } finally {
     isLoadingList.value = false;
@@ -89,6 +90,9 @@ const showDrawer = ref(false);
 const selectedAdapter = ref<AdapterWithStatus | null>(null);
 
 const handleChildClick = (adapterID: number) => {
+  if (!adapterList.value) {
+    return;
+  }
   const adapter = adapterList.value.find((item) => item.id === adapterID);
   if (adapter) {
     selectedAdapter.value = adapter;
@@ -188,32 +192,36 @@ const handleToggle = async (adapterID: number, enabled: boolean) => {
           </UModal>
 
           <!-- 空状态 -->
-          <div
-            v-if="adapterList.length === 0 && !isLoadingList"
-            class="mt-10 flex flex-col items-center gap-4 text-center"
-          >
-            <p class="text-muted text-sm">
-              暂无 Bot 实例，请先创建一个 Bot 实例
-            </p>
-            <UButton icon="i-lucide-plus" @click="openModal"
-              >创建新 Bot 实例</UButton
-            >
-          </div>
+          <LoadingState v-if="!adapterList" />
 
-          <!-- 适配器卡片列表 -->
-          <div
-            v-else
-            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-          >
-            <component
-              :is="getAdapterComponent(adapter.type)"
-              v-for="(adapter, index) in adapterList"
-              :key="adapter.id"
-              :adapter="adapter"
-              :data-index="index"
-              @click="handleChildClick"
-            />
-          </div>
+          <template v-else>
+            <div
+              v-if="adapterList.length === 0 && !isLoadingList"
+              class="mt-10 flex flex-col items-center gap-4 text-center"
+            >
+              <p class="text-muted text-sm">
+                暂无 Bot 实例，请先创建一个 Bot 实例
+              </p>
+              <UButton icon="i-lucide-plus" @click="openModal"
+                >创建新 Bot 实例</UButton
+              >
+            </div>
+
+            <!-- 适配器卡片列表 -->
+            <div
+              v-else
+              class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+            >
+              <component
+                :is="getAdapterComponent(adapter.type)"
+                v-for="(adapter, index) in adapterList"
+                :key="adapter.id"
+                :adapter="adapter"
+                :data-index="index"
+                @click="handleChildClick"
+              />
+            </div>
+          </template>
 
           <!-- 抽屉 -->
           <USlideover

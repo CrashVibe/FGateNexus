@@ -20,7 +20,7 @@ const toast = useToast();
 const showModal = ref(false);
 
 // 服务器列表逻辑
-const serverList = ref<ServerWithStatus[]>([]);
+const serverList = ref<ServerWithStatus[] | null>(null);
 const isLoadingList = ref(false);
 
 const fetchServerList = async () => {
@@ -29,6 +29,7 @@ const fetchServerList = async () => {
     serverList.value = await ServerData.gets();
   } catch (error) {
     console.error("Failed to fetch server list:", error);
+    serverList.value = [];
     toast.add({ color: "error", title: "获取服务器列表失败" });
   } finally {
     isLoadingList.value = false;
@@ -152,28 +153,32 @@ onMounted(() => {
           </UModal>
 
           <!-- 空状态 -->
-          <div
-            v-if="serverList.length === 0 && !isLoadingList"
-            class="mt-10 flex flex-col items-center gap-4 text-center"
-          >
-            <p class="text-muted text-sm">暂无服务器，请先创建一个服务器</p>
-            <UButton icon="i-lucide-plus" @click="openModal"
-              >创建服务器</UButton
-            >
-          </div>
+          <LoadingState v-if="!serverList" />
 
-          <!-- 服务器卡片列表 -->
-          <div
-            v-else
-            class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
-          >
-            <CardServer
-              v-for="(server, index) in serverList"
-              :key="server.id"
-              :data-index="index"
-              :server="server"
-            />
-          </div>
+          <template v-else>
+            <div
+              v-if="serverList.length === 0 && !isLoadingList"
+              class="mt-10 flex flex-col items-center gap-4 text-center"
+            >
+              <p class="text-muted text-sm">暂无服务器，请先创建一个服务器</p>
+              <UButton icon="i-lucide-plus" @click="openModal"
+                >创建服务器</UButton
+              >
+            </div>
+
+            <!-- 服务器卡片列表 -->
+            <div
+              v-else
+              class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
+            >
+              <CardServer
+                v-for="(server, index) in serverList"
+                :key="server.id"
+                :data-index="index"
+                :server="server"
+              />
+            </div>
+          </template>
         </UContainer>
       </template>
     </UDashboardPanel>

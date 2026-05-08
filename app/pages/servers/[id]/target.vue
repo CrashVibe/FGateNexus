@@ -9,140 +9,148 @@
       </template>
       <template #body>
         <UContainer class="py-8">
-          <div class="mb-4 flex items-center justify-between gap-4">
-            <UInput
-              v-model="globalFilter"
-              class="max-w-xs"
-              icon="i-lucide-search"
-              placeholder="搜索目标 ID / 类型..."
-            />
-            <UButton icon="i-lucide-plus" @click="addTarget">添加目标</UButton>
-          </div>
-          <UTable
-            ref="table"
-            v-model:pagination="pagination"
-            v-model:global-filter="globalFilter"
-            :data="formData"
-            :columns="columns"
-            :pagination-options="{
-              autoResetPageIndex: false,
-              getPaginationRowModel: getPaginationRowModel(),
-            }"
-          >
-            <template #empty>
-              <div class="flex flex-col items-center gap-4 py-8">
-                <template v-if="globalFilter">
-                  <p class="text-muted">
-                    没有找到匹配 "{{ globalFilter }}" 的目标
-                  </p>
-                  <UButton
-                    variant="subtle"
-                    color="neutral"
-                    @click="globalFilter = ''"
-                    >清除搜索</UButton
-                  >
-                </template>
-                <template v-else>
-                  <p class="text-muted">暂无目标配置，请添加目标</p>
-                  <UButton @click="addTarget">添加目标</UButton>
-                </template>
-              </div>
-            </template>
-          </UTable>
-          <div
-            class="border-default mt-4 flex items-center justify-between border-t px-4 pt-4"
-          >
-            <UPagination
-              :page="
-                (table?.tableApi?.getState().pagination.pageIndex || 0) + 1
-              "
-              :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-              :total="table?.tableApi?.getFilteredRowModel().rows.length"
-              @update:page="updatePage"
-            />
-            <div class="flex gap-2">
-              <UButton
-                color="neutral"
-                variant="subtle"
-                :disabled="!isDirty"
-                :loading="isAnyLoading"
-                @click="cancelChanges"
-                >取消更改</UButton
-              >
-              <UButton
-                :disabled="!isDirty || hasErrors"
-                :loading="isAnyLoading"
-                @click="handleSubmit"
-              >
-                保存配置
-              </UButton>
-            </div>
-          </div>
+          <LoadingState v-if="!formData" />
 
-          <UModal v-model:open="showAddModal" title="添加目标">
-            <template #body>
-              <UForm
-                :schema="formSchema"
-                :state="newTargetForm"
-                class="space-y-4"
-                @submit="handleAddTargetSubmit"
+          <template v-else>
+            <div class="mb-4 flex items-center justify-between gap-4">
+              <UInput
+                v-model="globalFilter"
+                class="max-w-xs"
+                icon="i-lucide-search"
+                placeholder="搜索目标 ID / 类型..."
+              />
+              <UButton icon="i-lucide-plus" @click="addTarget"
+                >添加目标</UButton
               >
-                <UFormField label="目标 ID" name="targetId">
-                  <UInput
-                    v-model="newTargetForm.targetId"
-                    class="w-full"
-                    placeholder="请输入目标 ID"
-                  />
-                </UFormField>
-                <UFormField label="类型" name="type">
-                  <USelect
-                    v-model="newTargetForm.type"
-                    :items="targetTypeOptions"
-                    class="w-full"
-                  />
-                </UFormField>
-                <UFormField label="状态" name="enabled">
-                  <USelect
-                    v-model="newTargetForm.enabled"
-                    :items="statusOptions"
-                    class="w-full"
-                  />
-                </UFormField>
+            </div>
+            <UTable
+              ref="table"
+              v-model:pagination="pagination"
+              v-model:global-filter="globalFilter"
+              :data="formData"
+              :columns="columns"
+              :pagination-options="{
+                autoResetPageIndex: false,
+                getPaginationRowModel: getPaginationRowModel(),
+              }"
+            >
+              <template #empty>
+                <div class="flex flex-col items-center gap-4 py-8">
+                  <template v-if="globalFilter">
+                    <p class="text-muted">
+                      没有找到匹配 "{{ globalFilter }}" 的目标
+                    </p>
+                    <UButton
+                      variant="subtle"
+                      color="neutral"
+                      @click="globalFilter = ''"
+                      >清除搜索</UButton
+                    >
+                  </template>
+                  <template v-else>
+                    <p class="text-muted">暂无目标配置，请添加目标</p>
+                    <UButton @click="addTarget">添加目标</UButton>
+                  </template>
+                </div>
+              </template>
+            </UTable>
+            <div
+              class="border-default mt-4 flex items-center justify-between border-t px-4 pt-4"
+            >
+              <UPagination
+                :page="
+                  (table?.tableApi?.getState().pagination.pageIndex || 0) + 1
+                "
+                :items-per-page="
+                  table?.tableApi?.getState().pagination.pageSize
+                "
+                :total="table?.tableApi?.getFilteredRowModel().rows.length"
+                @update:page="updatePage"
+              />
+              <div class="flex gap-2">
+                <UButton
+                  color="neutral"
+                  variant="subtle"
+                  :disabled="!isDirty"
+                  :loading="isAnyLoading"
+                  @click="cancelChanges"
+                  >取消更改</UButton
+                >
+                <UButton
+                  :disabled="!isDirty || hasErrors"
+                  :loading="isAnyLoading"
+                  @click="handleSubmit"
+                >
+                  保存配置
+                </UButton>
+              </div>
+            </div>
+
+            <UModal v-model:open="showAddModal" title="添加目标">
+              <template #body>
+                <UForm
+                  :schema="formSchema"
+                  :state="newTargetForm"
+                  class="space-y-4"
+                  @submit="handleAddTargetSubmit"
+                >
+                  <UFormField label="目标 ID" name="targetId">
+                    <UInput
+                      v-model="newTargetForm.targetId"
+                      class="w-full"
+                      placeholder="请输入目标 ID"
+                    />
+                  </UFormField>
+                  <UFormField label="类型" name="type">
+                    <USelect
+                      v-model="newTargetForm.type"
+                      :items="targetTypeOptions"
+                      class="w-full"
+                    />
+                  </UFormField>
+                  <UFormField label="状态" name="enabled">
+                    <USelect
+                      v-model="newTargetForm.enabled"
+                      :items="statusOptions"
+                      class="w-full"
+                    />
+                  </UFormField>
+                  <div class="mt-6 flex justify-end gap-2">
+                    <UButton
+                      color="neutral"
+                      variant="subtle"
+                      @click="showAddModal = false"
+                    >
+                      取消
+                    </UButton>
+                    <UButton type="submit"> 添加 </UButton>
+                  </div>
+                </UForm>
+              </template>
+            </UModal>
+
+            <UModal v-model:open="showDeleteModal" title="确认删除">
+              <template #body>
+                <p>确定要删除这个目标吗？此操作不可逆。</p>
                 <div class="mt-6 flex justify-end gap-2">
                   <UButton
                     color="neutral"
                     variant="subtle"
-                    @click="showAddModal = false"
+                    @click="showDeleteModal = false"
                   >
-                    取消
+                    取 消
                   </UButton>
-                  <UButton type="submit"> 添加 </UButton>
+                  <UButton
+                    :loading="loadingMap.isSubmitting"
+                    color="error"
+                    @click="confirmDelete"
+                  >
+                    确认删除
+                  </UButton>
                 </div>
-              </UForm>
-            </template>
-          </UModal>
-
-          <UModal v-model:open="showDeleteModal" title="确认删除">
-            <template #body>
-              <p>确定要删除这个目标吗？此操作不可逆。</p>
-              <div class="mt-6 flex justify-end gap-2">
-                <UButton
-                  color="neutral"
-                  variant="subtle"
-                  @click="showDeleteModal = false"
-                >
-                  取 消
-                </UButton>
-                <UButton
-                  :loading="loadingMap.isSubmitting"
-                  color="error"
-                  @click="confirmDelete"
-                >
-                  确认删除
-                </UButton>
-              </div>
-            </template>
-          </UModal>
+              </template>
+            </UModal>
+          </template>
         </UContainer>
       </template>
     </UDashboardPanel>
@@ -210,11 +218,17 @@ const buildRequestFromRow = (row: targetResponse): targetSchemaRequestType =>
     type: row.type,
   });
 
-let originalTargets: targetResponse[] = [];
+const originalTargets = ref<targetResponse[] | null>(null);
 
-const formData = ref<targetResponse[]>([]);
+const formData = ref<targetResponse[] | null>(null);
 
-const isDirty = computed(() => !isEqual(formData.value, originalTargets));
+const isDirty = computed(() => {
+  if (!formData.value || !originalTargets.value) {
+    return false;
+  }
+
+  return !isEqual(formData.value, originalTargets.value);
+});
 const loadingMap = reactive({
   isLoading: true,
   isSubmitting: false,
@@ -238,6 +252,9 @@ const openDeleteModal = (id: string) => {
 };
 
 const getRowTargetIdError = (index: number): string | undefined => {
+  if (!formData.value) {
+    return undefined;
+  }
   const item = formData.value[index];
   if (!item) {
     return undefined;
@@ -248,7 +265,7 @@ const getRowTargetIdError = (index: number): string | undefined => {
   }
 
   const isDup = formData.value.some(
-    (t, i) => i !== index && t.targetId.trim() === tid && t.type === item.type
+    (t, i) => i !== index && t.targetId.trim() === tid && t.type === item.type,
   );
   if (isDup) {
     return "该组合已存在";
@@ -257,17 +274,27 @@ const getRowTargetIdError = (index: number): string | undefined => {
   return undefined;
 };
 
-const hasErrors = computed(() => formData.value.some((_, idx) => !!getRowTargetIdError(idx)));
+const hasErrors = computed(() => {
+  if (!formData.value) {
+    return false;
+  }
+
+  return formData.value.some((_, idx) => !!getRowTargetIdError(idx));
+});
 
 const refreshAll = async (): Promise<void> => {
+  if (!serverId) {
+    loadingMap.isLoading = false;
+    return;
+  }
   loadingMap.isLoading = true;
   try {
     const targets = await TargetData.gets(serverId);
-    originalTargets = structuredClone(targets);
+    originalTargets.value = structuredClone(targets);
     formData.value = structuredClone(targets);
   } catch (error) {
     console.error(error);
-    toast.add({color: "error", title: "刷新目标列表失败"});
+    toast.add({ color: "error", title: "刷新目标列表失败" });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -303,6 +330,9 @@ const columns: TableColumn<targetResponse>[] = [
             color={errorMsg ? "error" : undefined}
             modelValue={row.original.targetId ? String(row.original.targetId) : ""}
             onUpdate:modelValue={(v: string | number | undefined | boolean) => {
+              if (!formData.value) {
+                return;
+              }
               const item = formData.value[row.index];
               if (item) {
                 item.targetId = String(v ?? "");
@@ -322,6 +352,9 @@ const columns: TableColumn<targetResponse>[] = [
         items={targetTypeOptions}
         modelValue={row.original.type}
         onUpdate:modelValue={(v: string | number | boolean | undefined) => {
+          if (!formData.value) {
+            return;
+          }
           const item = formData.value[row.index];
           if (item) {
             item.type = String(v) as "group" | "private";
@@ -338,6 +371,9 @@ const columns: TableColumn<targetResponse>[] = [
         items={statusOptions}
         modelValue={row.original.enabled ? "enable" : "disable"}
         onUpdate:modelValue={(v: string | number | boolean | undefined) => {
+          if (!formData.value) {
+            return;
+          }
           const item = formData.value[row.index];
           if (item) {
             item.enabled = String(v) === "enable";
@@ -378,6 +414,9 @@ const addTarget = () => {
 };
 
 const handleAddTargetSubmit = async () => {
+  if (!formData.value) {
+    return;
+  }
   const targetId = newTargetForm.targetId.trim();
   const {type} = newTargetForm;
 
@@ -414,7 +453,11 @@ const handleAddTargetSubmit = async () => {
 };
 
 const handleSubmit = async () => {
-  const originalById = keyBy(originalTargets, "id");
+  if (!formData.value || !originalTargets.value) {
+    return;
+  }
+
+  const originalById = keyBy(originalTargets.value, "id");
   const toUpdate = formData.value.filter((t) => {
     const ori = originalById[t.id];
     return (
@@ -450,7 +493,9 @@ const handleSubmit = async () => {
 };
 
 const cancelChanges = () => {
-  formData.value = structuredClone(originalTargets);
+  formData.value = originalTargets.value
+    ? structuredClone(originalTargets.value)
+    : null;
 };
 
 onMounted(async () => {

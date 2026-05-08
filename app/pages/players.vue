@@ -11,7 +11,7 @@ import type { PlayerAPI } from "../../shared/model/player/api";
 const UBadge = resolveComponent("UBadge");
 
 const toast = useToast();
-const playerList = ref<z.infer<typeof PlayerAPI.GETS.response>>([]);
+const playerList = ref<z.infer<typeof PlayerAPI.GETS.response> | null>(null);
 const isLoadingList = ref(false);
 
 const fetchPlayerList = async () => {
@@ -20,6 +20,7 @@ const fetchPlayerList = async () => {
     playerList.value = await PlayerData.gets();
   } catch (error) {
     console.error("Failed to fetch player list:", error);
+    playerList.value = [];
     toast.add({ color: "error", title: "获取玩家列表失败" });
   } finally {
     isLoadingList.value = false;
@@ -53,7 +54,7 @@ watch([searchName, searchUUID, searchIP, searchSocial], () => {
 });
 
 const data = computed<PlayerRow[]>(() =>
-  playerList.value
+  (playerList.value ?? [])
     .filter((player) => {
       const name = player.player.name.toLowerCase();
       const uuid = player.player.uuid.toLowerCase();
@@ -141,59 +142,69 @@ const columns: TableColumn<PlayerRow>[] = [
       </template>
       <template #body>
         <UContainer class="py-8">
-          <!-- 搜索栏 -->
-          <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
-            <UInput
-              v-model="searchName"
-              icon="i-lucide-search"
-              placeholder="搜索玩家名..."
-            />
-            <UInput
-              v-model="searchUUID"
-              icon="i-lucide-search"
-              placeholder="搜索UUID..."
-            />
-            <UInput
-              v-model="searchIP"
-              icon="i-lucide-search"
-              placeholder="搜索IP..."
-            />
-            <UInput
-              v-model="searchSocial"
-              icon="i-lucide-search"
-              placeholder="搜索社交账号UID..."
-            />
-          </div>
+          <LoadingState v-if="!playerList" />
 
-          <!-- 表格 -->
-          <UTable
-            ref="table"
-            v-model:pagination="pagination"
-            :data="data"
-            :columns="columns"
-            :loading="isLoadingList"
-            :pagination-options="{
-              getPaginationRowModel: getPaginationRowModel(),
-            }"
-          >
-            <template #empty>
-              <div class="text-muted py-8 text-center text-sm">
-                暂无玩家数据
-              </div>
-            </template>
-          </UTable>
+          <template v-else>
+            <!-- 搜索栏 -->
+            <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+              <UInput
+                v-model="searchName"
+                icon="i-lucide-search"
+                placeholder="搜索玩家名..."
+              />
+              <UInput
+                v-model="searchUUID"
+                icon="i-lucide-search"
+                placeholder="搜索UUID..."
+              />
+              <UInput
+                v-model="searchIP"
+                icon="i-lucide-search"
+                placeholder="搜索IP..."
+              />
+              <UInput
+                v-model="searchSocial"
+                icon="i-lucide-search"
+                placeholder="搜索社交账号UID..."
+              />
+            </div>
 
-          <!-- 分页 -->
-          <div class="border-default mt-4 flex justify-end border-t px-4 pt-4">
-            <UPagination
-              :page="
-                (table?.tableApi?.getState().pagination.pageIndex || 0) + 1
-              "
-              :items-per-page="table?.tableApi?.getState().pagination.pageSize"
-              :total="table?.tableApi?.getFilteredRowModel().rows.length"
-              @update:page="(p: number) => table?.tableApi?.setPageIndex(p - 1)"
-            />
-          </div>
+            <!-- 表格 -->
+            <UTable
+              ref="table"
+              v-model:pagination="pagination"
+              :data="data"
+              :columns="columns"
+              :loading="isLoadingList"
+              :pagination-options="{
+                getPaginationRowModel: getPaginationRowModel(),
+              }"
+            >
+              <template #empty>
+                <div class="text-muted py-8 text-center text-sm">
+                  暂无玩家数据
+                </div>
+              </template>
+            </UTable>
+
+            <!-- 分页 -->
+            <div
+              class="border-default mt-4 flex justify-end border-t px-4 pt-4"
+            >
+              <UPagination
+                :page="
+                  (table?.tableApi?.getState().pagination.pageIndex || 0) + 1
+                "
+                :items-per-page="
+                  table?.tableApi?.getState().pagination.pageSize
+                "
+                :total="table?.tableApi?.getFilteredRowModel().rows.length"
+                @update:page="
+                  (p: number) => table?.tableApi?.setPageIndex(p - 1)
+                "
+              />
+            </div>
+          </template>
         </UContainer>
       </template>
     </UDashboardPanel>

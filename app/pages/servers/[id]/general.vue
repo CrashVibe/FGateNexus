@@ -9,90 +9,94 @@
       </template>
       <template #body>
         <UContainer class="py-8">
-          <div
-            class="grid gap-4"
-            :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
-          >
-            <UPageCard
-              variant="outline"
-              title="基础设置"
-              description="修改服务器基础信息"
-            >
-              <UFormField label="服务器名字" name="name">
-                <UInput
-                  v-model="formData.name"
-                  class="w-full"
-                  placeholder="请输入服务器名称"
-                />
-              </UFormField>
-              <UFormField label="Token" name="token">
-                <UInput
-                  v-model="formData.token"
-                  class="w-full"
-                  placeholder="请输入服务器 Token"
-                />
-              </UFormField>
-            </UPageCard>
+          <LoadingState v-if="!formData" />
 
-            <UPageCard
-              variant="outline"
-              title="Bot 实例"
-              description="为此服务器绑定一个 Bot 实例"
+          <template v-else>
+            <div
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
             >
-              <UFormField name="adapterId">
-                <div class="flex w-full items-center gap-2">
-                  <USelect
-                    v-model="selectedAdapterId"
-                    :items="adapterOptions"
-                    class="flex-1"
-                    searchable
-                    placeholder="请选择 Bot 实例"
+              <UPageCard
+                variant="outline"
+                title="基础设置"
+                description="修改服务器基础信息"
+              >
+                <UFormField label="服务器名字" name="name">
+                  <UInput
+                    v-model="formData.name"
+                    class="w-full"
+                    placeholder="请输入服务器名称"
                   />
-                  <UButton
-                    v-if="selectedAdapterId !== undefined"
-                    color="neutral"
-                    variant="ghost"
-                    icon="i-lucide-x"
-                    size="sm"
-                    aria-label="清除选择"
-                    @click="selectedAdapterId = undefined"
+                </UFormField>
+                <UFormField label="Token" name="token">
+                  <UInput
+                    v-model="formData.token"
+                    class="w-full"
+                    placeholder="请输入服务器 Token"
                   />
-                </div>
-              </UFormField>
-            </UPageCard>
+                </UFormField>
+              </UPageCard>
 
-            <UPageCard
-              variant="outline"
-              title="基础操作"
-              description="危险操作，请谨慎"
-            >
+              <UPageCard
+                variant="outline"
+                title="Bot 实例"
+                description="为此服务器绑定一个 Bot 实例"
+              >
+                <UFormField name="adapterId">
+                  <div class="flex w-full items-center gap-2">
+                    <USelect
+                      v-model="selectedAdapterId"
+                      :items="adapterOptions"
+                      class="flex-1"
+                      searchable
+                      placeholder="请选择 Bot 实例"
+                    />
+                    <UButton
+                      v-if="selectedAdapterId !== undefined"
+                      color="neutral"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="sm"
+                      aria-label="清除选择"
+                      @click="selectedAdapterId = undefined"
+                    />
+                  </div>
+                </UFormField>
+              </UPageCard>
+
+              <UPageCard
+                variant="outline"
+                title="基础操作"
+                description="危险操作，请谨慎"
+              >
+                <UButton
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="showDeleteModal = true"
+                  >删除服务器
+                </UButton>
+              </UPageCard>
+            </div>
+
+            <USeparator class="my-4" />
+            <div class="flex justify-end gap-2">
               <UButton
-                color="error"
+                color="neutral"
                 variant="subtle"
-                icon="i-lucide-trash-2"
-                @click="showDeleteModal = true"
-                >删除服务器
-              </UButton>
-            </UPageCard>
-          </div>
-
-          <USeparator class="my-4" />
-          <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              :disabled="!isDirty"
-              :loading="isAnyLoading"
-              @click="cancelChanges"
-              >取消</UButton
-            >
-            <UButton
-              :disabled="!isDirty"
-              :loading="isAnyLoading"
-              @click="handleSubmit"
-              >保存配置</UButton
-            >
-          </div>
+                :disabled="!isDirty"
+                :loading="isAnyLoading"
+                @click="cancelChanges"
+                >取消</UButton
+              >
+              <UButton
+                :disabled="!isDirty"
+                :loading="isAnyLoading"
+                @click="handleSubmit"
+                >保存配置</UButton
+              >
+            </div>
+          </template>
         </UContainer>
 
         <UModal v-model:open="showDeleteModal" title="确认删除">
@@ -155,22 +159,23 @@ const showDeleteModal = ref(false);
 const adapterOptions = ref<{ label: string; value: number }[]>([]);
 let serverData: ServerWithStatus | null = null;
 
-const formData = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
-  adapterId: null,
-  name: "",
-  token: "",
+const formData = ref<z.infer<typeof GeneralAPI.PATCH.request> | null>(null);
+const original = ref<z.infer<typeof GeneralAPI.PATCH.request> | null>(null);
+const isDirty = computed(() => {
+  if (!formData.value || !original.value) {
+    return false;
+  }
+
+  return !isEqual(formData.value, original.value);
 });
-const original = reactive<z.infer<typeof GeneralAPI.PATCH.request>>({
-  adapterId: null,
-  name: "",
-  token: "",
-});
-const isDirty = computed(() => !isEqual(formData, original));
 
 const selectedAdapterId = computed({
-  get: () => formData.adapterId ?? undefined,
+  get: () => formData.value?.adapterId ?? undefined,
   set: (v: number | undefined) => {
-    formData.adapterId = v ?? null;
+    if (!formData.value) {
+      return;
+    }
+    formData.value.adapterId = v ?? null;
   },
 });
 
@@ -191,6 +196,10 @@ const confirmDelete = async () => {
 };
 
 const refreshAll = async (): Promise<void> => {
+  if (!route.params["id"]) {
+    loadingMap.isLoading = false;
+    return;
+  }
   loadingMap.isLoading = true;
   try {
     const [adapterData, serverDataResult] = await Promise.all([
@@ -205,10 +214,12 @@ const refreshAll = async (): Promise<void> => {
       value: adapter.id,
     }));
 
-    formData.adapterId = serverDataResult.adapterId;
-    formData.name = serverDataResult.name;
-    formData.token = serverDataResult.token;
-    Object.assign(original, structuredClone(toRaw(formData)));
+    formData.value = {
+      adapterId: serverDataResult.adapterId,
+      name: serverDataResult.name,
+      token: serverDataResult.token,
+    };
+    original.value = { ...formData.value };
   } catch (error) {
     console.error("Refresh failed:", error);
     toast.add({ color: "error", title: "加载数据失败" });
@@ -218,13 +229,16 @@ const refreshAll = async (): Promise<void> => {
 };
 
 const handleSubmit = async (): Promise<void> => {
+  if (!formData.value) {
+    return;
+  }
   loadingMap.isSubmitting = true;
   try {
     await GeneralData.patch(
       serverData?.id ?? Number(route.params["id"]),
-      formData,
+      formData.value,
     );
-    Object.assign(original, structuredClone(toRaw(formData)));
+    original.value = { ...formData.value };
     toast.add({ color: "success", title: "配置已保存" });
     await refreshAll();
   } catch (error) {
@@ -236,7 +250,7 @@ const handleSubmit = async (): Promise<void> => {
 };
 
 const cancelChanges = () => {
-  Object.assign(formData, structuredClone(toRaw(original)));
+  formData.value = original.value ? { ...original.value } : null;
 };
 
 onMounted(async () => {

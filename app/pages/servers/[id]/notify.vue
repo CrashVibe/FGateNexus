@@ -9,275 +9,284 @@
       </template>
       <template #body>
         <UContainer class="py-8">
-          <div class="mb-4" :class="isMobile ? 'columns-1' : 'columns-2'">
-            <!-- 玩家进出事件 -->
-            <UPageCard
-              variant="outline"
-              class="mb-4 break-inside-avoid"
-              title="玩家进出事件"
-              description="玩家加入/离开服务器时发送通知"
-            >
-              <template #footer>
-                <div class="flex flex-col gap-4">
-                  <UFormField name="player_notify" label="是否启用">
-                    <USwitch v-model="formData.config.player_notify" />
-                  </UFormField>
+          <LoadingState v-if="!formData.config" />
 
-                  <UFormField
-                    name="join_notify_message"
-                    label="玩家进出时发送的消息"
-                  >
-                    <UInput
-                      v-model="formData.config.join_notify_message"
-                      :maxlength="200"
-                      class="w-full"
-                      placeholder="玩家进入时的通知消息"
-                    />
-                    <div class="mt-2 space-y-2">
-                      <p class="text-muted text-xs">点击变量插入到消息</p>
-                      <div class="flex flex-wrap gap-1">
-                        <UTooltip
-                          v-for="tag in joinVariables"
-                          :key="tag.value"
-                          :text="`${tag.label} · [${tag.example}]`"
-                        >
-                          <UBadge
-                            :color="
-                              formData.config.join_notify_message.includes(
-                                tag.value,
-                              )
-                                ? 'primary'
-                                : 'neutral'
-                            "
-                            variant="subtle"
-                            class="cursor-pointer"
-                            @click="
-                              insertPlaceholder(
-                                'join_notify_message',
-                                tag.value,
-                              )
-                            "
-                          >
-                            {{ tag.value }}
-                          </UBadge>
-                        </UTooltip>
-                      </div>
-                      <div class="text-muted text-sm">
-                        预览：
-                        <span class="text-success">{{
-                          renderJoinMessage(
-                            formData.config.join_notify_message,
-                            "Steve",
-                          )
-                        }}</span>
-                      </div>
-                    </div>
-                  </UFormField>
+          <template v-else>
+            <div class="mb-4" :class="isMobile ? 'columns-1' : 'columns-2'">
+              <!-- 玩家进出事件 -->
+              <UPageCard
+                variant="outline"
+                class="mb-4 break-inside-avoid"
+                title="玩家进出事件"
+                description="玩家加入/离开服务器时发送通知"
+              >
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <UFormField name="player_notify" label="是否启用">
+                      <USwitch v-model="formData.config.player_notify" />
+                    </UFormField>
 
-                  <UFormField
-                    name="leave_notify_message"
-                    label="玩家离开时发送的消息"
-                  >
-                    <UInput
-                      v-model="formData.config.leave_notify_message"
-                      :maxlength="200"
-                      class="w-full"
-                      placeholder="玩家离开时的通知消息"
-                    />
-                    <div class="mt-2 space-y-2">
-                      <p class="text-muted text-xs">点击变量插入到消息</p>
-                      <div class="flex flex-wrap gap-1">
-                        <UTooltip
-                          v-for="tag in leaveVariables"
-                          :key="tag.value"
-                          :text="`${tag.label} · [${tag.example}]`"
-                        >
-                          <UBadge
-                            :color="
-                              formData.config.leave_notify_message.includes(
-                                tag.value,
-                              )
-                                ? 'primary'
-                                : 'neutral'
-                            "
-                            variant="subtle"
-                            class="cursor-pointer"
-                            @click="
-                              insertPlaceholder(
-                                'leave_notify_message',
-                                tag.value,
-                              )
-                            "
-                          >
-                            {{ tag.value }}
-                          </UBadge>
-                        </UTooltip>
-                      </div>
-                      <div class="text-muted text-sm">
-                        预览：
-                        <span class="text-success">{{
-                          renderLeaveMessage(
-                            formData.config.leave_notify_message,
-                            "Steve",
-                          )
-                        }}</span>
-                      </div>
-                    </div>
-                  </UFormField>
-                </div>
-              </template>
-            </UPageCard>
-
-            <!-- 死亡事件 -->
-            <UPageCard
-              variant="outline"
-              class="mb-4 break-inside-avoid"
-              title="死亡事件"
-              description="玩家死亡时发送通知"
-            >
-              <template #footer>
-                <div class="flex flex-col gap-4">
-                  <UFormField name="player_disappoint_notify" label="是否启用">
-                    <USwitch
-                      v-model="formData.config.player_disappoint_notify"
-                    />
-                  </UFormField>
-
-                  <UFormField
-                    name="death_notify_message"
-                    label="玩家死亡时发送的消息"
-                  >
-                    <UInput
-                      v-model="formData.config.death_notify_message"
-                      :maxlength="200"
-                      class="w-full"
-                      placeholder="玩家死亡时的通知消息"
-                    />
-                    <div class="mt-2 space-y-2">
-                      <p class="text-muted text-xs">点击变量插入到消息</p>
-                      <div class="flex flex-wrap gap-1">
-                        <UTooltip
-                          v-for="tag in deathVariables"
-                          :key="tag.value"
-                          :text="`${tag.label} · [${tag.example}]`"
-                        >
-                          <UBadge
-                            :color="
-                              formData.config.death_notify_message.includes(
-                                tag.value,
-                              )
-                                ? 'primary'
-                                : 'neutral'
-                            "
-                            variant="subtle"
-                            class="cursor-pointer"
-                            @click="
-                              insertPlaceholder(
-                                'death_notify_message',
-                                tag.value,
-                              )
-                            "
-                          >
-                            {{ tag.value }}
-                          </UBadge>
-                        </UTooltip>
-                      </div>
-                      <div class="text-muted text-sm">
-                        预览：
-                        <span class="text-success">{{
-                          renderDeathMessage(
-                            formData.config.death_notify_message,
-                            "Steve",
-                            "掉落",
-                          )
-                        }}</span>
-                      </div>
-                    </div>
-                  </UFormField>
-                </div>
-              </template>
-            </UPageCard>
-
-            <!-- 配置群聊 -->
-            <UPageCard
-              variant="outline"
-              class="mb-4 break-inside-avoid"
-              title="配置群聊"
-              description="单独对目标进行配置"
-            >
-              <template #default>
-                <UDropdownMenu
-                  v-if="options.length"
-                  :items="
-                    options.map((o) => ({
-                      label: o.label,
-                      onSelect: () => handleSelect(o.key),
-                    }))
-                  "
-                >
-                  <UButton icon="i-lucide-settings-2">配置目标</UButton>
-                </UDropdownMenu>
-                <UAlert
-                  v-else
-                  color="warning"
-                  variant="subtle"
-                  icon="i-lucide-triangle-alert"
-                >
-                  <template #description>
-                    <UButton
-                      variant="link"
-                      color="warning"
-                      size="sm"
-                      class="p-0"
-                      @click="router.push(`/servers/${route.params.id}/target`)"
+                    <UFormField
+                      name="join_notify_message"
+                      label="玩家进出时发送的消息"
                     >
-                      你还没有创建目标哦（去创建）
-                    </UButton>
-                  </template>
-                </UAlert>
+                      <UInput
+                        v-model="formData.config.join_notify_message"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="玩家进入时的通知消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in joinVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.join_notify_message.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder(
+                                  'join_notify_message',
+                                  tag.value,
+                                )
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-success">{{
+                            renderJoinMessage(
+                              formData.config.join_notify_message,
+                              "Steve",
+                            )
+                          }}</span>
+                        </div>
+                      </div>
+                    </UFormField>
+
+                    <UFormField
+                      name="leave_notify_message"
+                      label="玩家离开时发送的消息"
+                    >
+                      <UInput
+                        v-model="formData.config.leave_notify_message"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="玩家离开时的通知消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in leaveVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.leave_notify_message.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder(
+                                  'leave_notify_message',
+                                  tag.value,
+                                )
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-success">{{
+                            renderLeaveMessage(
+                              formData.config.leave_notify_message,
+                              "Steve",
+                            )
+                          }}</span>
+                        </div>
+                      </div>
+                    </UFormField>
+                  </div>
+                </template>
+              </UPageCard>
+
+              <!-- 死亡事件 -->
+              <UPageCard
+                variant="outline"
+                class="mb-4 break-inside-avoid"
+                title="死亡事件"
+                description="玩家死亡时发送通知"
+              >
+                <template #footer>
+                  <div class="flex flex-col gap-4">
+                    <UFormField
+                      name="player_disappoint_notify"
+                      label="是否启用"
+                    >
+                      <USwitch
+                        v-model="formData.config.player_disappoint_notify"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      name="death_notify_message"
+                      label="玩家死亡时发送的消息"
+                    >
+                      <UInput
+                        v-model="formData.config.death_notify_message"
+                        :maxlength="200"
+                        class="w-full"
+                        placeholder="玩家死亡时的通知消息"
+                      />
+                      <div class="mt-2 space-y-2">
+                        <p class="text-muted text-xs">点击变量插入到消息</p>
+                        <div class="flex flex-wrap gap-1">
+                          <UTooltip
+                            v-for="tag in deathVariables"
+                            :key="tag.value"
+                            :text="`${tag.label} · [${tag.example}]`"
+                          >
+                            <UBadge
+                              :color="
+                                formData.config.death_notify_message.includes(
+                                  tag.value,
+                                )
+                                  ? 'primary'
+                                  : 'neutral'
+                              "
+                              variant="subtle"
+                              class="cursor-pointer"
+                              @click="
+                                insertPlaceholder(
+                                  'death_notify_message',
+                                  tag.value,
+                                )
+                              "
+                            >
+                              {{ tag.value }}
+                            </UBadge>
+                          </UTooltip>
+                        </div>
+                        <div class="text-muted text-sm">
+                          预览：
+                          <span class="text-success">{{
+                            renderDeathMessage(
+                              formData.config.death_notify_message,
+                              "Steve",
+                              "掉落",
+                            )
+                          }}</span>
+                        </div>
+                      </div>
+                    </UFormField>
+                  </div>
+                </template>
+              </UPageCard>
+
+              <!-- 配置群聊 -->
+              <UPageCard
+                variant="outline"
+                class="mb-4 break-inside-avoid"
+                title="配置群聊"
+                description="单独对目标进行配置"
+              >
+                <template #default>
+                  <UDropdownMenu
+                    v-if="options.length"
+                    :items="
+                      options.map((o) => ({
+                        label: o.label,
+                        onSelect: () => handleSelect(o.key),
+                      }))
+                    "
+                  >
+                    <UButton icon="i-lucide-settings-2">配置目标</UButton>
+                  </UDropdownMenu>
+                  <UAlert
+                    v-else
+                    color="warning"
+                    variant="subtle"
+                    icon="i-lucide-triangle-alert"
+                  >
+                    <template #description>
+                      <UButton
+                        variant="link"
+                        color="warning"
+                        size="sm"
+                        class="p-0"
+                        @click="
+                          router.push(`/servers/${route.params.id}/target`)
+                        "
+                      >
+                        你还没有创建目标哦（去创建）
+                      </UButton>
+                    </template>
+                  </UAlert>
+                </template>
+              </UPageCard>
+            </div>
+
+            <!-- 目标配置侧边栏 -->
+            <USlideover
+              v-model:open="drawerVisible"
+              :title="
+                selectTarget
+                  ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                  : ''
+              "
+            >
+              <template #body>
+                <div v-if="selectTarget">
+                  <UFormField label="是否开启此目标的通知" required>
+                    <USwitch
+                      v-model="selectTarget.config.NotifyConfigSchema.enabled"
+                    />
+                  </UFormField>
+                </div>
               </template>
-            </UPageCard>
-          </div>
+            </USlideover>
 
-          <!-- 目标配置侧边栏 -->
-          <USlideover
-            v-model:open="drawerVisible"
-            :title="
-              selectTarget
-                ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
-                : ''
-            "
-          >
-            <template #body>
-              <div v-if="selectTarget">
-                <UFormField label="是否开启此目标的通知" required>
-                  <USwitch
-                    v-model="selectTarget.config.NotifyConfigSchema.enabled"
-                  />
-                </UFormField>
-              </div>
-            </template>
-          </USlideover>
-
-          <USeparator class="my-4" />
-          <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              :disabled="!isDirty"
-              :loading="isAnyLoading"
-              @click="cancelChanges"
-            >
-              取消
-            </UButton>
-            <UButton
-              :disabled="!isDirty"
-              :loading="isAnyLoading"
-              @click="handleSubmit"
-            >
-              保存设置
-            </UButton>
-          </div>
+            <USeparator class="my-4" />
+            <div class="flex justify-end gap-2">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                :disabled="!isDirty"
+                :loading="isAnyLoading"
+                @click="cancelChanges"
+              >
+                取消
+              </UButton>
+              <UButton
+                :disabled="!isDirty"
+                :loading="isAnyLoading"
+                @click="handleSubmit"
+              >
+                保存设置
+              </UButton>
+            </div>
+          </template>
         </UContainer>
       </template>
     </UDashboardPanel>
@@ -316,12 +325,12 @@ const toast = useToast();
 const router = useRouter();
 
 interface FormState {
-  config: z.infer<typeof NotifyConfigSchema>;
+  config: z.infer<typeof NotifyConfigSchema> | null;
   targets: targetResponse[];
 }
 
 const formData = reactive<FormState>({
-  config: NotifyConfigSchema.parse({}),
+  config: null,
   targets: [],
 });
 
@@ -368,12 +377,16 @@ const insertPlaceholder = (
   >,
   placeholder: string,
 ) => {
+  if (!formData.config) {
+    return;
+  }
   const current = formData.config[field] || "";
   formData.config[field] = current + placeholder;
 };
 
 const refreshServerData = async (): Promise<void> => {
   if (!route.params["id"]) {
+    loadingMap.isLoading = false;
     return;
   }
   loadingMap.isLoading = true;
@@ -395,7 +408,13 @@ const refreshServerData = async (): Promise<void> => {
   }
 };
 
-const isDirty = computed(() => !isEqual(formData, originalFormData.value));
+const isDirty = computed(() => {
+  if (!formData.config || !originalFormData.value?.config) {
+    return false;
+  }
+
+  return !isEqual(formData, originalFormData.value);
+});
 
 const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
@@ -408,7 +427,7 @@ const handleSelect = (key: string) => {
 };
 
 const handleSubmit = async () => {
-  if (!isDirty.value) {
+  if (!isDirty.value || !formData.config) {
     return;
   }
 
@@ -440,7 +459,7 @@ const cancelChanges = () => {
   if (originalFormData.value) {
     Object.assign(formData, structuredClone(toRaw(originalFormData.value)));
   } else {
-    formData.config = NotifyConfigSchema.parse({});
+    formData.config = null;
     formData.targets = [];
   }
   selectTarget.value = null;

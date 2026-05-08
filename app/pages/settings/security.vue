@@ -12,6 +12,7 @@ const authStore = useAuthStore();
 const { checkAuthStatus } = authStore;
 const toast = useToast();
 const isLoading = ref(false);
+const isInitializing = ref(true);
 
 const passwordForm = reactive({
   confirmPassword: "",
@@ -241,18 +242,19 @@ const confirmDeletePassword = async () => {
 };
 
 onMounted(async () => {
-  isLoading.value = true;
   try {
     await checkAuthStatus();
   } finally {
-    isLoading.value = false;
+    isInitializing.value = false;
   }
 });
 </script>
 
 <template>
   <div>
+    <LoadingState v-if="isInitializing" />
     <div
+      v-else
       :class="{ 'pointer-events-none opacity-50': isLoading }"
       class="transition-opacity"
     >

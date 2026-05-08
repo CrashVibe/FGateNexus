@@ -9,110 +9,114 @@
       </template>
       <template #body>
         <UContainer class="py-8">
-          <div
-            class="grid gap-4"
-            :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
-          >
-            <UPageCard variant="outline" title="基础设置">
-              <UFormField
-                label="图片渲染"
-                description="将指令返回结果的颜色代码转换为图片后发送"
-              >
-                <USwitch v-model="formData.config.imageRender" />
-              </UFormField>
-              <UAlert
-                v-if="currentConfig.executablePath === null"
-                color="warning"
-                variant="subtle"
-                icon="i-lucide-info"
-                class="mt-2"
-              >
-                <template #description>
-                  <UButton
-                    variant="link"
-                    color="warning"
-                    size="sm"
-                    class="p-0"
-                    @click="router.push('/settings/browser')"
-                  >
-                    图片渲染功能需要配置浏览器路径才能使用（去配置）
-                  </UButton>
-                </template>
-              </UAlert>
-            </UPageCard>
-            <UPageCard
-              variant="outline"
-              title="配置群聊"
-              description="单独对目标进行配置"
-            >
-              <UDropdownMenu
-                v-if="options.length"
-                :items="
-                  options.map((o) => ({
-                    label: o.label,
-                    onSelect: () => handleSelect(o.key),
-                  }))
-                "
-              >
-                <UButton icon="i-lucide-settings-2">配置目标</UButton>
-              </UDropdownMenu>
-              <UAlert
-                v-else
-                color="warning"
-                variant="subtle"
-                icon="i-lucide-triangle-alert"
-              >
-                <template #description>
-                  <UButton
-                    variant="link"
-                    color="warning"
-                    size="sm"
-                    class="p-0"
-                    @click="router.push(`/servers/${route.params.id}/target`)"
-                  >
-                    你还没有创建目标哦（去创建）
-                  </UButton>
-                </template>
-              </UAlert>
-            </UPageCard>
-          </div>
+          <LoadingState v-if="!formData.config" />
 
-          <USlideover
-            v-model:open="drawerVisible"
-            :title="
-              selectTarget
-                ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
-                : ''
-            "
-          >
-            <template #body>
-              <drawer-command
-                v-if="selectTarget"
-                :adapter-type="adapterData?.type"
-                :target="selectTarget"
-              />
-            </template>
-          </USlideover>
+          <template v-else>
+            <div
+              class="grid gap-4"
+              :class="isMobile ? 'grid-cols-1' : 'grid-cols-2'"
+            >
+              <UPageCard variant="outline" title="基础设置">
+                <UFormField
+                  label="图片渲染"
+                  description="将指令返回结果的颜色代码转换为图片后发送"
+                >
+                  <USwitch v-model="formData.config.imageRender" />
+                </UFormField>
+                <UAlert
+                  v-if="currentConfig.executablePath === null"
+                  color="warning"
+                  variant="subtle"
+                  icon="i-lucide-info"
+                  class="mt-2"
+                >
+                  <template #description>
+                    <UButton
+                      variant="link"
+                      color="warning"
+                      size="sm"
+                      class="p-0"
+                      @click="router.push('/settings/browser')"
+                    >
+                      图片渲染功能需要配置浏览器路径才能使用（去配置）
+                    </UButton>
+                  </template>
+                </UAlert>
+              </UPageCard>
+              <UPageCard
+                variant="outline"
+                title="配置群聊"
+                description="单独对目标进行配置"
+              >
+                <UDropdownMenu
+                  v-if="options.length"
+                  :items="
+                    options.map((o) => ({
+                      label: o.label,
+                      onSelect: () => handleSelect(o.key),
+                    }))
+                  "
+                >
+                  <UButton icon="i-lucide-settings-2">配置目标</UButton>
+                </UDropdownMenu>
+                <UAlert
+                  v-else
+                  color="warning"
+                  variant="subtle"
+                  icon="i-lucide-triangle-alert"
+                >
+                  <template #description>
+                    <UButton
+                      variant="link"
+                      color="warning"
+                      size="sm"
+                      class="p-0"
+                      @click="router.push(`/servers/${route.params.id}/target`)"
+                    >
+                      你还没有创建目标哦（去创建）
+                    </UButton>
+                  </template>
+                </UAlert>
+              </UPageCard>
+            </div>
 
-          <USeparator class="my-4" />
-          <div class="flex justify-end gap-2">
-            <UButton
-              color="neutral"
-              variant="subtle"
-              :disabled="isAnyLoading || !isDirty"
-              :loading="isAnyLoading"
-              @click="cancelChanges"
+            <USlideover
+              v-model:open="drawerVisible"
+              :title="
+                selectTarget
+                  ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                  : ''
+              "
             >
-              取消更改
-            </UButton>
-            <UButton
-              :disabled="isAnyLoading || !isDirty"
-              :loading="isAnyLoading"
-              @click="handleSubmit"
-            >
-              保存配置
-            </UButton>
-          </div>
+              <template #body>
+                <drawer-command
+                  v-if="selectTarget"
+                  :adapter-type="adapterData?.type"
+                  :target="selectTarget"
+                />
+              </template>
+            </USlideover>
+
+            <USeparator class="my-4" />
+            <div class="flex justify-end gap-2">
+              <UButton
+                color="neutral"
+                variant="subtle"
+                :disabled="isAnyLoading || !isDirty"
+                :loading="isAnyLoading"
+                @click="cancelChanges"
+              >
+                取消更改
+              </UButton>
+              <UButton
+                :disabled="isAnyLoading || !isDirty"
+                :loading="isAnyLoading"
+                @click="handleSubmit"
+              >
+                保存配置
+              </UButton>
+            </div>
+          </template>
         </UContainer>
       </template>
     </UDashboardPanel>
@@ -150,12 +154,12 @@ const router = useRouter();
 const toast = useToast();
 
 interface FormState {
-  config: CommandConfig;
+  config: CommandConfig | null;
   targets: targetResponse[];
 }
 
 const formData = reactive<FormState>({
-  config: CommandConfigSchema.parse({}),
+  config: null,
   targets: [],
 });
 
@@ -174,7 +178,13 @@ const loadingMap = reactive({
   isSubmitting: false,
 });
 
-const isDirty = computed(() => !isEqual(formData, originalFormData.value));
+const isDirty = computed(() => {
+  if (!formData.config || !originalFormData.value?.config) {
+    return false;
+  }
+
+  return !isEqual(formData, originalFormData.value);
+});
 const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 
 const options = ref<{ label: string; key: string }[]>([]);
@@ -191,6 +201,7 @@ const handleSelect = (key: string) => {
 
 const refreshServerData = async (): Promise<void> => {
   if (!route.params["id"]) {
+    loadingMap.isLoading = false;
     return;
   }
   loadingMap.isLoading = true;
@@ -218,7 +229,7 @@ const refreshServerData = async (): Promise<void> => {
 };
 
 const handleSubmit = async () => {
-  if (!isDirty.value) {
+  if (!isDirty.value || !formData.config) {
     return;
   }
 
@@ -250,7 +261,7 @@ const cancelChanges = () => {
   if (originalFormData.value) {
     Object.assign(formData, structuredClone(toRaw(originalFormData.value)));
   } else {
-    formData.config = CommandConfigSchema.parse({});
+    formData.config = null;
     formData.targets = [];
   }
   selectTarget.value = null;
