@@ -2,6 +2,10 @@ import tailwindcss from "@tailwindcss/vite";
 
 const isDev = process.env.NODE_ENV !== "production";
 const isBuild = !isDev;
+const enableSentry = process.env.SENTRY_RELEASE === "true";
+const sentryRelease = enableSentry
+  ? `${process.env.npm_package_name}@${process.env.npm_package_version}`
+  : undefined;
 
 export default defineNuxtConfig({
   app: {
@@ -65,17 +69,17 @@ export default defineNuxtConfig({
       isDev,
       sentry: {
         dsn: process.env.SENTRY_DSN,
-        enabled: !isDev,
-        release: process.env.SENTRY_RELEASE ?? "development",
+        enabled: !isDev && enableSentry,
+        release: sentryRelease,
       },
     },
   },
   sentry: {
-    enabled: !isDev,
+    enabled: !isDev && enableSentry,
     org: "crashvibe",
     project: "flowgate",
     release: {
-      name: process.env.SENTRY_RELEASE ?? "development",
+      name: sentryRelease,
     },
   },
   sourcemap: {
