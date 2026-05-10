@@ -9,7 +9,7 @@ import {
   bindingService,
   BindingService,
 } from "~~/server/service/bindingmanager";
-import { handlePlatformMessage } from "~~/server/service/message-router";
+import { handlePlatformMessage } from "~~/server/service/chatbridge/message-router";
 import { configManager } from "~~/server/utils/config";
 
 import type { AdapterConfig } from "#shared/model/adapter/schema";

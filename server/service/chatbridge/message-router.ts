@@ -14,8 +14,9 @@ import {
 
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 
-import type { BotConnection } from "./chatbridge";
-import { chatBridge } from "./chatbridge";
+import type { BotConnection } from ".";
+import { chatBridge } from ".";
+import { elements_to_string } from "./utils";
 
 /**
  * MC 聊天消息数据
@@ -168,9 +169,13 @@ const handlePlatformChatSync = (
   serverSession: ServerSession,
 ): void => {
   const { chatSyncConfig } = server;
+  if (session.elements === undefined) {
+    return;
+  }
+  const content = elements_to_string(session.elements);
   if (
     !chatSyncConfig.platformToMcEnabled ||
-    !shouldForwardMessage(session.content!, chatSyncConfig)
+    !shouldForwardMessage(content, chatSyncConfig)
   ) {
     return;
   }
@@ -187,7 +192,7 @@ const handlePlatformChatSync = (
   const formattedMessage = formatPlatformToMCMessage(
     chatSyncConfig.platformToMcTemplate,
     {
-      message: session.content!,
+      message: content,
       nickname: session.username,
       platform: session.platform,
       timestamp: session.timestamp,

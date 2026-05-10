@@ -1,8 +1,8 @@
 import { z } from "zod";
+import { handleMCMessage } from "~~/server/service/chatbridge/message-router";
 import type RequestHandler from "~~/server/service/mcwsbridge/request-handler";
 import type { JsonRpcRequest } from "~~/server/service/mcwsbridge/types";
 import { createJsonRpcRequestSchema } from "~~/server/service/mcwsbridge/types";
-import { handleMCMessage } from "~~/server/service/message-router";
 
 import type ServerSession from "#server/service/mcwsbridge/server-session";
 
