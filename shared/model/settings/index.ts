@@ -31,19 +31,6 @@ export const SettingsAPI = {
     request: z.void(),
     response: z.void(),
   },
-  DOWNLOAD_PROGRESS_GET: {
-    description: "获取下载进度",
-    request: z.void(),
-    response: z.object({
-      buildId: z.string(),
-      downloadedBytes: z.number(),
-      error: z.string().optional(),
-      executablePath: z.string().optional(),
-      platform: z.string(),
-      status: DownloadStatus,
-      totalBytes: z.number(),
-    }),
-  },
   GET: {
     description: "获取浏览器设置",
     request: z.void(),

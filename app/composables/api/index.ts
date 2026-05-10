@@ -202,12 +202,6 @@ export const BrowserData = {
     const response = await $fetch<ApiResponse>("/api/settings/browser");
     return SettingsAPI.GET.response.parse(response.data);
   },
-  async getDownloadProgress() {
-    const response = await $fetch<ApiResponse>(
-      "/api/settings/browser/download-progress",
-    );
-    return SettingsAPI.DOWNLOAD_PROGRESS_GET.response.parse(response.data);
-  },
   async patch(executablePath: string | null) {
     await $fetch<ApiResponse>("/api/settings/browser", {
       body: SettingsAPI.PATCH.request.parse({ executablePath }),

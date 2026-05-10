@@ -17,19 +17,26 @@ const ACTIVE_STATUSES = new Set<DownloadStatus>([
 ]);
 
 const IDLE_STATE: DownloadState = {
-  buildId: "",
+  buildId: null,
   downloadedBytes: 0,
-  platform: "",
+  platform: null,
   status: "idle",
   totalBytes: 0,
 };
 
 const toMB = (b: number) => (b / 1024 / 1024).toFixed(1);
 
-const fetchErrorMsg = (error: unknown) =>
-  error instanceof FetchError
-    ? ((error.data as { message?: string })?.message ?? error.message)
-    : String(error);
+interface FetchErrorData {
+  message?: string;
+}
+
+const fetchErrorMsg = (error: unknown): string => {
+  if (error instanceof FetchError) {
+    const data = error.data as FetchErrorData | null;
+    return data?.message ?? error.message;
+  }
+  return String(error);
+};
 
 // ─── 类型 ───────────────────────────────────────────────────────────────────
 
@@ -47,9 +54,9 @@ const toast = useToast();
 const mode = ref<Mode>("download");
 const isLoading = ref(false);
 const isInitializing = ref(true);
-const currentConfig = ref<{
-  executablePath: string | null;
-}>({ executablePath: null });
+const currentConfig = ref<{ executablePath: string | null }>({
+  executablePath: null,
+});
 const customPath = ref("");
 const isSavingPath = ref(false);
 const downloadState = ref<DownloadState>({ ...IDLE_STATE });
@@ -57,10 +64,7 @@ const isStartingDownload = ref(false);
 const updateInfo = ref<UpdateInfo | null>(null);
 const isCheckingUpdate = ref(false);
 
-// 轮询控制
-let progressTimer: ReturnType<typeof setInterval> | null = null;
-let isFetchingProgress = false;
-const wasActiveDownload = ref(false);
+let progressSource: EventSource | null = null;
 
 // ─── 计算属性 ─────────────────────────────────────────────────────────────────
 
@@ -79,10 +83,11 @@ const downloadProgress = computed(() => {
 const downloadProgressColor = computed<
   "primary" | "success" | "error" | "warning" | "neutral"
 >(() => {
-  if (downloadState.value.status === "done") {
+  const { status } = downloadState.value;
+  if (status === "done") {
     return "success";
   }
-  if (downloadState.value.status === "error") {
+  if (status === "error") {
     return "error";
   }
   return "primary";
@@ -90,12 +95,6 @@ const downloadProgressColor = computed<
 
 const downloadStatusText = computed(() => {
   const { status, downloadedBytes, totalBytes } = downloadState.value;
-  const statusMap: Partial<Record<DownloadStatus, string>> = {
-    done: "下载完成！",
-    idle: "等待下载",
-    resolving: "正在获取最新版本信息...",
-    unpacking: "正在解压安装...",
-  };
   if (status === "downloading") {
     return totalBytes > 0
       ? `下载中 ${toMB(downloadedBytes)} / ${toMB(totalBytes)} MB (${downloadProgress.value}%)`
@@ -104,16 +103,27 @@ const downloadStatusText = computed(() => {
   if (status === "error") {
     return `下载失败：${downloadState.value.error ?? "未知错误"}`;
   }
+  const statusMap: Partial<Record<DownloadStatus, string>> = {
+    done: "下载完成！",
+    idle: "等待下载",
+    resolving: "正在获取最新版本信息...",
+    unpacking: "正在解压安装...",
+  };
   return statusMap[status] ?? "";
 });
 
+const showProgressSection = computed(
+  () =>
+    isDownloading.value ||
+    downloadState.value.status === "done" ||
+    downloadState.value.status === "error",
+);
+
 // ─── 方法 ─────────────────────────────────────────────────────────────────────
 
-const stopPolling = () => {
-  if (progressTimer !== null) {
-    clearInterval(progressTimer);
-    progressTimer = null;
-  }
+const stopProgressStream = () => {
+  progressSource?.close();
+  progressSource = null;
 };
 
 const loadConfig = async () => {
@@ -128,57 +138,56 @@ const loadConfig = async () => {
   }
 };
 
-const fetchProgress = async () => {
-  if (isFetchingProgress) {
-    return;
-  }
-  isFetchingProgress = true;
-  try {
-    const data = await BrowserData.getDownloadProgress();
-    if (!data) {
+const startProgressStream = () => {
+  stopProgressStream();
+  progressSource = new EventSource("/api/settings/browser/download-stream");
+
+  progressSource.addEventListener("progress", (event) => {
+    if (!(event instanceof MessageEvent)) {
       return;
     }
-    if (ACTIVE_STATUSES.has(data.status)) {
-      wasActiveDownload.value = true;
+    try {
+      const payload = JSON.parse(event.data) as DownloadState;
+      downloadState.value = payload;
+    } catch {
+      // ignore
     }
-    downloadState.value = data;
-    if (!ACTIVE_STATUSES.has(data.status)) {
-      stopPolling();
-      if (data.status === "done" && wasActiveDownload.value) {
-        toast.add({
-          color: "success",
-          description: `已安装到：${data.executablePath ?? ""}`,
-          title: "Chromium 下载完成",
-        });
-        void loadConfig();
-      } else if (data.status === "error" && wasActiveDownload.value) {
-        toast.add({
-          color: "error",
-          description: data.error,
-          title: "下载失败",
-        });
-      }
-      wasActiveDownload.value = false;
+  });
+
+  progressSource.addEventListener("error", () => {
+    stopProgressStream();
+    if (isDownloading.value) {
+      setTimeout(startProgressStream, 1500);
     }
-  } catch {
-    // ignore poll errors
-  } finally {
-    isFetchingProgress = false;
-  }
+  });
 };
 
-const startProgressStream = () => {
-  stopPolling();
-  progressTimer = setInterval(() => {
-    void fetchProgress();
-  }, 800);
-};
+watch(downloadState, (state, prevState) => {
+  const wasActive = ACTIVE_STATUSES.has(prevState.status);
+  if (!wasActive) {
+    return;
+  }
+
+  if (state.status === "done") {
+    toast.add({
+      color: "success",
+      description: `已安装到：${state.executablePath ?? ""}`,
+      title: "Chromium 下载完成",
+    });
+    void loadConfig();
+  } else if (state.status === "error") {
+    toast.add({
+      color: "error",
+      description: state.error,
+      title: "下载失败",
+    });
+  }
+});
 
 const startDownload = async () => {
   isStartingDownload.value = true;
   try {
     await BrowserData.startDownload();
-    wasActiveDownload.value = true;
     downloadState.value = { ...IDLE_STATE, status: "resolving" };
     startProgressStream();
   } catch (error) {
@@ -195,8 +204,6 @@ const startDownload = async () => {
 const cancelDownload = async () => {
   try {
     await BrowserData.cancelDownload();
-    stopPolling();
-    wasActiveDownload.value = false;
     downloadState.value = { ...IDLE_STATE };
     toast.add({ color: "neutral", title: "下载已取消" });
   } catch {
@@ -255,14 +262,7 @@ const checkUpdate = async () => {
 onMounted(async () => {
   try {
     await loadConfig();
-    const initialData = await BrowserData.getDownloadProgress();
-    if (initialData) {
-      downloadState.value = initialData;
-      if (ACTIVE_STATUSES.has(initialData.status)) {
-        wasActiveDownload.value = true;
-        startProgressStream();
-      }
-    }
+    startProgressStream();
   } catch {
     // ignore
   } finally {
@@ -271,7 +271,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  stopPolling();
+  stopProgressStream();
 });
 </script>
 
@@ -358,14 +358,7 @@ onUnmounted(() => {
           <template #footer>
             <div class="flex w-full flex-col gap-4">
               <!-- 进度区 -->
-              <template
-                v-if="
-                  isDownloading ||
-                  (wasActiveDownload &&
-                    (downloadState.status === 'done' ||
-                      downloadState.status === 'error'))
-                "
-              >
+              <template v-if="showProgressSection">
                 <div class="flex flex-col gap-2">
                   <div class="flex items-center justify-between text-sm">
                     <span class="text-muted">{{ downloadStatusText }}</span>
@@ -418,7 +411,9 @@ onUnmounted(() => {
                   @click="startDownload"
                 >
                   {{
-                    downloadState.status === "done" ? "重新下载" : "开始下载"
+                    downloadState.executablePath !== undefined
+                      ? "重新下载"
+                      : "开始下载"
                   }}
                 </UButton>
                 <UButton
@@ -434,6 +429,7 @@ onUnmounted(() => {
                   color="neutral"
                   variant="subtle"
                   icon="i-lucide-refresh-cw"
+                  :disabled="isDownloading"
                   :loading="isCheckingUpdate"
                   @click="checkUpdate"
                 >
