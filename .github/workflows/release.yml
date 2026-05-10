@@ -128,12 +128,24 @@ jobs:
         with:
           name: binaries
 
+      - name: Determine changelog range
+        id: changelog_args
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if [[ "${TAG_NAME}" =~ -(alpha|beta|rc) ]]; then
+            echo "args=--latest --strip header --tag-pattern ^v[0-9].*" >> "${GITHUB_OUTPUT}"
+            echo "prerelease=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "args=--latest --strip header --tag-pattern ^v[0-9]+\\.[0-9]+\\.[0-9]+$" >> "${GITHUB_OUTPUT}"
+            echo "prerelease=false" >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Generate Changelog
         uses: orhun/git-cliff-action@v4
         id: git_cliff
         with:
           config: .github/cliff.toml
-          args: --latest --strip header
+          args: ${{ steps.changelog_args.outputs.args }}
         env:
           OUTPUT: CHANGELOG.md
 
@@ -144,7 +156,7 @@ jobs:
           name: v${{ steps.package_version.outputs.version }}
           draft: true
           generate_release_notes: false
-          prerelease: false
+          prerelease: ${{ steps.changelog_args.outputs.prerelease }}
           files: |
             FGateNexus-v${{ steps.package_version.outputs.version }}-linux-x64.tar.gz
             FGateNexus-v${{ steps.package_version.outputs.version }}-linux-arm64.tar.gz
@@ -162,6 +174,8 @@ jobs:
             | macOS | ARM64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-mac-arm64.tar.gz` |
             | Windows | x64 | `FGateNexus-v${{ steps.package_version.outputs.version }}-win.zip` |
 
-            ## What's Changed
+            ---
+
+            ## 📋 更新内容
 
             ${{ steps.git_cliff.outputs.content }}
