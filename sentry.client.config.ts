@@ -42,6 +42,7 @@ const initSentry = async () => {
   }
 
   init({
+    attachStacktrace: true,
     debug: false,
     dsn,
     enableLogs: true,
@@ -49,9 +50,7 @@ const initSentry = async () => {
     integrations: [
       replayIntegration(),
       browserTracingIntegration(),
-      captureConsoleIntegration({
-        levels: ["error", "warn"],
-      }),
+      captureConsoleIntegration(),
       breadcrumbsIntegration({
         console: true,
         dom: true,

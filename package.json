@@ -70,9 +70,6 @@
     "typescript": "^5.9.3",
     "ultracite": "7.6.0"
   },
-  "overrides": {
-    "vite": "^8.0.8"
-  },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "oxlint --fix --quiet",

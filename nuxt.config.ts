@@ -1,7 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 
 const isDev = process.env.NODE_ENV !== "production";
-const isBuild = !isDev;
 const enableSentry = process.env.SENTRY_RELEASE === "true";
 const sentryRelease = enableSentry
   ? `${process.env.npm_package_name}@${process.env.npm_package_version}`
@@ -81,10 +80,13 @@ export default defineNuxtConfig({
     release: {
       name: sentryRelease,
     },
+    sourcemaps: {
+      filesToDeleteAfterUpload: [".*/**/*.map"],
+    },
   },
   sourcemap: {
-    client: isBuild ? "hidden" : false,
-    server: isBuild ? "hidden" : false,
+    client: "hidden",
+    server: true,
   },
   ssr: false,
   typescript: {
@@ -110,39 +112,7 @@ export default defineNuxtConfig({
     },
   },
   vite: {
-    build: {
-      cssCodeSplit: true,
-      minify: isBuild ? "oxc" : false,
-      rollupOptions: {
-        output: {
-          codeSplitting: {
-            groups: [
-              {
-                name: "icons",
-                test: /@vicons|@iconify/,
-              },
-              {
-                name: "zxcvbn",
-                test: /@zxcvbn-ts/,
-              },
-              {
-                name: "utils",
-                test: /uuid|zod|lodash-es|nanoid/,
-              },
-              {
-                name: "vue-vendor",
-                test: /vue|@vue|vue-router/,
-              },
-            ],
-          },
-        },
-      },
-      target: "esnext",
-    },
     optimizeDeps: {
-      esbuildOptions: {
-        target: "esnext",
-      },
       include: [
         "@vue/devtools-core",
         "@vue/devtools-kit",
@@ -160,8 +130,5 @@ export default defineNuxtConfig({
       ],
     },
     plugins: [tailwindcss()],
-    worker: {
-      format: "es",
-    },
   },
 });

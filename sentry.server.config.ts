@@ -22,11 +22,7 @@ init({
   enabled: sentry.enabled && sentryEnabled,
   integrations: [
     httpIntegration(),
-    pinoIntegration({
-      error: {
-        levels: ["error", "fatal"],
-      },
-    }),
+    pinoIntegration(),
     onUncaughtExceptionIntegration(),
     onUnhandledRejectionIntegration(),
     zodErrorsIntegration(),
