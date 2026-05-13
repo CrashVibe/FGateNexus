@@ -1,3 +1,4 @@
+import { useEventSource } from "@vueuse/core";
 import type { z } from "zod";
 import { AdapterAPI } from "~~/shared/model/adapter/api";
 
@@ -212,5 +213,10 @@ export const BrowserData = {
     await $fetch<ApiResponse>("/api/settings/browser/download", {
       method: "POST",
     });
+  },
+  useDownloadStream() {
+    return useEventSource("/api/settings/browser/download-stream", [
+      "progress",
+    ]);
   },
 };

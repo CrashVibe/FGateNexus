@@ -64,7 +64,8 @@ const isStartingDownload = ref(false);
 const updateInfo = ref<UpdateInfo | null>(null);
 const isCheckingUpdate = ref(false);
 
-let progressSource: EventSource | null = null;
+let progressClose: (() => void) | null = null;
+let progressScope: ReturnType<typeof effectScope> | null = null;
 
 // ─── 计算属性 ─────────────────────────────────────────────────────────────────
 
@@ -122,8 +123,10 @@ const showProgressSection = computed(
 // ─── 方法 ─────────────────────────────────────────────────────────────────────
 
 const stopProgressStream = () => {
-  progressSource?.close();
-  progressSource = null;
+  progressClose?.();
+  progressClose = null;
+  progressScope?.stop();
+  progressScope = null;
 };
 
 const loadConfig = async () => {
@@ -140,25 +143,32 @@ const loadConfig = async () => {
 
 const startProgressStream = () => {
   stopProgressStream();
-  progressSource = new EventSource("/api/settings/browser/download-stream");
+  progressScope = effectScope();
+  progressScope.run(() => {
+    const { data, error, close } = BrowserData.useDownloadStream();
+    progressClose = close;
 
-  progressSource.addEventListener("progress", (event) => {
-    if (!(event instanceof MessageEvent)) {
-      return;
-    }
-    try {
-      const payload = JSON.parse(event.data) as DownloadState;
-      downloadState.value = payload;
-    } catch {
-      // ignore
-    }
-  });
+    watch(data, (value) => {
+      if (!value) {
+        return;
+      }
+      try {
+        const payload: DownloadState = JSON.parse(value);
+        downloadState.value = payload;
+      } catch {
+        // ignore
+      }
+    });
 
-  progressSource.addEventListener("error", () => {
-    stopProgressStream();
-    if (isDownloading.value) {
-      setTimeout(startProgressStream, 1500);
-    }
+    watch(error, (value) => {
+      if (!value) {
+        return;
+      }
+      stopProgressStream();
+      if (isDownloading.value) {
+        setTimeout(startProgressStream, 1500);
+      }
+    });
   });
 };
 

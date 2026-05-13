@@ -1,67 +1,47 @@
-import { once } from "node:events";
-
-import { setResponseHeaders } from "h3";
+import { createEventStream } from "h3";
 import {
   getEnrichedDownloadState,
   subscribeDownloadState,
 } from "~~/server/service/browser-downloader";
 
 export default defineEventHandler(async (event) => {
-  setResponseHeaders(event, {
-    "Cache-Control": "no-cache, no-transform",
-    "Content-Type": "text/event-stream; charset=utf-8",
-    "X-Accel-Buffering": "no",
-  });
+  const eventStream = createEventStream(event);
 
-  const { req, res } = event.node;
+  const send = async (payload: unknown) => {
+    await eventStream.push({
+      data: JSON.stringify(payload),
+      event: "progress",
+    });
+  };
 
-  if (!res || res.writableEnded) {
-    return;
-  }
+  const sendPing = async () => {
+    await eventStream.push({
+      data: "{}",
+      event: "ping",
+    });
+  };
 
-  res.flushHeaders?.();
-
-  const writeEvent = (name: string, payload: unknown) => {
-    if (res.writableEnded) {
-      return;
+  void (async () => {
+    try {
+      await send(await getEnrichedDownloadState());
+    } catch (error) {
+      logger.error(error, "获取下载状态失败");
+      await send({ error: "获取下载状态失败", status: "error" });
     }
-    res.write(`event: ${name}\n`);
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
-  };
-
-  const send = (payload: unknown) => {
-    writeEvent("progress", payload);
-  };
-
-  const sendPing = () => {
-    writeEvent("ping", {});
-  };
-
-  try {
-    send(await getEnrichedDownloadState());
-  } catch (error) {
-    logger.error(error, "获取下载状态失败");
-    send({ error: "获取下载状态失败", status: "error" });
-  }
+  })();
 
   const unsubscribe = subscribeDownloadState((next) => {
-    send(next);
+    void send(next);
   });
 
-  const keepAliveTimer = setInterval(sendPing, 15_000);
+  const keepAliveTimer = setInterval(() => {
+    void sendPing();
+  }, 15_000);
 
-  const close = () => {
+  eventStream.onClosed(() => {
     clearInterval(keepAliveTimer);
     unsubscribe();
-    if (!res.writableEnded) {
-      res.end();
-    }
-  };
+  });
 
-  req.on("close", close);
-  req.on("error", close);
-
-  res.on("error", close);
-
-  await once(req, "close");
+  return eventStream.send();
 });
