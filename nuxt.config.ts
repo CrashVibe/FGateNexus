@@ -60,7 +60,7 @@ export default defineNuxtConfig({
       websocket: true,
     },
     minify: true,
-    preset: "bun",
+    preset: "node-server",
     serveStatic: "inline",
   },
   runtimeConfig: {
