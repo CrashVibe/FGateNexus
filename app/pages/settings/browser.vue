@@ -172,7 +172,7 @@ watch(downloadState, (state, prevState) => {
     toast.add({
       color: "success",
       description: `已安装到：${state.executablePath ?? ""}`,
-      title: "Chromium 下载完成",
+      title: "Chrome Headless Shell 下载完成",
     });
     void loadConfig();
   } else if (state.status === "error") {
@@ -280,16 +280,12 @@ onUnmounted(() => {
     <LoadingState v-if="isInitializing" />
     <template v-else>
       <!-- 当前状态 -->
-      <UPageCard
-        icon="i-lucide-chrome"
-        title="Chromium 浏览器"
-        variant="outline"
-      >
+      <UPageCard icon="i-lucide-chrome" title="浏览器" variant="outline">
         <template #description>
           <span
             class="text-muted inline-flex flex-wrap items-center gap-1.5 text-sm"
           >
-            图片渲染功能需要 Chromium。当前状态：
+            图片渲染功能需要浏览器支持（chrome-headless-shell）。当前状态：
             <UBadge
               v-if="currentConfig.executablePath"
               color="success"
@@ -342,12 +338,12 @@ onUnmounted(() => {
       <template v-if="mode === 'download'">
         <UPageCard
           icon="i-lucide-download-cloud"
-          title="下载 Chromium"
+          title="下载 Chrome Headless Shell"
           variant="outline"
         >
           <template #description>
             <span class="text-muted text-sm">
-              自动下载适合当前系统的 Chromium，并保存至
+              自动下载适合当前系统的 Chrome Headless Shell，并保存至
               <code class="bg-muted/50 rounded px-1 text-xs"
                 >./data/browsers/</code
               >
@@ -488,8 +484,8 @@ onUnmounted(() => {
         >
           <template #description>
             <span class="text-muted text-sm">
-              填写系统中已安装的 Chromium / Chrome 可执行文件的绝对路径。
-              留空将使用自动检测。
+              填写系统中已安装的 Chrome Headless Shell 或 Chromium
+              可执行文件的绝对路径。
             </span>
           </template>
           <template #footer>
@@ -498,7 +494,7 @@ onUnmounted(() => {
                 <div class="flex w-full gap-2">
                   <UInput
                     v-model="customPath"
-                    placeholder="例如：/usr/bin/chromium-browser"
+                    placeholder="例如：/usr/bin/chrome-headless-shell"
                     class="flex-1"
                     icon="i-lucide-file-cog"
                   />

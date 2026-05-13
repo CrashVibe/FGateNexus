@@ -111,7 +111,7 @@ const getInstalledChromes = async (): Promise<InstalledBrowser[]> => {
       cacheDir: BROWSER_CACHE_DIR,
     });
     return installed
-      .filter((b) => b.browser === Browser.CHROME)
+      .filter((b) => b.browser === Browser.CHROMEHEADLESSSHELL)
       .toSorted((a, b) => b.buildId.localeCompare(a.buildId));
   } catch (error) {
     logger.warn(
@@ -185,7 +185,7 @@ export const checkChromiumUpdate = async (): Promise<{
   }
 
   const [latestBuildId, chromes] = await Promise.all([
-    resolveBuildId(Browser.CHROME, platform, "latest"),
+    resolveBuildId(Browser.CHROMEHEADLESSSHELL, platform, "latest"),
     getInstalledChromes(),
   ]);
 
@@ -248,7 +248,11 @@ export const startChromiumDownload = async (): Promise<void> => {
 
     let buildId: string;
     try {
-      buildId = await resolveBuildId(Browser.CHROME, platform, "latest");
+      buildId = await resolveBuildId(
+        Browser.CHROMEHEADLESSSHELL,
+        platform,
+        "latest",
+      );
     } catch (error) {
       throw new Error(`获取最新版本号失败：${toErrorMessage(error)}`, {
         cause: error,
@@ -277,7 +281,7 @@ export const startChromiumDownload = async (): Promise<void> => {
 
     try {
       installed = await install({
-        browser: Browser.CHROME,
+        browser: Browser.CHROMEHEADLESSSHELL,
         buildId,
         cacheDir: BROWSER_CACHE_TMP_DIR,
         downloadProgressCallback: (downloaded, total) => {
