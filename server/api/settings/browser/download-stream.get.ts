@@ -9,24 +9,40 @@ import {
 export default defineEventHandler(async (event) => {
   setResponseHeaders(event, {
     "Cache-Control": "no-cache, no-transform",
-    Connection: "keep-alive",
-    "Content-Type": "text/event-stream",
+    "Content-Type": "text/event-stream; charset=utf-8",
     "X-Accel-Buffering": "no",
   });
 
-  const { res } = event.node;
+  const { req, res } = event.node;
 
-  const send = (payload: unknown) => {
-    res.write(`event: progress\n`);
+  if (!res || res.writableEnded) {
+    return;
+  }
+
+  res.flushHeaders?.();
+
+  const writeEvent = (name: string, payload: unknown) => {
+    if (res.writableEnded) {
+      return;
+    }
+    res.write(`event: ${name}\n`);
     res.write(`data: ${JSON.stringify(payload)}\n\n`);
   };
 
-  const sendPing = () => {
-    res.write("event: ping\n");
-    res.write("data: {}\n\n");
+  const send = (payload: unknown) => {
+    writeEvent("progress", payload);
   };
 
-  send(await getEnrichedDownloadState());
+  const sendPing = () => {
+    writeEvent("ping", {});
+  };
+
+  try {
+    send(await getEnrichedDownloadState());
+  } catch (error) {
+    logger.error(error, "获取下载状态失败");
+    send({ error: "获取下载状态失败", status: "error" });
+  }
 
   const unsubscribe = subscribeDownloadState((next) => {
     send(next);
@@ -37,11 +53,15 @@ export default defineEventHandler(async (event) => {
   const close = () => {
     clearInterval(keepAliveTimer);
     unsubscribe();
-    res.end();
+    if (!res.writableEnded) {
+      res.end();
+    }
   };
 
-  event.node.req.on("close", close);
-  event.node.req.on("error", close);
+  req.on("close", close);
+  req.on("error", close);
 
-  await once(event.node.req, "close");
+  res.on("error", close);
+
+  await once(req, "close");
 });

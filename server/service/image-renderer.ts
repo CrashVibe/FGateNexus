@@ -1,8 +1,4 @@
-import type {
-  Browser,
-  PuppeteerLifeCycleEvent,
-  ScreenshotOptions,
-} from "puppeteer-core";
+import type { Browser, ScreenshotOptions } from "puppeteer-core";
 import { launch } from "puppeteer-core";
 
 import { getLatestInstalledChromiumPath } from "./browser-downloader";
@@ -18,7 +14,7 @@ export interface RenderOptions {
   /**
    * 等待条件
    */
-  waitUntil: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
+  waitUntil: "load" | "domcontentloaded" | ("load" | "domcontentloaded")[];
   /**
    * 类型
    */
