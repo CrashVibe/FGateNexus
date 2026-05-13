@@ -74,13 +74,13 @@ export default defineNuxtConfig({
     },
   },
   sentry: {
-    enabled: !isDev && enableSentry,
     org: "crashvibe",
     project: "flowgate",
     release: {
       name: sentryRelease,
     },
     sourcemaps: {
+      disable: isDev || !enableSentry,
       filesToDeleteAfterUpload: [".*/**/*.map"],
     },
   },
