@@ -7,6 +7,7 @@ import readline from "node:readline/promises";
 import type { MigrationMeta } from "drizzle-orm/migrator";
 
 import { configManager } from "./server/utils/config";
+import { logger } from "./server/utils/logger";
 
 const execDir = path.dirname(path.resolve(process.execPath));
 process.chdir(execDir);
@@ -32,7 +33,7 @@ const prepareDatabase = async (): Promise<void> => {
   ]);
 
   if (legacyExists && newExists) {
-    console.warn(
+    logger.warn(
       `检测到根目录和 ${DB_DIR} 目录下同时存在数据库，将继续使用 ${DB_PATH}。如有需要，请手动将 ${LEGACY_PATH} 覆盖到 ${DB_PATH}，或删除 ${DB_PATH} 后重启。`,
     );
     return;
@@ -40,7 +41,7 @@ const prepareDatabase = async (): Promise<void> => {
 
   if (legacyExists) {
     await fs.rename(LEGACY_PATH, DB_PATH);
-    console.info(`发现老地方还有数据库，已经帮你搬到 ${DB_PATH} 了，放心吧。`);
+    logger.info(`发现老地方还有数据库，已经帮你搬到 ${DB_PATH} 了，放心吧。`);
   }
 };
 
@@ -85,9 +86,9 @@ const initDatabase = async () => {
   const client = new Database(DB_PATH);
 
   if (isNewDatabase) {
-    console.info("数据库不存在，正在初始化...");
+    logger.info("数据库不存在，正在初始化...");
   } else {
-    console.info("[MIGRATION] 检查并执行数据库迁移...");
+    logger.info("[MIGRATION] 检查并执行数据库迁移...");
   }
 
   try {
@@ -111,9 +112,9 @@ const initDatabase = async () => {
       };
     });
     applyMigrations(client, migrations);
-    console.info("[SUCCESS] 数据库准备就绪");
+    logger.info("[SUCCESS] 数据库准备就绪");
   } catch (error) {
-    console.error("数据库迁移失败：", error);
+    logger.error(error, "数据库迁移失败：");
     process.exit(1);
   }
 };
@@ -172,7 +173,7 @@ const startApplication = async () => {
     await import("./.output/server/sentry.server.config.mjs");
     await import("./.output/server/index.mjs");
   } catch (error) {
-    console.error("应用启动失败：", error);
+    logger.error(error, "应用启动失败：");
     process.exit(1);
   }
 };

@@ -66,6 +66,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       isDev,
+      release: process.env.npm_package_version,
       sentry: {
         dsn: process.env.SENTRY_DSN,
         enabled: !isDev && enableSentry,
