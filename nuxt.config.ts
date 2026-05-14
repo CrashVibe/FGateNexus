@@ -40,6 +40,7 @@ export default defineNuxtConfig({
   },
   experimental: {
     asyncContext: true,
+    viteEnvironmentApi: true,
   },
   modules: [
     "@pinia/nuxt",
@@ -60,7 +61,7 @@ export default defineNuxtConfig({
       websocket: true,
     },
     minify: true,
-    preset: "node-server",
+    preset: "bun",
     serveStatic: "inline",
   },
   runtimeConfig: {
@@ -115,19 +116,20 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: [
+        "@tanstack/vue-table",
         "@vue/devtools-core",
         "@vue/devtools-kit",
-        "@tanstack/vue-table",
-        "vooks",
-        "uuid",
-        "zod",
-        "http-status-codes",
+        "@vueuse/core",
         "@zxcvbn-ts/core",
         "@zxcvbn-ts/language-common",
+        "dayjs",
+        "http-status-codes",
         "lodash-es",
         "nanoid",
-        "dayjs",
+        "uuid",
+        "vooks",
         "vue-qrcode-reader",
+        "zod",
       ],
     },
     plugins: [tailwindcss()],
