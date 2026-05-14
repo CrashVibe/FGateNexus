@@ -154,7 +154,7 @@ class AppConfigManager {
     );
 
     this._config = newConfig;
-    logger.info({ newConfig }, "准备更新配置");
+    logger.debug({ newConfig }, "准备更新配置");
 
     const configPath = path.resolve(process.cwd(), "config/appsettings.json");
     try {
