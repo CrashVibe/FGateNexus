@@ -72,12 +72,9 @@
     "ultracite": "7.6.0"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "oxlint --fix --quiet",
-      "oxfmt --write"
-    ],
-    "*.{json,jsonc,css,scss,md,mdx}": [
-      "oxfmt --write"
+    "**/*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "oxlint . --fix --quiet",
+      "oxfmt . --write"
     ]
   },
   "apiVersion": "0.0.3",
