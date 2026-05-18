@@ -10,8 +10,8 @@ import { NotifyConfigSchema } from "./notify";
 import { targetSchema } from "./target";
 
 export const ServerResponseSchema = z.object({
-  adapterId: z.number().nullable(),
   bindingConfig: BindingConfigSchema,
+  botId: z.number().nullable(),
   chatSyncConfig: ChatSyncConfigSchema,
   commandConfig: CommandConfigSchema,
   id: z.number(),

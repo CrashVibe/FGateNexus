@@ -2,7 +2,7 @@ import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "~~/server/db/client";
-import { targets } from "~~/server/db/schema";
+import { targetTable } from "~~/server/db/schema";
 import { TargetConfigSchema } from "~~/shared/model/server/schema/target";
 
 import { createApiResponse } from "#shared/model";
@@ -25,23 +25,31 @@ export default defineEventHandler(async (event) => {
       );
     }
 
-    const serverExists = await db.query.servers.findFirst({
+    const serverExists = await db.query.serverTable.findFirst({
       where: (s, { eq }) => eq(s.id, serverID),
+      with: {
+        bot: true,
+      },
     });
-    if (!serverExists) {
+
+    if (!serverExists || serverExists.bot === null) {
       return createErrorResponse(event, ApiError.notFound("服务器不存在"));
     }
 
+    const { bot } = serverExists;
+
     const nowValues = parsed.data.map((p) => ({
+      channelId: p.channelId,
       config: TargetConfigSchema.parse({}),
       enabled: p.enabled,
+      guildId: p.guildId,
       id: uuidv4(),
+      platform: bot.platform,
       serverId: serverID,
-      targetId: p.targetId,
       type: p.type,
     }));
 
-    const inserted = await db.insert(targets).values(nowValues).returning();
+    const inserted = await db.insert(targetTable).values(nowValues).returning();
 
     return createApiResponse(
       event,

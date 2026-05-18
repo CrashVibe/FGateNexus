@@ -2,7 +2,7 @@ import type { Peer } from "crossws";
 import { eq } from "drizzle-orm";
 
 import { db } from "#server/db/client";
-import { servers } from "#server/db/schema";
+import { serverTable } from "#server/db/schema";
 import { clientInfoSchema } from "#server/service/mcwsbridge/model";
 import ServerSession from "#server/service/mcwsbridge/server-session";
 
@@ -127,9 +127,9 @@ class ConnectionManager {
     session.supports_papi = supports_papi;
 
     await db
-      .update(servers)
+      .update(serverTable)
       .set({ minecraft_software, minecraft_version })
-      .where(eq(servers.id, session.serverId))
+      .where(eq(serverTable.id, session.serverId))
       .execute();
   }
 }

@@ -84,14 +84,15 @@
               v-model:open="drawerVisible"
               :title="
                 selectTarget
-                  ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                  ? `目标配置 · ${selectTarget.channelId || selectTarget.id}`
                   : ''
               "
             >
               <template #body>
                 <drawer-command
                   v-if="selectTarget"
-                  :adapter-type="adapterData?.type"
+                  :platformType="botData?.platform"
+                  :botId="botData?.id"
                   :target="selectTarget"
                 />
               </template>
@@ -128,7 +129,7 @@ import { differenceWith, isEqual, pick } from "lodash-es";
 import type { z } from "zod";
 import { pickEditableTarget } from "~~/shared/utils/target";
 
-import type { AdapterWithStatus } from "#shared/model/adapter/schema";
+import type { BotWithStatus } from "#shared/model/bot/api";
 import { CommandAPI } from "#shared/model/server/api";
 import type { CommandConfig } from "#shared/model/server/schema/command";
 import { CommandConfigSchema } from "#shared/model/server/schema/command";
@@ -137,7 +138,7 @@ import type { targetResponse } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
 import {
-  AdapterData,
+  BotData,
   BrowserData,
   CommandData,
   ServerData,
@@ -166,10 +167,10 @@ const formData = reactive<FormState>({
 const selectTarget = ref<targetResponse | null>(null);
 const drawerVisible = ref(false);
 let serverData: ServerWithStatus | null = null;
-const adapterData = ref<AdapterWithStatus | null>(null);
+const botData = ref<BotWithStatus | null>(null);
 const currentConfig = ref<{
-  executablePath: string | null;
-}>({ executablePath: null });
+  executablePath: string | null | undefined;
+}>({ executablePath: undefined });
 
 const originalFormData = ref<FormState | null>(null);
 
@@ -210,11 +211,9 @@ const refreshServerData = async (): Promise<void> => {
     serverData = data;
     options.value = data.targets.map((target) => ({
       key: target.id,
-      label: target.targetId,
+      label: target.channelId,
     }));
-    adapterData.value = data.adapterId
-      ? await AdapterData.get(data.adapterId)
-      : null;
+    botData.value = data.botId ? await BotData.get(data.botId) : null;
     formData.config = structuredClone(
       data.commandConfig || CommandConfigSchema.parse({}),
     );

@@ -103,7 +103,7 @@ const columns: TableColumn<PlayerRow>[] = [
           h(
             UBadge,
             { color: "info", size: "sm", variant: "subtle" },
-            () => sa.adapterType,
+            () => sa.platform,
           ),
           h(
             "span",

@@ -21,20 +21,22 @@
                 title="基础设置"
                 description="修改服务器基础信息"
               >
-                <UFormField label="服务器名字" name="name">
-                  <UInput
-                    v-model="formData.name"
-                    class="w-full"
-                    placeholder="请输入服务器名称"
-                  />
-                </UFormField>
-                <UFormField label="Token" name="token">
-                  <UInput
-                    v-model="formData.token"
-                    class="w-full"
-                    placeholder="请输入服务器 Token"
-                  />
-                </UFormField>
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <UFormField label="服务器名字" name="name">
+                    <UInput
+                      v-model="formData.name"
+                      class="w-full"
+                      placeholder="请输入服务器名称"
+                    />
+                  </UFormField>
+                  <UFormField label="Token" name="token">
+                    <UInput
+                      v-model="formData.token"
+                      class="w-full"
+                      placeholder="请输入服务器 Token"
+                    />
+                  </UFormField>
+                </div>
               </UPageCard>
 
               <UPageCard
@@ -42,23 +44,24 @@
                 title="Bot 实例"
                 description="为此服务器绑定一个 Bot 实例"
               >
-                <UFormField name="adapterId">
+                <UFormField name="botId">
                   <div class="flex w-full items-center gap-2">
                     <USelect
-                      v-model="selectedAdapterId"
-                      :items="adapterOptions"
+                      :model-value="selectedBotId"
+                      :items="botOptions"
                       class="flex-1"
                       searchable
                       placeholder="请选择 Bot 实例"
+                      @update:model-value="requestBotChange"
                     />
                     <UButton
-                      v-if="selectedAdapterId !== undefined"
+                      v-if="selectedBotId !== undefined"
                       color="neutral"
                       variant="ghost"
                       icon="i-lucide-x"
                       size="sm"
                       aria-label="清除选择"
-                      @click="selectedAdapterId = undefined"
+                      @click="requestBotChange(undefined)"
                     />
                   </div>
                 </UFormField>
@@ -87,7 +90,7 @@
                 :disabled="!isDirty"
                 :loading="isAnyLoading"
                 @click="cancelChanges"
-                >取消</UButton
+                >取消更改</UButton
               >
               <UButton
                 :disabled="!isDirty"
@@ -122,6 +125,29 @@
             </div>
           </template>
         </UModal>
+
+        <UModal v-model:open="showBotChangeModal" title="确认更改 Bot 实例">
+          <template #body>
+            <p class="text-sm">
+              {{
+                pendingBotId === undefined
+                  ? "确定要清除 Bot 实例绑定吗？"
+                  : "确定要更改 Bot 实例吗？"
+              }}
+            </p>
+            <p class="text-muted mt-2 text-sm">
+              此操作将自动清理该服务器下的所有目标配置，且无法恢复。
+            </p>
+          </template>
+          <template #footer>
+            <div class="flex justify-end gap-2">
+              <UButton color="neutral" variant="subtle" @click="cancelBotChange"
+                >取消</UButton
+              >
+              <UButton color="error" @click="confirmBotChange">确认</UButton>
+            </div>
+          </template>
+        </UModal>
       </template>
     </UDashboardPanel>
   </div>
@@ -135,7 +161,7 @@ import { GeneralAPI } from "#shared/model/server/api";
 import type { ServerWithStatus } from "#shared/model/server/schema/servers";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
-import { AdapterData, GeneralData, ServerData } from "~/composables/api";
+import { BotData, GeneralData, ServerData } from "~/composables/api";
 
 const isMobile = useIsMobile();
 
@@ -155,8 +181,10 @@ const loadingMap = reactive({
 const isAnyLoading = computed(() => Object.values(loadingMap).some(Boolean));
 const isDeleting = ref(false);
 const showDeleteModal = ref(false);
+const showBotChangeModal = ref(false);
+const pendingBotId = ref<number | undefined>(undefined);
 
-const adapterOptions = ref<{ label: string; value: number }[]>([]);
+const botOptions = ref<{ label: string; value: number }[]>([]);
 let serverData: ServerWithStatus | null = null;
 
 const formData = ref<z.infer<typeof GeneralAPI.PATCH.request> | null>(null);
@@ -169,15 +197,30 @@ const isDirty = computed(() => {
   return !isEqual(formData.value, original.value);
 });
 
-const selectedAdapterId = computed({
-  get: () => formData.value?.adapterId ?? undefined,
-  set: (v: number | undefined) => {
-    if (!formData.value) {
-      return;
-    }
-    formData.value.adapterId = v ?? null;
-  },
-});
+const selectedBotId = computed(() => formData.value?.botId ?? undefined);
+
+const requestBotChange = (v: number | undefined) => {
+  if (selectedBotId.value === undefined && v !== undefined) {
+    formData.value!.botId = v;
+    return;
+  }
+
+  pendingBotId.value = v;
+  showBotChangeModal.value = true;
+};
+
+const confirmBotChange = () => {
+  if (!formData.value) {
+    return;
+  }
+  formData.value.botId = pendingBotId.value ?? null;
+  showBotChangeModal.value = false;
+};
+
+const cancelBotChange = () => {
+  pendingBotId.value = undefined;
+  showBotChangeModal.value = false;
+};
 
 const confirmDelete = async () => {
   isDeleting.value = true;
@@ -202,20 +245,20 @@ const refreshAll = async (): Promise<void> => {
   }
   loadingMap.isLoading = true;
   try {
-    const [adapterData, serverDataResult] = await Promise.all([
-      AdapterData.gets(),
+    const [botData, serverDataResult] = await Promise.all([
+      BotData.gets(),
       ServerData.get(Number(route.params["id"])),
     ]);
 
     serverData = serverDataResult;
 
-    adapterOptions.value = adapterData.map((adapter) => ({
-      label: `#${adapter.id} - ${adapter.type} [${adapter.isOnline ? "在线" : "离线"}${adapter.enabled ? "" : " · 已禁用"}]`,
-      value: adapter.id,
+    botOptions.value = botData.map((bot) => ({
+      label: `#${bot.id} - ${bot.platform} [${bot.isOnline ? "在线" : "离线"}${bot.enabled ? "" : " · 已禁用"}]`,
+      value: bot.id,
     }));
 
     formData.value = {
-      adapterId: serverDataResult.adapterId,
+      botId: serverDataResult.botId,
       name: serverDataResult.name,
       token: serverDataResult.token,
     };

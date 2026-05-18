@@ -11,7 +11,7 @@ const { savePage } = usePageStateStore();
 const basicMenuOptions: NavigationMenuItem[][] = [
   [
     { icon: "i-lucide-server", label: "服务器管理", to: "/" },
-    { icon: "i-lucide-link", label: "Bot 实例", to: "/adapters" },
+    { icon: "i-lucide-link", label: "Bot 实例", to: "/bots" },
     { icon: "i-lucide-users", label: "玩家列表", to: "/players" },
   ],
   [

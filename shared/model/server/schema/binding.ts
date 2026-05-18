@@ -18,7 +18,7 @@ export const BindingConfigSchema = z.object({
     .string()
     .min(1, "改名模板不能为空")
     .max(32, "改名模板长度不能超过 32 个字符")
-    .default("{socialNickname}"),
+    .default("{playerName}"),
   bindFailMsg: z
     .string()
     .max(200, "绑定失败消息长度不能超过 200 个字符")

@@ -1,71 +1,52 @@
 <script lang="ts" setup>
 import type { z } from "zod";
-import type { AdapterAPI } from "~~/shared/model/adapter/api";
 
-import type { AdapterWithStatus } from "#shared/model/adapter/schema";
+import type { BotWithStatus, BotAPI } from "#shared/model/bot/api";
+import SelectorBot from "@/components/selector/bot.vue";
 
-const { adapter } = defineProps<{
-  adapter: AdapterWithStatus;
+const { bot } = defineProps<{
+  bot: BotWithStatus;
 }>();
 
 const emit = defineEmits<{
-  save: [adapterID: number, data: z.infer<typeof AdapterAPI.POST.request>];
-  delete: [adapterID: number];
-  toggle: [adapterID: number, enabled: boolean];
+  save: [botID: number, data: z.infer<typeof BotAPI.POST.request>];
+  delete: [botID: number];
+  toggle: [botID: number, enabled: boolean];
 }>();
 
-const loading = ref(false);
-
-const formData = ref<z.infer<typeof AdapterAPI.POST.request>>({
-  config: adapter.config,
-  name: adapter.name,
-  type: adapter.type,
+const formData = ref<z.infer<typeof BotAPI.POST.request>>({
+  config: bot.config,
+  name: bot.name,
+  platform: bot.platform,
 });
 
-const handleSave = async () => {
-  loading.value = true;
-  try {
-    emit("save", adapter.id, formData.value);
-  } finally {
-    loading.value = false;
-  }
-};
+const formRef = useTemplateRef<InstanceType<typeof SelectorBot>>("formRef");
 
 const handleDelete = () => {
-  emit("delete", adapter.id);
+  emit("delete", bot.id);
 };
 
-const handleToggle = () => {
-  emit("toggle", adapter.id, !adapter.enabled);
-};
+const handleToggle = () => emit("toggle", bot.id, !bot.enabled);
 </script>
 
 <template>
   <div class="flex h-full flex-col">
     <div class="flex-1 overflow-y-auto">
-      <selector-bot v-model="formData" :is-edit="true" />
+      <SelectorBot
+        ref="formRef"
+        @submit="emit('save', bot.id, formData)"
+        v-model="formData"
+        :is-edit="true"
+      />
     </div>
     <div class="border-default flex justify-end gap-3 border-t px-4 py-3">
-      <UButton
-        color="error"
-        variant="subtle"
-        :disabled="loading"
-        :loading="loading"
-        @click="handleDelete"
-      >
+      <UButton color="error" variant="subtle" @click="handleDelete">
         删除
       </UButton>
-      <UButton
-        color="neutral"
-        variant="subtle"
-        :disabled="loading"
-        @click="handleToggle"
-      >
-        {{ adapter.enabled ? "禁用" : "启用" }}
+      <UButton color="neutral" variant="subtle" @click="handleToggle">
+        {{ bot.enabled ? "禁用" : "启用" }}
       </UButton>
-      <UButton :disabled="loading" :loading="loading" @click="handleSave">
-        保存
-      </UButton>
+      <UButton @click="formRef?.submit()"> 保存 </UButton>
     </div>
   </div>
 </template>

@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
       const apiError = ApiError.validation("无效服务器 ID");
       return createErrorResponse(event, apiError);
     }
-    const result = await db.query.targets.findMany({
+    const result = await db.query.targetTable.findMany({
       where: (target, { eq }) => eq(target.serverId, serverID),
     });
     return createApiResponse(

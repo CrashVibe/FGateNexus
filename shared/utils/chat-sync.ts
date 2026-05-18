@@ -43,11 +43,6 @@ export const shouldForwardMessage = (
   config: ChatSyncConfig,
 ): boolean => {
   const { filters } = config;
-
-  if (!config.enabled) {
-    return false;
-  }
-
   // 消息长度
   if (
     message.length < filters.minMessageLength ||

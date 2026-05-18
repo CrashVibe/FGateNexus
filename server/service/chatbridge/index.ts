@@ -1,10 +1,11 @@
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
-import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
-import type { Element, ForkScope, Session } from "koishi";
+import type { ForkScope, Session } from "koishi";
 import { Context, Logger as log } from "koishi";
 import { db } from "~~/server/db/client";
-import { adapters } from "~~/server/db/schema";
+import { getServerByIdWithBotAndTargets } from "~~/server/db/queries/server";
+import { botTable } from "~~/server/db/schema";
+import type { Target } from "~~/server/db/schema";
 import {
   bindingService,
   BindingService,
@@ -12,44 +13,29 @@ import {
 import { handlePlatformMessage } from "~~/server/service/chatbridge/message-router";
 import { configManager } from "~~/server/utils/config";
 
-import type { AdapterConfig } from "#shared/model/adapter/schema";
-import { AdapterType } from "#shared/model/adapter/schema";
-import type { OneBotConfig } from "#shared/model/adapter/schema/onebot";
+import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
 
-/**
- * Bot 连接信息
- */
-export interface BotConnection {
-  /**
-   * bot 的实例
-   */
-  pluginInstance: ForkScope;
-  /**
-   * 适配器 ID
-   */
-  adapterID: number;
-  /**
-   * 适配器类型
-   */
-  adapterType: AdapterType;
-  /**
-   * 配置
-   */
-  config: AdapterConfig;
-}
+import type { MCEvent, MCEventType } from "../mcwsbridge/types";
+import { BotFactory } from "./bot-factory";
+import { ConnectionStore } from "./connection-store";
+import { eventConfigMap } from "./sender/event-config-map";
+import type { PlatformSender } from "./sender/types";
 
-type AdapterBot = Session["bot"];
+type EventHandlerMap = {
+  [K in MCEventType]: (
+    sender: PlatformSender,
+    event: MCEvent<K>,
+    target: Target,
+  ) => Promise<void>;
+};
 
-interface SetGroupCardHandlerContext {
-  bot: AdapterBot;
-  groupId: number;
-  userId: number;
-  card: string;
-}
-
-type SetGroupCardHandler = (
-  context: SetGroupCardHandlerContext,
-) => Promise<void>;
+const handlerMap: EventHandlerMap = {
+  "execute.command": async (s, e, t) => s.onCommand(e, t),
+  "player.chat": async (s, e, t) => s.onChat(e, t),
+  "player.death": async (s, e, t) => s.onDeath(e, t),
+  "player.join": async (s, e, t) => s.onJoin(e, t),
+  "player.leave": async (s, e, t) => s.onLeave(e, t),
+};
 
 /**
  * 聊天桥接
@@ -57,32 +43,27 @@ type SetGroupCardHandler = (
 class ChatBridge {
   static instance: ChatBridge | null = null;
   // Bot ID -> Bot Connection
-  private readonly connectionMap = new Map<number, BotConnection>();
-  private readonly setGroupCardHandlers: Partial<
-    Record<AdapterType, SetGroupCardHandler>
-  > = {
-    [AdapterType.Onebot]: async ({ bot, groupId, userId, card }) => {
-      if (!(bot instanceof OneBot)) {
-        throw new Error("OneBot 机器人实例类型不匹配，无法修改群名片");
-      }
-      await bot.internal.setGroupCard(groupId, userId, card);
-    },
-  };
+  private readonly connections = new ConnectionStore();
   private readonly app: Context;
   private readonly pluginsContext: ForkScope[] = [];
+  private readonly botFactory: BotFactory;
+
+  private readonly logger = logger.child({}, { msgPrefix: "[ChatBridge] " });
 
   private constructor() {
     this.app = new Context();
+    this.botFactory = new BotFactory(this.app);
   }
 
-  public static getInstance(): ChatBridge {
+  static getInstance(): ChatBridge {
     ChatBridge.instance ??= new ChatBridge();
     return ChatBridge.instance;
   }
 
-  public async init(): Promise<void> {
+  async init(): Promise<void> {
     const { config } = configManager;
     log.levels.base = 1;
+
     this.pluginsContext.push(
       // @ts-expect-error -- @cordisjs/plugin-server 与 Koishi plugin() 重载存在 Function.prototype.apply 结构性误匹配
       this.app.plugin(Server, {
@@ -90,154 +71,91 @@ class ChatBridge {
         port: config.koishi.port,
       }),
     );
-    logger.info(
+    this.pluginsContext.push(this.app.plugin(HTTP));
+
+    this.logger.info(
       `Koishi 服务启动 http://${config.koishi.host}:${config.koishi.port}`,
     );
-    this.pluginsContext.push(this.app.plugin(HTTP));
+
     await this.app.start();
-    const result = await db.select().from(adapters);
-    for (const adapter of result) {
-      if (!adapter.enabled) {
+
+    const result = await db.select().from(botTable);
+
+    for (const bot of result) {
+      if (!bot.enabled) {
         continue;
       }
-      this.addBot(adapter.id, adapter.type, adapter.config);
+      this.addBot(bot.id, bot.platform, bot.config);
     }
+
     this.app.on("message", async (session) => {
-      const connection = [...this.connectionMap.values()].find(
-        (conn) => conn.config.selfId === session.bot.selfId,
-      );
-      if (
-        connection &&
-        session.content !== undefined &&
-        session.content !== ""
-      ) {
+      const connection = this.connections.findBySession(session);
+      if (connection && !session.content) {
         await ChatBridge.receiveMessage(connection, session);
       }
     });
     this.app.on("guild-member-removed", async (session) => {
-      const connection = [...this.connectionMap.values()].find(
-        (conn) => conn.config.selfId === session.bot.selfId,
-      );
+      const connection = this.connections.findBySession(session);
       if (connection) {
         await ChatBridge.handleGroupLeave(connection, session);
       }
     });
   }
 
-  public async close(): Promise<void> {
+  async close(): Promise<void> {
     for (const pluginContext of this.pluginsContext) {
       pluginContext.dispose();
     }
-    for (const connection of this.connectionMap.values()) {
+    for (const connection of this.connections.values()) {
       connection.pluginInstance.dispose();
     }
-    this.connectionMap.clear();
+    this.connections.clear();
     await this.app.stop();
-  }
-
-  /**
-   * 创建 Onebot Bot 实例
-   */
-  public createOnebot(config: OneBotConfig): ForkScope {
-    logger.debug({ config }, "创建 Onebot Bot 实例");
-    if (config.protocol === "ws-reverse") {
-      return this.app.plugin(OneBot, {
-        ...config,
-        responseTimeout: 5000,
-      });
-    }
-    return this.app.plugin(OneBot, {
-      ...config,
-    });
   }
 
   /**
    * 移除 Bot 连接
    */
-  public removeBot(botID: number): void {
-    const connection = this.connectionMap.get(botID);
-    if (connection) {
-      connection.pluginInstance.dispose();
-      this.connectionMap.delete(botID);
-      logger.info(`已移除 Bot 连接：${botID}`);
-      return;
-    }
-    throw new Error(`找不到 Bot 连接：${botID}`);
+  removeBot(botID: number): void {
+    const connection = this.connections.remove(botID);
+    connection.pluginInstance.dispose();
+    this.logger.debug(`已移除 Bot 连接：${botID}`);
   }
 
   /**
    * 添加 Bot 连接
    */
-  public addBot(
+  addBot(
     botID: number,
-    adapterType: AdapterType,
-    config: OneBotConfig,
+    platformType: PlatformType,
+    config: PlatformConfig,
   ): void {
-    if (this.connectionMap.has(botID)) {
+    if (this.connections.has(botID)) {
       throw new Error(`Bot 连接已存在：${botID}`);
     }
-    if (adapterType === AdapterType.Onebot) {
-      const bot = this.createOnebot(config);
-      this.connectionMap.set(botID, {
-        adapterID: botID,
-        adapterType,
-        config,
-        pluginInstance: bot,
-      });
-      logger.info(`已添加 Bot 连接：${botID}`);
-    } else {
-      throw new Error(
-        `不支持的适配器类型 (可能版本太低了吧？): ${String(adapterType)}`,
-      );
-    }
+    const connection = this.botFactory.createConnection(
+      botID,
+      platformType,
+      config,
+    );
+    this.connections.add(connection);
+    this.logger.info(`已添加 Bot 连接：${botID}`);
   }
 
   /**
    * 获取 Bot 连接数据
    */
-  public getConnectionData(botID: number): BotConnection | undefined {
-    return this.connectionMap.get(botID);
-  }
-
-  /**
-   * 检查 Bot 是否在线
-   */
-  public isOnline(botID: number): boolean {
-    const bot = this.findBot(botID);
-    return bot.status === 1;
-  }
-
-  /**
-   * 查找 Bot 实例
-   */
-  public findBot(botID: number): (typeof this.app.bots)[0] {
-    const connection = this.connectionMap.get(botID);
-    if (!connection) {
-      throw new Error(`找不到 Bot 连接：${botID}`);
-    }
-    let bot: (typeof this.app.bots)[0] | undefined;
-
-    if (connection.adapterType === AdapterType.Onebot) {
-      bot = this.app.bots.find((b) => b.selfId === connection.config.selfId);
-    } else {
-      throw new Error(
-        `不支持的适配器类型 (可能版本太低了吧？): ${String(connection.adapterType)}`,
-      );
-    }
-
-    if (!bot) {
-      throw new Error(`找不到 Bot 实例：${connection.config.selfId}`);
-    }
-    return bot;
+  get(botID: number): PlatformSender | undefined {
+    return this.connections.get(botID);
   }
 
   /**
    * 更新 Bot 配置
    */
-  public updateConfig(adapterID: number, config: OneBotConfig): void {
-    const connection = this.connectionMap.get(adapterID);
+  updateConfig(senderId: number, config: PlatformConfig): void {
+    const connection = this.connections.get(senderId);
     if (!connection) {
-      throw new Error(`找不到 Bot 连接：${adapterID}`);
+      throw new Error(`找不到 Bot 连接：${senderId}`);
     }
     connection.config = config;
     connection.pluginInstance.update(config, true);
@@ -246,8 +164,8 @@ class ChatBridge {
   /**
    * 接收消息
    */
-  public static async receiveMessage(
-    connection: BotConnection,
+  private static async receiveMessage(
+    connection: PlatformSender,
     session: Session,
   ): Promise<void> {
     if (await bindingService.processMessage(connection, session)) {
@@ -261,60 +179,43 @@ class ChatBridge {
    * 处理离群事件
    */
   private static async handleGroupLeave(
-    connection: BotConnection,
+    connection: PlatformSender,
     ctx: Session,
   ): Promise<void> {
     await BindingService.handleGroupLeave(connection, ctx);
   }
 
-  /**
-   * 发送消息到指定目标
-   */
-  public async sendToTarget(
-    botConnection: BotConnection,
-    targetId: string,
-    targetType: "group" | "private",
-    message: Element.Fragment,
-  ): Promise<void> {
-    try {
-      const bot = this.findBot(botConnection.adapterID);
+  async dispatch<T extends MCEventType>(event: MCEvent<T>): Promise<void> {
+    const checker = eventConfigMap[event.type];
 
-      if (targetType === "group") {
-        await bot.sendMessage(targetId, message);
-      } else if (targetType === "private") {
-        await bot.sendPrivateMessage(targetId, message);
+    const server = await getServerByIdWithBotAndTargets(event.serverId);
+
+    if (!server?.botId) {
+      this.logger.warn(
+        `服务器 ${event.serverId} 无配置机器人，无法处理事件：${event.type}`,
+      );
+      return;
+    }
+
+    for (const target of server?.targets ?? []) {
+      if (!checker(target.config)) {
+        continue;
       }
-    } catch (error) {
-      logger.error(
-        { error, targetId, targetType },
-        `[MessageRouter] 发送消息失败`,
-      );
+      const connection = this.connections.get(server?.botId);
+      if (!connection) {
+        this.logger.warn({ target }, `找不到 Bot 连接，无法发送消息`);
+        continue;
+      }
+      const handler = handlerMap[event.type];
+      try {
+        await handler(connection, event, target);
+      } catch (error) {
+        this.logger.error(
+          { error, event, target },
+          `处理事件时发生错误：${event.type}`,
+        );
+      }
     }
-  }
-
-  /**
-   * 修改群成员名片
-   */
-  public async setGroupCard(
-    botID: number,
-    groupId: number,
-    userId: number,
-    card: string,
-  ): Promise<void> {
-    const connection = this.getConnectionData(botID);
-    if (!connection) {
-      throw new Error(`找不到 Bot 连接：${botID}`);
-    }
-
-    const handler = this.setGroupCardHandlers[connection.adapterType];
-    if (!handler) {
-      throw new Error(
-        `当前适配器不支持修改群名片：${String(connection.adapterType)}`,
-      );
-    }
-
-    const bot = this.findBot(botID);
-    await handler({ bot, card, groupId, userId });
   }
 }
 

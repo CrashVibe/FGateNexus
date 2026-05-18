@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  const user = await db.query.users.findFirst();
+  const user = await db.query.userTable.findFirst();
 
   if (!user || user.passwordHash === null || user.passwordHash === "") {
     return;

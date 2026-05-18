@@ -35,12 +35,6 @@
                   <template #title>
                     <div class="flex items-center gap-2">
                       <span>聊天同步总开关</span>
-                      <UBadge
-                        :color="formData.config.enabled ? 'success' : 'neutral'"
-                        variant="subtle"
-                      >
-                        {{ formData.config.enabled ? "已启用" : "未启用" }}
-                      </UBadge>
                     </div>
                   </template>
                   <template #description>
@@ -50,9 +44,6 @@
                   </template>
                   <template #default>
                     <div class="flex flex-col gap-4">
-                      <UFormField name="enabled" label="启用聊天同步">
-                        <USwitch v-model="formData.config.enabled" />
-                      </UFormField>
                       <USeparator />
                       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <UFormField
@@ -62,7 +53,6 @@
                         >
                           <USwitch
                             v-model="formData.config.mcToPlatformEnabled"
-                            :disabled="!formData.config.enabled"
                           />
                         </UFormField>
                         <UFormField
@@ -72,7 +62,6 @@
                         >
                           <USwitch
                             v-model="formData.config.platformToMcEnabled"
-                            :disabled="!formData.config.enabled"
                           />
                         </UFormField>
                       </div>
@@ -365,13 +354,13 @@
               v-model:open="drawerVisible"
               :title="
                 selectTarget
-                  ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                  ? `目标配置 · ${selectTarget.channelId || selectTarget.id}`
                   : ''
               "
             >
               <template #body>
                 <div v-if="selectTarget">
-                  <UFormField label="是否开启此目标的聊天同步" required>
+                  <UFormField label="启用聊天同步" required>
                     <USwitch
                       v-model="selectTarget.config.chatSyncConfigSchema.enabled"
                     />
@@ -450,6 +439,20 @@ const router = useRouter();
 const toast = useToast();
 const form = useTemplateRef("form");
 
+const selectTarget = ref<targetResponse | null>(null);
+const drawerVisible = ref(false);
+let serverData: ServerWithStatus | null = null;
+
+interface FormState {
+  config: ChatSyncConfig | null;
+  targets: targetResponse[];
+}
+
+const formData = reactive<FormState>({
+  config: null,
+  targets: [],
+});
+
 const createArrayTextComputed = (
   key:
     | "blacklistKeywords"
@@ -481,20 +484,6 @@ const blacklistKeywordsText = createArrayTextComputed("blacklistKeywords");
 const blacklistRegexText = createArrayTextComputed("blacklistRegex");
 const whitelistPrefixesText = createArrayTextComputed("whitelistPrefixes");
 const whitelistRegexText = createArrayTextComputed("whitelistRegex");
-
-const selectTarget = ref<targetResponse | null>(null);
-const drawerVisible = ref(false);
-let serverData: ServerWithStatus | null = null;
-
-interface FormState {
-  config: ChatSyncConfig | null;
-  targets: targetResponse[];
-}
-
-const formData = reactive<FormState>({
-  config: null,
-  targets: [],
-});
 
 const originalFormData = ref<FormState | null>(null);
 
@@ -602,7 +591,7 @@ const refreshServerData = async (): Promise<void> => {
     originalFormData.value = structuredClone(toRaw(formData));
     options.value = data.targets.map((target) => ({
       key: target.id,
-      label: target.targetId,
+      label: target.channelId,
     }));
   } catch (error) {
     console.error("Failed to refresh server data:", error);

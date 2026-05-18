@@ -9,7 +9,7 @@ import { ServersAPI } from "#shared/model/server/api";
 
 export default defineEventHandler(async (event) => {
   try {
-    const result = await db.query.servers.findMany({
+    const result = await db.query.serverTable.findMany({
       with: {
         targets: true,
       },

@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
       const apiError = ApiError.validation("无效服务器 ID");
       return createErrorResponse(event, apiError);
     }
-    const result = await db.query.servers.findFirst({
+    const result = await db.query.serverTable.findFirst({
       where: (server, { eq }) => eq(server.id, serverID),
       with: {
         targets: true,

@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const { password, twoFactorToken } = parsed.data;
-    const user = await db.query.users.findFirst();
+    const user = await db.query.userTable.findFirst();
 
     if (!user || user.passwordHash === null) {
       return createErrorResponse(

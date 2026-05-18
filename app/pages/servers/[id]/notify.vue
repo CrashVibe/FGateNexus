@@ -22,10 +22,6 @@
               >
                 <template #footer>
                   <div class="flex flex-col gap-4">
-                    <UFormField name="player_notify" label="是否启用">
-                      <USwitch v-model="formData.config.player_notify" />
-                    </UFormField>
-
                     <UFormField
                       name="join_notify_message"
                       label="玩家进出时发送的消息"
@@ -141,15 +137,6 @@
                 <template #footer>
                   <div class="flex flex-col gap-4">
                     <UFormField
-                      name="player_disappoint_notify"
-                      label="是否启用"
-                    >
-                      <USwitch
-                        v-model="formData.config.player_disappoint_notify"
-                      />
-                    </UFormField>
-
-                    <UFormField
                       name="death_notify_message"
                       label="玩家死亡时发送的消息"
                     >
@@ -252,15 +239,29 @@
               v-model:open="drawerVisible"
               :title="
                 selectTarget
-                  ? `目标配置 · ${selectTarget.targetId || selectTarget.id}`
+                  ? `目标配置 · ${selectTarget.channelId || selectTarget.id}`
                   : ''
               "
             >
               <template #body>
-                <div v-if="selectTarget">
-                  <UFormField label="是否开启此目标的通知" required>
+                <div
+                  v-if="selectTarget"
+                  class="grid grid-cols-1 gap-4 md:grid-cols-2"
+                >
+                  <UFormField label="玩家死亡通知" required>
                     <USwitch
-                      v-model="selectTarget.config.NotifyConfigSchema.enabled"
+                      v-model="
+                        selectTarget.config.NotifyConfigSchema
+                          .player_disappoint_notify
+                      "
+                    />
+                  </UFormField>
+
+                  <UFormField label="玩家进出通知" required>
+                    <USwitch
+                      v-model="
+                        selectTarget.config.NotifyConfigSchema.player_notify
+                      "
                     />
                   </UFormField>
                 </div>
@@ -276,14 +277,14 @@
                 :loading="isAnyLoading"
                 @click="cancelChanges"
               >
-                取消
+                取消更改
               </UButton>
               <UButton
                 :disabled="!isDirty"
                 :loading="isAnyLoading"
                 @click="handleSubmit"
               >
-                保存设置
+                保存配置
               </UButton>
             </div>
           </template>
@@ -398,7 +399,7 @@ const refreshServerData = async (): Promise<void> => {
     originalFormData.value = structuredClone(toRaw(formData));
     options.value = data.targets.map((target) => ({
       key: target.id,
-      label: target.targetId,
+      label: target.channelId,
     }));
   } catch (error) {
     console.error(error);

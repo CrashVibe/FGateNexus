@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { users } from "~~/server/db/schema";
+import { userTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户
-    const user = await db.query.users.findFirst();
+    const user = await db.query.userTable.findFirst();
     if (!user) {
       const apiError = ApiError.notFound("用户不存在");
       return createErrorResponse(event, apiError);
@@ -26,13 +26,13 @@ export default defineEventHandler(async (event) => {
 
     // 禁用 2FA
     await db
-      .update(users)
+      .update(userTable)
       .set({
         twoFactorEnabled: false,
         twoFactorSecret: null,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, user.id));
+      .where(eq(userTable.id, user.id));
 
     return createApiResponse(event, "2FA 已禁用", StatusCodes.OK);
   } catch (error) {

@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { servers } from "~~/server/db/schema";
+import { serverTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -23,11 +23,11 @@ export default defineEventHandler(async (event) => {
     }
 
     const result = await db
-      .update(servers)
+      .update(serverTable)
       .set({
         bindingConfig: parsed.data.config,
       })
-      .where(eq(servers.id, serverID))
+      .where(eq(serverTable.id, serverID))
       .returning();
 
     if (!result[0]) {

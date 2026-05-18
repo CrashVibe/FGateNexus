@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 import { verify } from "otplib";
 import { z } from "zod";
 import { db } from "~~/server/db/client";
-import { users } from "~~/server/db/schema";
+import { userTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
     );
 
     // 获取用户
-    const user = await db.query.users.findFirst();
+    const user = await db.query.userTable.findFirst();
     if (!user) {
       const apiError = ApiError.notFound("用户不存在");
       return createErrorResponse(event, apiError);
@@ -44,13 +44,13 @@ export default defineEventHandler(async (event) => {
 
     // 启用 2FA
     await db
-      .update(users)
+      .update(userTable)
       .set({
         twoFactorEnabled: true,
         twoFactorSecret: secret,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, user.id));
+      .where(eq(userTable.id, user.id));
 
     return createApiResponse(
       event,
