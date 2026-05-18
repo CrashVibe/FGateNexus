@@ -2,7 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { targets } from "~~/server/db/schema";
+import { targetTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -26,8 +26,10 @@ export default defineEventHandler(async (event) => {
     const { ids } = parsed.data;
 
     const deleted = await db
-      .delete(targets)
-      .where(and(eq(targets.serverId, serverID), inArray(targets.id, ids)))
+      .delete(targetTable)
+      .where(
+        and(eq(targetTable.serverId, serverID), inArray(targetTable.id, ids)),
+      )
       .returning();
 
     if (deleted.length === 0) {

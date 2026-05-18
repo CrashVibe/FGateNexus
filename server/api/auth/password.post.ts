@@ -2,24 +2,19 @@ import { eq } from "drizzle-orm";
 import { defineEventHandler } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { users } from "~~/server/db/schema";
 
+import { userTable } from "#server/db/schema";
 import { createApiResponse } from "#shared/model";
+import { PasswordAPI } from "#shared/model/auth/api";
 import { ApiError, createErrorResponse } from "#shared/model/error";
 import { validatePasswordStrength } from "#shared/utils/password";
 
-import { PasswordAPI } from "../../../shared/model/auth/api";
-
 export default defineEventHandler(async (event) => {
   try {
-    const user = await db.query.users.findFirst();
+    const user = await db.query.userTable.findFirst();
 
     // 如果用户已设置密码则需要认证
-    if (
-      user?.passwordHash !== undefined &&
-      user.passwordHash !== null &&
-      user.passwordHash !== ""
-    ) {
+    if (!user?.passwordHash) {
       const session = await requireUserSession(event);
 
       if (session?.user === null || session?.user === undefined) {
@@ -61,10 +56,10 @@ export default defineEventHandler(async (event) => {
     // 更新或创建用户
     await (user
       ? db
-          .update(users)
+          .update(userTable)
           .set({ passwordHash, updatedAt: new Date() })
-          .where(eq(users.id, user.id))
-      : db.insert(users).values({
+          .where(eq(userTable.id, user.id))
+      : db.insert(userTable).values({
           createdAt: new Date(),
           passwordHash,
           updatedAt: new Date(),

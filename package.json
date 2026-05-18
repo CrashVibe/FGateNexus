@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "NODE_ENV=production nuxt build",
-    "dev": "NODE_ENV=development nuxt dev",
+    "dev": "NODE_ENV=development nuxt dev --inspect",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -13,7 +13,7 @@
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --fix --type-aware",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "bun scripts/migrate.ts",
     "build:all": "bun run build && bun run build:mac && bun run build:linux && bun run build:win",
     "build:mac": "bun build --compile --minify --sourcemap --production --target=bun-darwin-arm64 ./entry.ts --outfile ./dist/FGateNexus-mac-arm64 && bun build --compile --minify --sourcemap --production --target=bun-darwin-x64 ./entry.ts --outfile ./dist/FGateNexus-mac-x64",
     "build:linux": "bun build --compile --minify --sourcemap --production --target=bun-linux-arm64 ./entry.ts --outfile ./dist/FGateNexus-linux-arm64 && bun build --compile --minify --sourcemap --production --target=bun-linux-x64 ./entry.ts --outfile ./dist/FGateNexus-linux-x64",
@@ -23,6 +23,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@koishijs/plugin-adapter-discord": "^4.6.1",
     "@koishijs/plugin-http": "^0.6.3",
     "@koishijs/plugin-server": "^3.2.9",
     "@mrlingxd/koishi-plugin-adapter-onebot": "^0.2.10",
@@ -79,7 +80,7 @@
       "oxfmt --write"
     ]
   },
-  "apiVersion": "0.0.2",
+  "apiVersion": "0.0.3",
   "json-comments": {
     "tips": "请安装 JSONComments 插件为 JSON 文件提供注释功能，详见：https://github.com/zhangfisher/json_comments_extension",
     "package.json": {
@@ -89,6 +90,7 @@
   "minimumClientVersion": "0.0.1",
   "patchedDependencies": {
     "nuxt-auth-utils@0.5.29": "patches/nuxt-auth-utils@0.5.29.patch",
-    "@koishijs/loader@4.6.11": "patches/@koishijs%2Floader@4.6.11.patch"
+    "@koishijs/loader@4.6.11": "patches/@koishijs%2Floader@4.6.11.patch",
+    "@satorijs/adapter-discord@4.6.1": "patches/@satorijs%2Fadapter-discord@4.6.1.patch"
   }
 }

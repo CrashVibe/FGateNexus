@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { servers } from "~~/server/db/schema";
+import { serverTable } from "~~/server/db/schema";
 import { BindingConfigSchema } from "~~/shared/model/server/schema/binding";
 import { ChatSyncConfigSchema } from "~~/shared/model/server/schema/chat-sync";
 import { CommandConfigSchema } from "~~/shared/model/server/schema/command";
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
       name: parsed.data.servername,
       token: parsed.data.token,
     };
-    await db.insert(servers).values({
+    await db.insert(serverTable).values({
       bindingConfig: BindingConfigSchema.parse({}),
       chatSyncConfig: ChatSyncConfigSchema.parse({}),
       commandConfig: CommandConfigSchema.parse({}),

@@ -47,3 +47,42 @@ export interface PendingRequest<T = unknown> {
   reject: (reason?: unknown) => void;
   timeout: NodeJS.Timeout;
 }
+
+// MC 事件类型定义
+export interface MCEventPayloadMap {
+  "player.chat": {
+    playerName: string;
+    playerUUID: string;
+    message: string;
+    timestamp: number;
+  };
+  "player.death": {
+    playerName: string;
+    playerUUID: string;
+    deathMessage: string | null;
+    timestamp: number;
+  };
+  "player.join": {
+    playerName: string;
+    playerUUID: string;
+    timestamp: number;
+  };
+  "player.leave": {
+    playerName: string;
+    playerUUID: string;
+    timestamp: number;
+  };
+  "execute.command": {
+    success: boolean;
+    message: string;
+  };
+}
+
+export type MCEventType = keyof MCEventPayloadMap;
+
+export interface MCEvent<T extends MCEventType = MCEventType> {
+  type: T;
+  timestamp: number;
+  serverId: number;
+  payload: MCEventPayloadMap[T];
+}

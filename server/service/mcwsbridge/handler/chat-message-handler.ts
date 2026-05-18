@@ -1,10 +1,11 @@
 import { z } from "zod";
-import { handleMCMessage } from "~~/server/service/chatbridge/message-router";
 import type RequestHandler from "~~/server/service/mcwsbridge/request-handler";
 import type { JsonRpcRequest } from "~~/server/service/mcwsbridge/types";
 import { createJsonRpcRequestSchema } from "~~/server/service/mcwsbridge/types";
 
 import type ServerSession from "#server/service/mcwsbridge/server-session";
+
+import { chatBridge } from "../../chatbridge";
 
 /**
  * 处理来自 MC 的聊天消息
@@ -36,14 +37,19 @@ class ChatMessageHandler implements RequestHandler {
 
     try {
       // 转发消息到聊天平台
-      await handleMCMessage(serverId, {
-        message,
-        playerName,
-        playerUUID,
+      await chatBridge.dispatch({
+        payload: {
+          message,
+          playerName,
+          playerUUID,
+          timestamp,
+        },
+        serverId,
         timestamp,
+        type: "player.chat",
       });
 
-      logger.info(
+      logger.debug(
         `[ChatMessageHandler] 处理来自 ${playerName} 的聊天消息，服务器 ID: ${serverId}`,
       );
     } catch (error) {

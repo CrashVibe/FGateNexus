@@ -25,35 +25,71 @@
       />
     </UFormField>
     <UAlert
-      v-if="!adapterType && target.type === 'group'"
+      v-if="!platformType && target.type === 'group'"
       title="权限提示"
       color="warning"
       variant="subtle"
       icon="i-lucide-triangle-alert"
-      description="由于你没有选择适配器，无法提供权限提示"
+      description="由于你没有选择 Bot 实例，无法提供权限提示"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { AdapterType } from "#shared/model/adapter/schema";
-import type { targetResponse } from "#shared/model/server/schema/target";
+import { PlatformType } from "~~/shared/model/bot/types";
 
-const { target, adapterType = null } = defineProps<{
+import type { targetResponse } from "#shared/model/server/schema/target";
+import { BotData } from "~/composables/api";
+
+const {
+  target,
+  platformType = null,
+  botId = null,
+} = defineProps<{
   target: targetResponse;
-  adapterType?: AdapterType;
+  platformType?: PlatformType;
+  botId?: number;
 }>();
 
-const options = computed(() => {
-  if (adapterType === AdapterType.Onebot) {
-    return [
-      { label: "群主", value: "owner" },
-      { label: "管理员", value: "admin" },
-      { label: "成员", value: "member" },
-    ];
+const onebotOptions = [
+  { label: "群主", value: "owner" },
+  { label: "管理员", value: "admin" },
+  { label: "成员", value: "member" },
+];
+
+const options = ref<{ label: string; value: string }[]>([]);
+
+const loadOptions = async () => {
+  if (platformType === PlatformType.Onebot) {
+    options.value = onebotOptions;
+    return;
   }
-  return [];
-});
+
+  if (
+    platformType === PlatformType.Discord &&
+    botId !== null &&
+    target.type === "group" &&
+    target.guildId !== null
+  ) {
+    try {
+      options.value = await BotData.getDiscordRoles(botId, target.guildId);
+      return;
+    } catch {
+      options.value = [];
+      return;
+    }
+  }
+
+  options.value = [];
+};
+
+watch(
+  () => [platformType, botId, target.type, target.channelId],
+  () => {
+    void loadOptions();
+  },
+  { immediate: true },
+);
 
 const selectedTarget = computed(() => target);
 </script>

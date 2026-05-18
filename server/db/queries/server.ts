@@ -1,20 +1,24 @@
 import { eq } from "drizzle-orm";
 
 import { db } from "../client";
-import { servers } from "../schema";
+import { serverTable } from "../schema";
 
-export const getServerByIdWithAdapterAndTargets = async (serverId: number) =>
-  db.query.servers.findFirst({
-    where: eq(servers.id, serverId),
-    with: { adapter: true, targets: true },
+export const getServerByIdWithBotAndTargets = async (serverId: number) =>
+  db.query.serverTable.findFirst({
+    where: eq(serverTable.id, serverId),
+    with: { bot: true, targets: true },
   });
 
-export const getServersByAdapterIdWithTargets = async (adapterId: number) =>
-  db.query.servers.findMany({
-    where: eq(servers.adapterId, adapterId),
+export const getServersByBotIdWithTargets = async (botId: number) =>
+  db.query.serverTable.findMany({
+    where: eq(serverTable.botId, botId),
     with: { targets: true },
   });
 
+export type ServerWithBotAndTargets = Awaited<
+  ReturnType<typeof getServerByIdWithBotAndTargets>
+>;
+
 export type ServerWithTargets = Awaited<
-  ReturnType<typeof getServersByAdapterIdWithTargets>
+  ReturnType<typeof getServersByBotIdWithTargets>
 >[number];

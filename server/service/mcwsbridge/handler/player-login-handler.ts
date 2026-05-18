@@ -4,7 +4,11 @@ import utc from "dayjs/plugin/utc";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "~~/server/db/client";
-import { players, playerServers, servers } from "~~/server/db/schema";
+import {
+  playerTable,
+  playerServerTable,
+  serverTable,
+} from "~~/server/db/schema";
 import { bindingService } from "~~/server/service/bindingmanager";
 import { getConfig } from "~~/server/service/bindingmanager/config";
 import type RequestHandler from "~~/server/service/mcwsbridge/request-handler";
@@ -24,6 +28,7 @@ class PlayerLoginHandler implements RequestHandler {
     z.object({
       ip: z.string().nullable(),
       player: z.string(),
+      timestamp: z.number(),
       uuid: z.string(),
     }),
   );
@@ -43,17 +48,17 @@ class PlayerLoginHandler implements RequestHandler {
 
     const { player: playerName, uuid, ip } = result.data.params;
 
-    const server = await db.query.servers.findFirst({
-      where: eq(servers.id, serverID),
+    const serverRecord = await db.query.serverTable.findFirst({
+      where: eq(serverTable.id, serverID),
     });
 
-    if (!server) {
+    if (!serverRecord) {
       throw new Error("Server not found");
     }
 
     // 玩家信息写入
-    const [player] = await db
-      .insert(players)
+    const [playerRecord] = await db
+      .insert(playerTable)
       .values({
         ip,
         name: playerName,
@@ -66,43 +71,43 @@ class PlayerLoginHandler implements RequestHandler {
           name: playerName,
           updatedAt: sql`(unixepoch())`,
         },
-        target: players.uuid,
+        target: playerTable.uuid,
       })
       .returning();
 
-    if (!player) {
+    if (!playerRecord) {
       throw new Error("Failed to insert or update player");
     }
 
     // 是否存在关系
-    const existingRelation = await db.query.playerServers.findFirst({
+    const existingRelation = await db.query.playerServerTable.findFirst({
       where: and(
-        eq(playerServers.playerId, player.id),
-        eq(playerServers.serverId, serverID),
+        eq(playerServerTable.playerId, playerRecord.id),
+        eq(playerServerTable.serverId, serverID),
       ),
     });
 
     if (!existingRelation) {
-      await db.insert(playerServers).values({
-        playerId: player.id,
+      await db.insert(playerServerTable).values({
+        playerId: playerRecord.id,
         serverId: serverID,
       });
     }
 
     const bindingConfig = await getConfig(serverID);
-    if (bindingConfig.forceBind && player.socialAccountId !== null) {
+    if (bindingConfig.forceBind && playerRecord.socialAccountId === null) {
       try {
         const bindingResult = await bindingService.addPendingBinding(
           serverID,
-          player.uuid,
-          player.name,
+          playerRecord.uuid,
+          playerRecord.name,
         );
         const formattedTime = dayjs(bindingResult.expiresAt)
           .tz("Asia/Shanghai")
           .format("YYYY-MM-DD HH:mm:ss");
         const bindKickMsg = renderNoBindKick(
           bindingConfig.nobindkickMsg,
-          player.name,
+          playerRecord.name,
           bindingResult.message,
           formattedTime,
         );
@@ -111,7 +116,7 @@ class PlayerLoginHandler implements RequestHandler {
           reason: bindKickMsg,
         });
         logger.info(
-          `[Server #${serverID}] ${player.name} 绑定请求已发送，过期时间：${formattedTime}`,
+          `[Server #${serverID}] ${playerRecord.name} 绑定请求已发送，过期时间：${formattedTime}`,
         );
       } catch (error: unknown) {
         const errorMessage =

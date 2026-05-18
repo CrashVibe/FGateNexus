@@ -97,6 +97,7 @@ export default defineNuxtConfig({
       compilerOptions: {
         allowImportingTsExtensions: true,
         esModuleInterop: true,
+        noImplicitOverride: true,
         resolveJsonModule: true,
         skipLibCheck: true,
         strictNullChecks: true,

@@ -562,14 +562,14 @@
                 :loading="isAnyLoading"
                 @click="cancelChanges"
               >
-                取消
+                取消更改
               </UButton>
               <UButton
                 :disabled="isAnyLoading || !isDirty"
                 :loading="isAnyLoading"
                 @click="form?.submit()"
               >
-                保存设置
+                保存配置
               </UButton>
             </div>
           </template>

@@ -22,14 +22,4 @@ export const NotifyConfigSchema = z.object({
   leave_notify_message: z
     .string()
     .default("[系统通知] {playerName} 离开了游戏"),
-
-  /**
-   * 玩家死亡通知
-   */
-  player_disappoint_notify: z.boolean().default(false),
-
-  /**
-   * 玩家进出通知
-   */
-  player_notify: z.boolean().default(false),
 });

@@ -2,12 +2,11 @@ import { eq } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { users } from "~~/server/db/schema";
+import { userTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
+import { LoginAPI } from "#shared/model/auth/api";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-
-import { LoginAPI } from "../../../shared/model/auth/api";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -19,8 +18,8 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id),
+    const user = await db.query.userTable.findFirst({
+      where: eq(userTable.id, session.user.id),
     });
     if (!user) {
       const apiError = ApiError.notFound("用户不存在");
@@ -53,14 +52,14 @@ export default defineEventHandler(async (event) => {
 
     // 删除密码、2FA 和相关数据
     await db
-      .update(users)
+      .update(userTable)
       .set({
         passwordHash: null,
         twoFactorEnabled: false,
         twoFactorSecret: null,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, user.id));
+      .where(eq(userTable.id, user.id));
 
     // 清除所有会话
     await clearUserSession(event);

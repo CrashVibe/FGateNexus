@@ -15,6 +15,13 @@
       "when": 1765437409139,
       "tag": "0001_auth_refactor",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779026863781,
+      "tag": "0002_broken_eternity",
+      "breakpoints": true
     }
   ]
 }

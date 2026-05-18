@@ -1,0 +1,44 @@
+import { z } from "zod";
+
+export const OneBotWSReverseConfigSchema = z.object({
+  path: z.string().nonempty("路径不能为空"),
+  protocol: z.literal("ws-reverse"),
+  selfId: z.string().nonempty("selfId 不能为空"),
+  token: z.string(),
+});
+
+export const OneBotWSConfigSchema = z.object({
+  endpoint: z.url("连接地址必须是有效的 URL"),
+  protocol: z.literal("ws"),
+  retryInterval: z
+    .number()
+    .int("重试间隔必须是整数")
+    .positive("重试间隔必须是正整数")
+    .default(3000),
+  retryLazy: z
+    .number()
+    .int("重试延迟必须是整数")
+    .nonnegative("重试延迟不能为负数")
+    .default(1000),
+  retryTimes: z
+    .number()
+    .int("重试次数必须是整数")
+    .nonnegative("重试次数不能为负数")
+    .default(3),
+  selfId: z.string().nonempty("selfId 不能为空"),
+  timeout: z
+    .number()
+    .int("超时时间必须是整数")
+    .positive("超时时间必须是正整数")
+    .default(5000),
+  token: z.string(),
+});
+
+export const OneBotConfigSchema = z.union([
+  OneBotWSReverseConfigSchema,
+  OneBotWSConfigSchema,
+]);
+
+export type OneBotWSReverseConfig = z.infer<typeof OneBotWSReverseConfigSchema>;
+export type OneBotWSConfig = z.infer<typeof OneBotWSConfigSchema>;
+export type OneBotConfig = z.infer<typeof OneBotConfigSchema>;

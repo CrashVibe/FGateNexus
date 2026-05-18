@@ -21,10 +21,10 @@ export const PlayerAPI = {
         serversName: z.array(ServersAPI.GETS.response.element.shape.name),
         socialAccount: z
           .object({
-            adapterType: z.string(),
             createdAt: z.coerce.date(),
             id: z.number(),
             nickname: z.string().nullable(),
+            platform: z.string(),
             uid: z.string(),
             updatedAt: z.coerce.date(),
           })

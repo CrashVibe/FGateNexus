@@ -3,14 +3,13 @@ import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 
 import { createApiResponse } from "#shared/model";
+import type { AuthStatus } from "#shared/model/auth/schema";
 import { ApiError, createErrorResponse } from "#shared/model/error";
-
-import type { AuthStatus } from "../../../shared/model/auth/api";
 
 export default defineEventHandler(async (event) => {
   try {
     // 检查是否存在用户
-    const user = await db.query.users.findFirst();
+    const user = await db.query.userTable.findFirst();
 
     const authStatus: AuthStatus = {
       has2FA: false,

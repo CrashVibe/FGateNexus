@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import { db } from "~~/server/db/client";
-import { servers } from "~~/server/db/schema";
 import {
   checkClientVersion,
   CURRENT_API_VERSION,
@@ -8,6 +7,8 @@ import {
 } from "~~/server/utils/version";
 
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+
+import { serverTable } from "../db/schema";
 
 export default defineWebSocketHandler({
   close(peer) {
@@ -93,8 +94,8 @@ export default defineWebSocketHandler({
 
     const db_token = await db
       .select()
-      .from(servers)
-      .where(eq(servers.token, token))
+      .from(serverTable)
+      .where(eq(serverTable.token, token))
       .limit(1);
     if (db_token.length === 0) {
       peer.close(1008, "Unauthorized: Invalid authorization token");
@@ -102,18 +103,18 @@ export default defineWebSocketHandler({
       return;
     }
 
-    const [server] = db_token;
-    if (!server) {
+    const [serverRecord] = db_token;
+    if (!serverRecord) {
       peer.close(1008, "Unauthorized: Invalid server data");
       logger.warn("WebSocket 请求服务器数据无效");
       return;
     }
 
-    if (connectionManager.hasConnection(undefined, server.id)) {
+    if (connectionManager.hasConnection(undefined, serverRecord.id)) {
       peer.close(1008, "Unauthorized: Connection already exists");
       logger.warn(
         {
-          serverId: server.id,
+          serverId: serverRecord.id,
         },
         "WebSocket 接受的对应连接连接已存在",
       );
@@ -121,7 +122,7 @@ export default defineWebSocketHandler({
     }
 
     try {
-      await connectionManager.addConnection(peer, server.id);
+      await connectionManager.addConnection(peer, serverRecord.id);
     } catch {
       return;
     }
@@ -137,7 +138,7 @@ export default defineWebSocketHandler({
     logger.info(
       {
         clientVersion,
-        serverId: server.id,
+        serverId: serverRecord.id,
       },
       "WebSocket 接受请求成功：",
     );

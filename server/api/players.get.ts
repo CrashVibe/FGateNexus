@@ -9,7 +9,7 @@ import { PlayerAPI } from "../../shared/model/player/api";
 
 export default defineEventHandler(async (event) => {
   try {
-    const playersWithRelations = await db.query.players.findMany({
+    const playersWithRelations = await db.query.playerTable.findMany({
       with: {
         playerServers: {
           with: {

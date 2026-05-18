@@ -62,7 +62,7 @@ export const GeneralAPI = {
   PATCH: {
     description: "更新服务器基础信息",
     request: z.object({
-      adapterId: z.number().nullish(),
+      botId: z.number().nullish(),
       name: ServerNameSchema.optional(),
       token: ServerTokenSchema.optional(),
     }),

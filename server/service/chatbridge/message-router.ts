@@ -1,104 +1,22 @@
-import type { Element, Session } from "koishi";
-import { h } from "koishi";
-import {
-  getServerByIdWithAdapterAndTargets,
-  getServersByAdapterIdWithTargets,
-} from "~~/server/db/queries/server";
+import type { Session } from "koishi";
+import { getServersByBotIdWithTargets } from "~~/server/db/queries/server";
 import type { ServerWithTargets } from "~~/server/db/queries/server";
-import { renderMinecraftTextToImage } from "~~/server/utils/mc-image-render";
 import {
-  formatMCToPlatformMessage,
   formatPlatformToMCMessage,
   shouldForwardMessage,
 } from "~~/shared/utils/chat-sync";
 
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 
-import type { BotConnection } from ".";
 import { chatBridge } from ".";
+import type { PlatformSender } from "./sender/types";
 import { elements_to_string } from "./utils";
-
-/**
- * MC 聊天消息数据
- */
-export interface MCChatMessage {
-  playerName: string;
-  playerUUID: string;
-  message: string;
-  timestamp: number;
-}
-
-/**
- * 处理来自 MC 的聊天消息，转发到对应的聊天平台
- */
-export const handleMCMessage = async (
-  serverId: number,
-  mcMessage: MCChatMessage,
-): Promise<void> => {
-  try {
-    const server = await getServerByIdWithAdapterAndTargets(serverId);
-
-    if (!server?.adapter) {
-      logger.warn(`服务器 ${serverId} 或其适配器未找到`);
-      return;
-    }
-
-    const { chatSyncConfig } = server;
-    if (!chatSyncConfig.mcToPlatformEnabled) {
-      return;
-    }
-    if (!shouldForwardMessage(mcMessage.message, chatSyncConfig)) {
-      return;
-    }
-
-    const botConnection = chatBridge.getConnectionData(server.adapter.id);
-    if (!botConnection || !chatBridge.isOnline(server.adapter.id)) {
-      logger.warn(`机器人 ${server.adapter.id} 未上线`);
-      return;
-    }
-
-    const formattedMessage = formatMCToPlatformMessage(
-      chatSyncConfig.mcToPlatformTemplate,
-      {
-        message: mcMessage.message,
-        playerName: mcMessage.playerName,
-        playerUUID: mcMessage.playerUUID,
-        serverName: server.name,
-        timestamp: mcMessage.timestamp,
-      },
-    );
-
-    const enabledTargets = server.targets.filter(
-      (t) => t.config.chatSyncConfigSchema.enabled,
-    );
-    await Promise.allSettled(
-      enabledTargets.map(async (t) =>
-        chatBridge.sendToTarget(
-          botConnection,
-          t.targetId,
-          t.type,
-          formattedMessage,
-        ),
-      ),
-    );
-
-    logger.info(
-      `[消息路由] MC 消息已从服务器 ${serverId} 转发到 ${enabledTargets.length} 个目标`,
-    );
-  } catch (error) {
-    logger.error(
-      { error },
-      `[消息路由] 处理来自服务器 ${serverId} 的 MC 消息时出错`,
-    );
-  }
-};
 
 type ServerSession = ReturnType<
   typeof connectionManager.getConnectionByServerId
 >;
 
 const handlePlatformCommand = async (
-  connection: BotConnection,
   session: Session,
   server: ServerWithTargets,
   serverSession: ServerSession,
@@ -106,8 +24,8 @@ const handlePlatformCommand = async (
   const commandTarget = server.targets.find((t) => {
     const isMatch =
       t.type === "group"
-        ? t.targetId === session.channelId
-        : t.targetId === session.userId;
+        ? t.channelId === session.channelId
+        : t.channelId === session.userId;
     return (
       isMatch &&
       t.config.CommandConfigSchema.enabled &&
@@ -120,11 +38,13 @@ const handlePlatformCommand = async (
   }
 
   const roles = session.event.member?.roles ?? [];
-  const hasPermission = roles.some(
-    (r) =>
-      r.id &&
-      commandTarget.config.CommandConfigSchema.permissions.includes(r.id),
-  );
+  const hasPermission =
+    commandTarget.type === "private" ||
+    roles.some(
+      (r) =>
+        r.id &&
+        commandTarget.config.CommandConfigSchema.permissions.includes(r.id),
+    );
 
   if (!hasPermission) {
     return false;
@@ -140,26 +60,14 @@ const handlePlatformCommand = async (
     session.content!.slice(prefix.length),
     server.commandConfig.imageRender,
   );
-  const resultText = `指令执行${success ? "成功" : "失败"}：\n${message}`;
 
-  let messageToSend: string | Element = resultText;
-  if (server.commandConfig.imageRender) {
-    try {
-      const imgBuffer = await renderMinecraftTextToImage(resultText);
-      messageToSend = h.image(
-        `data:image/png;base64,${imgBuffer.toString("base64")}`,
-      );
-    } catch (error) {
-      logger.error(error, "渲染指令结果图片时出错，已回退为文本消息");
-    }
-  }
+  await chatBridge.dispatch({
+    payload: { message, success },
+    serverId: server.id,
+    timestamp: Date.now(),
+    type: "execute.command",
+  });
 
-  await chatBridge.sendToTarget(
-    connection,
-    commandTarget.targetId,
-    commandTarget.type,
-    messageToSend,
-  );
   return true;
 };
 
@@ -208,7 +116,7 @@ const handlePlatformChatSync = (
  * 处理来自聊天平台的消息，转发到对应的 MC 服务器
  */
 export const handlePlatformMessage = async (
-  connection: BotConnection,
+  connection: PlatformSender,
   session: Session,
 ): Promise<void> => {
   if (session.content === undefined) {
@@ -216,8 +124,8 @@ export const handlePlatformMessage = async (
   }
 
   try {
-    const serversWithConfig = await getServersByAdapterIdWithTargets(
-      connection.adapterID,
+    const serversWithConfig = await getServersByBotIdWithTargets(
+      connection.botId,
     );
 
     for (const server of serversWithConfig) {
@@ -227,7 +135,6 @@ export const handlePlatformMessage = async (
 
       // 1. 处理指令匹配
       const isCommandHandled = await handlePlatformCommand(
-        connection,
         session,
         server,
         serverSession,

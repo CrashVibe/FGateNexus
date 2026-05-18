@@ -5,11 +5,6 @@ import { z } from "zod";
  */
 export const ChatSyncConfigSchema = z.object({
   /**
-   * 是否启用聊天同步
-   */
-  enabled: z.boolean().default(false),
-
-  /**
    * 过滤配置
    */
   filters: z
@@ -62,7 +57,7 @@ export const ChatSyncConfigSchema = z.object({
   /**
    * 是否启用从 Minecraft 到 平台 的转发
    */
-  mcToPlatformEnabled: z.boolean().default(true),
+  mcToPlatformEnabled: z.boolean().default(false),
 
   /**
    * MC 到平台的消息格式模板
@@ -74,7 +69,7 @@ export const ChatSyncConfigSchema = z.object({
   /**
    * 是否启用从 平台 到 Minecraft 的转发
    */
-  platformToMcEnabled: z.boolean().default(true),
+  platformToMcEnabled: z.boolean().default(false),
 
   /**
    * 平台到 MC 的消息格式模板

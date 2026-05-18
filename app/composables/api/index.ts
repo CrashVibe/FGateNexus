@@ -1,6 +1,6 @@
 import { useEventSource } from "@vueuse/core";
 import type { z } from "zod";
-import { AdapterAPI } from "~~/shared/model/adapter/api";
+import { BotAPI } from "~~/shared/model/bot/api";
 
 import type { ApiResponse } from "#shared/model";
 import type { NotifyAPI } from "#shared/model/server/api";
@@ -47,38 +47,47 @@ export const NotifyData = {
   },
 };
 
-export const AdapterData = {
-  async delete(adapterId: number) {
-    await $fetch<ApiResponse>(`/api/adapter/${adapterId}`, {
+export const BotData = {
+  async delete(botId: number) {
+    await $fetch<ApiResponse>(`/api/bot/${botId}`, {
       method: "DELETE",
     });
   },
-  async get(adapterId: number) {
-    const response = await $fetch<ApiResponse>(`/api/adapter/${adapterId}`);
-    return AdapterAPI.GET.response.parse(response.data);
+  async get(botId: number) {
+    const response = await $fetch<ApiResponse>(`/api/bot/${botId}`);
+    return BotAPI.GET.response.parse(response.data);
+  },
+  async getDiscordRoles(botId: number, guildId: string) {
+    const response = await $fetch<ApiResponse>(
+      `/api/bot/${botId}/discord-roles`,
+      {
+        query: BotAPI.DISCORD_ROLES.request.parse({ guildId }),
+      },
+    );
+    return BotAPI.DISCORD_ROLES.response.parse(response.data);
   },
   async gets() {
-    const response = await $fetch<ApiResponse>("/api/adapter");
-    return AdapterAPI.GETS.response.parse(response.data);
+    const response = await $fetch<ApiResponse>("/api/bot");
+    return BotAPI.GETS.response.parse(response.data);
   },
-  async post(data: z.infer<typeof AdapterAPI.POST.request>) {
-    await $fetch<ApiResponse>("/api/adapter", {
-      body: AdapterAPI.POST.request.parse(data),
+  async post(data: z.infer<typeof BotAPI.POST.request>) {
+    await $fetch<ApiResponse>("/api/bot", {
+      body: BotAPI.POST.request.parse(data),
       method: "POST",
     });
   },
   async postToggle(
-    adapterId: number,
-    data: z.infer<typeof AdapterAPI.POSTTOGGLE.request>,
+    botId: number,
+    data: z.infer<typeof BotAPI.POSTTOGGLE.request>,
   ) {
-    await $fetch<ApiResponse>(`/api/adapter/${adapterId}/toggle`, {
-      body: AdapterAPI.POSTTOGGLE.request.parse(data),
+    await $fetch<ApiResponse>(`/api/bot/${botId}/toggle`, {
+      body: BotAPI.POSTTOGGLE.request.parse(data),
       method: "POST",
     });
   },
-  async put(adapterId: number, data: z.infer<typeof AdapterAPI.PUT.request>) {
-    await $fetch<ApiResponse>(`/api/adapter/${adapterId}`, {
-      body: AdapterAPI.PUT.request.parse(data),
+  async put(botId: number, data: z.infer<typeof BotAPI.PUT.request>) {
+    await $fetch<ApiResponse>(`/api/bot/${botId}`, {
+      body: BotAPI.PUT.request.parse(data),
       method: "PUT",
     });
   },

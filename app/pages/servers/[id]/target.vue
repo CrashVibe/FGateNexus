@@ -9,15 +9,27 @@
       </template>
       <template #body>
         <UContainer class="py-8">
-          <LoadingState v-if="!formData" />
+          <LoadingState v-if="!formData && !noBotConfigured" />
 
-          <template v-else>
+          <template v-else-if="noBotConfigured">
+            <div class="flex flex-col items-center gap-4 py-16">
+              <p class="text-muted">请先配置 Bot 实例后再管理目标</p>
+              <UButton
+                :to="`/servers/${serverId}/general`"
+                icon="i-lucide-settings"
+              >
+                前往配置 Bot 实例
+              </UButton>
+            </div>
+          </template>
+
+          <template v-else-if="formData">
             <div class="mb-4 flex items-center justify-between gap-4">
               <UInput
                 v-model="globalFilter"
                 class="max-w-xs"
                 icon="i-lucide-search"
-                placeholder="搜索目标 ID / 类型..."
+                placeholder="搜索频道 ID / 类型..."
               />
               <UButton icon="i-lucide-plus" @click="addTarget"
                 >添加目标</UButton
@@ -29,6 +41,7 @@
               v-model:global-filter="globalFilter"
               :data="formData"
               :columns="columns"
+              :column-visibility="columnVisibility"
               :pagination-options="{
                 autoResetPageIndex: false,
                 getPaginationRowModel: getPaginationRowModel(),
@@ -89,16 +102,27 @@
             <UModal v-model:open="showAddModal" title="添加目标">
               <template #body>
                 <UForm
-                  :schema="formSchema"
+                  :schema="TargetAPI.POST.request.element"
                   :state="newTargetForm"
                   class="space-y-4"
                   @submit="handleAddTargetSubmit"
                 >
-                  <UFormField label="目标 ID" name="targetId">
+                  <UFormField label="频道 ID" name="channelId">
                     <UInput
-                      v-model="newTargetForm.targetId"
+                      v-model="newTargetForm.channelId"
                       class="w-full"
-                      placeholder="请输入目标 ID"
+                      placeholder="请输入频道 ID"
+                    />
+                  </UFormField>
+                  <UFormField
+                    label="群组 ID"
+                    name="guildId"
+                    v-if="columnVisibility.guildId"
+                  >
+                    <UInput
+                      v-model="newTargetForm.guildId"
+                      class="w-full"
+                      placeholder="请输入群组 ID"
                     />
                   </UFormField>
                   <UFormField label="类型" name="type">
@@ -160,17 +184,18 @@
 <script lang="tsx" setup>
 import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
-import {isEqual, keyBy} from "lodash-es";
-import { z } from "zod";
+import { isEqual, keyBy } from "lodash-es";
+import { PlatformType } from "~~/shared/model/bot/types";
+import { TargetAPI } from '~~/shared/model/server/api';
 
+import { UButton, USelect, UInput, UFormField } from "#components";
 import type {
   targetResponse,
   targetSchemaRequestType,
 } from "#shared/model/server/schema/target";
-import {targetSchemaRequest} from "#shared/model/server/schema/target";
+import { targetSchemaRequest } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
-import { TargetData } from "~/composables/api";
-import {UButton, USelect, UInput, UFormField} from "#components";
+import { BotData, ServerData, TargetData } from "~/composables/api";
 
 const table = useTemplateRef("table");
 const pagination = ref({ pageIndex: 0, pageSize: 10 });
@@ -178,21 +203,17 @@ const globalFilter = ref("");
 const showAddModal = ref(false);
 const showDeleteModal = ref(false);
 const targetToDelete = ref<string | null>(null);
+const noBotConfigured = ref(false);
 
 const updatePage = (p: number) => {
   table.value?.tableApi?.setPageIndex(p - 1);
 };
 
 const newTargetForm = reactive({
-  enabled: "enable" as "enable" | "disable",
-  targetId: "",
+  channelId: "",
+  enabled: true,
+  guildId: "",
   type: "group" as "group" | "private",
-});
-
-const formSchema = z.object({
-  enabled: z.enum(['enable', 'disable']),
-  targetId: z.string().nonempty('目标 ID 不能为空'),
-  type: z.enum(['group', 'private']),
 });
 
 watch(globalFilter, () => {
@@ -205,23 +226,25 @@ definePageMeta({ layout: "default" });
 const route = useRoute();
 const toast = useToast();
 const isSameTarget = (
-  a: Pick<targetResponse, "targetId" | "type" | "enabled">,
-  b: Pick<targetResponse, "targetId" | "type" | "enabled">,
-) => a.targetId === b.targetId && a.type === b.type && a.enabled === b.enabled;
+  a: Pick<targetResponse, "channelId" | "type" | "enabled" | "guildId">,
+  b: Pick<targetResponse, "channelId" | "type" | "enabled" | "guildId">,
+) =>
+  a.channelId === b.channelId &&
+  a.type === b.type &&
+  a.enabled === b.enabled &&
+  a.guildId === b.guildId;
 const serverId = Number(route.params?.["id"]);
 
 const buildRequestFromRow = (row: targetResponse): targetSchemaRequestType =>
   targetSchemaRequest.parse({
-    config: row.config,
+    channelId: row.channelId.trim(),
     enabled: row.enabled,
-    targetId: row.targetId.trim(),
+    guildId: row.guildId?.trim(),
     type: row.type,
   });
-
 const originalTargets = ref<targetResponse[] | null>(null);
-
+let targetPlatform: null | PlatformType = null;
 const formData = ref<targetResponse[] | null>(null);
-
 const isDirty = computed(() => {
   if (!formData.value || !originalTargets.value) {
     return false;
@@ -240,10 +263,13 @@ const targetTypeOptions = [
   { label: "群聊", value: "group" },
   { label: "私聊", value: "private" },
 ];
+const columnVisibility = computed(() => ({
+  guildId: targetPlatform === PlatformType.Discord,
+}));
 
 const statusOptions = [
-  { label: "已启用", value: "enable" },
-  { label: "已禁用", value: "disable" },
+  { label: "已启用", value: true },
+  { label: "已禁用", value: false },
 ];
 
 const openDeleteModal = (id: string) => {
@@ -251,7 +277,7 @@ const openDeleteModal = (id: string) => {
   showDeleteModal.value = true;
 };
 
-const getRowTargetIdError = (index: number): string | undefined => {
+const getRowchannelIdError = (index: number): string | undefined => {
   if (!formData.value) {
     return undefined;
   }
@@ -259,13 +285,13 @@ const getRowTargetIdError = (index: number): string | undefined => {
   if (!item) {
     return undefined;
   }
-  const tid = item.targetId?.trim();
+  const tid = item.channelId?.trim();
   if (!tid) {
-    return "目标 ID 不能为空";
+    return "频道 ID 不能为空";
   }
 
   const isDup = formData.value.some(
-    (t, i) => i !== index && t.targetId.trim() === tid && t.type === item.type,
+    (t, i) => i !== index && t.channelId.trim() === tid && t.type === item.type,
   );
   if (isDup) {
     return "该组合已存在";
@@ -274,12 +300,27 @@ const getRowTargetIdError = (index: number): string | undefined => {
   return undefined;
 };
 
+const getRowGuildIdError = (index: number): string | undefined => {
+  if (!formData.value) {
+    return undefined;
+  }
+  const item = formData.value[index];
+  if (!item) {
+    return undefined;
+  }
+  const gid = item.guildId?.trim();
+  if (item.type === "group" && !gid) {
+    return "群组 ID 不能为空";
+  }
+  return undefined;
+};
+
 const hasErrors = computed(() => {
   if (!formData.value) {
     return false;
   }
 
-  return formData.value.some((_, idx) => !!getRowTargetIdError(idx));
+  return formData.value.some((_, idx) => !!getRowchannelIdError(idx) || !!getRowGuildIdError(idx));
 });
 
 const refreshAll = async (): Promise<void> => {
@@ -288,8 +329,18 @@ const refreshAll = async (): Promise<void> => {
     return;
   }
   loadingMap.isLoading = true;
+  noBotConfigured.value = false;
   try {
+    const serverData = await ServerData.get(serverId);
+    if (!serverData.botId) {
+      noBotConfigured.value = true;
+      formData.value = null;
+      originalTargets.value = null;
+      return;
+    }
     const targets = await TargetData.gets(serverId);
+    const botData = await BotData.get(serverData.botId);
+    targetPlatform = botData.platform;
     originalTargets.value = structuredClone(targets);
     formData.value = structuredClone(targets);
   } catch (error) {
@@ -306,12 +357,12 @@ const confirmDelete = async () => {
   }
   loadingMap.isSubmitting = true;
   try {
-    await TargetData.deletes(serverId, {ids: [targetToDelete.value]});
-    toast.add({color: "success", title: "目标已删除"});
+    await TargetData.deletes(serverId, { ids: [targetToDelete.value] });
+    toast.add({ color: "success", title: "目标已删除" });
     await refreshAll();
   } catch (error) {
     console.error("删除失败：", error);
-    toast.add({color: "error", title: "删除失败，请稍后再试"});
+    toast.add({ color: "error", title: "删除失败，请稍后再试" });
   } finally {
     showDeleteModal.value = false;
     targetToDelete.value = null;
@@ -319,31 +370,56 @@ const confirmDelete = async () => {
   }
 };
 
+
 const columns: TableColumn<targetResponse>[] = [
   {
-    accessorKey: "targetId",
+    accessorKey: "channelId",
     cell: ({row}) => {
-      const errorMsg = getRowTargetIdError(row.index);
+      const errorMsg = getRowchannelIdError(row.index);
       return (
         <UFormField error={errorMsg}>
           <UInput
             color={errorMsg ? "error" : undefined}
-            modelValue={row.original.targetId ? String(row.original.targetId) : ""}
-            onUpdate:modelValue={(v: string | number | undefined | boolean) => {
+            modelValue={row.original.channelId || ""}
+            onUpdate:modelValue={(v: string) => {
               if (!formData.value) {
                 return;
               }
               const item = formData.value[row.index];
               if (item) {
-                item.targetId = String(v ?? "");
+                item.channelId = String(v ?? "");
               }
             }}
-            placeholder="请输入目标 ID"
+            placeholder="请输入频道 ID"
           />
         </UFormField>
       );
     },
-    header: "目标 ID",
+    header: "频道 ID",
+  },
+  {
+    accessorKey: "guildId",
+    cell: ({row}) => {
+      const errorMsg = getRowGuildIdError(row.index);
+      return (
+        <UFormField error={errorMsg}>
+          <UInput
+            color={errorMsg ? "error" : undefined}
+            modelValue={row.original.guildId || ""}
+            onUpdate:modelValue={(v: string) => {
+              if (!formData.value) {
+                return;
+              }
+              const item = formData.value[row.index];
+              if (item) {
+                item.guildId = v ?? "";
+              }
+            }}
+          />
+        </UFormField>
+      );
+    },
+    header: "群组 ID",
   },
   {
     accessorKey: "type",
@@ -351,7 +427,7 @@ const columns: TableColumn<targetResponse>[] = [
       <USelect
         items={targetTypeOptions}
         modelValue={row.original.type}
-        onUpdate:modelValue={(v: string | number | boolean | undefined) => {
+        onUpdate:modelValue={(v: string) => {
           if (!formData.value) {
             return;
           }
@@ -369,14 +445,12 @@ const columns: TableColumn<targetResponse>[] = [
     cell: ({row}) => (
       <USelect
         items={statusOptions}
-        modelValue={row.original.enabled ? "enable" : "disable"}
-        onUpdate:modelValue={(v: string | number | boolean | undefined) => {
-          if (!formData.value) {
-            return;
-          }
+        modelValue={row.original.enabled}
+        onUpdate:modelValue={(v: boolean | undefined) => {
+          if (!formData.value) {return;}
           const item = formData.value[row.index];
           if (item) {
-            item.enabled = String(v) === "enable";
+            item.enabled = !!v;
           }
         }}
       />
@@ -407,9 +481,10 @@ const columns: TableColumn<targetResponse>[] = [
 ];
 
 const addTarget = () => {
-  newTargetForm.targetId = "";
+  newTargetForm.channelId = "";
+  newTargetForm.guildId = "";
   newTargetForm.type = "group";
-  newTargetForm.enabled = "enable";
+  newTargetForm.enabled = true;
   showAddModal.value = true;
 };
 
@@ -417,16 +492,25 @@ const handleAddTargetSubmit = async () => {
   if (!formData.value) {
     return;
   }
-  const targetId = newTargetForm.targetId.trim();
-  const {type} = newTargetForm;
+  const { type } = newTargetForm;
+
+  const channelId = newTargetForm.channelId.trim();
+  const guildId = (() => {
+    if (columnVisibility.value.guildId) {
+      return newTargetForm.guildId.trim();
+    }
+    if (type === "group") {
+      return channelId; // 对于群聊类型，如果没有单独的 guildId 字段，则使用 channelId 作为 guildId
+    }
+  })();
 
   const isDuplicate = formData.value.some(
-    (t) => t.targetId.trim() === targetId && t.type === type
+    (t) => t.channelId.trim() === channelId && t.type === type && t.guildId?.trim() === guildId
   );
   if (isDuplicate) {
     toast.add({
       color: "warning",
-      title: `目标 ID "${targetId}" + 类型 "${type === "group" ? "群聊" : "私聊"}" 已经存在`,
+      title: `频道 ID 已经存在`,
     });
     return;
   }
@@ -434,19 +518,19 @@ const handleAddTargetSubmit = async () => {
   loadingMap.isSubmitting = true;
   try {
     const req = targetSchemaRequest.parse({
-      config: {},
-      enabled: newTargetForm.enabled === "enable",
-      targetId,
+      channelId,
+      enabled: newTargetForm.enabled,
+      guildId,
       type,
     });
 
     await TargetData.creates(serverId, [req]);
-    toast.add({color: "success", title: "目标已添加"});
+    toast.add({ color: "success", title: "目标已添加" });
     showAddModal.value = false;
     await refreshAll();
   } catch (error) {
     console.error("添加失败：", error);
-    toast.add({color: "error", title: "添加失败，请稍后再试"});
+    toast.add({ color: "error", title: "添加失败，请稍后再试" });
   } finally {
     loadingMap.isSubmitting = false;
   }
@@ -463,8 +547,18 @@ const handleSubmit = async () => {
     return (
       ori &&
       !isSameTarget(
-        { enabled: t.enabled, targetId: t.targetId, type: t.type },
-        { enabled: ori.enabled, targetId: ori.targetId, type: ori.type },
+        {
+          channelId: t.channelId,
+          enabled: t.enabled,
+          guildId: t.guildId,
+          type: t.type,
+        },
+        {
+          channelId: ori.channelId,
+          enabled: ori.enabled,
+          guildId: ori.guildId,
+          type: ori.type,
+        },
       )
     );
   });
@@ -494,7 +588,7 @@ const handleSubmit = async () => {
 
 const cancelChanges = () => {
   formData.value = originalTargets.value
-    ? structuredClone(originalTargets.value)
+    ? structuredClone(toRaw(originalTargets.value))
     : null;
 };
 

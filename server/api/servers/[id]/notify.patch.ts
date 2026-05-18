@@ -2,7 +2,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { defineEventHandler, getRouterParam, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { servers, targets } from "~~/server/db/schema";
+import { serverTable, targetTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -26,9 +26,9 @@ export default defineEventHandler(async (event) => {
     const { notify, targets: items } = parsed.data;
 
     db.transaction((tx) => {
-      tx.update(servers)
+      tx.update(serverTable)
         .set({ notifyConfig: notify })
-        .where(eq(servers.id, serverId))
+        .where(eq(serverTable.id, serverId))
         .run();
 
       if (items.length === 0) {
@@ -39,8 +39,10 @@ export default defineEventHandler(async (event) => {
 
       const exists = tx
         .select()
-        .from(targets)
-        .where(and(eq(targets.serverId, serverId), inArray(targets.id, ids)))
+        .from(targetTable)
+        .where(
+          and(eq(targetTable.serverId, serverId), inArray(targetTable.id, ids)),
+        )
         .all();
 
       if (exists.length !== ids.length) {
@@ -52,12 +54,14 @@ export default defineEventHandler(async (event) => {
       }
 
       for (const i of items) {
-        tx.update(targets)
+        tx.update(targetTable)
           .set({
             config: i.config,
             updatedAt: sql`(unixepoch())`,
           })
-          .where(and(eq(targets.id, i.id), eq(targets.serverId, serverId)))
+          .where(
+            and(eq(targetTable.id, i.id), eq(targetTable.serverId, serverId)),
+          )
           .run();
       }
     });

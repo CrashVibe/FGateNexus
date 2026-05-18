@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { defineEventHandler, readBody } from "h3";
 import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
-import { targets } from "~~/server/db/schema";
+import { targetTable } from "~~/server/db/schema";
 
 import { createApiResponse } from "#shared/model";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -32,15 +32,12 @@ export default defineEventHandler(async (event) => {
 
     const updatePromises = items.map(({ id, data }) =>
       db
-        .update(targets)
+        .update(targetTable)
         .set({
-          config: data.config,
-          enabled: data.enabled,
-          targetId: data.targetId,
-          type: data.type,
+          ...data,
           updatedAt: sql`(unixepoch())`,
         })
-        .where(and(eq(targets.serverId, serverID), eq(targets.id, id)))
+        .where(and(eq(targetTable.serverId, serverID), eq(targetTable.id, id)))
         .returning(),
     );
 

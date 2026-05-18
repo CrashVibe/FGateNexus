@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 获取用户
-    const user = await db.query.users.findFirst();
+    const user = await db.query.userTable.findFirst();
     if (!user) {
       const apiError = ApiError.notFound("用户不存在");
       return createErrorResponse(event, apiError);
