@@ -67,7 +67,6 @@ export const targetSchema = z.object({
   channelId: z.string().nonempty("会话 ID 不能为空"),
   config: TargetConfigSchema.default(TargetConfigSchema.parse({})),
   createdAt: z.coerce.date().default(() => new Date()),
-  enabled: z.boolean().default(true),
   guildId: z.string().nullable(),
   id: z.string().default(() => uuidv4()),
   platform: z.enum(PlatformType),
@@ -77,7 +76,6 @@ export const targetSchema = z.object({
 
 export const targetSchemaRequest = targetSchema.pick({
   channelId: true,
-  enabled: true,
   guildId: true,
   type: true,
 });

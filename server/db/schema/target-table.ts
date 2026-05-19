@@ -20,7 +20,6 @@ export const targetTable = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
-    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
     guildId: text("guild_id"),
     id: text("id")
       .primaryKey()

@@ -3,6 +3,7 @@ import type { z } from "zod";
 import { BotAPI } from "~~/shared/model/bot/api";
 
 import type { ApiResponse } from "#shared/model";
+import { PlatformType } from "#shared/model/bot/types";
 import type { NotifyAPI } from "#shared/model/server/api";
 import {
   BindingAPI,
@@ -56,6 +57,19 @@ export const BotData = {
   async get(botId: number) {
     const response = await $fetch<ApiResponse>(`/api/bot/${botId}`);
     return BotAPI.GET.response.parse(response.data);
+  },
+  async getChannels(botId: number, platform: PlatformType) {
+    const endpoint =
+      platform === PlatformType.Onebot
+        ? `/api/bot/${botId}/onebot-channels`
+        : `/api/bot/${botId}/discord-channels`;
+    const response = await $fetch<ApiResponse>(endpoint);
+    const data =
+      platform === PlatformType.Onebot
+        ? BotAPI.ONEBOT_CHANNELS.response.parse(response.data)
+        : BotAPI.DISCORD_CHANNELS.response.parse(response.data);
+
+    return data;
   },
   async getDiscordRoles(botId: number, guildId: string) {
     const response = await $fetch<ApiResponse>(

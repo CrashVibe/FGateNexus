@@ -139,7 +139,7 @@ class ChatBridge {
       config,
     );
     this.connections.add(connection);
-    this.logger.info(`已添加 Bot 连接：${botID}`);
+    this.logger.debug(`已添加 Bot 连接：${botID}`);
   }
 
   /**
@@ -153,12 +153,15 @@ class ChatBridge {
    * 更新 Bot 配置
    */
   updateConfig(senderId: number, config: PlatformConfig): void {
-    const connection = this.connections.get(senderId);
+    this.logger.debug(`正在更新 Bot 配置：${senderId}`);
+    const connection = this.get(senderId);
     if (!connection) {
-      throw new Error(`找不到 Bot 连接：${senderId}`);
+      throw new Error(`Bot 连接不存在：${senderId}`);
     }
-    connection.config = config;
-    connection.pluginInstance.update(config, true);
+    const { platformType } = connection;
+    this.removeBot(senderId);
+    this.addBot(senderId, platformType, config);
+    this.logger.debug(`已更新 Bot 配置：${senderId}`);
   }
 
   /**

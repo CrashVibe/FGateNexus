@@ -1,0 +1,1 @@
+ALTER TABLE `target` DROP COLUMN `enabled`;

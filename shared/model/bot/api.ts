@@ -5,7 +5,41 @@ import type { ApiSchemaRegistry } from "#shared/model";
 import { PlatformResponseSchema, PlatformSchema } from "./schema";
 import { PlatformType } from "./types";
 
+const ChannelItemSchema = z.object({
+  avatar: z.string().optional(),
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["group", "private"]),
+});
+
+const OnebotChannelsSchema = z.array(ChannelItemSchema);
+
+const DiscordChannelsSchema = z.object({
+  channels: z.array(
+    ChannelItemSchema.extend({
+      guildId: z.string().optional(),
+    }),
+  ),
+  dms: z.array(
+    ChannelItemSchema.extend({
+      guildId: z.string().optional(),
+    }),
+  ),
+  guilds: z.array(
+    z.object({
+      avatar: z.string().optional(),
+      id: z.string(),
+      name: z.string(),
+    }),
+  ),
+});
+
 export const BotAPI = {
+  DISCORD_CHANNELS: {
+    description: "获取 Discord 频道列表（频道和 DM）",
+    request: z.void(),
+    response: DiscordChannelsSchema,
+  },
   DISCORD_ROLES: {
     description: "获取 Discord 机器人群组权限列表",
     request: z.object({
@@ -27,6 +61,11 @@ export const BotAPI = {
     description: "获取服务器机器人列表",
     request: z.void(),
     response: z.array(PlatformResponseSchema),
+  },
+  ONEBOT_CHANNELS: {
+    description: "获取 OneBot 频道列表（群和私聊）",
+    request: z.void(),
+    response: OnebotChannelsSchema,
   },
   POST: {
     description: "新增机器人",

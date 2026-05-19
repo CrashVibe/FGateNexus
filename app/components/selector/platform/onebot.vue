@@ -6,9 +6,7 @@ import type {
   OneBotWSConfig,
   OneBotWSReverseConfig,
 } from "#shared/model/bot/schema/onebot";
-import {
-  OneBotConfigSchema,
-} from "#shared/model/bot/schema/onebot";
+import { OneBotConfigSchema } from "#shared/model/bot/schema/onebot";
 
 const modelValue = defineModel<OneBotConfig>({ required: true });
 

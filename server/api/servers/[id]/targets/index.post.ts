@@ -41,7 +41,6 @@ export default defineEventHandler(async (event) => {
     const nowValues = parsed.data.map((p) => ({
       channelId: p.channelId,
       config: TargetConfigSchema.parse({}),
-      enabled: p.enabled,
       guildId: p.guildId,
       id: uuidv4(),
       platform: bot.platform,
