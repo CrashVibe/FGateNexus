@@ -137,7 +137,7 @@ const getSoftwareIcon = (software: string | null) => {
       return "https://assets.papermc.io/brand/papermc_logo.min.svg";
     }
     case "Leaf": {
-      return "https://www.leafmc.one/logo.svg";
+      return "https://www.leafmc.one/favicon.ico";
     }
     case "Leaves": {
       return "https://leavesmc.org/favicon.ico";
