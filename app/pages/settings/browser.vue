@@ -1,20 +1,12 @@
 <script lang="ts" setup>
 import { clamp } from "lodash-es";
 import { FetchError } from "ofetch";
-import type {
-  DownloadState,
-  DownloadStatus,
-} from "~~/server/service/browser-downloader";
 
+import { ACTIVE_STATUSES } from "#shared/model/settings";
+import type { DownloadStatus, DownloadState } from "#shared/model/settings";
 import { BrowserData } from "@/composables/api";
 
 // ─── 常量 ───────────────────────────────────────────────────────────────────
-
-const ACTIVE_STATUSES = new Set<DownloadStatus>([
-  "resolving",
-  "downloading",
-  "unpacking",
-]);
 
 const IDLE_STATE: DownloadState = {
   buildId: null,

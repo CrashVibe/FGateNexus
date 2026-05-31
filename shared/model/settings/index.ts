@@ -2,13 +2,31 @@ import { z } from "zod";
 
 import type { ApiSchemaRegistry } from "#shared/model";
 
-export const DownloadStatus = z.enum([
+export const DownloadStatusSchema = z.enum([
   "idle",
   "resolving",
   "downloading",
   "unpacking",
   "done",
   "error",
+]);
+
+export type DownloadStatus = z.infer<typeof DownloadStatusSchema>;
+
+export interface DownloadState {
+  status: DownloadStatus;
+  downloadedBytes: number;
+  totalBytes: number;
+  buildId: string | null;
+  platform: string | null;
+  error?: string;
+  executablePath?: string;
+}
+
+export const ACTIVE_STATUSES = new Set<DownloadStatus>([
+  "resolving",
+  "downloading",
+  "unpacking",
 ]);
 
 export const SettingsAPI = {

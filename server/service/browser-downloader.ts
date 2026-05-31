@@ -10,34 +10,13 @@ import {
   resolveBuildId,
 } from "@puppeteer/browsers";
 
+import type { DownloadState } from "#shared/model/settings";
+import { ACTIVE_STATUSES } from "#shared/model/settings";
+
 import { imageRenderer } from "./image-renderer";
 
 const BROWSER_CACHE_DIR = path.resolve(process.cwd(), "data/browsers");
 const BROWSER_CACHE_TMP_DIR = path.resolve(process.cwd(), "data/browsers-tmp");
-
-export type DownloadStatus =
-  | "idle"
-  | "resolving"
-  | "downloading"
-  | "unpacking"
-  | "done"
-  | "error";
-
-export interface DownloadState {
-  status: DownloadStatus;
-  downloadedBytes: number;
-  totalBytes: number;
-  buildId: string | null;
-  platform: string | null;
-  error?: string;
-  executablePath?: string;
-}
-
-const ACTIVE_STATUSES = new Set<DownloadStatus>([
-  "resolving",
-  "downloading",
-  "unpacking",
-]);
 
 const state: DownloadState = {
   buildId: null,
