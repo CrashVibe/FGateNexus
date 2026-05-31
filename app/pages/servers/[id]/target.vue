@@ -9,11 +9,17 @@
       </template>
       <template #body>
         <UContainer class="py-8">
-          <LoadingState v-if="!formReady && !noBotConfigured && !botIsOnline" />
+          <LoadingState v-if="loadingMap.isLoading" />
 
-          <template v-else-if="noBotConfigured">
-            <div class="flex flex-col items-center gap-4 py-16">
-              <p class="text-muted">请先配置 Bot 实例后再管理目标</p>
+          <template v-else-if="noBotConfigured" key="no-bot">
+            <div class="flex flex-col items-center gap-4 py-16 text-center">
+              <UIcon name="i-lucide-bot" class="text-muted size-12" />
+              <div>
+                <p class="font-medium">尚未配置 Bot 实例</p>
+                <p class="text-muted mt-1 text-sm">
+                  请先前往通用设置配置 Bot 实例，再管理目标频道
+                </p>
+              </div>
               <UButton
                 :to="`/servers/${serverId}/general`"
                 icon="i-lucide-settings"
@@ -23,25 +29,62 @@
             </div>
           </template>
 
-          <template v-else-if="!botIsOnline">
-            <div class="flex flex-col items-center gap-4 py-16">
-              <p class="text-muted">
-                该页面需要 Bot 实例在线时配置，请确保 Bot 已正确运行
-              </p>
-              <UButton :to="`/bots`" icon="i-lucide-settings">
+          <template v-else-if="!botIsOnline" key="offline">
+            <div class="flex flex-col items-center gap-4 py-16 text-center">
+              <UIcon name="i-lucide-plug-zap" class="text-muted size-12" />
+              <div>
+                <p class="font-medium">Bot 实例当前离线</p>
+                <p class="text-muted mt-1 text-sm">
+                  目标频道配置需要 Bot 在线才能加载，请确保 Bot 已正确运行
+                </p>
+              </div>
+              <UButton :to="`/bots`" icon="i-lucide-activity">
                 前往检查 Bot 状态
               </UButton>
             </div>
           </template>
 
-          <template v-else-if="formReady">
+          <template v-else-if="formReady" key="ready">
             <div class="space-y-6">
               <!-- Header -->
-              <div>
-                <h2 class="text-lg font-semibold">选择目标频道</h2>
-                <p class="text-muted mt-1 text-sm">
-                  从 Bot 实例中选择要转发消息的群组、频道或私聊
-                </p>
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="flex items-center gap-2.5">
+                    <h2 class="text-lg font-semibold">目标频道</h2>
+                    <UBadge
+                      v-if="selectedChannelIds.size > 0"
+                      color="success"
+                      variant="subtle"
+                    >
+                      已选 {{ selectedChannelIds.size }} 个
+                    </UBadge>
+                  </div>
+                  <p class="text-muted mt-1 text-sm">
+                    从 Bot 实例中选择要转发消息的群组、频道或私聊
+                  </p>
+                </div>
+                <UTooltip
+                  :text="
+                    isDirty
+                      ? '有未保存的更改，请先保存或取消'
+                      : '重新加载频道列表'
+                  "
+                  :delay-duration="300"
+                >
+                  <UButton
+                    icon="i-lucide-refresh-cw"
+                    color="neutral"
+                    variant="ghost"
+                    size="sm"
+                    :loading="
+                      loadingMap.isLoading || loadingMap.isLoadingChannels
+                    "
+                    :disabled="isDirty"
+                    @click="refreshAll"
+                  >
+                    刷新
+                  </UButton>
+                </UTooltip>
               </div>
 
               <!-- Transfer List -->

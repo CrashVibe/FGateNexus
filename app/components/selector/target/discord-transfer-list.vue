@@ -73,7 +73,7 @@ const items = computed<TransferItem[]>(() => [
   ...dmItems.value,
 ]);
 
-const loadChannels = async (skipCache = false) => {
+const loadChannels = async () => {
   loading.value = true;
   errorMsg.value = null;
   try {
@@ -95,7 +95,7 @@ const loadChannels = async (skipCache = false) => {
 };
 
 const retry = async () => {
-  await loadChannels(true);
+  await loadChannels();
 };
 
 watch(
