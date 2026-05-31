@@ -5,8 +5,8 @@ import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { botTable } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge";
-import { createApiResponse } from "~~/shared/model";
 
+import { createApiResponse } from "#shared/model";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   try {
     const botId = Number(getRouterParam(event, "id"));
     if (Number.isNaN(botId)) {
-      const apiError = ApiError.validation("无效的 Bot  ID");
+      const apiError = ApiError.validation("无效的 Bot ID");
       return createErrorResponse(event, apiError);
     }
 
@@ -35,24 +35,24 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!botRecord) {
-      const apiError = ApiError.notFound("未能找到 Bot ");
+      const apiError = ApiError.notFound("Bot 不存在");
       return createErrorResponse(event, apiError);
     }
 
     if (botRecord.platform !== PlatformType.Discord) {
-      const apiError = ApiError.validation(" Bot 类型不是 Discord");
+      const apiError = ApiError.validation("Bot 类型不是 Discord");
       return createErrorResponse(event, apiError);
     }
 
     const botConnection = chatBridge.get(botId);
     if (!botConnection || !botConnection.isOnline()) {
-      const apiError = ApiError.notFound(" Bot 未上线或机器人未找到");
+      const apiError = ApiError.notFound("Bot 未上线或机器人未找到");
       return createErrorResponse(event, apiError);
     }
 
     const { bot } = botConnection;
     if (!(bot instanceof DiscordBot)) {
-      const apiError = ApiError.internal(" Bot 对应的机器人实例类型不匹配");
+      const apiError = ApiError.internal("Bot 对应的机器人实例类型不匹配");
       return createErrorResponse(event, apiError);
     }
 

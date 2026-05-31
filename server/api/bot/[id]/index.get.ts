@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!bot) {
-      const apiError = ApiError.database("未能找到 Bot");
+      const apiError = ApiError.notFound("Bot 不存在");
       return createErrorResponse(event, apiError);
     }
     const connection = chatBridge.get(bot.id);
@@ -38,10 +38,9 @@ export default defineEventHandler(async (event) => {
         isOnline,
       }),
     );
-  } catch {
-    const apiError = ApiError.internal(
-      `获取 ${Number(getRouterParam(event, "id"))} Bot 失败`,
-    );
+  } catch (error) {
+    logger.error(error, "获取 Bot 详情失败");
+    const apiError = ApiError.internal("获取 Bot 详情失败");
     return createErrorResponse(event, apiError);
   }
 });

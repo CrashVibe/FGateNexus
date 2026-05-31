@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     const botId = Number(getRouterParam(event, "id"));
 
     if (Number.isNaN(botId)) {
-      const apiError = ApiError.validation("无效的 Bot  ID");
+      const apiError = ApiError.validation("无效的 Bot ID");
       return createErrorResponse(event, apiError);
     }
 
@@ -26,9 +26,10 @@ export default defineEventHandler(async (event) => {
       chatBridge.removeBot(botId);
       return createApiResponse(event, "删除 Bot 成功", StatusCodes.OK);
     }
-    const apiError = ApiError.database("未能找到 Bot ");
+    const apiError = ApiError.notFound("Bot 不存在");
     return createErrorResponse(event, apiError);
-  } catch {
+  } catch (error) {
+    logger.error(error, "删除 Bot 失败");
     const apiError = ApiError.internal("删除 Bot 失败");
     return createErrorResponse(event, apiError);
   }

@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
       chatBridge.addBot(result[0].id, parsed.data.platform, parsed.data.config);
       return createApiResponse(event, "添加 Bot 成功", StatusCodes.CREATED);
     }
-    const apiError = ApiError.database("添加 Bot 失败：未能插入 Bot ");
+    const apiError = ApiError.database("添加 Bot 失败：未能插入数据");
     return createErrorResponse(event, apiError);
   } catch (error) {
     logger.error(error, "添加 Bot 失败");

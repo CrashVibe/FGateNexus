@@ -29,9 +29,6 @@ export default defineEventHandler(async (event) => {
     );
   } catch (error) {
     logger.error(error, "获取认证状态失败");
-    return createErrorResponse(
-      event,
-      ApiError.internalServerError("获取认证状态失败"),
-    );
+    return createErrorResponse(event, ApiError.internal("获取认证状态失败"));
   }
 });

@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
       updatedRows,
     );
   } catch (error) {
-    logger.error(error, "Database error");
-    return createErrorResponse(event, ApiError.database("批量更新失败"));
+    logger.error(error, "批量更新目标失败");
+    return createErrorResponse(event, ApiError.internal("批量更新失败"));
   }
 });

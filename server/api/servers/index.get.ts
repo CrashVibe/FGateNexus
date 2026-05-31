@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
       serversWithStatus,
     );
   } catch (error) {
-    logger.error(error, "Database error");
+    logger.error(error, "获取服务器列表失败");
     return createErrorResponse(event, ApiError.database("获取服务器列表失败"));
   }
 });

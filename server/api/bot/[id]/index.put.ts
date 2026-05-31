@@ -15,14 +15,12 @@ export default defineEventHandler(async (event) => {
     const parsed = BotAPI.PUT.request.safeParse(await readBody(event));
 
     if (Number.isNaN(id)) {
-      const apiError = ApiError.validation("更新 Bot 失败：无效的 Bot  ID");
+      const apiError = ApiError.validation("更新 Bot 失败：无效的 Bot ID");
       return createErrorResponse(event, apiError);
     }
 
     if (!parsed.success) {
-      const apiError = ApiError.validation(
-        `更新 Bot 失败：配置无效${parsed.error.message}`,
-      );
+      const apiError = ApiError.validation("更新 Bot 失败：配置无效");
       return createErrorResponse(event, apiError, parsed.error);
     }
 
@@ -42,7 +40,7 @@ export default defineEventHandler(async (event) => {
       }
       return createApiResponse(event, "更新 Bot 成功", StatusCodes.OK);
     }
-    const apiError = ApiError.database("更新 Bot 失败：未能更新 Bot ");
+    const apiError = ApiError.notFound("Bot 不存在");
     return createErrorResponse(event, apiError);
   } catch (error) {
     logger.error(error, "更新 Bot 失败");

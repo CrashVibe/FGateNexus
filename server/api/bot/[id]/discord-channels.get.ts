@@ -7,8 +7,8 @@ import { StatusCodes } from "http-status-codes";
 import { db } from "~~/server/db/client";
 import { botTable } from "~~/server/db/schema";
 import { chatBridge } from "~~/server/service/chatbridge";
-import { createApiResponse } from "~~/shared/model";
 
+import { createApiResponse } from "#shared/model";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
 import { ApiError, createErrorResponse } from "#shared/model/error";
@@ -132,7 +132,7 @@ export default cachedEventHandler(
         BotAPI.DISCORD_CHANNELS.response.parse(response),
       );
     } catch (error) {
-      console.error("[Discord Channels API Error]", error);
+      logger.error(error, "获取 Discord 频道列表失败");
       const apiError = ApiError.internal("获取频道列表失败");
       return createErrorResponse(event, apiError);
     }

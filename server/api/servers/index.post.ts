@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     });
     return createApiResponse(event, "添加服务器成功", StatusCodes.CREATED);
   } catch (error) {
-    logger.error(error, "Database error");
+    logger.error(error, "添加服务器失败");
     const apiError = ApiError.database("添加服务器失败");
     return createErrorResponse(event, apiError);
   }
