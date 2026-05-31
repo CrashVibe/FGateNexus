@@ -133,7 +133,12 @@ import type { targetResponse } from "#shared/model/server/schema/target";
 import { targetSchemaRequest } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import TargetChannelSelector from "@/components/selector/target/index.vue";
-import { BotData, ServerData, TargetData } from "~/composables/api";
+import {
+  BotData,
+  fetchErrorMsg,
+  ServerData,
+  TargetData,
+} from "~/composables/api";
 
 const route = useRoute();
 const toast = useToast();
@@ -210,8 +215,11 @@ const refreshAll = async (): Promise<void> => {
 
     formReady.value = true;
   } catch (error) {
-    console.error(error);
-    toast.add({ color: "error", title: "刷新目标列表失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "刷新目标列表失败",
+    });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -269,8 +277,11 @@ const handleSubmit = async () => {
     toast.add({ color: "success", title: "配置已保存" });
     await refreshAll();
   } catch (error) {
-    console.error("保存失败：", error);
-    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "保存配置失败",
+    });
   } finally {
     loadingMap.isSubmitting = false;
   }

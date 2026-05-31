@@ -603,7 +603,7 @@ import { ServersAPI } from "#shared/model/server/api";
 import { generateVerificationCode } from "#shared/utils/binding";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
-import { BindingData, ServerData } from "~/composables/api";
+import { BindingData, fetchErrorMsg, ServerData } from "~/composables/api";
 import { createVariablesArray } from "~/composables/use-placeholder-variables";
 
 const isMobile = useIsMobile();
@@ -806,8 +806,11 @@ const refreshServerData = async (): Promise<void> => {
     formData.config = structuredClone(data.bindingConfig);
     originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
-    console.error("Failed to refresh server data:", error);
-    toast.add({ color: "error", title: "刷新服务器数据失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "刷新服务器数据失败",
+    });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -826,8 +829,11 @@ const handleSubmit = async () => {
     toast.add({ color: "success", title: "绑定配置已保存" });
     await refreshServerData();
   } catch (error) {
-    console.error("Submit failed:", error);
-    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "保存配置失败",
+    });
   } finally {
     loadingMap.isSubmitting = false;
   }

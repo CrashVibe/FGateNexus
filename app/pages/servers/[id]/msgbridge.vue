@@ -412,7 +412,7 @@ import type { ServerWithStatus } from "#shared/model/server/schema/servers";
 import type { targetResponse } from "#shared/model/server/schema/target";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
-import { ChatSyncData, ServerData } from "~/composables/api";
+import { ChatSyncData, fetchErrorMsg, ServerData } from "~/composables/api";
 import {
   createVariableMap,
   createVariablesArray,
@@ -594,8 +594,11 @@ const refreshServerData = async (): Promise<void> => {
       label: target.channelId,
     }));
   } catch (error) {
-    console.error("Failed to refresh server data:", error);
-    toast.add({ color: "error", title: "刷新服务器数据失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "刷新服务器数据失败",
+    });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -623,7 +626,11 @@ const handleSubmit = async () => {
     selectTarget.value = null;
     await refreshServerData();
   } catch (error) {
-    console.error("Submit failed:", error);
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "保存配置失败",
+    });
   } finally {
     loadingMap.isSubmitting = false;
   }

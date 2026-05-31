@@ -1,21 +1,58 @@
 import { useEventSource } from "@vueuse/core";
 import type { z } from "zod";
-import { BotAPI } from "~~/shared/model/bot/api";
 
 import type { ApiResponse } from "#shared/model";
+import type { PasswordAPI } from "#shared/model/auth/api";
+import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
-import type { NotifyAPI } from "#shared/model/server/api";
-import {
+import { isFetchError } from "#shared/model/error";
+import { PlayerAPI } from "#shared/model/player/api";
+import type {
+  NotifyAPI,
   BindingAPI,
   ChatSyncAPI,
   CommandAPI,
   GeneralAPI,
-  ServersAPI,
-  TargetAPI,
 } from "#shared/model/server/api";
+import { ServersAPI, TargetAPI } from "#shared/model/server/api";
 import { SettingsAPI } from "#shared/model/settings";
 
-import { PlayerAPI } from "../../../shared/model/player/api";
+export const fetchErrorMsg = (error: unknown): string => {
+  if (isFetchError(error)) {
+    return error.data?.message ?? error.message;
+  }
+  return String(error);
+};
+
+export const AuthData = {
+  async deletePassword(currentPassword: string) {
+    await $fetch<ApiResponse>("/api/auth/password", {
+      body: { currentPassword },
+      method: "DELETE",
+    });
+  },
+  async remove2FA() {
+    await $fetch<ApiResponse>("/api/auth/2fa", { method: "DELETE" });
+  },
+  async setPassword(body: z.infer<typeof PasswordAPI.POST.request>) {
+    await $fetch<ApiResponse>("/api/auth/password", {
+      body,
+      method: "POST",
+    });
+  },
+  async setup2FA() {
+    const response = await $fetch<
+      ApiResponse<{ keyuri: string; secret: string }>
+    >("/api/auth/2fa/setup");
+    return response.data;
+  },
+  async verify2FA(secret: string, token: string) {
+    await $fetch<ApiResponse>("/api/auth/2fa/verify", {
+      body: { secret, token },
+      method: "POST",
+    });
+  },
+};
 
 export const ServerData = {
   async delete(serverId: number) {
@@ -33,7 +70,7 @@ export const ServerData = {
   },
   async post(data: z.infer<typeof ServersAPI.POST.request>) {
     await $fetch<ApiResponse>("/api/servers", {
-      body: ServersAPI.POST.request.parse(data),
+      body: data,
       method: "POST",
     });
   },
@@ -64,19 +101,14 @@ export const BotData = {
         ? `/api/bot/${botId}/onebot-channels`
         : `/api/bot/${botId}/discord-channels`;
     const response = await $fetch<ApiResponse>(endpoint);
-    const data =
-      platform === PlatformType.Onebot
-        ? BotAPI.ONEBOT_CHANNELS.response.parse(response.data)
-        : BotAPI.DISCORD_CHANNELS.response.parse(response.data);
-
-    return data;
+    return platform === PlatformType.Onebot
+      ? BotAPI.ONEBOT_CHANNELS.response.parse(response.data)
+      : BotAPI.DISCORD_CHANNELS.response.parse(response.data);
   },
   async getDiscordRoles(botId: number, guildId: string) {
     const response = await $fetch<ApiResponse>(
       `/api/bot/${botId}/discord-roles`,
-      {
-        query: BotAPI.DISCORD_ROLES.request.parse({ guildId }),
-      },
+      { query: { guildId } },
     );
     return BotAPI.DISCORD_ROLES.response.parse(response.data);
   },
@@ -86,7 +118,7 @@ export const BotData = {
   },
   async post(data: z.infer<typeof BotAPI.POST.request>) {
     await $fetch<ApiResponse>("/api/bot", {
-      body: BotAPI.POST.request.parse(data),
+      body: data,
       method: "POST",
     });
   },
@@ -95,13 +127,13 @@ export const BotData = {
     data: z.infer<typeof BotAPI.POSTTOGGLE.request>,
   ) {
     await $fetch<ApiResponse>(`/api/bot/${botId}/toggle`, {
-      body: BotAPI.POSTTOGGLE.request.parse(data),
+      body: data,
       method: "POST",
     });
   },
   async put(botId: number, data: z.infer<typeof BotAPI.PUT.request>) {
     await $fetch<ApiResponse>(`/api/bot/${botId}`, {
-      body: BotAPI.PUT.request.parse(data),
+      body: data,
       method: "PUT",
     });
   },
@@ -115,7 +147,7 @@ export const TargetData = {
     const response = await $fetch<ApiResponse>(
       `/api/servers/${serverId}/targets`,
       {
-        body: TargetAPI.POST.request.parse(payloads),
+        body: payloads,
         method: "POST",
       },
     );
@@ -128,7 +160,7 @@ export const TargetData = {
     const response = await $fetch<ApiResponse>(
       `/api/servers/${serverId}/targets`,
       {
-        body: TargetAPI.DELETE.request.parse(payloads),
+        body: payloads,
         method: "DELETE",
       },
     );
@@ -147,7 +179,7 @@ export const TargetData = {
     const response = await $fetch<ApiResponse>(
       `/api/servers/${serverId}/targets`,
       {
-        body: TargetAPI.PATCH.request.parse(payloads),
+        body: payloads,
         method: "PATCH",
       },
     );
@@ -161,7 +193,7 @@ export const ChatSyncData = {
     payloads: z.infer<typeof ChatSyncAPI.PATCH.request>,
   ) {
     await $fetch<ApiResponse>(`/api/servers/${serverId}/chat-sync`, {
-      body: ChatSyncAPI.PATCH.request.parse(payloads),
+      body: payloads,
       method: "PATCH",
     });
   },
@@ -173,7 +205,7 @@ export const GeneralData = {
     payloads: z.infer<typeof GeneralAPI.PATCH.request>,
   ) {
     await $fetch<ApiResponse>(`/api/servers/${serverId}/general`, {
-      body: GeneralAPI.PATCH.request.parse(payloads),
+      body: payloads,
       method: "PATCH",
     });
   },
@@ -185,7 +217,7 @@ export const CommandData = {
     payloads: z.infer<typeof CommandAPI.PATCH.request>,
   ) {
     await $fetch<ApiResponse>(`/api/servers/${serverId}/command`, {
-      body: CommandAPI.PATCH.request.parse(payloads),
+      body: payloads,
       method: "PATCH",
     });
   },
@@ -197,7 +229,7 @@ export const BindingData = {
     payloads: z.infer<typeof BindingAPI.PATCH.request>,
   ) {
     await $fetch<ApiResponse>(`/api/servers/${serverId}/binding`, {
-      body: BindingAPI.PATCH.request.parse(payloads),
+      body: payloads,
       method: "PATCH",
     });
   },
@@ -228,7 +260,7 @@ export const BrowserData = {
   },
   async patch(executablePath: string | null) {
     await $fetch<ApiResponse>("/api/settings/browser", {
-      body: SettingsAPI.PATCH.request.parse({ executablePath }),
+      body: { executablePath },
       method: "PATCH",
     });
   },

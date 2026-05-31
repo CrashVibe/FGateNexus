@@ -1,12 +1,9 @@
 <script lang="ts" setup>
-import { FetchError } from "ofetch";
 import { z } from "zod";
 
-import type { ApiResponse } from "#shared/model";
-import type { ApiErrorResponse } from "#shared/model/error";
+import { PasswordAPI } from "#shared/model/auth/api";
 import { validatePasswordStrength } from "#shared/utils/password";
-
-import { PasswordAPI } from "../../../shared/model/auth/api";
+import { AuthData, fetchErrorMsg } from "~/composables/api";
 
 const authStore = useAuthStore();
 const { checkAuthStatus } = authStore;
@@ -122,12 +119,9 @@ const handleSetPassword = async () => {
 
   try {
     isLoading.value = true;
-    await $fetch<ApiResponse<void>>("/api/auth/password", {
-      body: {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      },
-      method: "POST",
+    await AuthData.setPassword({
+      currentPassword: passwordForm.currentPassword || undefined,
+      newPassword: passwordForm.newPassword,
     });
     toast.add({ color: "success", title: "密码设置成功，请重新登录" });
     showPasswordForm.value = false;
@@ -140,8 +134,11 @@ const handleSetPassword = async () => {
     await useUserSession().clear();
     await navigateTo("/login");
   } catch (error) {
-    console.error("Failed to set password:", error);
-    toast.add({ color: "error", title: "密码设置失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "密码设置失败",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -150,17 +147,18 @@ const handleSetPassword = async () => {
 const setup2FA = async () => {
   try {
     isLoading.value = true;
-    const response = await $fetch<
-      ApiResponse<{ keyuri: string; secret: string }>
-    >("/api/auth/2fa/setup");
-    if (response.data) {
-      twoFAForm.keyuri = response.data.keyuri;
-      twoFAForm.secret = response.data.secret;
+    const data = await AuthData.setup2FA();
+    if (data) {
+      twoFAForm.keyuri = data.keyuri;
+      twoFAForm.secret = data.secret;
       showTwoFASetup.value = true;
     }
   } catch (error) {
-    console.error("Failed to setup 2FA:", error);
-    toast.add({ color: "error", title: "2FA 设置失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "2FA 设置失败",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -169,22 +167,18 @@ const setup2FA = async () => {
 const verify2FA = async () => {
   try {
     isLoading.value = true;
-    const tokenString = twoFAState.token.join("");
-    await $fetch<ApiResponse<void>>("/api/auth/2fa/verify", {
-      body: {
-        secret: twoFAForm.secret,
-        token: tokenString,
-      },
-      method: "POST",
-    });
+    await AuthData.verify2FA(twoFAForm.secret, twoFAState.token.join(""));
     toast.add({ color: "success", title: "2FA 验证成功" });
     showTwoFASetup.value = false;
     Object.assign(twoFAForm, { keyuri: "", secret: "" });
     twoFAState.token = [];
     await checkAuthStatus();
   } catch (error) {
-    console.error("Failed to verify 2FA:", error);
-    toast.add({ color: "error", title: "2FA 验证失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "2FA 验证失败",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -198,12 +192,15 @@ const removeAuth = async (type: "password" | "2fa") => {
 
   try {
     isLoading.value = true;
-    await $fetch<ApiResponse<void>>(`/api/auth/${type}`, { method: "DELETE" });
+    await AuthData.remove2FA();
     toast.add({ color: "success", title: "2FA 已删除" });
     await checkAuthStatus();
   } catch (error) {
-    console.error(`Failed to remove ${type}:`, error);
-    toast.add({ color: "error", title: "删除 2FA 失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "删除 2FA 失败",
+    });
   } finally {
     isLoading.value = false;
   }
@@ -217,12 +214,7 @@ const confirmDeletePassword = async () => {
 
   try {
     isLoading.value = true;
-    await $fetch<ApiResponse<void>>("/api/auth/password", {
-      body: {
-        currentPassword: deletePasswordForm.currentPassword,
-      },
-      method: "DELETE",
-    });
+    await AuthData.deletePassword(deletePasswordForm.currentPassword);
     toast.add({ color: "success", title: "密码已删除" });
     showDeletePasswordModal.value = false;
     deletePasswordForm.currentPassword = "";
@@ -230,12 +222,11 @@ const confirmDeletePassword = async () => {
     await useUserSession().clear();
     await checkAuthStatus();
   } catch (error) {
-    const errorMessage =
-      error instanceof FetchError
-        ? (error.data as ApiErrorResponse).message || "删除密码失败"
-        : "删除密码失败";
-    console.error("Failed to remove password:", error);
-    toast.add({ color: "error", title: errorMessage });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "删除密码失败",
+    });
   } finally {
     isLoading.value = false;
   }

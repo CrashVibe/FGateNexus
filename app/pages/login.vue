@@ -2,10 +2,9 @@
 import type { AuthFormField, FormSubmitEvent } from "@nuxt/ui";
 
 import { useAuthStore } from "#imports";
+import type { LoginBody } from "#shared/model/auth/api";
+import { LoginAPI } from "#shared/model/auth/api";
 import { ApiErrorType, isFetchError } from "#shared/model/error";
-
-import type { LoginBody } from "../../shared/model/auth/api";
-import { LoginAPI } from "../../shared/model/auth/api";
 
 definePageMeta({
   layout: false,
@@ -81,7 +80,6 @@ const handleLogin = async (event: FormSubmitEvent<LoginBody>) => {
       toast.add({ color: "error", title: data.message });
       return;
     }
-    console.error("Login failed:", error);
     toast.add({ color: "error", title: "发生未知错误，请联系开发者～" });
   } finally {
     isLoading.value = false;

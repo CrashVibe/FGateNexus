@@ -1,14 +1,14 @@
 <script lang="ts" setup>
 import { cloneDeep } from "lodash-es";
 import type { z } from "zod";
-import { BotAPI } from "~~/shared/model/bot/api";
 
 import type { BotsWithStatus, BotWithStatus } from "#shared/model/bot/api";
+import { BotAPI } from "#shared/model/bot/api";
 import PageHeader from "@/components/header/page-header.vue";
 import SelectorBot from "@/components/selector/bot.vue";
 import CardBot from "~/components/card/bot.vue";
 import DrawerBot from "~/components/drawer/bot.vue";
-import { BotData } from "~/composables/api";
+import { BotData, fetchErrorMsg } from "~/composables/api";
 
 const createEmptyForm = (): Partial<z.infer<typeof BotAPI.POST.request>> => ({
   config: undefined,
@@ -38,9 +38,12 @@ const fetchBotList = async () => {
   try {
     botList.value = await BotData.gets();
   } catch (error) {
-    console.error("Failed to fetch bot list:", error);
     botList.value = [];
-    toast.add({ color: "error", title: "获取机器人列表失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "获取机器人列表失败",
+    });
   } finally {
     isLoadingList.value = false;
   }
@@ -60,8 +63,11 @@ const handleSubmitClick = async () => {
     showModal.value = false;
     await fetchBotList();
   } catch (error) {
-    console.error("Submit failed:", error);
-    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "创建 Bot 实例失败",
+    });
   } finally {
     isSubmitting.value = false;
   }
@@ -92,8 +98,12 @@ const runBotAction = async (
     toast.add({ color: "success", title: successTitle });
     showDrawer.value = false;
     await fetchBotList();
-  } catch {
-    toast.add({ color: "error", title: "操作失败，请检查后端日志" });
+  } catch (error) {
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "操作失败",
+    });
   }
 };
 

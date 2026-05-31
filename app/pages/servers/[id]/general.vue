@@ -161,7 +161,12 @@ import { GeneralAPI } from "#shared/model/server/api";
 import type { ServerWithStatus } from "#shared/model/server/schema/servers";
 import ServerHeader from "@/components/header/server-header.vue";
 import { useIsMobile } from "@/composables/is-mobile";
-import { BotData, GeneralData, ServerData } from "~/composables/api";
+import {
+  BotData,
+  fetchErrorMsg,
+  GeneralData,
+  ServerData,
+} from "~/composables/api";
 
 const isMobile = useIsMobile();
 
@@ -231,8 +236,11 @@ const confirmDelete = async () => {
     serverData = null;
     await router.push("/");
   } catch (error) {
-    console.error("Delete failed:", error);
-    toast.add({ color: "error", title: "删除服务器失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "删除服务器失败",
+    });
   } finally {
     isDeleting.value = false;
   }
@@ -264,8 +272,11 @@ const refreshAll = async (): Promise<void> => {
     };
     original.value = { ...formData.value };
   } catch (error) {
-    console.error("Refresh failed:", error);
-    toast.add({ color: "error", title: "加载数据失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "加载数据失败",
+    });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -285,8 +296,11 @@ const handleSubmit = async (): Promise<void> => {
     toast.add({ color: "success", title: "配置已保存" });
     await refreshAll();
   } catch (error) {
-    console.error("Submit failed:", error);
-    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "保存配置失败",
+    });
   } finally {
     loadingMap.isSubmitting = false;
   }

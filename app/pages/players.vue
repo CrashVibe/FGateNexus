@@ -3,10 +3,9 @@ import type { TableColumn } from "@nuxt/ui";
 import { getPaginationRowModel } from "@tanstack/vue-table";
 import type { z } from "zod";
 
+import type { PlayerAPI } from "#shared/model/player/api";
 import PageHeader from "@/components/header/page-header.vue";
-import { PlayerData } from "~/composables/api";
-
-import type { PlayerAPI } from "../../shared/model/player/api";
+import { fetchErrorMsg, PlayerData } from "~/composables/api";
 
 const UBadge = resolveComponent("UBadge");
 
@@ -19,9 +18,12 @@ const fetchPlayerList = async () => {
   try {
     playerList.value = await PlayerData.gets();
   } catch (error) {
-    console.error("Failed to fetch player list:", error);
     playerList.value = [];
-    toast.add({ color: "error", title: "获取玩家列表失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "获取玩家列表失败",
+    });
   } finally {
     isLoadingList.value = false;
   }

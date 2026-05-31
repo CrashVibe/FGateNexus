@@ -2,9 +2,8 @@ import { defineStore } from "pinia";
 import type { z } from "zod";
 
 import type { ApiResponse } from "#shared/model";
-
-import { LoginAPI } from "../../shared/model/auth/api";
-import type { AuthStatus } from "../../shared/model/auth/schema";
+import type { LoginAPI } from "#shared/model/auth/api";
+import type { AuthStatus } from "#shared/model/auth/schema";
 
 interface State {
   authStatus: AuthStatus;
@@ -23,8 +22,7 @@ export const useAuthStore = defineStore("auth", {
           return response.data;
         }
         return this.authStatus;
-      } catch (error) {
-        console.error({ error }, "无法检查认证状态：");
+      } catch {
         return this.authStatus;
       }
     },
@@ -32,7 +30,7 @@ export const useAuthStore = defineStore("auth", {
     async login(data: z.infer<typeof LoginAPI.POST.request>) {
       const { fetch: refreshSession } = useUserSession();
       await $fetch("/api/auth/login", {
-        body: LoginAPI.POST.request.parse(data),
+        body: data,
         method: "POST",
       });
 

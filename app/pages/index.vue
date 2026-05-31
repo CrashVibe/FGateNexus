@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ServersAPI } from "#shared/model/server/api";
 import type { ServerWithStatus } from "#shared/model/server/schema/servers";
 import PageHeader from "@/components/header/page-header.vue";
-import { ServerData } from "~/composables/api";
+import { fetchErrorMsg, ServerData } from "~/composables/api";
 
 type FormData = z.infer<(typeof ServersAPI)["POST"]["request"]>;
 
@@ -28,9 +28,12 @@ const fetchServerList = async () => {
     isLoadingList.value = true;
     serverList.value = await ServerData.gets();
   } catch (error) {
-    console.error("Failed to fetch server list:", error);
     serverList.value = [];
-    toast.add({ color: "error", title: "获取服务器列表失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "获取服务器列表失败",
+    });
   } finally {
     isLoadingList.value = false;
   }
@@ -51,8 +54,11 @@ const handleSubmit = async () => {
     showModal.value = false;
     await fetchServerList();
   } catch (error) {
-    console.error("Submit failed:", error);
-    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "创建服务器失败",
+    });
   } finally {
     isSubmitting.value = false;
   }

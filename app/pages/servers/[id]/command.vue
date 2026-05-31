@@ -141,6 +141,7 @@ import {
   BotData,
   BrowserData,
   CommandData,
+  fetchErrorMsg,
   ServerData,
 } from "~/composables/api";
 
@@ -220,8 +221,11 @@ const refreshServerData = async (): Promise<void> => {
     formData.targets = structuredClone(data.targets || []);
     originalFormData.value = structuredClone(toRaw(formData));
   } catch (error) {
-    console.error("Failed to refresh server data:", error);
-    toast.add({ color: "error", title: "刷新服务器数据失败" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "刷新服务器数据失败",
+    });
   } finally {
     loadingMap.isLoading = false;
   }
@@ -249,8 +253,11 @@ const handleSubmit = async () => {
     selectTarget.value = null;
     await refreshServerData();
   } catch (error) {
-    console.error("Submit failed:", error);
-    toast.add({ color: "error", title: "保存配置失败，请稍后再试" });
+    toast.add({
+      color: "error",
+      description: fetchErrorMsg(error),
+      title: "保存配置失败",
+    });
   } finally {
     loadingMap.isSubmitting = false;
   }
