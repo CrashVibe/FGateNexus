@@ -6,10 +6,7 @@ import { db } from "~~/server/db/client";
 import { getServerByIdWithBotAndTargets } from "~~/server/db/queries/server";
 import { botTable } from "~~/server/db/schema";
 import type { Target } from "~~/server/db/schema";
-import {
-  bindingService,
-  BindingService,
-} from "~~/server/service/bindingmanager";
+import { bindingService } from "~~/server/service/bindingmanager";
 import { handlePlatformMessage } from "~~/server/service/chatbridge/message-router";
 import { configManager } from "~~/server/utils/config";
 
@@ -35,6 +32,7 @@ const handlerMap: EventHandlerMap = {
   "player.death": async (s, e, t) => s.onDeath(e, t),
   "player.join": async (s, e, t) => s.onJoin(e, t),
   "player.leave": async (s, e, t) => s.onLeave(e, t),
+  "system.notify": async (s, e, t) => s.onNotify(e, t),
 };
 
 /**
@@ -42,7 +40,7 @@ const handlerMap: EventHandlerMap = {
  */
 class ChatBridge {
   static instance: ChatBridge | null = null;
-  // Bot ID -> Bot Connection
+  // Bot ID → Bot Connection
   private readonly connections = new ConnectionStore();
   private readonly app: Context;
   private readonly pluginsContext: ForkScope[] = [];
@@ -185,7 +183,7 @@ class ChatBridge {
     connection: PlatformSender,
     ctx: Session,
   ): Promise<void> {
-    await BindingService.handleGroupLeave(connection, ctx);
+    await bindingService.handleGroupLeave(connection, ctx);
   }
 
   async dispatch<T extends MCEventType>(event: MCEvent<T>): Promise<void> {

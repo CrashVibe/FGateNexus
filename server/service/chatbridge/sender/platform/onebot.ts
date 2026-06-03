@@ -80,6 +80,13 @@ export default class OneBotSender extends BaseSender<
       type: "text",
     };
   }
+  protected override async buildNotifyMessage(
+    payload: MCEvent<"system.notify">["payload"],
+    _server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+  ): Promise<OneBotTextMessage> {
+    return { message: payload.message, type: "text" };
+  }
+
   protected override async send(
     target: Target,
     message: OneBotTextMessage,

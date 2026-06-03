@@ -34,6 +34,7 @@ export enum DiscordColor {
   Death = 15_548_997, // #ED4245
   Join = 5_763_719, // #57F287
   Leave = 16_704_348, // #FEE75C
+  Notify = 3_447_003, // #3498DB
 }
 
 export default class DiscordSender extends BaseSender<
@@ -133,6 +134,16 @@ export default class DiscordSender extends BaseSender<
         color: DiscordColor.Command,
         description: text,
       },
+      type: "embed",
+    };
+  }
+
+  protected override async buildNotifyMessage(
+    payload: MCEvent<"system.notify">["payload"],
+    _server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+  ): Promise<DiscordEmbedMessage> {
+    return {
+      embed: { color: DiscordColor.Notify, description: payload.message },
       type: "embed",
     };
   }

@@ -7,3 +7,8 @@ export enum PlatformType {
   Onebot = "onebot",
   Discord = "discord",
 }
+
+const platformTypeSet = new Set<string>(Object.values(PlatformType));
+
+export const isPlatformType = (value: string): value is PlatformType =>
+  platformTypeSet.has(value);

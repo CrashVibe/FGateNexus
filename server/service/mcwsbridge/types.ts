@@ -76,6 +76,9 @@ export interface MCEventPayloadMap {
     success: boolean;
     message: string;
   };
+  "system.notify": {
+    message: string;
+  };
 }
 
 export type MCEventType = keyof MCEventPayloadMap;
@@ -86,3 +89,13 @@ export interface MCEvent<T extends MCEventType = MCEventType> {
   serverId: number;
   payload: MCEventPayloadMap[T];
 }
+
+export const buildSystemNotifyEvent = (
+  serverId: number,
+  message: string,
+): MCEvent<"system.notify"> => ({
+  payload: { message },
+  serverId,
+  timestamp: Date.now(),
+  type: "system.notify",
+});

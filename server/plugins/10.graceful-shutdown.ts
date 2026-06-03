@@ -1,5 +1,7 @@
 import readline from "node:readline";
 
+import { runCleanups } from "#server/utils/cleanup-registry";
+
 const forceExit = () => {
   logger.warn("好好好，不收拾了，跑路辽");
   process.exit(0);
@@ -14,6 +16,7 @@ export default defineNitroPlugin((nitro) => {
     isClosing = true;
     logger.info("等我收拾一下嗷...");
     await nitro.hooks.callHook("close");
+    await runCleanups();
     logger.info("收拾好啦，祝你有好的一天～");
     process.exit(0);
   };

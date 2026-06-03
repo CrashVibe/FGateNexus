@@ -15,4 +15,5 @@ export const eventConfigMap: Record<MCEventType, ConfigCHecker> = {
   "player.death": (c) => c.NotifyConfigSchema.player_disappoint_notify,
   "player.join": (c) => c.NotifyConfigSchema.player_notify,
   "player.leave": (c) => c.NotifyConfigSchema.player_notify,
+  "system.notify": () => true,
 };

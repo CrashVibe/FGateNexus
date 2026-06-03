@@ -66,6 +66,11 @@ export abstract class BaseSender<
 
   protected abstract send(target: Target, message: M): Promise<void>;
 
+  protected abstract buildNotifyMessage(
+    payload: MCEvent<"system.notify">["payload"],
+    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+  ): Promise<M>;
+
   abstract setGroupCard(
     target: Target,
     userId: string,
@@ -136,6 +141,21 @@ export abstract class BaseSender<
     await this.send(
       target,
       await this.buildCommandMessage(event.payload, server),
+    );
+  }
+
+  async onNotify(
+    event: MCEvent<"system.notify">,
+    target: Target,
+  ): Promise<void> {
+    const server = await BaseSender.getServer(event.serverId);
+    if (!server || !this.guardOnline()) {
+      return;
+    }
+
+    await this.send(
+      target,
+      await this.buildNotifyMessage(event.payload, server),
     );
   }
 
