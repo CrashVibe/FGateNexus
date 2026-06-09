@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { isEqual } from "lodash-es";
 import { Activity, Bot, PlugZap, RefreshCw, Settings } from "lucide-react";
@@ -38,6 +39,7 @@ export const ServerTargetPage = () => {
   const { id } = useParams({ from: "/dashboard/servers/$id/target" });
   const serverId = Number(id);
 
+  const queryClient = useQueryClient();
   const { data: server, isLoading: serverLoading } = useServer(serverId);
   const { data: bot } = useBot(server?.botId ?? null);
   const { data: targets, refetch: refetchTargets } = useTargets(serverId);
@@ -175,6 +177,9 @@ export const ServerTargetPage = () => {
             disabled={isDirty || channelsLoading}
             onClick={() => {
               void refetchTargets();
+              void queryClient.invalidateQueries({
+                queryKey: ["channels", server.botId, bot.platform],
+              });
             }}
             size="sm"
             variant="ghost"
