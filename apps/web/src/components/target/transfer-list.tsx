@@ -179,7 +179,7 @@ export const TransferList = ({
 
   return (
     <div className="grid gap-3 md:grid-cols-[1fr_48px_1fr]">
-      <div className="flex min-h-[340px] flex-col overflow-hidden rounded-xl border">
+      <div className="flex h-[460px] flex-col overflow-hidden rounded-xl border">
         <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
           <List className="text-muted-foreground size-4 shrink-0" />
           <span className="text-sm font-medium">可选频道</span>
@@ -233,7 +233,7 @@ export const TransferList = ({
         </Button>
       </div>
 
-      <div className="flex min-h-[340px] flex-col overflow-hidden rounded-xl border">
+      <div className="flex h-[460px] flex-col overflow-hidden rounded-xl border">
         <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
           <CheckCircle className="size-4 shrink-0 text-green-500" />
           <span className="text-sm font-medium">已选频道</span>

@@ -108,7 +108,7 @@ const main = async (): Promise<void> => {
   await prepareDatabase();
   await runMigrations();
 
-  printBanner();
+  printBanner(isCompiledBinary);
 
   // 以下模块在导入时即会打开数据库连接，必须在 DB 就绪后再动态导入。
   const { getLatestInstalledChromiumPath } =

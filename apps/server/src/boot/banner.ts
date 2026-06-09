@@ -1,7 +1,7 @@
 import packageJson from "~~/package.json";
 
 /** 打印启动横幅。 */
-export const printBanner = (): void => {
+export const printBanner = (isCompiled = false): void => {
   const version = packageJson.version || "0.0.0";
 
   const reset = "\u001B[0m";
@@ -24,7 +24,11 @@ export const printBanner = (): void => {
     `${cyan}${bold}◆  FlowGate Nexus${reset}  ${gray}${"◇".repeat(W - 20)}${reset}`,
     "",
     row("version", `v${version}`, green),
-    row("env", process.env.NODE_ENV ?? "development", yellow),
+    row(
+      "env",
+      isCompiled ? "production" : (process.env.NODE_ENV ?? "development"),
+      yellow,
+    ),
     row("platform", `${process.platform} / ${process.arch}`, white),
     row("pid", String(process.pid), gray),
     "",
