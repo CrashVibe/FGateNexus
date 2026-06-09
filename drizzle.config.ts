@@ -6,5 +6,5 @@ export default defineConfig({
   },
   dialect: "sqlite",
   out: "./migrations",
-  schema: "./server/db/schema",
+  schema: "./apps/server/src/db/schema",
 });

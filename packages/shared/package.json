@@ -1,0 +1,18 @@
+{
+  "name": "@fgate/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./model/index.ts",
+    "./*": "./*.ts",
+    "./*/index": "./*/index.ts"
+  },
+  "dependencies": {
+    "@zxcvbn-ts/core": "^3.0.4",
+    "@zxcvbn-ts/language-common": "^3.0.4",
+    "nanoid": "^5.1.11",
+    "uuid": "^13.0.2",
+    "zod": "^4.4.3"
+  }
+}

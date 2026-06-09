@@ -1,29 +1,22 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./.nuxt/tsconfig.app.json"
-    },
-    {
-      "path": "./.nuxt/tsconfig.server.json"
-    },
-    {
-      "path": "./.nuxt/tsconfig.shared.json"
-    },
-    {
-      "path": "./.nuxt/tsconfig.node.json"
-    }
-  ],
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["bun"],
     "paths": {
-      "#shared": ["./shared"],
-      "#shared/*": ["./shared/*"],
-      "@": ["./app"],
-      "@/*": ["./app/*"],
-      "~": ["./app"],
-      "~/*": ["./app/*"],
-      "~~": ["."],
-      "~~/*": ["./*"]
+      "#shared": ["./packages/shared/model/index.ts"],
+      "#shared/*": ["./packages/shared/*"]
     }
-  }
+  },
+  "include": ["packages/shared", "scripts", "drizzle.config.ts"]
 }

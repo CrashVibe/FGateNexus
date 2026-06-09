@@ -12,8 +12,9 @@
 
 ## 说明
 
-- 本项目采用 [Nuxt 4](https://nuxt.com/) + [TypeScript](https://www.typescriptlang.org/) + [Nuxt UI](https://ui.nuxt.com/)
-  开发
+- 本项目后端采用 [Hono](https://hono.dev/) on [Bun](https://bun.sh/)，前端采用 [React](https://react.dev/) +
+  [Vite](https://vite.dev/) + [shadcn/ui](https://ui.shadcn.com/)，以 [TypeScript](https://www.typescriptlang.org/)
+  开发，最终编译为单文件二进制分发
 - 需要配合 [FGATE Client](https://github.com/CrashVibe/FGateClient) 一起使用
 - 跨平台支持，适用于 Windows、Linux、macOS 等操作系统
 - 仅对移动端做了基础适配，不保证功能全部可用

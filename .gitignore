@@ -1,10 +1,11 @@
-# Nuxt dev/build outputs
+# dev/build outputs
 .output
 .data
 .nuxt
 .nitro
 .cache
 dist
+.playwright-mcp
 
 # Node dependencies
 node_modules
@@ -22,8 +23,9 @@ logs
 .env.*
 !.env.example
 /config
-app/auto-imports.d.ts
-app/components.d.ts
+
 
 # 数据产生
 /data
+
+# 构建期自动生成(内联迁移 / 静态资源)，apps/server/dist 已由上方 dist 规则覆盖

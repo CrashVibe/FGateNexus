@@ -1,9 +1,9 @@
 import { defineConfig } from "oxlint";
 import core from "ultracite/oxlint/core";
-import vue from "ultracite/oxlint/vue";
+import react from "ultracite/oxlint/react";
 
 export default defineConfig({
-  extends: [core, vue],
+  extends: [core, react],
   options: { typeAware: true },
   rules: {
     "class-methods-use-this": [
@@ -33,9 +33,9 @@ export default defineConfig({
     "typescript/no-unsafe-call": "allow",
     "typescript/no-unsafe-enum-comparison": "allow",
     "typescript/no-unsafe-member-access": "allow",
+    "typescript/no-unsafe-type-assertion": "allow",
     "typescript/prefer-readonly-parameter-types": "allow",
     "typescript/strict-boolean-expressions": "allow",
     "typescript/strict-void-return": "allow",
-    "vue/max-props": ["error", { maxProps: 5 }],
   },
 });
