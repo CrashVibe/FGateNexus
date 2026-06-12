@@ -85,7 +85,7 @@ class ChatBridge {
 
     this.app.on("message", async (session) => {
       const connection = this.connections.findBySession(session);
-      if (connection && !session.content) {
+      if (connection && session.content) {
         await ChatBridge.receiveMessage(connection, session);
       }
     });
