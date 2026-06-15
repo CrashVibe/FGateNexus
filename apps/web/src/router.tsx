@@ -83,6 +83,13 @@ const settingsRoute = dashRoute(
     "SettingsPage",
   ),
 );
+const templatesRoute = dashRoute(
+  "/templates",
+  lazyRouteComponent(
+    async () => import("@/pages/templates/index"),
+    "TemplatesPage",
+  ),
+);
 const serverGeneralRoute = dashRoute(
   "/servers/$id/general",
   lazyRouteComponent(
@@ -125,6 +132,20 @@ const serverNotifyRoute = dashRoute(
     "ServerNotifyPage",
   ),
 );
+const serverTemplatesRoute = dashRoute(
+  "/servers/$id/templates",
+  lazyRouteComponent(
+    async () => import("@/pages/servers/templates"),
+    "ServerTemplatesPage",
+  ),
+);
+const serverTemplateInstanceRoute = dashRoute(
+  "/servers/$id/templates/$instanceId",
+  lazyRouteComponent(
+    async () => import("@/pages/servers/template-instance"),
+    "ServerTemplateInstancePage",
+  ),
+);
 
 const settingsSecurityRoute = makeRedirect("/settings/security", "/settings");
 const settingsBrowserRoute = makeRedirect("/settings/browser", "/settings");
@@ -147,6 +168,7 @@ const routeTree = rootRoute.addChildren([
     settingsRoute,
     settingsSecurityRoute,
     settingsBrowserRoute,
+    templatesRoute,
     serverOverviewRoute,
     serverGeneralRoute,
     serverTargetRoute,
@@ -154,6 +176,8 @@ const routeTree = rootRoute.addChildren([
     serverCommandRoute,
     serverMsgbridgeRoute,
     serverNotifyRoute,
+    serverTemplatesRoute,
+    serverTemplateInstanceRoute,
   ]),
 ]);
 

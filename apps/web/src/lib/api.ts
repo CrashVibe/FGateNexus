@@ -14,8 +14,14 @@ import type {
 } from "#shared/model/server/api";
 import { ServersAPI, TargetAPI } from "#shared/model/server/api";
 import { SettingsAPI } from "#shared/model/settings";
+import { TemplateAPI, TemplateInstanceAPI } from "#shared/model/template/api";
+import type {
+  TemplateInstanceConfig,
+  TemplateInstanceCreate,
+  TemplateInstanceUpdate,
+} from "#shared/model/template/schema/instance";
 
-import { request } from "./http";
+import { request, throwIfNotOk, uploadFile } from "./http";
 
 export const AuthData = {
   async deletePassword(currentPassword: string): Promise<void> {
@@ -254,6 +260,92 @@ export const BrowserData = {
   },
   async startDownload(): Promise<void> {
     await request("/api/settings/browser/download", { method: "POST" });
+  },
+};
+
+export const TemplateData = {
+  async delete(id: string): Promise<void> {
+    await request(`/api/templates/${id}`, { method: "DELETE" });
+  },
+  async get(id: string): Promise<z.infer<typeof TemplateAPI.GET.response>> {
+    const response = await request(`/api/templates/${id}`);
+    return TemplateAPI.GET.response.parse(response.data);
+  },
+  async gets(): Promise<z.infer<typeof TemplateAPI.GETS.response>> {
+    const response = await request("/api/templates");
+    return TemplateAPI.GETS.response.parse(response.data);
+  },
+  async upload(
+    file: File,
+  ): Promise<z.infer<typeof TemplateAPI.UPLOAD.response>> {
+    const response = await uploadFile("/api/templates", file);
+    return TemplateAPI.UPLOAD.response.parse(response.data);
+  },
+};
+
+export const TemplateInstanceData = {
+  async create(
+    serverId: number,
+    body: TemplateInstanceCreate,
+  ): Promise<z.infer<typeof TemplateInstanceAPI.POST.response>> {
+    const response = await request(
+      `/api/servers/${serverId}/template-instances`,
+      { body, method: "POST" },
+    );
+    return TemplateInstanceAPI.POST.response.parse(response.data);
+  },
+  async delete(serverId: number, instanceId: string): Promise<void> {
+    await request(`/api/servers/${serverId}/template-instances/${instanceId}`, {
+      method: "DELETE",
+    });
+  },
+  async gets(
+    serverId: number,
+  ): Promise<z.infer<typeof TemplateInstanceAPI.GETS.response>> {
+    const response = await request(
+      `/api/servers/${serverId}/template-instances`,
+    );
+    return TemplateInstanceAPI.GETS.response.parse(response.data);
+  },
+  /** 失败时抛 ApiRequestError。 */
+  async render(serverId: number, instanceId: string): Promise<Blob> {
+    const res = await fetch(
+      `/api/servers/${serverId}/template-instances/${instanceId}/render`,
+      { credentials: "same-origin", method: "POST" },
+    );
+    await throwIfNotOk(res);
+    return res.blob();
+  },
+  /** 用未保存的配置渲染；失败时抛 ApiRequestError。 */
+  async renderPreview(
+    serverId: number,
+    templateId: string,
+    config: TemplateInstanceConfig,
+    signal?: AbortSignal,
+  ): Promise<Blob> {
+    const res = await fetch(
+      `/api/servers/${serverId}/template-instances/render-preview`,
+      {
+        body: JSON.stringify({ config, templateId }),
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+        signal,
+      },
+    );
+    await throwIfNotOk(res);
+    return res.blob();
+  },
+  async update(
+    serverId: number,
+    instanceId: string,
+    body: TemplateInstanceUpdate,
+  ): Promise<z.infer<typeof TemplateInstanceAPI.PATCH.response>> {
+    const response = await request(
+      `/api/servers/${serverId}/template-instances/${instanceId}`,
+      { body, method: "PATCH" },
+    );
+    return TemplateInstanceAPI.PATCH.response.parse(response.data);
   },
 };
 

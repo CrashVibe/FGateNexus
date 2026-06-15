@@ -9,6 +9,7 @@ import { botTable } from "#server/db/schema";
 import type { Target } from "#server/db/schema";
 import { bindingService } from "#server/service/bindingmanager";
 import { handlePlatformMessage } from "#server/service/chatbridge/message-router";
+import { recordMcEvent } from "#server/service/event-log";
 import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
@@ -34,6 +35,7 @@ const handlerMap: EventHandlerMap = {
   "player.join": async (s, e, t) => s.onJoin(e, t),
   "player.leave": async (s, e, t) => s.onLeave(e, t),
   "system.notify": async (s, e, t) => s.onNotify(e, t),
+  "system.template": async (s, e, t) => s.onTemplate(e, t),
 };
 
 class ChatBridge {
@@ -165,6 +167,9 @@ class ChatBridge {
   }
 
   async dispatch<T extends MCEventType>(event: MCEvent<T>): Promise<void> {
+    // 落库不影响转发，无 bot 配置也记录
+    void recordMcEvent(event);
+
     const checker = eventConfigMap[event.type];
 
     const server = await getServerByIdWithBotAndTargets(event.serverId);

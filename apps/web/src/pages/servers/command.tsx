@@ -8,6 +8,7 @@ import { PlatformType } from "#shared/model/bot/types";
 import { CommandConfigSchema } from "#shared/model/server/schema/command";
 import type { targetResponse } from "#shared/model/server/schema/target";
 import { LoadingState } from "@/components/common/loading-state";
+import { MultiSelectCombobox } from "@/components/common/multi-select-combobox";
 import {
   SettingsBlock,
   SettingsRow,
@@ -17,7 +18,6 @@ import { ServerHeader } from "@/components/layout/server-header";
 import { TargetConfigSheet } from "@/components/target/target-config-sheet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
@@ -25,14 +25,9 @@ import { Switch } from "@/components/ui/switch";
 import { useRegisterPageState } from "@/hooks/use-page-state";
 import { BotData, BrowserData, CommandData } from "@/lib/api";
 import { errorMessage } from "@/lib/http";
+import { ONEBOT_ROLES } from "@/lib/permissions";
 import { useBot } from "@/queries/bots";
 import { useServer } from "@/queries/servers";
-
-const ONEBOT_ROLES = [
-  { label: "群主", value: "owner" },
-  { label: "管理员", value: "admin" },
-  { label: "成员", value: "member" },
-];
 
 const TargetCommandDrawer = ({
   target,
@@ -67,14 +62,6 @@ const TargetCommandDrawer = ({
     });
   };
 
-  const togglePermission = (value: string): void => {
-    setCmd({
-      permissions: cmd.permissions.includes(value)
-        ? cmd.permissions.filter((p) => p !== value)
-        : [...cmd.permissions, value],
-    });
-  };
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -102,29 +89,23 @@ const TargetCommandDrawer = ({
           <p className="text-muted-foreground text-xs">
             权限相互独立，不存在继承关系
           </p>
-          {platform ? (
-            roleOptions.map((role) => (
-              <label
-                className="flex items-center gap-2 text-sm"
-                key={role.value}
-              >
-                <Checkbox
-                  checked={cmd.permissions.includes(role.value)}
-                  onCheckedChange={() => {
-                    togglePermission(role.value);
-                  }}
-                />
-                {role.label}
-              </label>
-            ))
-          ) : (
+          {platform ? null : (
             <Alert variant="warning">
               <TriangleAlert />
               <AlertDescription>
-                由于你没有选择 Bot 实例，无法提供权限提示
+                由于你没有选择 Bot 实例，无法提供权限建议，可手动输入
               </AlertDescription>
             </Alert>
           )}
+          <MultiSelectCombobox
+            creatable
+            onChange={(permissions) => {
+              setCmd({ permissions });
+            }}
+            options={roleOptions}
+            placeholder="选择或输入权限"
+            value={cmd.permissions}
+          />
         </div>
       ) : null}
     </div>

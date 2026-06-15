@@ -74,6 +74,11 @@ class ConnectionManager {
     return this.byPeerId.get(peer.id);
   }
 
+  /** 所有 session */
+  public getAllConnections(): ServerSession[] {
+    return [...this.byServerId.values()];
+  }
+
   public removeConnection(session: ServerSession): {
     peer: Peer;
     serverId: number;
@@ -118,6 +123,7 @@ class ConnectionManager {
     }
 
     const {
+      capabilities,
       minecraft_software,
       minecraft_version,
       supports_command,
@@ -126,6 +132,7 @@ class ConnectionManager {
 
     session.supports_command = supports_command;
     session.supports_papi = supports_papi;
+    session.capabilities = capabilities;
 
     await db
       .update(serverTable)

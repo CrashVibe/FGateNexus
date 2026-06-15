@@ -1,0 +1,48 @@
+{
+  "name": "@fgate/template-sdk",
+  "version": "0.2.2",
+  "description": "FGate Nexus 图片模板开发 SDK：类型安全地读取渲染数据/配置，并生成 manifest.json。",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CrashVibe/FGateNexus.git",
+    "directory": "packages/template-sdk"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin.d.ts",
+      "default": "./dist/vite-plugin.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsdown"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@fgate/shared": "workspace:*",
+    "@types/bun": "^1.3.14",
+    "tsdown": "^0.22.2",
+    "vite": "^8.0.0"
+  },
+  "peerDependencies": {
+    "vite": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  }
+}

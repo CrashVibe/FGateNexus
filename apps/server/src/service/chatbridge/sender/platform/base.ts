@@ -10,6 +10,9 @@ import type { MCEvent } from "../../../mcwsbridge/types";
 import type { AdapterBot } from "../../types";
 import type { PlatformMessage, PlatformSender } from "../types";
 
+export const toPngDataUri = (image: Buffer): string =>
+  `data:image/png;base64,${image.toString("base64")}`;
+
 export abstract class BaseSender<
   B extends AdapterBot = AdapterBot,
   M extends PlatformMessage = PlatformMessage,
@@ -70,6 +73,10 @@ export abstract class BaseSender<
   protected abstract buildNotifyMessage(
     payload: MCEvent<"system.notify">["payload"],
     server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+  ): Promise<M>;
+
+  protected abstract buildTemplateMessage(
+    payload: MCEvent<"system.template">["payload"],
   ): Promise<M>;
 
   abstract setGroupCard(
@@ -158,6 +165,16 @@ export abstract class BaseSender<
       target,
       await this.buildNotifyMessage(event.payload, server),
     );
+  }
+
+  async onTemplate(
+    event: MCEvent<"system.template">,
+    target: Target,
+  ): Promise<void> {
+    if (!this.guardOnline()) {
+      return;
+    }
+    await this.send(target, await this.buildTemplateMessage(event.payload));
   }
 
   protected static async getServer(serverId: number) {

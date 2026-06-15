@@ -115,7 +115,11 @@ const main = async (): Promise<void> => {
     await import("#server/service/browser-downloader");
   const { imageRenderer } = await import("#server/service/image-renderer");
   const { chatBridge } = await import("#server/service/chatbridge");
+  const { templateInstanceStore } =
+    await import("#server/service/template/template-instance-store");
   const { app } = await import("./app");
+
+  templateInstanceStore.init();
   const { handleMcBridgeUpgrade, MC_BRIDGE_PATH, mcBridgeWebSocket } =
     await import("./ws/mc-bridge");
 
@@ -133,6 +137,10 @@ const main = async (): Promise<void> => {
 
   // Koishi 聊天桥。
   await chatBridge.init();
+
+  const { startStatusCollector } =
+    await import("#server/service/metrics/status-collector");
+  startStatusCollector();
 
   // 单 binary：托管内联的前端 SPA（开发态由 Vite dev server 提供，这里为 null）。
   const staticHandler = isCompiledBinary ? await loadStaticHandler() : null;

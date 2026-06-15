@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   Bell,
+  Image,
   Link as LinkIcon,
   Server,
   Settings,
@@ -30,6 +31,12 @@ export const basicMenu = (): MenuColumn[] => [
     { icon: Server, label: "服务器管理", to: "/" },
     { icon: LinkIcon, label: "Bot 实例", to: "/bots" },
     { icon: Users, label: "玩家列表", to: "/players" },
+    {
+      desc: "上传与管理图片模板包。",
+      icon: Image,
+      label: "图片模板",
+      to: "/templates",
+    },
     {
       desc: "安全设置与浏览器配置。",
       icon: Settings,
@@ -73,6 +80,12 @@ export const serverMenu = (sid: string): MenuColumn[] => [
           icon: Terminal,
           label: "远程指令",
           to: `/servers/${sid}/command`,
+        },
+        {
+          desc: "为该服务器配置图片模板实例并绑定指令",
+          icon: Image,
+          label: "图片模板",
+          to: `/servers/${sid}/templates`,
         },
       ],
       label: "服务器管理",

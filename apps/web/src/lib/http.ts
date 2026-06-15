@@ -40,6 +40,28 @@ const buildUrl = (path: string, query?: RequestOptions["query"]): string => {
   return qs ? `${path}?${qs}` : path;
 };
 
+/** 非 2xx 抛 {@link ApiRequestError}（沿用后端 message）。 */
+const parseApiResponse = async <T>(
+  response: Response,
+): Promise<ApiResponse<T>> => {
+  let parsed: ApiResponse<T> | undefined;
+  try {
+    parsed = (await response.json()) as ApiResponse<T>;
+  } catch {
+    parsed = undefined;
+  }
+
+  if (!response.ok) {
+    const message = parsed?.message ?? response.statusText;
+    const code = (parsed as { code?: number } | undefined)?.code;
+    const errors = (parsed as { errors?: Record<string, string[]> } | undefined)
+      ?.errors;
+    throw new ApiRequestError(message, response.status, code, errors);
+  }
+
+  return parsed ?? { message: "" };
+};
+
 /**
  * 统一请求封装：发送 JSON、携带同源 Cookie（会话），解析 `ApiResponse`。
  * 非 2xx 抛 {@link ApiRequestError}（沿用后端 `message`），与 TanStack Query 协作。
@@ -57,22 +79,38 @@ export const request = async <T>(
     method,
   });
 
-  let parsed: ApiResponse<T> | undefined;
+  return parseApiResponse<T>(response);
+};
+
+/** 不手动设置 content-type：浏览器自动加 boundary。 */
+export const uploadFile = async <T>(
+  path: string,
+  file: File,
+  field = "file",
+): Promise<ApiResponse<T>> => {
+  const form = new FormData();
+  form.set(field, file);
+  const response = await fetch(path, {
+    body: form,
+    credentials: "same-origin",
+    method: "POST",
+  });
+
+  return parseApiResponse<T>(response);
+};
+
+export const throwIfNotOk = async (response: Response): Promise<void> => {
+  if (response.ok) {
+    return;
+  }
+  let message = response.statusText;
   try {
-    parsed = (await response.json()) as ApiResponse<T>;
+    const parsed = (await response.json()) as { message?: string };
+    message = parsed.message ?? message;
   } catch {
-    parsed = undefined;
+    /* 非 JSON，保留 statusText */
   }
-
-  if (!response.ok) {
-    const message = parsed?.message ?? response.statusText;
-    const code = (parsed as { code?: number } | undefined)?.code;
-    const errors = (parsed as { errors?: Record<string, string[]> } | undefined)
-      ?.errors;
-    throw new ApiRequestError(message, response.status, code, errors);
-  }
-
-  return parsed ?? { message: "" };
+  throw new ApiRequestError(message, response.status);
 };
 
 /** 从任意错误中提取面向用户的提示文本。 */

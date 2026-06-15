@@ -1,8 +1,14 @@
 import type { Session } from "koishi";
 
+import { getBoundPlayer } from "#server/db/queries/player";
 import { getServersByBotIdWithTargets } from "#server/db/queries/server";
 import type { ServerWithTargets } from "#server/db/queries/server";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+import { buildSystemTemplateEvent } from "#server/service/mcwsbridge/types";
+import { resolveDataSources } from "#server/service/template/data-resolver";
+import { templateInstanceStore } from "#server/service/template/template-instance-store";
+import { renderTemplateInstance } from "#server/service/template/template-renderer";
+import { getTemplateManifest } from "#server/service/template/template-store";
 import { logger } from "#server/utils/logger";
 import {
   formatPlatformToMCMessage,
@@ -17,37 +23,119 @@ type ServerSession = ReturnType<
   typeof connectionManager.getConnectionByServerId
 >;
 
+type ServerTarget = ServerWithTargets["targets"][number];
+
+const findSessionTarget = (
+  session: Session,
+  server: ServerWithTargets,
+): ServerTarget | undefined =>
+  server.targets.find((t) =>
+    t.type === "group"
+      ? t.channelId === session.channelId
+      : t.channelId === session.userId,
+  );
+
+/** 私聊不限权限 */
+const hasRolePermission = (
+  session: Session,
+  target: ServerTarget,
+  permissions: string[],
+): boolean => {
+  if (target.type === "private") {
+    return true;
+  }
+  const roles = session.event.member?.roles ?? [];
+  return roles.some((r) => r.id && permissions.includes(r.id));
+};
+
+/** 与远程指令开关/前缀无关，binding.commands 全词匹配 */
+const handleTemplateCommand = async (
+  connection: PlatformSender,
+  session: Session,
+  server: ServerWithTargets,
+  serverSession: ServerSession,
+  target: ServerTarget | undefined,
+): Promise<boolean> => {
+  if (!target) {
+    return false;
+  }
+
+  const commandWord = session.content!.trim().split(/\s+/)[0] ?? "";
+  if (!commandWord) {
+    return false;
+  }
+
+  const instance = templateInstanceStore.findBindingByCommand(
+    String(server.id),
+    commandWord,
+  );
+  if (!instance) {
+    return false;
+  }
+
+  if (
+    !hasRolePermission(session, target, instance.binding?.permissions ?? [])
+  ) {
+    return false;
+  }
+
+  if (!serverSession) {
+    logger.warn(`服务器 ${server.id} 没有活动的 MCWS 连接，无法渲染模板`);
+    return false;
+  }
+
+  let buffer: Buffer;
+  try {
+    const manifest = await getTemplateManifest(instance.templateId);
+    const contextPlayer = session.userId
+      ? await getBoundPlayer(session.platform, session.userId, server.id)
+      : null;
+    const data = await resolveDataSources(manifest, serverSession, {
+      config: instance.config,
+      contextPlayer,
+    });
+    buffer = await renderTemplateInstance(
+      instance.config,
+      instance.name,
+      manifest,
+      data,
+      server.name,
+    );
+  } catch (error) {
+    logger.error(error, `[模板] 渲染实例 ${instance.id} 失败`);
+    const message = error instanceof Error ? error.message : "未知错误";
+    await connection.onTemplate(
+      buildSystemTemplateEvent(server.id, { error: message, success: false }),
+      target,
+    );
+    return true;
+  }
+
+  // 发送失败不再回退提示
+  await connection.onTemplate(
+    buildSystemTemplateEvent(server.id, { image: buffer, success: true }),
+    target,
+  );
+  return true;
+};
+
 const handlePlatformCommand = async (
   session: Session,
   server: ServerWithTargets,
   serverSession: ServerSession,
+  commandTarget: ServerTarget | undefined,
 ): Promise<boolean> => {
-  const commandTarget = server.targets.find((t) => {
-    const isMatch =
-      t.type === "group"
-        ? t.channelId === session.channelId
-        : t.channelId === session.userId;
-    return (
-      isMatch &&
-      t.config.CommandConfigSchema.enabled &&
-      session.content!.startsWith(t.config.CommandConfigSchema.prefix)
-    );
-  });
-
   if (!commandTarget) {
     return false;
   }
 
-  const roles = session.event.member?.roles ?? [];
-  const hasPermission =
-    commandTarget.type === "private" ||
-    roles.some(
-      (r) =>
-        r.id &&
-        commandTarget.config.CommandConfigSchema.permissions.includes(r.id),
-    );
+  const { enabled, prefix, permissions } =
+    commandTarget.config.CommandConfigSchema;
+  if (!enabled || !session.content!.startsWith(prefix)) {
+    return false;
+  }
 
-  if (!hasPermission) {
+  if (!hasRolePermission(session, commandTarget, permissions)) {
     return false;
   }
 
@@ -56,7 +144,6 @@ const handlePlatformCommand = async (
     return false;
   }
 
-  const { prefix } = commandTarget.config.CommandConfigSchema;
   const { success, message } = await serverSession.executeCommand(
     session.content!.slice(prefix.length),
     server.commandConfig.imageRender,
@@ -133,18 +220,32 @@ export const handlePlatformMessage = async (
       const serverSession = connectionManager.getConnectionByServerId(
         server.id,
       );
+      const target = findSessionTarget(session, server);
 
-      // 1. 处理指令匹配
+      // 1. 图片模板指令
+      const isTemplateHandled = await handleTemplateCommand(
+        connection,
+        session,
+        server,
+        serverSession,
+        target,
+      );
+      if (isTemplateHandled) {
+        return;
+      } // 阻断不处理
+
+      // 2. 处理远程指令
       const isCommandHandled = await handlePlatformCommand(
         session,
         server,
         serverSession,
+        target,
       );
       if (isCommandHandled) {
         return;
       } // 阻断不处理
 
-      // 2. 处理聊天消息同步
+      // 3. 处理聊天消息同步
       handlePlatformChatSync(session, server, serverSession);
     }
   } catch (error) {

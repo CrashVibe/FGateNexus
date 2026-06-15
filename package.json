@@ -45,7 +45,7 @@
       "oxfmt . --write"
     ]
   },
-  "apiVersion": "0.0.3",
+  "apiVersion": "0.1.0",
   "json-comments": {
     "tips": "请安装 JSONComments 插件为 JSON 文件提供注释功能，详见：https://github.com/zhangfisher/json_comments_extension"
   },

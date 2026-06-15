@@ -79,6 +79,9 @@ export interface MCEventPayloadMap {
   "system.notify": {
     message: string;
   };
+  "system.template":
+    | { success: true; image: Buffer }
+    | { success: false; error: string };
 }
 
 export type MCEventType = keyof MCEventPayloadMap;
@@ -98,4 +101,14 @@ export const buildSystemNotifyEvent = (
   serverId,
   timestamp: Date.now(),
   type: "system.notify",
+});
+
+export const buildSystemTemplateEvent = (
+  serverId: number,
+  payload: MCEventPayloadMap["system.template"],
+): MCEvent<"system.template"> => ({
+  payload,
+  serverId,
+  timestamp: Date.now(),
+  type: "system.template",
 });

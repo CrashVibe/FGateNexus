@@ -1,4 +1,6 @@
 import type { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
+import { h } from "koishi";
+import type { Element } from "koishi";
 
 import type { Target } from "#server/db/schema";
 import type { MCEvent } from "#server/service/mcwsbridge/types";
@@ -10,11 +12,11 @@ import {
 } from "#shared/utils/template/notify";
 
 import type { PlatformMessage } from "../types";
-import { BaseSender } from "./base";
+import { BaseSender, toPngDataUri } from "./base";
 
 interface OneBotTextMessage extends PlatformMessage {
   type: "text";
-  message: string;
+  message: Element.Fragment;
 }
 
 export default class OneBotSender extends BaseSender<
@@ -87,6 +89,18 @@ export default class OneBotSender extends BaseSender<
     _server: Awaited<ReturnType<typeof BaseSender.getServer>>,
   ): Promise<OneBotTextMessage> {
     return { message: payload.message, type: "text" };
+  }
+
+  protected override async buildTemplateMessage(
+    payload: MCEvent<"system.template">["payload"],
+  ): Promise<OneBotTextMessage> {
+    if (payload.success) {
+      return {
+        message: h.image(toPngDataUri(payload.image)),
+        type: "text",
+      };
+    }
+    return { message: `模板渲染失败：${payload.error}`, type: "text" };
   }
 
   protected override async send(

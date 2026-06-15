@@ -18,6 +18,8 @@ logs
 .DS_Store
 .fleet
 .idea
+.codegraph
+*.tgz
 # Local env files
 .env
 .env.*

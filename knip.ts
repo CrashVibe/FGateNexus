@@ -34,6 +34,12 @@ const config: KnipConfig = {
     "packages/shared": {
       project: ["**/*.ts"],
     },
+    "packages/template-sdk": {
+      ignoreDependencies: [
+        // 经 @fgate/shared 的 manifest schema 间接使用，由 tsdown 内联进 dist/vite-plugin.js
+        "zod",
+      ],
+    },
   },
 };
 

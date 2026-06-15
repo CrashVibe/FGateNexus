@@ -26,6 +26,7 @@ export interface PlatformSender {
   onLeave(event: MCEvent<"player.leave">, target: Target): Promise<void>;
   onCommand(event: MCEvent<"execute.command">, target: Target): Promise<void>;
   onNotify(event: MCEvent<"system.notify">, target: Target): Promise<void>;
+  onTemplate(event: MCEvent<"system.template">, target: Target): Promise<void>;
 
   isOnline(): boolean;
 }

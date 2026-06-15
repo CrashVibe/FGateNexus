@@ -13,7 +13,7 @@ import {
   renderLeaveMessage,
 } from "#shared/utils/template/notify";
 
-import { BaseSender } from "./base";
+import { BaseSender, toPngDataUri } from "./base";
 
 interface DiscordEmbedMessage extends PlatformMessage {
   type: "embed";
@@ -124,7 +124,7 @@ export default class DiscordSender extends BaseSender<
       try {
         const buf = await renderMinecraftTextToImage(text);
         return {
-          content: h.image(`data:image/png;base64,${buf.toString("base64")}`),
+          content: h.image(toPngDataUri(buf)),
           type: "image",
         };
       } catch (error) {
@@ -146,6 +146,24 @@ export default class DiscordSender extends BaseSender<
   ): Promise<DiscordEmbedMessage> {
     return {
       embed: { color: DiscordColor.Notify, description: payload.message },
+      type: "embed",
+    };
+  }
+
+  protected override async buildTemplateMessage(
+    payload: MCEvent<"system.template">["payload"],
+  ): Promise<DiscordEmbedMessage | DiscordImageMessage> {
+    if (payload.success) {
+      return {
+        content: h.image(toPngDataUri(payload.image)),
+        type: "image",
+      };
+    }
+    return {
+      embed: {
+        color: DiscordColor.Notify,
+        description: `模板渲染失败：${payload.error}`,
+      },
       type: "embed",
     };
   }

@@ -8,7 +8,26 @@ import PlayerLeaveHandler from "#server/service/mcwsbridge/handler/player-leave-
 import PlayerLoginHandler from "#server/service/mcwsbridge/handler/player-login-handler";
 import {
   executeCommandSchema,
+  getAdvancementsResponseSchema,
+  getEquipmentResponseSchema,
+  getPlaceholdersResponseSchema,
+  getPlayersSchema,
+  getServerStatusSchema,
+  getStatisticsResponseSchema,
   kickPlayerSchema,
+} from "#server/service/mcwsbridge/model";
+import type {
+  AdvancementsRequest,
+  AdvancementsResult,
+  Capabilities,
+  EquipmentRequest,
+  EquipmentResult,
+  PlaceholderRequest,
+  PlaceholderResult,
+  PlayerInfo,
+  ServerStatus,
+  StatisticResult,
+  StatisticsRequest,
 } from "#server/service/mcwsbridge/model";
 import type { Peer } from "#server/service/mcwsbridge/peer";
 import type RequestHandler from "#server/service/mcwsbridge/request-handler";
@@ -28,6 +47,13 @@ class ServerSession {
   public readonly serverId: number;
   public supports_papi: boolean | null = null;
   public supports_command: boolean | null = null;
+  public capabilities: Capabilities = {
+    advancements: false,
+    equipment: false,
+    players: false,
+    server_status: false,
+    statistics: false,
+  };
   private readonly handlers = new Map<string, RequestHandler>();
   private readonly pendingRequests = new Map<string, PendingRequest>();
   private readonly logger_prefix: string;
@@ -198,6 +224,39 @@ class ServerSession {
     logger.info(`${this.logger_prefix} 已清理 ${pendingCount} 个待处理请求`);
   }
 
+  /** 解析失败抛错（附 cause） */
+  private static parseRpcResult<S extends z.ZodType>(
+    schema: S,
+    result: unknown,
+    errorMessage: string,
+  ): z.infer<S> {
+    const parsed = schema.safeParse(result);
+    if (!parsed.success) {
+      throw new Error(errorMessage, { cause: parsed.error });
+    }
+    return parsed.data;
+  }
+
+  /** 玩家数 ≤ 200，单玩家子项 ≤ 20 */
+  private static assertBatchSize<T>(
+    requests: T[],
+    method: string,
+    itemLabel: string,
+    itemCount: (request: T) => number,
+  ): void {
+    if (requests.length > 200) {
+      throw new Error(`${method} 请求玩家数超出上限：${requests.length} > 200`);
+    }
+    for (const request of requests) {
+      const count = itemCount(request);
+      if (count > 20) {
+        throw new Error(
+          `${method} 单玩家${itemLabel}数超出上限：${count} > 20`,
+        );
+      }
+    }
+  }
+
   public async kickPlayer(
     playerUUID: string,
     reason = "You have been kicked",
@@ -207,12 +266,11 @@ class ServerSession {
       reason,
     });
 
-    const parsed = kickPlayerSchema.safeParse(result);
-    if (!parsed.success) {
-      throw new Error("Invalid kick player response", { cause: parsed.error });
-    }
-
-    return parsed.data;
+    return ServerSession.parseRpcResult(
+      kickPlayerSchema,
+      result,
+      "Invalid kick player response",
+    );
   }
 
   public async executeCommand(
@@ -224,12 +282,137 @@ class ServerSession {
       need_color,
     });
 
-    const parsed = executeCommandSchema.safeParse(result);
-    if (!parsed.success) {
-      throw new Error("Invalid command result", { cause: parsed.error });
+    return ServerSession.parseRpcResult(
+      executeCommandSchema,
+      result,
+      "Invalid command result",
+    );
+  }
+
+  public async getPlayers(): Promise<PlayerInfo[]> {
+    if (!this.capabilities.players) {
+      return [];
     }
 
-    return parsed.data;
+    const result = await this.sendRequest("get.players");
+
+    return ServerSession.parseRpcResult(
+      getPlayersSchema,
+      result,
+      "Invalid get.players response",
+    ).players;
+  }
+
+  public async getServerStatus(): Promise<ServerStatus | null> {
+    if (!this.capabilities.server_status) {
+      return null;
+    }
+
+    const result = await this.sendRequest("get.server_status");
+
+    return ServerSession.parseRpcResult(
+      getServerStatusSchema,
+      result,
+      "Invalid get.server_status response",
+    );
+  }
+
+  public async getPlaceholders(
+    requests: PlaceholderRequest[],
+  ): Promise<PlaceholderResult[]> {
+    if (!this.supports_papi) {
+      return [];
+    }
+    if (requests.length === 0) {
+      return [];
+    }
+    ServerSession.assertBatchSize(
+      requests,
+      "get.placeholders",
+      "占位符",
+      (request) => request.placeholders.length,
+    );
+
+    const result = await this.sendRequest(
+      "get.placeholders",
+      { requests },
+      8000,
+    );
+
+    return ServerSession.parseRpcResult(
+      getPlaceholdersResponseSchema,
+      result,
+      "Invalid get.placeholders response",
+    ).results;
+  }
+
+  public async getStatistics(
+    requests: StatisticsRequest[],
+  ): Promise<StatisticResult[]> {
+    if (!this.capabilities.statistics) {
+      return [];
+    }
+    if (requests.length === 0) {
+      return [];
+    }
+    ServerSession.assertBatchSize(
+      requests,
+      "get.statistics",
+      "统计名",
+      (request) => request.statistics.length,
+    );
+
+    const result = await this.sendRequest("get.statistics", { requests }, 8000);
+
+    return ServerSession.parseRpcResult(
+      getStatisticsResponseSchema,
+      result,
+      "Invalid get.statistics response",
+    ).results;
+  }
+
+  /** 仅在线玩家有数据 */
+  public async getAdvancements(
+    requests: AdvancementsRequest[],
+  ): Promise<AdvancementsResult[]> {
+    if (!this.capabilities.advancements) {
+      return [];
+    }
+    if (requests.length === 0) {
+      return [];
+    }
+
+    const result = await this.sendRequest(
+      "get.advancements",
+      { requests },
+      8000,
+    );
+
+    return ServerSession.parseRpcResult(
+      getAdvancementsResponseSchema,
+      result,
+      "Invalid get.advancements response",
+    ).results;
+  }
+
+  /** 仅在线玩家有数据 */
+  public async getEquipment(
+    requests: EquipmentRequest[],
+  ): Promise<EquipmentResult[]> {
+    if (!this.capabilities.equipment) {
+      return [];
+    }
+    if (requests.length === 0) {
+      return [];
+    }
+
+    const result = await this.sendRequest("get.equipment", { requests }, 8000);
+
+    return ServerSession.parseRpcResult(
+      getEquipmentResponseSchema,
+      result,
+      "Invalid get.equipment response",
+    ).results;
   }
 
   public broadcastMessageToServer(message: string): void {

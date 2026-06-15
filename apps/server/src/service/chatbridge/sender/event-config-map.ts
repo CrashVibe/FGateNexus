@@ -16,4 +16,5 @@ export const eventConfigMap: Record<MCEventType, ConfigCHecker> = {
   "player.join": (c) => c.NotifyConfigSchema.player_notify,
   "player.leave": (c) => c.NotifyConfigSchema.player_notify,
   "system.notify": () => true,
+  "system.template": () => true,
 };
