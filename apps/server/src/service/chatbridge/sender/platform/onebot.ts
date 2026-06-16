@@ -4,6 +4,9 @@ import type { Element } from "koishi";
 
 import type { Target } from "#server/db/schema";
 import type { MCEvent } from "#server/service/mcwsbridge/types";
+import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
+import type { CommandConfig } from "#shared/model/server/schema/command";
+import type { NotifyConfig } from "#shared/model/server/schema/notify";
 import { formatMCToPlatformMessage } from "#shared/utils/chat-sync";
 import {
   renderDeathMessage,
@@ -25,26 +28,24 @@ export default class OneBotSender extends BaseSender<
 > {
   protected override async buildChatMessage(
     payload: MCEvent<"player.chat">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    chatSyncConfig: ChatSyncConfig,
+    serverName: string,
   ): Promise<OneBotTextMessage> {
     return {
-      message: formatMCToPlatformMessage(
-        server.chatSyncConfig.mcToPlatformTemplate,
-        {
-          ...payload,
-          serverName: server.name,
-        },
-      ),
+      message: formatMCToPlatformMessage(chatSyncConfig.mcToPlatformTemplate, {
+        ...payload,
+        serverName,
+      }),
       type: "text",
     };
   }
   protected override async buildDeathMessage(
     payload: MCEvent<"player.death">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<OneBotTextMessage> {
     return {
       message: renderDeathMessage(
-        server.notifyConfig.death_notify_message,
+        notifyConfig.death_notify_message,
         payload.playerName,
         payload.deathMessage ?? "未知原因",
       ),
@@ -53,11 +54,11 @@ export default class OneBotSender extends BaseSender<
   }
   protected override async buildJoinMessage(
     payload: MCEvent<"player.join">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<OneBotTextMessage> {
     return {
       message: renderJoinMessage(
-        server.notifyConfig.join_notify_message,
+        notifyConfig.join_notify_message,
         payload.playerName,
       ),
       type: "text",
@@ -65,11 +66,11 @@ export default class OneBotSender extends BaseSender<
   }
   protected override async buildLeaveMessage(
     payload: MCEvent<"player.leave">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<OneBotTextMessage> {
     return {
       message: renderLeaveMessage(
-        server.notifyConfig.leave_notify_message,
+        notifyConfig.leave_notify_message,
         payload.playerName,
       ),
       type: "text",
@@ -77,7 +78,7 @@ export default class OneBotSender extends BaseSender<
   }
   protected override async buildCommandMessage(
     payload: MCEvent<"execute.command">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    _commandConfig: CommandConfig,
   ): Promise<OneBotTextMessage> {
     return {
       message: `指令执行${payload.success ? "成功" : "失败"}：\n${payload.message}`,
@@ -86,7 +87,6 @@ export default class OneBotSender extends BaseSender<
   }
   protected override async buildNotifyMessage(
     payload: MCEvent<"system.notify">["payload"],
-    _server: Awaited<ReturnType<typeof BaseSender.getServer>>,
   ): Promise<OneBotTextMessage> {
     return { message: payload.message, type: "text" };
   }

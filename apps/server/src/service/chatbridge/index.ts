@@ -5,6 +5,7 @@ import { Context, Logger as log } from "koishi";
 
 import { db } from "#server/db/client";
 import { getServerByIdWithBotAndTargets } from "#server/db/queries/server";
+import type { ServerWithBotAndTargets } from "#server/db/queries/server";
 import { botTable } from "#server/db/schema";
 import type { Target } from "#server/db/schema";
 import { bindingService } from "#server/service/bindingmanager";
@@ -25,15 +26,18 @@ type EventHandlerMap = {
     sender: PlatformSender,
     event: MCEvent<K>,
     target: Target,
+    server: ServerWithBotAndTargets,
   ) => Promise<void>;
 };
 
 const handlerMap: EventHandlerMap = {
-  "execute.command": async (s, e, t) => s.onCommand(e, t),
-  "player.chat": async (s, e, t) => s.onChat(e, t),
-  "player.death": async (s, e, t) => s.onDeath(e, t),
-  "player.join": async (s, e, t) => s.onJoin(e, t),
-  "player.leave": async (s, e, t) => s.onLeave(e, t),
+  "execute.command": async (s, e, t, srv) =>
+    s.onCommand(e, t, srv.commandConfig),
+  "player.chat": async (s, e, t, srv) =>
+    s.onChat(e, t, srv.chatSyncConfig, srv.name),
+  "player.death": async (s, e, t, srv) => s.onDeath(e, t, srv.notifyConfig),
+  "player.join": async (s, e, t, srv) => s.onJoin(e, t, srv.notifyConfig),
+  "player.leave": async (s, e, t, srv) => s.onLeave(e, t, srv.notifyConfig),
   "system.notify": async (s, e, t) => s.onNotify(e, t),
   "system.template": async (s, e, t) => s.onTemplate(e, t),
 };
@@ -181,18 +185,22 @@ class ChatBridge {
       return;
     }
 
-    for (const target of server?.targets ?? []) {
+    const connection = this.connections.get(server.botId);
+    if (!connection) {
+      this.logger.warn(
+        { botId: server.botId },
+        `找不到 Bot 连接，无法发送消息`,
+      );
+      return;
+    }
+
+    for (const target of server.targets) {
       if (!checker(target.config)) {
-        continue;
-      }
-      const connection = this.connections.get(server?.botId);
-      if (!connection) {
-        this.logger.warn({ target }, `找不到 Bot 连接，无法发送消息`);
         continue;
       }
       const handler = handlerMap[event.type];
       try {
-        await handler(connection, event, target);
+        await handler(connection, event, target, server);
       } catch (error) {
         this.logger.error(
           { error, event, target },

@@ -6,6 +6,9 @@ import type { Target } from "#server/db/schema";
 import type { PlatformMessage } from "#server/service/chatbridge/sender/types";
 import type { MCEvent } from "#server/service/mcwsbridge/types";
 import { renderMinecraftTextToImage } from "#server/utils/mc-image-render";
+import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
+import type { CommandConfig } from "#shared/model/server/schema/command";
+import type { NotifyConfig } from "#shared/model/server/schema/notify";
 import { formatMCToPlatformMessage } from "#shared/utils/chat-sync";
 import {
   renderDeathMessage,
@@ -45,17 +48,18 @@ export default class DiscordSender extends BaseSender<
 > {
   protected override async buildChatMessage(
     payload: MCEvent<"player.chat">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    chatSyncConfig: ChatSyncConfig,
+    serverName: string,
   ): Promise<DiscordEmbedMessage> {
     return {
       embed: {
         author: { name: payload.playerName },
         color: DiscordColor.Chat,
         description: formatMCToPlatformMessage(
-          server.chatSyncConfig.mcToPlatformTemplate,
+          chatSyncConfig.mcToPlatformTemplate,
           {
             ...payload,
-            serverName: server.name,
+            serverName,
           },
         ),
         timestamp: new Date(payload.timestamp).toISOString(),
@@ -66,14 +70,14 @@ export default class DiscordSender extends BaseSender<
 
   protected override async buildDeathMessage(
     payload: MCEvent<"player.death">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<DiscordEmbedMessage> {
     return {
       embed: {
         author: { name: payload.playerName },
         color: DiscordColor.Death,
         description: renderDeathMessage(
-          server.notifyConfig.death_notify_message,
+          notifyConfig.death_notify_message,
           payload.playerName,
           payload.deathMessage ?? "未知原因",
         ),
@@ -84,14 +88,14 @@ export default class DiscordSender extends BaseSender<
 
   protected override async buildJoinMessage(
     payload: MCEvent<"player.join">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<DiscordEmbedMessage> {
     return {
       embed: {
         author: { name: payload.playerName },
         color: DiscordColor.Join,
         description: renderJoinMessage(
-          server.notifyConfig.join_notify_message,
+          notifyConfig.join_notify_message,
           payload.playerName,
         ),
       },
@@ -100,14 +104,14 @@ export default class DiscordSender extends BaseSender<
   }
   protected override async buildLeaveMessage(
     payload: MCEvent<"player.leave">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<DiscordEmbedMessage> {
     return {
       embed: {
         author: { name: payload.playerName },
         color: DiscordColor.Leave,
         description: renderLeaveMessage(
-          server.notifyConfig.leave_notify_message,
+          notifyConfig.leave_notify_message,
           payload.playerName,
         ),
       },
@@ -117,10 +121,10 @@ export default class DiscordSender extends BaseSender<
 
   protected async buildCommandMessage(
     payload: MCEvent<"execute.command">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    commandConfig: CommandConfig,
   ): Promise<DiscordEmbedMessage | DiscordImageMessage> {
     const text = `指令执行${payload.success ? "成功" : "失败"}：\n${payload.message}`;
-    if (server.commandConfig.imageRender) {
+    if (commandConfig.imageRender) {
       try {
         const buf = await renderMinecraftTextToImage(text);
         return {
@@ -142,7 +146,6 @@ export default class DiscordSender extends BaseSender<
 
   protected override async buildNotifyMessage(
     payload: MCEvent<"system.notify">["payload"],
-    _server: Awaited<ReturnType<typeof BaseSender.getServer>>,
   ): Promise<DiscordEmbedMessage> {
     return {
       embed: { color: DiscordColor.Notify, description: payload.message },

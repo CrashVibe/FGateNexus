@@ -1,9 +1,11 @@
 import type { ForkScope } from "koishi";
 
-import { getServerByIdWithBotAndTargets } from "#server/db/queries/server";
 import type { Target } from "#server/db/schema";
 import { logger } from "#server/utils/logger";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
+import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
+import type { CommandConfig } from "#shared/model/server/schema/command";
+import type { NotifyConfig } from "#shared/model/server/schema/notify";
 import { shouldForwardMessage } from "#shared/utils/chat-sync";
 
 import type { MCEvent } from "../../../mcwsbridge/types";
@@ -45,34 +47,34 @@ export abstract class BaseSender<
 
   protected abstract buildChatMessage(
     payload: MCEvent<"player.chat">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    chatSyncConfig: ChatSyncConfig,
+    serverName: string,
   ): Promise<M>;
 
   protected abstract buildDeathMessage(
     payload: MCEvent<"player.death">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<M>;
 
   protected abstract buildJoinMessage(
     payload: MCEvent<"player.join">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<M>;
 
   protected abstract buildLeaveMessage(
     payload: MCEvent<"player.leave">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    notifyConfig: NotifyConfig,
   ): Promise<M>;
 
   protected abstract buildCommandMessage(
     payload: MCEvent<"execute.command">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
+    commandConfig: CommandConfig,
   ): Promise<M>;
 
   protected abstract send(target: Target, message: M): Promise<void>;
 
   protected abstract buildNotifyMessage(
     payload: MCEvent<"system.notify">["payload"],
-    server: Awaited<ReturnType<typeof BaseSender.getServer>>,
   ): Promise<M>;
 
   protected abstract buildTemplateMessage(
@@ -85,13 +87,15 @@ export abstract class BaseSender<
     card: string,
   ): Promise<void>;
 
-  async onChat(event: MCEvent<"player.chat">, target: Target): Promise<void> {
-    const server = await BaseSender.getServer(event.serverId);
-    if (!server || !this.guardOnline()) {
+  async onChat(
+    event: MCEvent<"player.chat">,
+    target: Target,
+    chatSyncConfig: ChatSyncConfig,
+    serverName: string,
+  ): Promise<void> {
+    if (!this.guardOnline()) {
       return;
     }
-
-    const { chatSyncConfig } = server;
 
     if (!chatSyncConfig.mcToPlatformEnabled) {
       return;
@@ -100,55 +104,71 @@ export abstract class BaseSender<
       return;
     }
 
-    const message = await this.buildChatMessage(event.payload, server);
+    const message = await this.buildChatMessage(
+      event.payload,
+      chatSyncConfig,
+      serverName,
+    );
     await this.send(target, message);
   }
 
-  async onDeath(event: MCEvent<"player.death">, target: Target): Promise<void> {
-    const server = await BaseSender.getServer(event.serverId);
-    if (!server || !this.guardOnline()) {
+  async onDeath(
+    event: MCEvent<"player.death">,
+    target: Target,
+    notifyConfig: NotifyConfig,
+  ): Promise<void> {
+    if (!this.guardOnline()) {
       return;
     }
 
     await this.send(
       target,
-      await this.buildDeathMessage(event.payload, server),
+      await this.buildDeathMessage(event.payload, notifyConfig),
     );
   }
 
-  async onJoin(event: MCEvent<"player.join">, target: Target): Promise<void> {
-    const server = await BaseSender.getServer(event.serverId);
-    if (!server || !this.guardOnline()) {
-      return;
-    }
-
-    await this.send(target, await this.buildJoinMessage(event.payload, server));
-  }
-
-  async onLeave(event: MCEvent<"player.leave">, target: Target): Promise<void> {
-    const server = await BaseSender.getServer(event.serverId);
-    if (!server || !this.guardOnline()) {
+  async onJoin(
+    event: MCEvent<"player.join">,
+    target: Target,
+    notifyConfig: NotifyConfig,
+  ): Promise<void> {
+    if (!this.guardOnline()) {
       return;
     }
 
     await this.send(
       target,
-      await this.buildLeaveMessage(event.payload, server),
+      await this.buildJoinMessage(event.payload, notifyConfig),
+    );
+  }
+
+  async onLeave(
+    event: MCEvent<"player.leave">,
+    target: Target,
+    notifyConfig: NotifyConfig,
+  ): Promise<void> {
+    if (!this.guardOnline()) {
+      return;
+    }
+
+    await this.send(
+      target,
+      await this.buildLeaveMessage(event.payload, notifyConfig),
     );
   }
 
   async onCommand(
     event: MCEvent<"execute.command">,
     target: Target,
+    commandConfig: CommandConfig,
   ): Promise<void> {
-    const server = await BaseSender.getServer(event.serverId);
-    if (!server || !this.guardOnline()) {
+    if (!this.guardOnline()) {
       return;
     }
 
     await this.send(
       target,
-      await this.buildCommandMessage(event.payload, server),
+      await this.buildCommandMessage(event.payload, commandConfig),
     );
   }
 
@@ -156,15 +176,11 @@ export abstract class BaseSender<
     event: MCEvent<"system.notify">,
     target: Target,
   ): Promise<void> {
-    const server = await BaseSender.getServer(event.serverId);
-    if (!server || !this.guardOnline()) {
+    if (!this.guardOnline()) {
       return;
     }
 
-    await this.send(
-      target,
-      await this.buildNotifyMessage(event.payload, server),
-    );
+    await this.send(target, await this.buildNotifyMessage(event.payload));
   }
 
   async onTemplate(
@@ -175,14 +191,6 @@ export abstract class BaseSender<
       return;
     }
     await this.send(target, await this.buildTemplateMessage(event.payload));
-  }
-
-  protected static async getServer(serverId: number) {
-    const server = await getServerByIdWithBotAndTargets(serverId);
-    if (!server || !server?.bot) {
-      throw new Error(`服务器 ${serverId} 或其 Bot 未找到`);
-    }
-    return server;
   }
 
   isOnline(): boolean {

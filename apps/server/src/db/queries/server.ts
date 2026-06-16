@@ -18,3 +18,7 @@ export const getServersByBotIdWithTargets = async (botId: number) =>
 export type ServerWithTargets = Awaited<
   ReturnType<typeof getServersByBotIdWithTargets>
 >[number];
+
+export type ServerWithBotAndTargets = NonNullable<
+  Awaited<ReturnType<typeof getServerByIdWithBotAndTargets>>
+>;

@@ -23,3 +23,5 @@ export const NotifyConfigSchema = z.object({
     .string()
     .default("[系统通知] {playerName} 离开了游戏"),
 });
+
+export type NotifyConfig = z.infer<typeof NotifyConfigSchema>;
