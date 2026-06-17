@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import type { ZodError } from "zod";
+import type { ZodError, ZodType, z } from "zod";
 
 import { logger } from "#server/utils/logger";
 import { createApiResponse } from "#shared/model";
@@ -32,6 +32,19 @@ export const readJson = async (c: Context): Promise<unknown> => {
   } catch {
     return undefined;
   }
+};
+
+/** 校验请求体，失败抛 ApiError.validation */
+export const parseBody = async <S extends ZodType>(
+  c: Context,
+  schema: S,
+  message = "请求参数错误",
+): Promise<z.infer<S>> => {
+  const parsed = schema.safeParse(await readJson(c));
+  if (!parsed.success) {
+    throw ApiError.validation(message, parsed.error);
+  }
+  return parsed.data;
 };
 
 /** 全局错误兜底：ApiError 按其状态返回，其余按 500 内部错误。 */

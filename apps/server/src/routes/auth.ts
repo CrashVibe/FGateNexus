@@ -10,7 +10,7 @@ import { z } from "zod";
 import { db } from "#server/db/client";
 import { userTable } from "#server/db/schema";
 import { hashPassword, verifyPassword } from "#server/http/password";
-import { fail, guard, ok, readJson } from "#server/http/respond";
+import { fail, guard, ok, parseBody, readJson } from "#server/http/respond";
 import {
   clearUserSession,
   getUserSession,
@@ -45,12 +45,10 @@ export const authRouter = new Hono()
     guard("登录失败", async (c) => {
       const clientIP = getClientIP(c);
 
-      const parsed = LoginAPI.POST.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求参数错误"), parsed.error);
-      }
-
-      const { password, twoFactorToken } = parsed.data;
+      const { password, twoFactorToken } = await parseBody(
+        c,
+        LoginAPI.POST.request,
+      );
       const user = await db.query.userTable.findFirst();
       if (!user || user.passwordHash === null) {
         return fail(c, ApiError.unauthorized("无密码，无需登陆"));
@@ -127,11 +125,10 @@ export const authRouter = new Hono()
         await requireUserSession(c);
       }
 
-      const parsed = PasswordAPI.POST.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求参数错误"), parsed.error);
-      }
-      const { currentPassword, newPassword } = parsed.data;
+      const { currentPassword, newPassword } = await parseBody(
+        c,
+        PasswordAPI.POST.request,
+      );
 
       const validation = validatePasswordStrength(newPassword);
       if (!validation.isValid) {
@@ -240,11 +237,7 @@ export const authRouter = new Hono()
         secret: z.string().min(1, "密钥不能为空"),
         token: z.string().min(1, "验证码不能为空"),
       });
-      const parsed = bodySchema.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("参数错误"), parsed.error);
-      }
-      const { secret, token } = parsed.data;
+      const { secret, token } = await parseBody(c, bodySchema, "参数错误");
 
       const user = await db.query.userTable.findFirst();
       if (!user) {

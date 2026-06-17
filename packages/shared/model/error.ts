@@ -30,6 +30,19 @@ export enum ApiErrorType {
   TooManyRequests = 50_012,
 }
 
+/** ZodError → 按路径聚合 */
+export const flattenZodError = (
+  zodError: ZodError,
+): Record<string, string[]> => {
+  const validationErrors: Record<string, string[]> = {};
+  for (const issue of zodError.issues) {
+    const path = issue.path.join(".");
+    validationErrors[path] ??= [];
+    validationErrors[path].push(issue.message);
+  }
+  return validationErrors;
+};
+
 /**
  * API 错误类
  */
@@ -57,8 +70,12 @@ export class ApiError extends Error {
     return new ApiError(ApiErrorType.Database, message);
   }
 
-  static validation(message: string): ApiError {
-    return new ApiError(ApiErrorType.Validation, message);
+  static validation(message: string, zodError?: ZodError): ApiError {
+    return new ApiError(
+      ApiErrorType.Validation,
+      message,
+      zodError ? flattenZodError(zodError) : undefined,
+    );
   }
 
   static authentication(message: string): ApiError {
@@ -162,13 +179,7 @@ export const createErrorResponse = (
   const response = error.toResponse();
 
   if (zodError) {
-    const validationErrors: Record<string, string[]> = {};
-    for (const issue of zodError.issues) {
-      const path = issue.path.join(".");
-      validationErrors[path] ??= [];
-      validationErrors[path].push(issue.message);
-    }
-    response.errors = validationErrors;
+    response.errors = flattenZodError(zodError);
   }
 
   return response;

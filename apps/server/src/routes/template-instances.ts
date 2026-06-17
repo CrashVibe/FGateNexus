@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { db } from "#server/db/client";
 import { serverTable } from "#server/db/schema";
-import { fail, guard, ok, readJson } from "#server/http/respond";
+import { fail, guard, ok, parseBody } from "#server/http/respond";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import {
   ConfigValidationError,
@@ -87,23 +87,20 @@ export const templateInstancesRouter = new Hono()
       if (!serverId) {
         return fail(c, ApiError.badRequest("缺少服务器 id"));
       }
-      const parsed = TemplateInstanceCreateSchema.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求参数错误"), parsed.error);
-      }
+      const data = await parseBody(c, TemplateInstanceCreateSchema);
       return withDomainErrors(c, async () => {
-        const manifest = await getTemplateManifest(parsed.data.templateId);
+        const manifest = await getTemplateManifest(data.templateId);
         const config = validateInstanceConfig(
           manifest.configSchema,
-          parsed.data.config,
+          data.config,
         );
         const instance = await templateInstanceStore.createInstance({
-          binding: parsed.data.binding,
+          binding: data.binding,
           config,
-          enabled: parsed.data.enabled,
-          name: parsed.data.name,
+          enabled: data.enabled,
+          name: data.name,
           serverId,
-          templateId: parsed.data.templateId,
+          templateId: data.templateId,
         });
         return ok(c, "创建模板实例成功", StatusCodes.CREATED, instance);
       });
@@ -116,25 +113,22 @@ export const templateInstancesRouter = new Hono()
       if (!instanceId) {
         return fail(c, ApiError.badRequest("缺少实例 id"));
       }
-      const parsed = TemplateInstanceUpdateSchema.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求参数错误"), parsed.error);
-      }
+      const data = await parseBody(c, TemplateInstanceUpdateSchema);
       const existing = templateInstanceStore.getInstance(instanceId);
       if (!existing) {
         return fail(c, ApiError.notFound("模板实例不存在"));
       }
       return withDomainErrors(c, async () => {
-        let { config } = parsed.data;
+        let { config } = data;
         if (config !== undefined) {
           const manifest = await getTemplateManifest(existing.templateId);
           config = validateInstanceConfig(manifest.configSchema, config);
         }
         const result = await templateInstanceStore.updateInstance(instanceId, {
-          binding: parsed.data.binding,
+          binding: data.binding,
           config,
-          enabled: parsed.data.enabled,
-          name: parsed.data.name,
+          enabled: data.enabled,
+          name: data.name,
         });
         return ok(c, "更新模板实例成功", StatusCodes.OK, result);
       });
@@ -160,22 +154,17 @@ export const templateInstancesRouter = new Hono()
       if (!serverId) {
         return fail(c, ApiError.badRequest("缺少服务器 id"));
       }
-      const parsed = TemplateInstanceRenderPreviewSchema.safeParse(
-        await readJson(c),
-      );
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求参数错误"), parsed.error);
-      }
+      const body = await parseBody(c, TemplateInstanceRenderPreviewSchema);
 
       const server = await db.query.serverTable.findFirst({
         where: eq(serverTable.id, Number(serverId)),
       });
 
       return withDomainErrors(c, async () => {
-        const manifest = await getTemplateManifest(parsed.data.templateId);
+        const manifest = await getTemplateManifest(body.templateId);
         const config = validateInstanceConfig(
           manifest.configSchema,
-          parsed.data.config,
+          body.config,
         );
         const data = resolveMockDataSources(manifest, config);
         const buffer = await renderTemplateInstance(

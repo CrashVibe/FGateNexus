@@ -1,6 +1,10 @@
 import { faker } from "@faker-js/faker";
 
 import { parseNumeric } from "#server/service/template/data-resolver";
+import type {
+  PlaceholderEntry,
+  TemplateDataShape,
+} from "#server/service/template/data-shapes";
 import { resolvePlaceholderIds } from "#server/service/template/dynamic-placeholders";
 import type { TemplateInstanceConfig } from "#shared/model/template/schema/instance";
 import type {
@@ -34,7 +38,7 @@ const [MOCK_SELF] = MOCK_PLAYERS;
 const GAME_MODES = ["survival", "creative", "adventure", "spectator"] as const;
 const WORLD_NAMES = ["world", "world_nether", "world_the_end"] as const;
 
-const mockOnlinePlayers = (): unknown[] =>
+const mockOnlinePlayers = (): TemplateDataShape["online_players"] =>
   MOCK_PLAYERS.map((player) => ({
     ...player,
     displayName: player.name,
@@ -43,7 +47,7 @@ const mockOnlinePlayers = (): unknown[] =>
     world: faker.helpers.arrayElement(WORLD_NAMES),
   }));
 
-const mockServerStatus = (): unknown => ({
+const mockServerStatus = (): TemplateDataShape["server_status"] => ({
   max: 100,
   mspt: faker.number.float({ fractionDigits: 2, max: 45, min: 5 }),
   online: MOCK_PLAYERS.length,
@@ -88,7 +92,7 @@ const mockPlaceholderValue = (placeholder: string): string => {
 const mockPlaceholderEntry = (
   player: (typeof MOCK_PLAYERS)[number],
   placeholders: string[],
-): unknown => ({
+): PlaceholderEntry => ({
   name: player.name,
   uuid: player.uuid,
   values: Object.fromEntries(
@@ -99,7 +103,7 @@ const mockPlaceholderEntry = (
 const mockPlaceholder = (
   ds: Extract<TemplateDataSource, { type: "placeholder" }>,
   config: TemplateInstanceConfig,
-): unknown => {
+): TemplateDataShape["placeholder"] => {
   const placeholders = resolvePlaceholderIds(ds, config);
   if (ds.target === "self") {
     return mockPlaceholderEntry(MOCK_SELF, placeholders);
@@ -110,7 +114,7 @@ const mockPlaceholder = (
   );
 };
 
-const mockPlayerProfile = (): unknown => ({
+const mockPlayerProfile = (): TemplateDataShape["player_profile"] => ({
   firstJoinedAt: faker.date.past({ years: 2 }).toISOString(),
   name: MOCK_SELF.name,
   social: {
@@ -124,7 +128,7 @@ const mockPlayerProfile = (): unknown => ({
 
 const mockRecentJoins = (
   ds: Extract<TemplateDataSource, { type: "recent_joins" }>,
-): unknown => {
+): TemplateDataShape["recent_joins"] => {
   const limit = Math.min(ds.limit ?? 10, MOCK_PLAYERS.length);
   return MOCK_PLAYERS.slice(0, limit).map((p, i) => ({
     // 越靠后越早加入，模拟倒序
@@ -136,7 +140,7 @@ const mockRecentJoins = (
   }));
 };
 
-const mockBindingStats = (): unknown => {
+const mockBindingStats = (): TemplateDataShape["binding_stats"] => {
   const onebot = faker.number.int({ max: 90, min: 40 });
   const discord = faker.number.int({ max: 30, min: 5 });
   const bound = onebot + discord;
@@ -181,7 +185,7 @@ const mockStatisticValue = (stat: string): number => {
 
 const mockPlayerStatistics = (
   ds: Extract<TemplateDataSource, { type: "player_statistics" }>,
-): unknown => ({
+): TemplateDataShape["player_statistics"] => ({
   name: MOCK_SELF.name,
   uuid: MOCK_SELF.uuid,
   values: Object.fromEntries(
@@ -247,7 +251,7 @@ const ADV_BLOCK_ICONS = [
   "bookshelf",
 ] as const;
 
-const mockPlayerAdvancements = (): unknown => {
+const mockPlayerAdvancements = (): TemplateDataShape["player_advancements"] => {
   const advancements: {
     block: boolean;
     done: boolean;
@@ -318,8 +322,17 @@ const MOCK_EQUIPMENT = [
   { enchantments: [], slot: "offHand", type: "SHIELD" },
 ] as const;
 
-const mockPlayerEquipment = (): unknown => ({
-  items: MOCK_EQUIPMENT.map((e) => ({ ...e, amount: 1 })),
+const mockPlayerEquipment = (): TemplateDataShape["player_equipment"] => ({
+  items: MOCK_EQUIPMENT.map((e) => ({
+    amount: 1,
+    // 去 readonly
+    enchantments: e.enchantments.map((en) => ({
+      level: en.level,
+      name: en.name,
+    })),
+    slot: e.slot,
+    type: e.type,
+  })),
   name: MOCK_SELF.name,
   online: true,
   uuid: MOCK_SELF.uuid,
@@ -336,7 +349,7 @@ const DEATH_MESSAGES = [
 
 const mockEventLeaderboard = (
   ds: Extract<TemplateDataSource, { type: "event_leaderboard" }>,
-): unknown => {
+): TemplateDataShape["event_leaderboard"] => {
   const limit = Math.min(ds.limit ?? 10, MOCK_PLAYERS.length);
   return MOCK_PLAYERS.slice(0, limit)
     .map((p, i) => ({
@@ -356,7 +369,7 @@ const mockEventLeaderboard = (
 
 const mockStatusHistory = (
   ds: Extract<TemplateDataSource, { type: "server_status_history" }>,
-): unknown => {
+): TemplateDataShape["server_status_history"] => {
   const windowMinutes = Math.min(ds.windowMinutes ?? 60, 720);
   const points = Math.min(windowMinutes, 60);
   const now = Date.now();
@@ -371,7 +384,7 @@ const mockStatusHistory = (
 
 const mockPlaceholderRank = (
   ds: Extract<TemplateDataSource, { type: "placeholder_rank" }>,
-): unknown => {
+): TemplateDataShape["placeholder_rank"] => {
   const total = faker.number.int({ max: 200, min: 30 });
   const value = mockPlaceholderValue(ds.placeholder);
   return {

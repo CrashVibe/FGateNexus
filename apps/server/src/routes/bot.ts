@@ -9,7 +9,7 @@ import type { z } from "zod";
 
 import { db } from "#server/db/client";
 import { botTable } from "#server/db/schema";
-import { fail, guard, ok, readJson } from "#server/http/respond";
+import { fail, guard, ok, parseBody } from "#server/http/respond";
 import { chatBridge } from "#server/service/chatbridge";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
@@ -117,28 +117,21 @@ export const botRouter = new Hono()
   .post(
     "/",
     guard("添加 Bot 失败", async (c) => {
-      const parsed = BotAPI.POST.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(
-          c,
-          ApiError.validation("添加 Bot 失败：配置无效"),
-          parsed.error,
-        );
-      }
+      const data = await parseBody(
+        c,
+        BotAPI.POST.request,
+        "添加 Bot 失败：配置无效",
+      );
       const result = await db
         .insert(botTable)
         .values({
-          config: parsed.data.config,
-          name: parsed.data.name ?? "",
-          platform: parsed.data.platform,
+          config: data.config,
+          name: data.name ?? "",
+          platform: data.platform,
         })
         .returning();
       if (result[0]) {
-        chatBridge.addBot(
-          result[0].id,
-          parsed.data.platform,
-          parsed.data.config,
-        );
+        chatBridge.addBot(result[0].id, data.platform, data.config);
         return ok(c, "添加 Bot 成功", StatusCodes.CREATED);
       }
       return fail(c, ApiError.database("添加 Bot 失败：未能插入数据"));
@@ -175,22 +168,19 @@ export const botRouter = new Hono()
       if (Number.isNaN(id)) {
         return fail(c, ApiError.validation("更新 Bot 失败：无效的 Bot ID"));
       }
-      const parsed = BotAPI.PUT.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(
-          c,
-          ApiError.validation("更新 Bot 失败：配置无效"),
-          parsed.error,
-        );
-      }
+      const data = await parseBody(
+        c,
+        BotAPI.PUT.request,
+        "更新 Bot 失败：配置无效",
+      );
       const result = await db
         .update(botTable)
-        .set({ config: parsed.data.config, name: parsed.data.name })
+        .set({ config: data.config, name: data.name })
         .where(eq(botTable.id, id))
         .returning();
       if (result[0]) {
         if (chatBridge.get(id)) {
-          chatBridge.updateConfig(id, parsed.data.config);
+          chatBridge.updateConfig(id, data.config);
         }
         return ok(c, "更新 Bot 成功", StatusCodes.OK);
       }
@@ -222,21 +212,18 @@ export const botRouter = new Hono()
       if (Number.isNaN(botId)) {
         return fail(c, ApiError.validation("开关 Bot 失败：无效的 Bot ID"));
       }
-      const parsed = BotAPI.POSTTOGGLE.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(
-          c,
-          ApiError.validation("开关 Bot 失败：配置无效"),
-          parsed.error,
-        );
-      }
+      const data = await parseBody(
+        c,
+        BotAPI.POSTTOGGLE.request,
+        "开关 Bot 失败：配置无效",
+      );
       const result = await db
         .update(botTable)
-        .set({ enabled: parsed.data.enabled })
+        .set({ enabled: data.enabled })
         .where(eq(botTable.id, botId))
         .returning();
       if (result[0]) {
-        if (parsed.data.enabled) {
+        if (data.enabled) {
           chatBridge.addBot(botId, result[0].platform, result[0].config);
         } else {
           chatBridge.removeBot(botId);

@@ -317,102 +317,97 @@ class ServerSession {
     );
   }
 
+  /** 批量 RPC 通用骨架 */
+  private async batchRpc<T, S extends z.ZodType, R>(opts: {
+    enabled: boolean;
+    method: string;
+    schema: S;
+    errMsg: string;
+    requests: T[];
+    pick: (parsed: z.infer<S>) => R[];
+    itemLabel?: string;
+    itemCount?: (request: T) => number;
+    timeout?: number;
+  }): Promise<R[]> {
+    if (!opts.enabled || opts.requests.length === 0) {
+      return [];
+    }
+    if (opts.itemLabel && opts.itemCount) {
+      ServerSession.assertBatchSize(
+        opts.requests,
+        opts.method,
+        opts.itemLabel,
+        opts.itemCount,
+      );
+    }
+
+    const result = await this.sendRequest(
+      opts.method,
+      { requests: opts.requests },
+      opts.timeout ?? 8000,
+    );
+
+    return opts.pick(
+      ServerSession.parseRpcResult(opts.schema, result, opts.errMsg),
+    );
+  }
+
   public async getPlaceholders(
     requests: PlaceholderRequest[],
   ): Promise<PlaceholderResult[]> {
-    if (!this.supports_papi) {
-      return [];
-    }
-    if (requests.length === 0) {
-      return [];
-    }
-    ServerSession.assertBatchSize(
+    return this.batchRpc({
+      enabled: this.supports_papi === true,
+      errMsg: "Invalid get.placeholders response",
+      itemCount: (request) => request.placeholders.length,
+      itemLabel: "占位符",
+      method: "get.placeholders",
+      pick: (parsed) => parsed.results,
       requests,
-      "get.placeholders",
-      "占位符",
-      (request) => request.placeholders.length,
-    );
-
-    const result = await this.sendRequest(
-      "get.placeholders",
-      { requests },
-      8000,
-    );
-
-    return ServerSession.parseRpcResult(
-      getPlaceholdersResponseSchema,
-      result,
-      "Invalid get.placeholders response",
-    ).results;
+      schema: getPlaceholdersResponseSchema,
+    });
   }
 
   public async getStatistics(
     requests: StatisticsRequest[],
   ): Promise<StatisticResult[]> {
-    if (!this.capabilities.statistics) {
-      return [];
-    }
-    if (requests.length === 0) {
-      return [];
-    }
-    ServerSession.assertBatchSize(
+    return this.batchRpc({
+      enabled: this.capabilities.statistics,
+      errMsg: "Invalid get.statistics response",
+      itemCount: (request) => request.statistics.length,
+      itemLabel: "统计名",
+      method: "get.statistics",
+      pick: (parsed) => parsed.results,
       requests,
-      "get.statistics",
-      "统计名",
-      (request) => request.statistics.length,
-    );
-
-    const result = await this.sendRequest("get.statistics", { requests }, 8000);
-
-    return ServerSession.parseRpcResult(
-      getStatisticsResponseSchema,
-      result,
-      "Invalid get.statistics response",
-    ).results;
+      schema: getStatisticsResponseSchema,
+    });
   }
 
   /** 仅在线玩家有数据 */
   public async getAdvancements(
     requests: AdvancementsRequest[],
   ): Promise<AdvancementsResult[]> {
-    if (!this.capabilities.advancements) {
-      return [];
-    }
-    if (requests.length === 0) {
-      return [];
-    }
-
-    const result = await this.sendRequest(
-      "get.advancements",
-      { requests },
-      8000,
-    );
-
-    return ServerSession.parseRpcResult(
-      getAdvancementsResponseSchema,
-      result,
-      "Invalid get.advancements response",
-    ).results;
+    return this.batchRpc({
+      enabled: this.capabilities.advancements,
+      errMsg: "Invalid get.advancements response",
+      method: "get.advancements",
+      pick: (parsed) => parsed.results,
+      requests,
+      schema: getAdvancementsResponseSchema,
+    });
   }
 
   /** 仅在线玩家有数据 */
   public async getEquipment(
     requests: EquipmentRequest[],
   ): Promise<EquipmentResult[]> {
-    if (!this.capabilities.equipment) {
-      return [];
-    }
-    if (requests.length === 0) {
-      return [];
-    }
-
-    const result = await this.sendRequest("get.equipment", { requests }, 8000);
-
-    return ServerSession.parseRpcResult(
-      getEquipmentResponseSchema,
-      result,
-      "Invalid get.equipment response",
-    ).results;
+    return this.batchRpc({
+      enabled: this.capabilities.equipment,
+      errMsg: "Invalid get.equipment response",
+      method: "get.equipment",
+      pick: (parsed) => parsed.results,
+      requests,
+      schema: getEquipmentResponseSchema,
+    });
   }
 
   public broadcastMessageToServer(message: string): void {

@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { StatusCodes } from "http-status-codes";
 
-import { fail, guard, ok, readJson } from "#server/http/respond";
+import { fail, guard, ok, parseBody } from "#server/http/respond";
 import {
   cancelDownload,
   checkChromiumUpdate,
@@ -42,11 +42,7 @@ export const settingsRouter = new Hono()
   .patch(
     "/browser",
     guard("更新浏览器路径失败", async (c) => {
-      const parsed = SettingsAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求参数错误"), parsed.error);
-      }
-      const { executablePath } = parsed.data;
+      const { executablePath } = await parseBody(c, SettingsAPI.PATCH.request);
 
       if (executablePath !== null) {
         try {

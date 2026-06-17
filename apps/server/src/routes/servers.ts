@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "#server/db/client";
 import type { Target } from "#server/db/schema";
 import { serverTable, targetTable } from "#server/db/schema";
-import { fail, guard, ok, readJson } from "#server/http/respond";
+import { fail, guard, ok, parseBody } from "#server/http/respond";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import { ApiError } from "#shared/model/error";
 import {
@@ -105,17 +105,18 @@ export const serversRouter = new Hono()
   .post(
     "/",
     guard("添加服务器失败", async (c) => {
-      const parsed = ServersAPI.POST.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("添加服务器失败"), parsed.error);
-      }
+      const data = await parseBody(
+        c,
+        ServersAPI.POST.request,
+        "添加服务器失败",
+      );
       await db.insert(serverTable).values({
         bindingConfig: BindingConfigSchema.parse({}),
         chatSyncConfig: ChatSyncConfigSchema.parse({}),
         commandConfig: CommandConfigSchema.parse({}),
-        name: parsed.data.servername,
+        name: data.servername,
         notifyConfig: NotifyConfigSchema.parse({}),
-        token: parsed.data.token,
+        token: data.token,
       });
       return ok(c, "添加服务器成功", StatusCodes.CREATED);
     }),
@@ -173,11 +174,11 @@ export const serversRouter = new Hono()
     "/:id/general",
     guard("更新服务器基础信息失败", async (c) => {
       const serverId = parseServerId(c.req.param("id"));
-      const parsed = GeneralAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("参数错误"), parsed.error);
-      }
-      const { botId, name, token } = parsed.data;
+      const { botId, name, token } = await parseBody(
+        c,
+        GeneralAPI.PATCH.request,
+        "参数错误",
+      );
       const updatePayload = Object.fromEntries(
         Object.entries({ botId: botId ?? null, name, token }).filter(
           ([, v]) => v !== undefined,
@@ -214,13 +215,10 @@ export const serversRouter = new Hono()
     "/:id/binding",
     guard("更新服务器绑定配置失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
-      const parsed = BindingAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("参数错误"), parsed.error);
-      }
+      const data = await parseBody(c, BindingAPI.PATCH.request, "参数错误");
       const result = await db
         .update(serverTable)
-        .set({ bindingConfig: parsed.data.config })
+        .set({ bindingConfig: data.config })
         .where(eq(serverTable.id, serverID))
         .returning();
       if (!result[0]) {
@@ -236,14 +234,11 @@ export const serversRouter = new Hono()
     "/:id/chat-sync",
     guard("更新服务器聊天同步配置失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
-      const parsed = ChatSyncAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("参数错误"), parsed.error);
-      }
+      const data = await parseBody(c, ChatSyncAPI.PATCH.request, "参数错误");
       updateServerWithTargets(
         serverID,
-        { chatSyncConfig: parsed.data.chatsync },
-        parsed.data.targets,
+        { chatSyncConfig: data.chatsync },
+        data.targets,
       );
       return ok(c, "更新服务器聊天同步配置成功", StatusCodes.OK);
     }),
@@ -252,14 +247,11 @@ export const serversRouter = new Hono()
     "/:id/command",
     guard("更新服务器指令配置失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
-      const parsed = CommandAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("参数错误"), parsed.error);
-      }
+      const data = await parseBody(c, CommandAPI.PATCH.request, "参数错误");
       updateServerWithTargets(
         serverID,
-        { commandConfig: parsed.data.command },
-        parsed.data.targets,
+        { commandConfig: data.command },
+        data.targets,
       );
       return ok(c, "更新服务器指令配置成功", StatusCodes.OK);
     }),
@@ -268,14 +260,11 @@ export const serversRouter = new Hono()
     "/:id/notify",
     guard("更新服务器通知配置失败", async (c) => {
       const serverId = parseServerId(c.req.param("id"));
-      const parsed = NotifyAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("参数错误"), parsed.error);
-      }
+      const data = await parseBody(c, NotifyAPI.PATCH.request, "参数错误");
       updateServerWithTargets(
         serverId,
-        { notifyConfig: parsed.data.notify },
-        parsed.data.targets,
+        { notifyConfig: data.notify },
+        data.targets,
       );
       return ok(c, "更新服务器通知配置成功", StatusCodes.OK);
     }),
@@ -299,10 +288,11 @@ export const serversRouter = new Hono()
     "/:id/targets",
     guard("批量创建目标失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
-      const parsed = TargetAPI.POST.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求体格式不正确"), parsed.error);
-      }
+      const data = await parseBody(
+        c,
+        TargetAPI.POST.request,
+        "请求体格式不正确",
+      );
       const serverExists = await db.query.serverTable.findFirst({
         where: eq(serverTable.id, serverID),
         with: { bot: true },
@@ -311,7 +301,7 @@ export const serversRouter = new Hono()
         return fail(c, ApiError.notFound("服务器不存在"));
       }
       const { bot } = serverExists;
-      const nowValues = parsed.data.map((p) => ({
+      const nowValues = data.map((p) => ({
         channelId: p.channelId,
         config: TargetConfigSchema.parse({}),
         guildId: p.guildId,
@@ -336,11 +326,11 @@ export const serversRouter = new Hono()
     "/:id/targets",
     guard("批量更新失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
-      const parsed = TargetAPI.PATCH.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求体格式不正确"), parsed.error);
-      }
-      const { items } = parsed.data;
+      const { items } = await parseBody(
+        c,
+        TargetAPI.PATCH.request,
+        "请求体格式不正确",
+      );
       if (items.length === 0) {
         return fail(c, ApiError.validation("更新项不能为空"));
       }
@@ -366,16 +356,17 @@ export const serversRouter = new Hono()
     "/:id/targets",
     guard("批量删除目标失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
-      const parsed = TargetAPI.DELETE.request.safeParse(await readJson(c));
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("请求体格式不正确"), parsed.error);
-      }
+      const data = await parseBody(
+        c,
+        TargetAPI.DELETE.request,
+        "请求体格式不正确",
+      );
       const deleted = await db
         .delete(targetTable)
         .where(
           and(
             eq(targetTable.serverId, serverID),
-            inArray(targetTable.id, parsed.data.ids),
+            inArray(targetTable.id, data.ids),
           ),
         )
         .returning();

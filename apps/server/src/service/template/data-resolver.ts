@@ -7,8 +7,12 @@ import {
 import type { MinimalPlayer } from "#server/db/queries/player";
 import { getEventLeaderboard } from "#server/db/queries/player-event";
 import { getStatusHistory } from "#server/db/queries/server-status-history";
-import type { PlaceholderRequest } from "#server/service/mcwsbridge/model";
+import type {
+  PlaceholderRequest,
+  PlayerInfo,
+} from "#server/service/mcwsbridge/model";
 import type ServerSession from "#server/service/mcwsbridge/server-session";
+import type { TemplateDataShape } from "#server/service/template/data-shapes";
 import { resolvePlaceholderIds } from "#server/service/template/dynamic-placeholders";
 import { logger } from "#server/utils/logger";
 import type { TemplateInstanceConfig } from "#shared/model/template/schema/instance";
@@ -36,7 +40,34 @@ export interface ResolveContext {
   contextPlayer?: MinimalPlayer | null;
   /** 合并 placeholdersFrom 用 */
   config?: TemplateInstanceConfig;
+  /** render 级玩家列表缓存（内部注入） */
+  playerMemo?: PlayerMemo;
 }
+
+/** 单次渲染内复用在线/已知玩家列表 */
+interface PlayerMemo {
+  online(): Promise<PlayerInfo[]>;
+  known(limit: number): Promise<MinimalPlayer[]>;
+}
+
+const createPlayerMemo = (session: ServerSession): PlayerMemo => {
+  let onlinePromise: Promise<PlayerInfo[]> | undefined;
+  const knownByLimit = new Map<number, Promise<MinimalPlayer[]>>();
+  return {
+    async known(limit) {
+      let cached = knownByLimit.get(limit);
+      if (!cached) {
+        cached = getKnownPlayers(session.serverId, limit);
+        knownByLimit.set(limit, cached);
+      }
+      return cached;
+    },
+    async online() {
+      onlinePromise ??= session.getPlayers();
+      return onlinePromise;
+    },
+  };
+};
 
 const isSupported = (
   ds: TemplateDataSource,
@@ -106,7 +137,7 @@ const resolvePlaceholder = async (
   ds: Extract<TemplateDataSource, { type: "placeholder" }>,
   session: ServerSession,
   ctx: ResolveContext,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["placeholder"]> => {
   const placeholders = resolvePlaceholderIds(ds, ctx.config);
 
   if (ds.target === "self") {
@@ -124,14 +155,15 @@ const resolvePlaceholder = async (
 
   let players: MinimalPlayer[];
   if (ds.target === "online_players") {
-    const online = await session.getPlayers();
+    const online = await (ctx.playerMemo?.online() ?? session.getPlayers());
     players = online.map((p) => ({ name: p.name, uuid: p.uuid }));
   } else {
     const limit = Math.min(
       ds.limit ?? KNOWN_PLAYERS_DEFAULT_LIMIT,
       PLAYERS_HARD_CAP,
     );
-    players = await getKnownPlayers(session.serverId, limit);
+    players = await (ctx.playerMemo?.known(limit) ??
+      getKnownPlayers(session.serverId, limit));
   }
 
   const limited = players.slice(
@@ -161,7 +193,7 @@ const resolvePlaceholder = async (
 const resolveProfile = async (
   session: ServerSession,
   ctx: ResolveContext,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["player_profile"]> => {
   const player = ctx.contextPlayer;
   if (!player) {
     return null;
@@ -191,7 +223,7 @@ const RANK_POOL_DEFAULT_LIMIT = 100;
 const resolveRecentJoins = async (
   ds: Extract<TemplateDataSource, { type: "recent_joins" }>,
   session: ServerSession,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["recent_joins"]> => {
   const limit = Math.min(ds.limit ?? RECENT_JOINS_DEFAULT_LIMIT, 50);
   const joins = await getRecentJoins(session.serverId, limit, ds.withinDays);
   return joins.map((j) => ({
@@ -212,7 +244,7 @@ const resolveRank = async (
   ds: Extract<TemplateDataSource, { type: "placeholder_rank" }>,
   session: ServerSession,
   ctx: ResolveContext,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["placeholder_rank"]> => {
   const self = ctx.contextPlayer;
   if (!self) {
     return null;
@@ -221,7 +253,8 @@ const resolveRank = async (
     ds.limit ?? RANK_POOL_DEFAULT_LIMIT,
     PLAYERS_HARD_CAP,
   );
-  const known = await getKnownPlayers(session.serverId, poolLimit);
+  const known = await (ctx.playerMemo?.known(poolLimit) ??
+    getKnownPlayers(session.serverId, poolLimit));
   const pool = known.some((p) => p.uuid === self.uuid)
     ? known
     : [...known, { name: self.name, uuid: self.uuid }];
@@ -259,7 +292,7 @@ const STATUS_HISTORY_HARD_LIMIT = 1000;
 const resolveStatusHistory = async (
   ds: Extract<TemplateDataSource, { type: "server_status_history" }>,
   session: ServerSession,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["server_status_history"]> => {
   const windowMinutes = Math.min(
     ds.windowMinutes ?? STATUS_HISTORY_DEFAULT_WINDOW,
     720,
@@ -284,7 +317,7 @@ const EVENT_LB_DEFAULT_LIMIT = 10;
 const resolveEventLeaderboard = async (
   ds: Extract<TemplateDataSource, { type: "event_leaderboard" }>,
   session: ServerSession,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["event_leaderboard"]> => {
   const windowDays = Math.min(
     ds.windowDays ?? EVENT_LB_DEFAULT_WINDOW_DAYS,
     90,
@@ -311,7 +344,7 @@ const resolveStatistics = async (
   ds: Extract<TemplateDataSource, { type: "player_statistics" }>,
   session: ServerSession,
   ctx: ResolveContext,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["player_statistics"]> => {
   const self = ctx.contextPlayer;
   if (!self) {
     return null;
@@ -327,7 +360,7 @@ const resolveStatistics = async (
 const resolveAdvancements = async (
   session: ServerSession,
   ctx: ResolveContext,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["player_advancements"]> => {
   const self = ctx.contextPlayer;
   if (!self) {
     return null;
@@ -350,7 +383,7 @@ const resolveAdvancements = async (
 const resolveEquipment = async (
   session: ServerSession,
   ctx: ResolveContext,
-): Promise<unknown> => {
+): Promise<TemplateDataShape["player_equipment"]> => {
   const self = ctx.contextPlayer;
   if (!self) {
     return null;
@@ -374,7 +407,7 @@ const callRpc = async (
 ): Promise<unknown> => {
   switch (ds.type) {
     case "online_players": {
-      return session.getPlayers();
+      return ctx.playerMemo?.online() ?? session.getPlayers();
     }
     case "server_status": {
       return session.getServerStatus();
@@ -451,9 +484,13 @@ export const resolveDataSources = async (
   session: ServerSession,
   ctx: ResolveContext = {},
 ): Promise<Record<string, unknown>> => {
+  const renderCtx: ResolveContext = {
+    ...ctx,
+    playerMemo: createPlayerMemo(session),
+  };
   const entries = await Promise.all(
     manifest.dataSources.map(
-      async (ds) => [ds.id, await resolveOne(ds, session, ctx)] as const,
+      async (ds) => [ds.id, await resolveOne(ds, session, renderCtx)] as const,
     ),
   );
   return Object.fromEntries(entries);
