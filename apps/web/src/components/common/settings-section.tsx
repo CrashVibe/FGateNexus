@@ -213,17 +213,3 @@ export const SubPageLayout = ({
     </div>
   );
 };
-
-// CSS Grid 三列布局：左右等宽列使中间内容居中，不受 SubNav 宽度影响。
-export const SubLayout = ({
-  nav,
-  children,
-}: {
-  nav: ReactNode;
-  children: ReactNode;
-}) => (
-  <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[11rem_minmax(0,42rem)_11rem] sm:items-start sm:justify-center sm:gap-x-8">
-    <div>{nav}</div>
-    <div className="space-y-8">{children}</div>
-  </div>
-);

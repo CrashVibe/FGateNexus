@@ -7,7 +7,6 @@ import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
 import { logger } from "./logger";
-import { applyDefaults } from "./zod";
 
 const AppConfigSchema = z.object({
   browser: z
@@ -64,7 +63,7 @@ type AppConfig = z.infer<typeof AppConfigSchema>;
 
 const mergeWithDefaults = (userConfig: unknown = {}): AppConfig => {
   const validatedConfig = AppConfigSchema.partial().parse(userConfig);
-  return applyDefaults(AppConfigSchema, validatedConfig);
+  return AppConfigSchema.parse(validatedConfig);
 };
 
 /** 将旧版 nitro.host/port 迁移到 server，写回文件并删除 nitro 字段。 */

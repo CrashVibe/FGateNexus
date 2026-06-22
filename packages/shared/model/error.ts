@@ -18,15 +18,11 @@ export interface ApiErrorResponse {
 export enum ApiErrorType {
   Database = 50_001,
   Validation = 50_002,
-  Authentication = 50_003,
-  Authorization = 50_004,
   NotFound = 50_005,
   Conflict = 50_006,
   Internal = 50_007,
   BadRequest = 50_008,
   Unauthorized = 50_009,
-  Forbidden = 50_010,
-  InternalServerError = 50_011,
   TooManyRequests = 50_012,
 }
 
@@ -78,14 +74,6 @@ export class ApiError extends Error {
     );
   }
 
-  static authentication(message: string): ApiError {
-    return new ApiError(ApiErrorType.Authentication, message);
-  }
-
-  static authorization(message: string): ApiError {
-    return new ApiError(ApiErrorType.Authorization, message);
-  }
-
   static notFound(message: string): ApiError {
     return new ApiError(ApiErrorType.NotFound, message);
   }
@@ -106,14 +94,6 @@ export class ApiError extends Error {
     return new ApiError(ApiErrorType.Unauthorized, message);
   }
 
-  static forbidden(message: string): ApiError {
-    return new ApiError(ApiErrorType.Forbidden, message);
-  }
-
-  static internalServerError(message: string): ApiError {
-    return new ApiError(ApiErrorType.InternalServerError, message);
-  }
-
   static tooManyRequests(message: string): ApiError {
     return new ApiError(ApiErrorType.TooManyRequests, message);
   }
@@ -127,8 +107,7 @@ export class ApiError extends Error {
     // 对于内部错误，不暴露具体错误信息
     if (
       this.type === ApiErrorType.Database ||
-      this.type === ApiErrorType.Internal ||
-      this.type === ApiErrorType.InternalServerError
+      this.type === ApiErrorType.Internal
     ) {
       console.error(`${this.type} error:`, this.message);
       errorMessage =
@@ -152,16 +131,12 @@ export class ApiError extends Error {
     const statusMap: Record<ApiErrorType, number> = {
       [ApiErrorType.Database]: 500,
       [ApiErrorType.Validation]: 400,
-      [ApiErrorType.Authentication]: 401,
-      [ApiErrorType.Authorization]: 403,
       [ApiErrorType.NotFound]: 404,
       [ApiErrorType.Conflict]: 409,
       [ApiErrorType.TooManyRequests]: 429,
       [ApiErrorType.Internal]: 500,
       [ApiErrorType.BadRequest]: 400,
       [ApiErrorType.Unauthorized]: 401,
-      [ApiErrorType.Forbidden]: 403,
-      [ApiErrorType.InternalServerError]: 500,
     };
 
     return statusMap[this.type] || 500;
