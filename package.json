@@ -52,7 +52,6 @@
   "json-comments": {
     "tips": "请安装 JSONComments 插件为 JSON 文件提供注释功能，详见：https://github.com/zhangfisher/json_comments_extension"
   },
-  "minimumClientVersion": "0.2.1",
   "patchedDependencies": {
     "@koishijs/loader@4.6.11": "patches/@koishijs%2Floader@4.6.11.patch",
     "@satorijs/adapter-discord@4.6.1": "patches/@satorijs%2Fadapter-discord@4.6.1.patch"

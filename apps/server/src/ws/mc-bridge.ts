@@ -8,7 +8,7 @@ import type { PeerData } from "#server/service/mcwsbridge/peer";
 import { createPeer } from "#server/service/mcwsbridge/peer";
 import { logger } from "#server/utils/logger";
 import {
-  checkClientVersion,
+  checkClientApiVersion,
   CURRENT_API_VERSION,
   isValidVersion,
 } from "#server/utils/version";
@@ -30,22 +30,28 @@ export const handleMcBridgeUpgrade = async (
   server: Server<PeerData>,
 ): Promise<Response | undefined> => {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
-  const clientVersion = req.headers.get("x-api-version");
+  const clientApiVersion = req.headers.get("x-api-version");
 
-  if (!token || !clientVersion) {
-    logger.warn({ clientVersion, token }, "WebSocket 请求缺失 Token 或 版本号");
+  if (!token || !clientApiVersion) {
+    logger.warn(
+      { clientVersion: clientApiVersion, token },
+      "WebSocket 请求缺失 Token 或 版本号",
+    );
     return unauthorized("Unauthorized: Missing authorization token");
   }
 
-  if (!isValidVersion(clientVersion)) {
-    logger.warn({ clientVersion }, "WebSocket 请求版本格式无效");
+  if (!isValidVersion(clientApiVersion)) {
+    logger.warn(
+      { clientVersion: clientApiVersion },
+      "WebSocket 请求版本格式无效",
+    );
     return unauthorized("Bad Request: Invalid version format", 400);
   }
 
-  const versionWarning = checkClientVersion(clientVersion);
+  const versionWarning = checkClientApiVersion(clientApiVersion);
   if (versionWarning) {
     logger.warn(
-      { clientVersion, warning: versionWarning.warning },
+      { clientApiVersion, warning: versionWarning.warning },
       "客户端版本过低",
     );
   }
