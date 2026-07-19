@@ -79,7 +79,7 @@ export const request = async <T>(
     method,
   });
 
-  return parseApiResponse<T>(response);
+  return await parseApiResponse<T>(response);
 };
 
 /** 不手动设置 content-type：浏览器自动加 boundary。 */
@@ -96,7 +96,7 @@ export const uploadFile = async <T>(
     method: "POST",
   });
 
-  return parseApiResponse<T>(response);
+  return await parseApiResponse<T>(response);
 };
 
 export const throwIfNotOk = async (response: Response): Promise<void> => {

@@ -110,7 +110,9 @@ export const ServerTargetPage = () => {
 
   useRegisterPageState(
     isDirty,
-    async () => handleSubmit(),
+    async () => {
+      await handleSubmit();
+    },
     () => {
       setSelected(new Set(original));
     },

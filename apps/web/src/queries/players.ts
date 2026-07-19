@@ -8,4 +8,7 @@ import { PlayerData } from "@/lib/api";
 export type PlayerEntry = z.infer<typeof PlayerAPI.GETS.response>[number];
 
 export const usePlayers = (): UseQueryResult<PlayerEntry[]> =>
-  useQuery({ queryFn: async () => PlayerData.gets(), queryKey: ["players"] });
+  useQuery({
+    queryFn: async () => await PlayerData.gets(),
+    queryKey: ["players"],
+  });

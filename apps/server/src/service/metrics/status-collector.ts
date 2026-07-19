@@ -23,23 +23,25 @@ const collectOnce = async (): Promise<void> => {
   }
   running = true;
   try {
-    for (const session of connectionManager.getAllConnections()) {
-      if (!session.capabilities.server_status) {
-        continue;
-      }
-      try {
-        const status = await session.getServerStatus();
-        if (status) {
-          await insertStatusSample(session.serverId, {
-            mspt: status.mspt ?? null,
-            online: status.online,
-            tps: status.tps ?? null,
-          });
+    const sessions = connectionManager
+      .getAllConnections()
+      .filter((s) => s.capabilities.server_status);
+    await Promise.all(
+      sessions.map(async (session) => {
+        try {
+          const status = await session.getServerStatus();
+          if (status) {
+            await insertStatusSample(session.serverId, {
+              mspt: status.mspt ?? null,
+              online: status.online,
+              tps: status.tps ?? null,
+            });
+          }
+        } catch (error) {
+          log.warn(error, `采集服务器 ${session.serverId} 状态失败`);
         }
-      } catch (error) {
-        log.warn(error, `采集服务器 ${session.serverId} 状态失败`);
-      }
-    }
+      }),
+    );
     if (Date.now() - lastPurgeAt >= PURGE_INTERVAL_MS) {
       await deleteStatusBefore(new Date(Date.now() - RETENTION_MS));
       lastPurgeAt = Date.now();

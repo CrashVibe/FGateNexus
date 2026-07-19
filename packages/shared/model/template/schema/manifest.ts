@@ -4,7 +4,7 @@ import { z } from "zod";
 export const TemplateIdSchema = z
   .string()
   .regex(
-    /^[a-z0-9][a-z0-9-_]{1,63}$/,
+    /^[a-z0-9][a-z0-9-_]{1,63}$/u,
     "模板 id 仅允许小写字母、数字、- 与 _，长度 2-64",
   );
 
@@ -12,7 +12,7 @@ export const TemplateIdSchema = z
 const IdentifierSchema = z
   .string()
   .regex(
-    /^[a-zA-Z_][a-zA-Z0-9_]*$/,
+    /^[a-zA-Z_][a-zA-Z0-9_]*$/u,
     "标识符仅允许字母、数字、_，且不能以数字开头",
   );
 
@@ -191,7 +191,7 @@ export const TemplateNetworkPermissionSchema = z.object({
   origin: z
     .string()
     .regex(
-      /^https:\/\/[a-zA-Z0-9.-]+(:\d+)?$/,
+      /^https:\/\/[a-zA-Z0-9.-]+(?<port>:\d+)?$/u,
       "origin 须为 https://host[:port] 格式，不含路径",
     ),
   reason: z.string().min(1).max(200),

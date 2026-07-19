@@ -46,80 +46,81 @@ export class BindCodeHandler implements BindingHandler {
       return false;
     }
 
-    let hit = false;
-    for (const [, binding] of bindings) {
-      if (binding.message !== session.content) {
-        continue;
-      }
+    const results = await Promise.all(
+      Array.from(bindings, async ([, binding]) => {
+        if (binding.message !== session.content) {
+          return false;
+        }
 
-      const target = await db.query.targetTable.findFirst({
-        where: and(
-          eq(targetTable.serverId, binding.serverID),
-          eq(targetTable.channelId, channelId),
-          session.guildId
-            ? eq(targetTable.guildId, session.guildId)
-            : isNull(targetTable.guildId),
-        ),
-        with: { server: true },
-      });
-      if (!target?.server) {
-        continue;
-      }
-
-      const bindingConfig = await getConfig(binding.serverID);
-      try {
-        const updatedPlayer = await bindAccount({
-          platform: connection.platformType,
-          playerUID: binding.playerUID,
-          socialNickname: session.username,
-          socialUid: userId,
+        const target = await db.query.targetTable.findFirst({
+          where: and(
+            eq(targetTable.serverId, binding.serverID),
+            eq(targetTable.channelId, channelId),
+            session.guildId
+              ? eq(targetTable.guildId, session.guildId)
+              : isNull(targetTable.guildId),
+          ),
+          with: { server: true },
         });
+        if (!target?.server) {
+          return false;
+        }
 
-        this.store.delete(
-          connection.botId,
-          binding.serverID,
-          binding.playerUID,
-        );
+        const bindingConfig = await getConfig(binding.serverID);
+        try {
+          const updatedPlayer = await bindAccount({
+            platform: connection.platformType,
+            playerUID: binding.playerUID,
+            socialNickname: session.username,
+            socialUid: userId,
+          });
 
-        // 改名不着急所以放在绑定成功之后
-        await BindCodeHandler.performAutoRename(
-          userId,
-          updatedPlayer.name,
-          session.username,
-          connection,
-          target,
-          bindingConfig,
-        );
-
-        await connection.onNotify(
-          buildSystemNotifyEvent(
+          this.store.delete(
+            connection.botId,
             binding.serverID,
-            renderBindSuccess(
-              bindingConfig.bindSuccessMsg,
-              binding.playerNickname,
+            binding.playerUID,
+          );
+
+          // 改名不着急所以放在绑定成功之后
+          await BindCodeHandler.performAutoRename(
+            userId,
+            updatedPlayer.name,
+            session.username,
+            connection,
+            target,
+            bindingConfig,
+          );
+
+          await connection.onNotify(
+            buildSystemNotifyEvent(
+              binding.serverID,
+              renderBindSuccess(
+                bindingConfig.bindSuccessMsg,
+                binding.playerNickname,
+              ),
             ),
-          ),
-          target,
-        );
-      } catch (error: unknown) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
-        logger.error({ errorMessage }, "无法处理绑定");
-        await connection.onNotify(
-          buildSystemNotifyEvent(
-            binding.serverID,
-            renderBindFail(
-              bindingConfig.bindFailMsg,
-              binding.playerNickname,
-              errorMessage,
+            target,
+          );
+        } catch (error: unknown) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          logger.error({ errorMessage }, "无法处理绑定");
+          await connection.onNotify(
+            buildSystemNotifyEvent(
+              binding.serverID,
+              renderBindFail(
+                bindingConfig.bindFailMsg,
+                binding.playerNickname,
+                errorMessage,
+              ),
             ),
-          ),
-          target,
-        );
-      }
-      hit = true;
-    }
-    return hit;
+            target,
+          );
+        }
+        return true;
+      }),
+    );
+    return results.some(Boolean);
   }
 
   private static async performAutoRename(

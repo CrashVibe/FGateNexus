@@ -1,5 +1,5 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import fs from "node:fs";
+import path from "node:path";
 
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import { isDataSourceSupported } from "#server/service/template/data-resolver";

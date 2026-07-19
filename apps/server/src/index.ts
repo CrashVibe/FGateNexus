@@ -1,4 +1,4 @@
-import * as path from "node:path";
+import path from "node:path";
 import { createInterface as createReadlineInterface } from "node:readline/promises";
 
 import { runCleanups } from "#server/utils/cleanup-registry";
@@ -154,7 +154,7 @@ const main = async (): Promise<void> => {
         url.pathname === MC_BRIDGE_PATH &&
         req.headers.get("upgrade")?.toLowerCase() === "websocket"
       ) {
-        return handleMcBridgeUpgrade(req, srv);
+        return await handleMcBridgeUpgrade(req, srv);
       }
       const res = await app.fetch(req, srv);
       // 非 /api 的 404 交给 SPA 静态托管（含前端路由回退）。

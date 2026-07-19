@@ -111,7 +111,7 @@ export class BindingService {
     session: Session,
   ): Promise<boolean> {
     this.store.cleanupExpired();
-    return this.dispatch("message", connection, session);
+    return await this.dispatch("message", connection, session);
   }
 
   /**
@@ -121,7 +121,7 @@ export class BindingService {
     connection: PlatformSender,
     session: Session,
   ): Promise<boolean> {
-    return this.dispatch("group-leave", connection, session);
+    return await this.dispatch("group-leave", connection, session);
   }
 
   /**
@@ -132,16 +132,15 @@ export class BindingService {
     connection: PlatformSender,
     session: Session,
   ): Promise<boolean> {
-    let handled = false;
     for (const handler of this.handlers) {
       if (handler.trigger !== trigger) {
         continue;
       }
       if (await handler.handle(connection, session)) {
-        handled = true;
+        return true;
       }
     }
-    return handled;
+    return false;
   }
 }
 

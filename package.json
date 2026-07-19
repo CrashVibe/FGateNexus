@@ -24,28 +24,34 @@
     "knip": "knip",
     "check": "ultracite check",
     "fix": "ultracite fix",
-    "prepare": "husky",
+    "prepare": "lefthook install",
     "postinstall": "bun apps/server/scripts/gen-embedded-migrations.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "p-limit": "^7.3.0",
+    "p-retry": "^8.0.0"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
     "husky": "^9.1.7",
     "knip": "^6.16.1",
-    "lint-staged": "^16.4.0",
-    "oxfmt": "^0.45.0",
-    "oxlint": "^1.69.0",
+    "lefthook": "^2.1.9",
+    "lint-staged": "^17.0.8",
+    "oxfmt": "^0.57.0",
+    "oxlint": "^1.72.0",
     "oxlint-tsgolint": "^0.16.0",
     "shadcn": "^4.11.0",
     "typescript": "^5.9.3",
-    "ultracite": "7.6.0"
+    "ultracite": "7.8.4"
   },
   "lint-staged": {
     "**/*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
       "oxlint . --fix --quiet",
       "oxfmt . --write"
+    ],
+    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
+      "bun x ultracite fix"
     ]
   },
   "apiVersion": "0.1.0",

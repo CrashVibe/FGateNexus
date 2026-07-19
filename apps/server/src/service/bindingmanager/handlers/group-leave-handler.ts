@@ -58,16 +58,16 @@ export class GroupLeaveHandler implements BindingHandler {
     }
 
     await Promise.all(
-      matchingTargets.map(async (target) =>
-        executeUnbind(
+      matchingTargets.map(async (target) => {
+        await executeUnbind(
           connection,
           target,
           target.server,
           platform,
           userId,
           playerRecord.name,
-        ),
-      ),
+        );
+      }),
     );
     return true;
   }

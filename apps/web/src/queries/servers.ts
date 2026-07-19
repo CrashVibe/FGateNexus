@@ -10,27 +10,37 @@ export const serversKey = ["servers"] as const;
 export const serverKey = (id: number) => ["server", id] as const;
 
 export const useServers = (): UseQueryResult<ServerWithStatus[]> =>
-  useQuery({ queryFn: async () => ServerData.gets(), queryKey: serversKey });
+  useQuery({
+    queryFn: async () => await ServerData.gets(),
+    queryKey: serversKey,
+  });
 
 export const useServer = (id: number): UseQueryResult<ServerWithStatus> =>
   useQuery({
-    queryFn: async () => ServerData.get(id),
+    queryFn: async () => await ServerData.get(id),
     queryKey: serverKey(id),
   });
 
 export const useCreateServer = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: z.infer<typeof ServersAPI.POST.request>) =>
-      ServerData.post(data),
-    onSuccess: async () => qc.invalidateQueries({ queryKey: serversKey }),
+    mutationFn: async (data: z.infer<typeof ServersAPI.POST.request>) => {
+      await ServerData.post(data);
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: serversKey });
+    },
   });
 };
 
 export const useDeleteServer = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: number) => ServerData.delete(id),
-    onSuccess: async () => qc.invalidateQueries({ queryKey: serversKey }),
+    mutationFn: async (id: number) => {
+      await ServerData.delete(id);
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: serversKey });
+    },
   });
 };

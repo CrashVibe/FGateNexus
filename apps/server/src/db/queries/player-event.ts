@@ -64,35 +64,34 @@ export const getEventLeaderboard = async (
     .orderBy(desc(count()))
     .limit(limit);
 
-  const entries: EventLeaderboardEntry[] = [];
-  for (const r of ranked) {
-    if (!r.playerUuid) {
-      continue;
-    }
-    // 该玩家最近一条同类事件
-    const [latest] = await db
-      .select({
-        createdAt: playerEventTable.createdAt,
-        data: playerEventTable.data,
-        playerName: playerEventTable.playerName,
-      })
-      .from(playerEventTable)
-      .where(
-        and(
-          eq(playerEventTable.serverId, serverId),
-          eq(playerEventTable.type, type),
-          eq(playerEventTable.playerUuid, r.playerUuid),
-        ),
-      )
-      .orderBy(desc(playerEventTable.createdAt))
-      .limit(1);
-    entries.push({
-      count: r.count,
-      lastAt: latest?.createdAt ?? since,
-      lastData: latest?.data ?? null,
-      playerName: latest?.playerName ?? null,
-      playerUuid: r.playerUuid,
-    });
-  }
-  return entries;
+  return await Promise.all(
+    ranked
+      .filter((r) => r.playerUuid)
+      .map(async (r) => {
+        // 该玩家最近一条同类事件
+        const [latest] = await db
+          .select({
+            createdAt: playerEventTable.createdAt,
+            data: playerEventTable.data,
+            playerName: playerEventTable.playerName,
+          })
+          .from(playerEventTable)
+          .where(
+            and(
+              eq(playerEventTable.serverId, serverId),
+              eq(playerEventTable.type, type),
+              eq(playerEventTable.playerUuid, r.playerUuid!),
+            ),
+          )
+          .orderBy(desc(playerEventTable.createdAt))
+          .limit(1);
+        return {
+          count: r.count,
+          lastAt: latest?.createdAt ?? since,
+          lastData: latest?.data ?? null,
+          playerName: latest?.playerName ?? null,
+          playerUuid: r.playerUuid!,
+        };
+      }),
+  );
 };

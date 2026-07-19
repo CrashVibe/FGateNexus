@@ -54,7 +54,7 @@ const FORMAT_SETTERS: Partial<Record<string, (s: McSegment) => void>> = {
 };
 
 /** 匹配 Bungee 的 legacy hex 颜色代码 */
-const BUNGEE_HEX_PATTERN = /^&x(&[0-9a-fA-F]){6}$/;
+const BUNGEE_HEX_PATTERN = /^&x(?<hex>&[0-9a-fA-F]){6}$/u;
 
 /** Bungee 的 legacy hex 颜色代码字符串长度 */
 const HEX_LENGTH = 14;
@@ -139,7 +139,7 @@ export const parseMinecraftText = (
   }
 
   const defaultColor = darkMode ? "#F0F8FF" : "#808080";
-  const lines = text.split(/\\n|\n/);
+  const lines = text.split(/\\n|\n/u);
   const segments: McSegment[] = [];
 
   const st = makeSegment({ color: defaultColor });

@@ -95,7 +95,7 @@ export const BrowserContent = () => {
     isLoading: configLoading,
     refetch: refetchConfig,
   } = useQuery({
-    queryFn: async () => BrowserData.get(),
+    queryFn: async () => await BrowserData.get(),
     queryKey: ["browser-config"],
   });
 

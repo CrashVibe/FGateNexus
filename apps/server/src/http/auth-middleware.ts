@@ -21,7 +21,6 @@ const publicEndpoints = [
 
 export const authMiddleware = async (c: Context, next: Next): Promise<void> => {
   const { method, path } = c.req;
-
   const isPublic = publicEndpoints.some(
     (endpoint) => path.startsWith(endpoint.path) && method === endpoint.method,
   );
@@ -29,13 +28,11 @@ export const authMiddleware = async (c: Context, next: Next): Promise<void> => {
     await next();
     return;
   }
-
   const user = await db.query.userTable.findFirst();
   if (!user || user.passwordHash === null || user.passwordHash === "") {
     await next();
     return;
   }
-
   await requireUserSession(c);
   await next();
 };

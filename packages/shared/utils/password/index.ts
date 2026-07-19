@@ -47,7 +47,7 @@ export const validatePasswordStrength = (
     };
   }
 
-  const asciiPattern = /^[\u0021-\u007E]+$/;
+  const asciiPattern = /^[\u0021-\u007E]+$/u;
   if (!asciiPattern.test(password)) {
     return {
       error: "密码只能包含英文字母、数字和常见符号",

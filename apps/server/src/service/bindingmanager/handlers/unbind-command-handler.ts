@@ -53,16 +53,16 @@ export class UnbindCommandHandler implements BindingHandler {
     }
 
     await Promise.all(
-      unbindTasks.map(async ({ target, playerName }) =>
-        executeUnbind(
+      unbindTasks.map(async ({ target, playerName }) => {
+        await executeUnbind(
           connection,
           target,
           target.server,
           platform,
           userId,
           playerName,
-        ),
-      ),
+        );
+      }),
     );
     return true;
   }

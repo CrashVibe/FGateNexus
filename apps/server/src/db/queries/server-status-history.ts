@@ -34,7 +34,7 @@ export const getStatusHistory = async (
   since: Date,
   limit: number,
 ): Promise<StatusSample[]> =>
-  db
+  await db
     .select({
       mspt: serverStatusHistoryTable.mspt,
       online: serverStatusHistoryTable.online,

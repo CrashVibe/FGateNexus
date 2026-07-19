@@ -1,5 +1,5 @@
-import * as fs from "node:fs";
-import * as path from "node:path";
+import fs from "node:fs";
+import path from "node:path";
 
 import extract from "extract-zip";
 
@@ -150,18 +150,18 @@ export const listTemplates = async (): Promise<TemplateManifest[]> => {
   const entries = await fs.promises.readdir(TEMPLATE_DIR, {
     withFileTypes: true,
   });
-  const result: TemplateManifest[] = [];
-  for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
-    try {
-      result.push(await readManifest(path.join(TEMPLATE_DIR, entry.name)));
-    } catch (error) {
-      log.warn({ dir: entry.name, error }, "跳过无效模板目录");
-    }
-  }
-  return result;
+  const dirs = entries.filter((e) => e.isDirectory());
+  const manifests = await Promise.all(
+    dirs.map(async (entry) => {
+      try {
+        return await readManifest(path.join(TEMPLATE_DIR, entry.name));
+      } catch (error) {
+        log.warn({ dir: entry.name, error }, "跳过无效模板目录");
+        return null;
+      }
+    }),
+  );
+  return manifests.filter((m): m is TemplateManifest => m !== null);
 };
 
 export const getTemplateManifest = async (
@@ -172,7 +172,7 @@ export const getTemplateManifest = async (
   if (!fs.existsSync(dir)) {
     throw new TemplateStoreError(`模板不存在：${validId}`);
   }
-  return readManifest(dir);
+  return await readManifest(dir);
 };
 
 /** 即 dist/ 内容所在目录 */

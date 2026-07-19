@@ -58,5 +58,5 @@ export interface BindingHandler {
    *
    * 供 BindingService 决定是否阻断后续处理器
    */
-  handle(connection: PlatformSender, session: Session): Promise<boolean>;
+  handle: (connection: PlatformSender, session: Session) => Promise<boolean>;
 }

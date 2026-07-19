@@ -29,9 +29,12 @@ const getVersion = (original: string | null): string => {
   if (!original) {
     return "未知版本";
   }
-  const match = /^([\d.]+-\d+-[a-f0-9]+)\s+\(MC:\s*([^)]+)\)/.exec(original);
+  const match =
+    /^(?<full>[\d.]+-\d+-[a-f0-9]+)\s+\(MC:\s*(?<mcVersion>[^)]+)\)/u.exec(
+      original,
+    );
   if (match) {
-    return `v${match.at(2) ?? ""}`;
+    return `v${match.groups?.mcVersion ?? ""}`;
   }
   return original;
 };

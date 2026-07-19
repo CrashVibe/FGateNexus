@@ -3,6 +3,6 @@ export const renderTemplate = (
   params: Record<string, string>,
 ): string =>
   msg.replaceAll(
-    /\{(\w+)\}/g,
+    /\{(?<key>\w+)\}/gu,
     (_: string, key: string) => params[key] ?? `{${key}}`,
   );

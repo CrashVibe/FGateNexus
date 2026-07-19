@@ -48,7 +48,7 @@ const TargetCommandDrawer = ({
       botId !== undefined &&
       target.type === "group" &&
       target.guildId !== null,
-    queryFn: async () => BotData.getDiscordRoles(botId!, target.guildId!),
+    queryFn: async () => await BotData.getDiscordRoles(botId!, target.guildId!),
     queryKey: ["discord-roles", botId, target.guildId],
   });
 
@@ -121,7 +121,7 @@ export const ServerCommandPage = () => {
   const { data: server, refetch } = useServer(serverId);
   const { data: bot } = useBot(server?.botId ?? null);
   const { data: browser } = useQuery({
-    queryFn: async () => BrowserData.get(),
+    queryFn: async () => await BrowserData.get(),
     queryKey: ["browser-config"],
   });
 
@@ -169,7 +169,9 @@ export const ServerCommandPage = () => {
 
   useRegisterPageState(
     isDirty,
-    async () => handleSubmit(),
+    async () => {
+      await handleSubmit();
+    },
     () => {
       setConfig(
         structuredClone(original?.config ?? CommandConfigSchema.parse({})),

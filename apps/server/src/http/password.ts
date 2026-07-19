@@ -9,9 +9,9 @@ import { Scrypt } from "@adonisjs/hash/drivers/scrypt";
 const hash = new Hash(new Scrypt({}));
 
 export const hashPassword = async (password: string): Promise<string> =>
-  hash.make(password);
+  await hash.make(password);
 
 export const verifyPassword = async (
   hashedPassword: string,
   plainPassword: string,
-): Promise<boolean> => hash.verify(hashedPassword, plainPassword);
+): Promise<boolean> => await hash.verify(hashedPassword, plainPassword);

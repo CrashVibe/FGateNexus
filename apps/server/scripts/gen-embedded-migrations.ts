@@ -1,5 +1,5 @@
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 /**
  * 把 `migrations/` 下的 journal + SQL 内联生成
@@ -29,12 +29,18 @@ const main = async (): Promise<void> => {
     when: e.when,
   }));
 
+  const readResults = await Promise.all(
+    entries.map(async (entry) => ({
+      sql: await fs.readFile(
+        path.join(MIGRATIONS_DIR, `${entry.tag}.sql`),
+        "utf-8",
+      ),
+      tag: entry.tag,
+    })),
+  );
   const sqlFiles: Record<string, string> = {};
-  for (const entry of entries) {
-    sqlFiles[entry.tag] = await fs.readFile(
-      path.join(MIGRATIONS_DIR, `${entry.tag}.sql`),
-      "utf-8",
-    );
+  for (const { tag, sql } of readResults) {
+    sqlFiles[tag] = sql;
   }
 
   const content = `// 此文件由 apps/server/scripts/gen-embedded-migrations.ts 自动生成，请勿手动编辑。

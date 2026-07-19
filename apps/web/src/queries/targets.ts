@@ -11,6 +11,6 @@ export const useTargets = (
   serverId: number,
 ): UseQueryResult<z.infer<typeof TargetAPI.GETS.response>> =>
   useQuery({
-    queryFn: async () => TargetData.gets(serverId),
+    queryFn: async () => await TargetData.gets(serverId),
     queryKey: targetsKey(serverId),
   });

@@ -1,5 +1,5 @@
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 /**
  * 遍历 apps/web/dist，把每个产物内联为字符串（文本直存、二进制 base64），
@@ -10,12 +10,14 @@ const DIST_DIR = path.join(REPO_ROOT, "apps/web/dist");
 const OUT_FILE = path.join(REPO_ROOT, "apps/server/dist/assets.ts");
 
 const walk = async (dir: string): Promise<string[]> => {
-  const out: string[] = [];
-  for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    out.push(...(entry.isDirectory() ? await walk(full) : [full]));
-  }
-  return out;
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const results = await Promise.all(
+    entries.map(async (entry) => {
+      const full = path.join(dir, entry.name);
+      return entry.isDirectory() ? await walk(full) : [full];
+    }),
+  );
+  return results.flat();
 };
 
 const main = async (): Promise<void> => {
@@ -24,19 +26,24 @@ const main = async (): Promise<void> => {
   const mapEntries: string[] = [];
   let indexBody = "null";
 
-  for (const file of files) {
-    const rel = path.relative(DIST_DIR, file).split(path.sep).join("/");
-    const urlPath = `/${rel}`;
-    const { type } = Bun.file(file);
-    const isText =
-      type.startsWith("text/") || /json|javascript|svg|xml/.test(type);
-    const buf = await fs.readFile(file);
-    const body = isText ? buf.toString("utf-8") : buf.toString("base64");
-    const literal = JSON.stringify(body);
+  const fileInfos = await Promise.all(
+    files.map(async (file) => {
+      const rel = path.relative(DIST_DIR, file).split(path.sep).join("/");
+      const urlPath = `/${rel}`;
+      const { type } = Bun.file(file);
+      const isText =
+        type.startsWith("text/") || /json|javascript|svg|xml/u.test(type);
+      const buf = await fs.readFile(file);
+      const body = isText ? buf.toString("utf-8") : buf.toString("base64");
+      return { body, isText, type, urlPath } as const;
+    }),
+  );
+  for (const info of fileInfos) {
+    const literal = JSON.stringify(info.body);
     mapEntries.push(
-      `  ${JSON.stringify(urlPath)}: { base64: ${!isText}, body: ${literal}, type: ${JSON.stringify(type)} },`,
+      `  ${JSON.stringify(info.urlPath)}: { base64: ${!info.isText}, body: ${literal}, type: ${JSON.stringify(info.type)} },`,
     );
-    if (urlPath === "/index.html") {
+    if (info.urlPath === "/index.html") {
       indexBody = literal;
     }
   }

@@ -55,7 +55,7 @@ export const ChannelSelector = ({
   onLoadingChange?: (loading: boolean) => void;
 }) => {
   const query = useQuery({
-    queryFn: async () => BotData.getChannels(botId, platform),
+    queryFn: async () => await BotData.getChannels(botId, platform),
     queryKey: ["channels", botId, platform],
   });
 

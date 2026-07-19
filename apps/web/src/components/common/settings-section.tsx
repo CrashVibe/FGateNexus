@@ -181,12 +181,14 @@ export const SubPageLayout = ({
         style={{ width: navWidth }}
       >
         <SubNav items={items} onChange={onChange} title={title} value={value} />
-        <div
-          className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
+        <button
+          type="button"
+          className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize border-0 bg-transparent p-0"
+          aria-label="Resize navigation"
           onMouseDown={startNavResize}
         >
           <div className="absolute top-1/2 left-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-white/50" />
-        </div>
+        </button>
       </aside>
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="flex h-12 shrink-0 items-center border-b px-6">

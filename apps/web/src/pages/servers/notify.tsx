@@ -82,7 +82,9 @@ export const ServerNotifyPage = () => {
 
   useRegisterPageState(
     isDirty,
-    async () => handleSubmit(),
+    async () => {
+      await handleSubmit();
+    },
     () => {
       setConfig(structuredClone(original?.config ?? null));
       setTargets(structuredClone(original?.targets ?? []));

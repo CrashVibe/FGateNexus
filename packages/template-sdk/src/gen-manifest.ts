@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import * as path from "node:path";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { TemplateManifestSchema } from "@fgate/shared/model/template/schema/manifest";

@@ -1,5 +1,5 @@
 import { Database } from "bun:sqlite";
-import * as path from "node:path";
+import path from "node:path";
 
 import { drizzle } from "drizzle-orm/bun-sqlite";
 

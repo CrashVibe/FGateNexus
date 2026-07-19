@@ -31,7 +31,7 @@ export const getKnownPlayers = async (
   serverId: number,
   limit: number,
 ): Promise<MinimalPlayer[]> =>
-  db
+  await db
     .select({ name: playerTable.name, uuid: playerTable.uuid })
     .from(playerServerTable)
     .innerJoin(playerTable, eq(playerServerTable.playerId, playerTable.id))
@@ -105,7 +105,7 @@ export const getRecentJoins = async (
     const since = new Date(Date.now() - withinDays * 24 * 60 * 60 * 1000);
     conditions.push(gte(playerServerTable.createdAt, since));
   }
-  return db
+  return await db
     .select({
       joinedAt: playerServerTable.createdAt,
       name: playerTable.name,

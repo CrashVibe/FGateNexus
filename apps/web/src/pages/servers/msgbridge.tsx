@@ -183,7 +183,9 @@ export const ServerMsgbridgePage = () => {
 
   useRegisterPageState(
     isDirty,
-    async () => handleSubmit(),
+    async () => {
+      await handleSubmit();
+    },
     () => {
       setConfig(structuredClone(original?.config ?? null));
       setTargets(structuredClone(original?.targets ?? []));

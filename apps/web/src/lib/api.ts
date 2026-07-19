@@ -314,7 +314,7 @@ export const TemplateInstanceData = {
       { credentials: "same-origin", method: "POST" },
     );
     await throwIfNotOk(res);
-    return res.blob();
+    return await res.blob();
   },
   /** 用未保存的配置渲染；失败时抛 ApiRequestError。 */
   async renderPreview(
@@ -334,7 +334,7 @@ export const TemplateInstanceData = {
       },
     );
     await throwIfNotOk(res);
-    return res.blob();
+    return await res.blob();
   },
   async update(
     serverId: number,

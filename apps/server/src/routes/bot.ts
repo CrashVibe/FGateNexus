@@ -5,6 +5,8 @@ import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { StatusCodes } from "http-status-codes";
+import pLimit from "p-limit";
+import pRetry from "p-retry";
 import type { z } from "zod";
 
 import { db } from "#server/db/client";
@@ -17,6 +19,7 @@ import { ApiError } from "#shared/model/error";
 
 const TEXT_CHANNEL_TYPE = 0;
 const DISCORD_GUILD_PAGE_SIZE = 200;
+const CHANNEL_FETCH_CONCURRENCY = 5;
 
 interface GuildItem {
   id: string;
@@ -43,42 +46,66 @@ const appendGuildChannels = async (
   bot: DiscordBot,
   response: DiscordChannelsResponse,
 ) => {
-  let nextGuildId: string | undefined;
-  do {
-    const guildList = await bot.internal.getCurrentUserGuilds({
-      after: nextGuildId,
-      limit: DISCORD_GUILD_PAGE_SIZE,
+  const collectGuilds = async (
+    after: string | undefined,
+    acc: Awaited<ReturnType<typeof bot.internal.getCurrentUserGuilds>>,
+  ) => {
+    const guildList = await pRetry(
+      async () =>
+        await bot.internal.getCurrentUserGuilds({
+          after,
+          limit: DISCORD_GUILD_PAGE_SIZE,
+        }),
+      { retries: 3 },
+    );
+    const combined = [...acc, ...guildList];
+
+    if (guildList.length < DISCORD_GUILD_PAGE_SIZE) {
+      return combined;
+    }
+    await sleep(200);
+    return await collectGuilds(guildList.at(-1)?.id, combined);
+  };
+
+  const allGuilds = await collectGuilds(undefined, []);
+
+  for (const guild of allGuilds) {
+    response.guilds.push({
+      avatar: toGuildAvatarUrl(guild.id, guild.icon),
+      id: guild.id,
+      name: guild.name ?? `服务器 ${guild.id}`,
     });
-    for (const guild of guildList) {
-      response.guilds.push({
-        avatar: toGuildAvatarUrl(guild.id, guild.icon),
-        id: guild.id,
-        name: guild.name || `服务器 ${guild.id}`,
-      });
-      const channelList = await bot.internal.getGuildChannels(guild.id);
-      for (const channel of channelList) {
-        if (channel.type !== TEXT_CHANNEL_TYPE) {
-          continue;
+  }
+
+  const limit = pLimit(CHANNEL_FETCH_CONCURRENCY);
+  await Promise.all(
+    allGuilds.map(async (guild) => {
+      await limit(async () => {
+        const channelList = await pRetry(
+          async () => await bot.internal.getGuildChannels(guild.id),
+          { retries: 3 },
+        );
+        for (const channel of channelList) {
+          if (channel.type !== TEXT_CHANNEL_TYPE) {
+            continue;
+          }
+          response.channels.push({
+            guildId: guild.id,
+            id: channel.id,
+            name: channel.name ?? `频道 ${channel.id}`,
+            type: "group",
+          });
         }
-        response.channels.push({
-          guildId: guild.id,
-          id: channel.id,
-          name: channel.name ?? `频道 ${channel.id}`,
-          type: "group",
-        });
-      }
-    }
-    nextGuildId =
-      guildList.length === DISCORD_GUILD_PAGE_SIZE
-        ? guildList.at(-1)?.id
-        : undefined;
-    if (nextGuildId) {
-      await sleep(100);
-    }
-  } while (nextGuildId);
+      });
+    }),
+  );
 };
 
-// 频道列表 TTL 缓存（10 秒），避免每次渲染都远程调用 bot API
+/**
+ * 频道列表 TTL 缓存
+ *
+ * 用于避免每次渲染都远程调用 bot API
+ */
 const CHANNEL_CACHE_TTL_MS = 10_000;
 const channelCache = new Map<string, { data: unknown; expiresAt: number }>();
 

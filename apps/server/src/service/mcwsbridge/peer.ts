@@ -10,8 +10,8 @@ import type { ServerWebSocket } from "bun";
 export interface Peer {
   readonly id: string;
   readonly request: { readonly headers: Headers };
-  send(data: string): void;
-  close(code?: number, reason?: string): void;
+  send: (data: string) => void;
+  close: (code?: number, reason?: string) => void;
 }
 
 /** 附加在 Bun `ServerWebSocket` 上的每连接数据（在 upgrade 阶段写入）。 */

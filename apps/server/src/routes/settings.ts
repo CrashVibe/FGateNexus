@@ -115,8 +115,12 @@ export const settingsRouter = new Hono()
   )
   .get("/browser/download-stream", (c) =>
     streamSSE(c, async (stream) => {
-      const send = async (payload: unknown) =>
-        stream.writeSSE({ data: JSON.stringify(payload), event: "progress" });
+      const send = async (payload: unknown) => {
+        await stream.writeSSE({
+          data: JSON.stringify(payload),
+          event: "progress",
+        });
+      };
 
       const unsubscribe = subscribeDownloadState((next) => {
         void send(next);
@@ -132,7 +136,9 @@ export const settingsRouter = new Hono()
         }
         // 保持连接：周期性 ping，直到客户端断开。
         while (!stream.aborted) {
+          // oxlint-disable-next-line no-await-in-loop - 必须在循环中等待，以便在客户端断开时退出循环
           await stream.sleep(KEEPALIVE_INTERVAL_MS);
+          // oxlint-disable-next-line no-await-in-loop
           await stream.writeSSE({ data: "{}", event: "ping" });
         }
       } finally {

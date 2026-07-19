@@ -62,7 +62,7 @@ export const shouldForwardMessage = (
     }
     return !filters.blacklistRegex.some((regex) => {
       try {
-        return new RegExp(regex, "i").test(message);
+        return new RegExp(regex, "iu").test(message);
       } catch {
         return false;
       }
@@ -74,7 +74,7 @@ export const shouldForwardMessage = (
     );
     const hasRegexMatch = filters.whitelistRegex.some((regex) => {
       try {
-        return new RegExp(regex).test(message);
+        return new RegExp(regex, "u").test(message);
       } catch {
         return false;
       }

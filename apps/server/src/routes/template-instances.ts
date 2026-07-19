@@ -88,7 +88,7 @@ export const templateInstancesRouter = new Hono()
         return fail(c, ApiError.badRequest("缺少服务器 id"));
       }
       const data = await parseBody(c, TemplateInstanceCreateSchema);
-      return withDomainErrors(c, async () => {
+      return await withDomainErrors(c, async () => {
         const manifest = await getTemplateManifest(data.templateId);
         const config = validateInstanceConfig(
           manifest.configSchema,
@@ -118,7 +118,7 @@ export const templateInstancesRouter = new Hono()
       if (!existing) {
         return fail(c, ApiError.notFound("模板实例不存在"));
       }
-      return withDomainErrors(c, async () => {
+      return await withDomainErrors(c, async () => {
         let { config } = data;
         if (config !== undefined) {
           const manifest = await getTemplateManifest(existing.templateId);
@@ -141,7 +141,7 @@ export const templateInstancesRouter = new Hono()
       if (!instanceId) {
         return fail(c, ApiError.badRequest("缺少实例 id"));
       }
-      return withDomainErrors(c, async () => {
+      return await withDomainErrors(c, async () => {
         await templateInstanceStore.deleteInstance(instanceId);
         return ok(c, "删除模板实例成功", StatusCodes.OK);
       });
@@ -160,7 +160,7 @@ export const templateInstancesRouter = new Hono()
         where: eq(serverTable.id, Number(serverId)),
       });
 
-      return withDomainErrors(c, async () => {
+      return await withDomainErrors(c, async () => {
         const manifest = await getTemplateManifest(body.templateId);
         const config = validateInstanceConfig(
           manifest.configSchema,
@@ -203,7 +203,7 @@ export const templateInstancesRouter = new Hono()
         where: eq(serverTable.id, Number(serverId)),
       });
 
-      return withDomainErrors(c, async () => {
+      return await withDomainErrors(c, async () => {
         const manifest = await getTemplateManifest(instance.templateId);
         const data = await resolveDataSources(manifest, session, {
           config: instance.config,

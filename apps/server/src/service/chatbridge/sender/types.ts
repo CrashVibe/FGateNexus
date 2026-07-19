@@ -20,36 +20,39 @@ export interface PlatformSender {
   readonly bot: AdapterBot;
   readonly pluginInstance: ForkScope;
 
-  setGroupCard(target: Target, userId: string, card: string): Promise<void>;
+  setGroupCard: (target: Target, userId: string, card: string) => Promise<void>;
 
-  onChat(
+  onChat: (
     event: MCEvent<"player.chat">,
     target: Target,
     chatSyncConfig: ChatSyncConfig,
     serverName: string,
-  ): Promise<void>;
-  onDeath(
+  ) => Promise<void>;
+  onDeath: (
     event: MCEvent<"player.death">,
     target: Target,
     notifyConfig: NotifyConfig,
-  ): Promise<void>;
-  onJoin(
+  ) => Promise<void>;
+  onJoin: (
     event: MCEvent<"player.join">,
     target: Target,
     notifyConfig: NotifyConfig,
-  ): Promise<void>;
-  onLeave(
+  ) => Promise<void>;
+  onLeave: (
     event: MCEvent<"player.leave">,
     target: Target,
     notifyConfig: NotifyConfig,
-  ): Promise<void>;
-  onCommand(
+  ) => Promise<void>;
+  onCommand: (
     event: MCEvent<"execute.command">,
     target: Target,
     commandConfig: CommandConfig,
-  ): Promise<void>;
-  onNotify(event: MCEvent<"system.notify">, target: Target): Promise<void>;
-  onTemplate(event: MCEvent<"system.template">, target: Target): Promise<void>;
+  ) => Promise<void>;
+  onNotify: (event: MCEvent<"system.notify">, target: Target) => Promise<void>;
+  onTemplate: (
+    event: MCEvent<"system.template">,
+    target: Target,
+  ) => Promise<void>;
 
-  isOnline(): boolean;
+  isOnline: () => boolean;
 }

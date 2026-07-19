@@ -59,7 +59,9 @@ export const useServerForm = <TForm, TInput = TForm>(
 
   useRegisterPageState(
     isDirty,
-    async () => handleSubmit(),
+    async () => {
+      await handleSubmit();
+    },
     () => {
       setForm(original === null ? null : structuredClone(original));
     },

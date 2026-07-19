@@ -1,4 +1,4 @@
-import * as path from "node:path";
+import path from "node:path";
 
 import { imageRenderer } from "#server/service/image-renderer";
 import { getTemplateDir } from "#server/service/template/template-store";
@@ -14,7 +14,7 @@ export const renderTemplateInstance = async (
   serverName: string,
 ): Promise<Buffer> => {
   const entryFilePath = path.join(getTemplateDir(manifest.id), "index.html");
-  return imageRenderer.render_page(
+  return await imageRenderer.render_page(
     entryFilePath,
     {
       config,

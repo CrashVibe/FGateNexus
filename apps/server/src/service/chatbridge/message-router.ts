@@ -60,7 +60,7 @@ const handleTemplateCommand = async (
     return false;
   }
 
-  const commandWord = session.content!.trim().split(/\s+/)[0] ?? "";
+  const commandWord = session.content!.trim().split(/\s+/u)[0] ?? "";
   if (!commandWord) {
     return false;
   }

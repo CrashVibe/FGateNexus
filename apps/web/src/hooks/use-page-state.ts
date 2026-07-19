@@ -24,7 +24,9 @@ export const useRegisterPageState = (
         cancelRef.current?.();
       },
       isDirty: () => isDirtyRef.current,
-      save: async () => saveRef.current(),
+      save: async () => {
+        await saveRef.current();
+      },
     });
     return () => {
       clearPageState();

@@ -1,10 +1,12 @@
 import { defineConfig } from "oxlint";
 import core from "ultracite/oxlint/core";
 import react from "ultracite/oxlint/react";
+import tanstack from "ultracite/oxlint/tanstack";
+import vitest from "ultracite/oxlint/vitest";
 
 export default defineConfig({
-  extends: [core, react],
-  options: { typeAware: true },
+  extends: [core, react, tanstack, vitest],
+  ignorePatterns: core.ignorePatterns,
   rules: {
     "class-methods-use-this": [
       "error",
@@ -25,6 +27,8 @@ export default defineConfig({
     "import/no-cycle": "off",
     "jsdoc/require-param-type": "off",
     "jsdoc/require-returns-type": "off",
+    "no-await-in-loop": "off",
+    "node/callback-return": "allow",
     "typescript/no-non-null-assertion": "allow",
     "typescript/no-unnecessary-type-conversion": "allow",
     "typescript/no-unnecessary-type-parameters": "allow",

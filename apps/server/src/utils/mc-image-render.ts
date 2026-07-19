@@ -35,5 +35,5 @@ export const renderMinecraftTextToImage = async (
 <body>${bodyHtml}</body>
 </html>`;
 
-  return imageRenderer.render_html(html, process.cwd(), "auto");
+  return await imageRenderer.render_html(html, process.cwd(), "auto");
 };

@@ -9,7 +9,7 @@ export const renderTemplateMC = (
     // 保留换行替换
     .replaceAll("\n", "\n&r")
     .replaceAll(
-      /\{(\w+)\}/g,
+      /\{(?<key>\w+)\}/gu,
       (_: string, key: string) => params[key] ?? `{${key}}`,
     );
 

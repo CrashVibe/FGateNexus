@@ -355,7 +355,7 @@ class ServerSession {
   public async getPlaceholders(
     requests: PlaceholderRequest[],
   ): Promise<PlaceholderResult[]> {
-    return this.batchRpc({
+    return await this.batchRpc({
       enabled: this.supports_papi === true,
       errMsg: "Invalid get.placeholders response",
       itemCount: (request) => request.placeholders.length,
@@ -370,7 +370,7 @@ class ServerSession {
   public async getStatistics(
     requests: StatisticsRequest[],
   ): Promise<StatisticResult[]> {
-    return this.batchRpc({
+    return await this.batchRpc({
       enabled: this.capabilities.statistics,
       errMsg: "Invalid get.statistics response",
       itemCount: (request) => request.statistics.length,
@@ -386,7 +386,7 @@ class ServerSession {
   public async getAdvancements(
     requests: AdvancementsRequest[],
   ): Promise<AdvancementsResult[]> {
-    return this.batchRpc({
+    return await this.batchRpc({
       enabled: this.capabilities.advancements,
       errMsg: "Invalid get.advancements response",
       method: "get.advancements",
@@ -400,7 +400,7 @@ class ServerSession {
   public async getEquipment(
     requests: EquipmentRequest[],
   ): Promise<EquipmentResult[]> {
-    return this.batchRpc({
+    return await this.batchRpc({
       enabled: this.capabilities.equipment,
       errMsg: "Invalid get.equipment response",
       method: "get.equipment",

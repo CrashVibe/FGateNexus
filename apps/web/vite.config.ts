@@ -18,17 +18,17 @@ export default defineConfig({
             {
               name: "react",
               priority: 3,
-              test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+              test: /node_modules[\\/](?<pkg>react|react-dom|scheduler)[\\/]/u,
             },
             {
               name: "tanstack",
               priority: 2,
-              test: /node_modules[\\/]@tanstack[\\/]/,
+              test: /node_modules[\\/]@tanstack[\\/]/u,
             },
             {
               name: "radix",
               priority: 2,
-              test: /node_modules[\\/]@radix-ui[\\/]/,
+              test: /node_modules[\\/]@radix-ui[\\/]/u,
             },
           ],
         },

@@ -46,8 +46,8 @@ export interface ResolveContext {
 
 /** 单次渲染内复用在线/已知玩家列表 */
 interface PlayerMemo {
-  online(): Promise<PlayerInfo[]>;
-  known(limit: number): Promise<MinimalPlayer[]>;
+  online: () => Promise<PlayerInfo[]>;
+  known: (limit: number) => Promise<MinimalPlayer[]>;
 }
 
 const createPlayerMemo = (session: ServerSession): PlayerMemo => {
@@ -60,11 +60,11 @@ const createPlayerMemo = (session: ServerSession): PlayerMemo => {
         cached = getKnownPlayers(session.serverId, limit);
         knownByLimit.set(limit, cached);
       }
-      return cached;
+      return await cached;
     },
     async online() {
       onlinePromise ??= session.getPlayers();
-      return onlinePromise;
+      return await onlinePromise;
     },
   };
 };
@@ -235,7 +235,7 @@ const resolveRecentJoins = async (
 
 /** 剥离非数字字符；解析失败为 null */
 export const parseNumeric = (raw: string): number | null => {
-  const n = Number.parseFloat(raw.replaceAll(/[^\d.-]/g, ""));
+  const n = Number.parseFloat(raw.replaceAll(/[^\d.-]/gu, ""));
   return Number.isFinite(n) ? n : null;
 };
 
@@ -407,40 +407,40 @@ const callRpc = async (
 ): Promise<unknown> => {
   switch (ds.type) {
     case "online_players": {
-      return ctx.playerMemo?.online() ?? session.getPlayers();
+      return await (ctx.playerMemo?.online() ?? session.getPlayers());
     }
     case "server_status": {
-      return session.getServerStatus();
+      return await session.getServerStatus();
     }
     case "placeholder": {
-      return resolvePlaceholder(ds, session, ctx);
+      return await resolvePlaceholder(ds, session, ctx);
     }
     case "player_profile": {
-      return resolveProfile(session, ctx);
+      return await resolveProfile(session, ctx);
     }
     case "recent_joins": {
-      return resolveRecentJoins(ds, session);
+      return await resolveRecentJoins(ds, session);
     }
     case "binding_stats": {
-      return getBindingStats(session.serverId);
+      return await getBindingStats(session.serverId);
     }
     case "placeholder_rank": {
-      return resolveRank(ds, session, ctx);
+      return await resolveRank(ds, session, ctx);
     }
     case "server_status_history": {
-      return resolveStatusHistory(ds, session);
+      return await resolveStatusHistory(ds, session);
     }
     case "event_leaderboard": {
-      return resolveEventLeaderboard(ds, session);
+      return await resolveEventLeaderboard(ds, session);
     }
     case "player_statistics": {
-      return resolveStatistics(ds, session, ctx);
+      return await resolveStatistics(ds, session, ctx);
     }
     case "player_advancements": {
-      return resolveAdvancements(session, ctx);
+      return await resolveAdvancements(session, ctx);
     }
     case "player_equipment": {
-      return resolveEquipment(session, ctx);
+      return await resolveEquipment(session, ctx);
     }
     default: {
       return null;

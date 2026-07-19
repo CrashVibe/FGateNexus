@@ -31,15 +31,27 @@ type EventHandlerMap = {
 };
 
 const handlerMap: EventHandlerMap = {
-  "execute.command": async (s, e, t, srv) =>
-    s.onCommand(e, t, srv.commandConfig),
-  "player.chat": async (s, e, t, srv) =>
-    s.onChat(e, t, srv.chatSyncConfig, srv.name),
-  "player.death": async (s, e, t, srv) => s.onDeath(e, t, srv.notifyConfig),
-  "player.join": async (s, e, t, srv) => s.onJoin(e, t, srv.notifyConfig),
-  "player.leave": async (s, e, t, srv) => s.onLeave(e, t, srv.notifyConfig),
-  "system.notify": async (s, e, t) => s.onNotify(e, t),
-  "system.template": async (s, e, t) => s.onTemplate(e, t),
+  "execute.command": async (s, e, t, srv) => {
+    await s.onCommand(e, t, srv.commandConfig);
+  },
+  "player.chat": async (s, e, t, srv) => {
+    await s.onChat(e, t, srv.chatSyncConfig, srv.name);
+  },
+  "player.death": async (s, e, t, srv) => {
+    await s.onDeath(e, t, srv.notifyConfig);
+  },
+  "player.join": async (s, e, t, srv) => {
+    await s.onJoin(e, t, srv.notifyConfig);
+  },
+  "player.leave": async (s, e, t, srv) => {
+    await s.onLeave(e, t, srv.notifyConfig);
+  },
+  "system.notify": async (s, e, t) => {
+    await s.onNotify(e, t);
+  },
+  "system.template": async (s, e, t) => {
+    await s.onTemplate(e, t);
+  },
 };
 
 class ChatBridge {
@@ -194,20 +206,20 @@ class ChatBridge {
       return;
     }
 
-    for (const target of server.targets) {
-      if (!checker(target.config)) {
-        continue;
-      }
-      const handler = handlerMap[event.type];
-      try {
-        await handler(connection, event, target, server);
-      } catch (error) {
-        this.logger.error(
-          { error, event, target },
-          `处理事件时发生错误：${event.type}`,
-        );
-      }
-    }
+    const targets = server.targets.filter((t) => checker(t.config));
+    const handler = handlerMap[event.type];
+    await Promise.all(
+      targets.map(async (target) => {
+        try {
+          await handler(connection, event, target, server);
+        } catch (error) {
+          this.logger.error(
+            { error, event, target },
+            `处理事件时发生错误：${event.type}`,
+          );
+        }
+      }),
+    );
   }
 }
 
