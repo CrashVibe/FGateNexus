@@ -18,7 +18,7 @@ export const PageHeader = ({
 }: PageHeaderProps) => {
   const { openMobileSidebar } = useLayout();
   return (
-    <div className="border-border flex h-12 shrink-0 items-center gap-3 border-b px-4 lg:px-6">
+    <div className="border-border flex h-16 shrink-0 items-center gap-3 border-b px-5 lg:px-8">
       <Button
         aria-label="打开菜单"
         className="lg:hidden"
@@ -28,11 +28,11 @@ export const PageHeader = ({
       >
         <Menu />
       </Button>
-      <div className="flex min-w-0 flex-col justify-center">
-        <span className="text-sm leading-none font-semibold">{title}</span>
+      <div className="flex min-w-0 flex-col justify-center gap-1">
+        <span className="text-base leading-none font-semibold">{title}</span>
         {description ? (
           <span
-            className="text-muted-foreground mt-1 truncate text-xs leading-none"
+            className="text-muted-foreground truncate text-xs leading-none"
             title={description}
           >
             {description}

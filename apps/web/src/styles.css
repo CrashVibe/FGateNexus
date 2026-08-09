@@ -8,61 +8,61 @@
  */
 :root {
   --radius: 0.375rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
+  --background: oklch(0.995 0.002 262);
+  --foreground: oklch(0.145 0.016 262);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
+  --card-foreground: oklch(0.145 0.016 262);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
+  --popover-foreground: oklch(0.145 0.016 262);
   --primary: oklch(0.546 0.245 262.881);
   --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.94 0.002 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
+  --secondary: oklch(0.96 0.008 262);
+  --secondary-foreground: oklch(0.21 0.016 262);
+  --muted: oklch(0.94 0.008 262);
+  --muted-foreground: oklch(0.55 0.02 262);
+  --accent: oklch(0.96 0.008 262);
+  --accent-foreground: oklch(0.21 0.016 262);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
+  --border: oklch(0.9 0.008 262);
+  --input: oklch(0.9 0.008 262);
   --ring: oklch(0.546 0.245 262.881);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar: oklch(0.965 0.01 262);
+  --sidebar-foreground: oklch(0.145 0.016 262);
   --sidebar-primary: oklch(0.546 0.245 262.881);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
+  --sidebar-accent: oklch(0.94 0.01 262);
+  --sidebar-accent-foreground: oklch(0.21 0.016 262);
+  --sidebar-border: oklch(0.9 0.008 262);
   --sidebar-ring: oklch(0.546 0.245 262.881);
 }
 
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
+  --background: oklch(0.115 0.016 262);
+  --foreground: oklch(0.97 0.005 262);
+  --card: oklch(0.185 0.017 262);
+  --card-foreground: oklch(0.97 0.005 262);
+  --popover: oklch(0.185 0.017 262);
+  --popover-foreground: oklch(0.97 0.005 262);
   --primary: oklch(0.623 0.214 259.815);
   --primary-foreground: oklch(0.97 0.014 254.604);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.23 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.26 0.014 262);
+  --secondary-foreground: oklch(0.97 0.005 262);
+  --muted: oklch(0.21 0.013 262);
+  --muted-foreground: oklch(0.68 0.015 262);
+  --accent: oklch(0.26 0.014 262);
+  --accent-foreground: oklch(0.97 0.005 262);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.623 0.214 259.815);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar: oklch(0.16 0.017 262);
+  --sidebar-foreground: oklch(0.97 0.005 262);
   --sidebar-primary: oklch(0.623 0.214 259.815);
   --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.26 0.014 262);
+  --sidebar-accent-foreground: oklch(0.97 0.005 262);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.623 0.214 259.815);
 }
@@ -144,5 +144,86 @@
   .scrollbar-custom::-webkit-scrollbar-thumb {
     background-color: var(--muted-foreground);
     border-radius: 9999px;
+  }
+
+  /* 新事件整行从右侧边界外滑入到位：纯位移，不带透明度渐变 */
+  @keyframes slide-in-event {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slide-in-event {
+    animation: slide-in-event 420ms cubic-bezier(0.22, 1.24, 0.34, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-slide-in-event {
+      animation: none;
+    }
+  }
+
+  /* 自动保存状态文案/图标切换：轻微上浮淡入，而非硬切 */
+  @keyframes status-content-in {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .status-content-in {
+    animation: status-content-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* 类 iOS 活动指示器：辐条依次淡出，营造旋转错觉 */
+  .apple-spinner {
+    position: relative;
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+  .apple-spinner-blade {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    animation: apple-spinner-fade 1s linear infinite;
+  }
+
+  .apple-spinner-blade::before {
+    content: "";
+    display: block;
+    width: 1.4px;
+    height: 38%;
+    border-radius: 1px;
+    background: currentColor;
+  }
+
+  @keyframes apple-spinner-fade {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.15;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .status-content-in {
+      animation: none;
+    }
+    .apple-spinner-blade {
+      animation-duration: 2s;
+    }
   }
 }

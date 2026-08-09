@@ -99,7 +99,7 @@ interface SubNavProps {
 export const SubNav = ({ items, value, onChange, title }: SubNavProps) => (
   <div className="flex h-full flex-col">
     {title ? (
-      <div className="flex h-12 shrink-0 items-center justify-between border-b px-4">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b px-5">
         <span className="text-sm font-semibold">{title}</span>
         <span className="text-muted-foreground text-xs">{items.length} 项</span>
       </div>
@@ -191,13 +191,13 @@ export const SubPageLayout = ({
         </button>
       </aside>
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex h-12 shrink-0 items-center border-b px-6">
-          <div className="flex min-w-0 flex-col justify-center">
-            <span className="text-sm leading-none font-semibold">
+        <div className="flex h-16 shrink-0 items-center border-b px-8">
+          <div className="flex min-w-0 flex-col justify-center gap-1">
+            <span className="text-base leading-none font-semibold">
               {currentItem?.label}
             </span>
             {currentItem?.description ? (
-              <span className="text-muted-foreground mt-1 truncate text-xs leading-none">
+              <span className="text-muted-foreground truncate text-xs leading-none">
                 {currentItem.description}
               </span>
             ) : null}
