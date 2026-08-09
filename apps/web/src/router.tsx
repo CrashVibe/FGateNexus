@@ -61,8 +61,31 @@ const makeRedirect = (path: string, to: string) =>
     path,
   });
 
+// 无 $section 时重定向到默认子区块，保留其余参数。
+const makeSectionRedirect = (path: string, to: string) =>
+  createRoute({
+    beforeLoad: ({ params }) => {
+      // oxlint-disable-next-line typescript/only-throw-error
+      throw redirect({
+        params: { ...params, section: "basic" },
+        replace: true,
+        to,
+      });
+    },
+    component: () => null,
+    getParentRoute: parent,
+    path,
+  });
+
 const indexRoute = dashRoute(
   "/",
+  lazyRouteComponent(
+    async () => await import("@/pages/dashboard"),
+    "DashboardPage",
+  ),
+);
+const serversIndexRoute = dashRoute(
+  "/servers",
   lazyRouteComponent(
     async () => await import("@/pages/servers/index"),
     "ServersPage",
@@ -108,11 +131,15 @@ const serverTargetRoute = dashRoute(
   ),
 );
 const serverBindingRoute = dashRoute(
-  "/servers/$id/binding",
+  "/servers/$id/binding/$section",
   lazyRouteComponent(
     async () => await import("@/pages/servers/binding"),
     "ServerBindingPage",
   ),
+);
+const serverBindingOverviewRoute = makeSectionRedirect(
+  "/servers/$id/binding",
+  "/servers/$id/binding/$section",
 );
 const serverCommandRoute = dashRoute(
   "/servers/$id/command",
@@ -122,11 +149,15 @@ const serverCommandRoute = dashRoute(
   ),
 );
 const serverMsgbridgeRoute = dashRoute(
-  "/servers/$id/msgbridge",
+  "/servers/$id/msgbridge/$section",
   lazyRouteComponent(
     async () => await import("@/pages/servers/msgbridge"),
     "ServerMsgbridgePage",
   ),
+);
+const serverMsgbridgeOverviewRoute = makeSectionRedirect(
+  "/servers/$id/msgbridge",
+  "/servers/$id/msgbridge/$section",
 );
 const serverNotifyRoute = dashRoute(
   "/servers/$id/notify",
@@ -166,6 +197,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   dashboardRoute.addChildren([
     indexRoute,
+    serversIndexRoute,
     botsRoute,
     playersRoute,
     settingsRoute,
@@ -175,8 +207,10 @@ const routeTree = rootRoute.addChildren([
     serverOverviewRoute,
     serverGeneralRoute,
     serverTargetRoute,
+    serverBindingOverviewRoute,
     serverBindingRoute,
     serverCommandRoute,
+    serverMsgbridgeOverviewRoute,
     serverMsgbridgeRoute,
     serverNotifyRoute,
     serverTemplatesRoute,

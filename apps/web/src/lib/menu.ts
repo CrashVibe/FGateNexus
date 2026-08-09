@@ -3,6 +3,7 @@ import {
   ArrowLeftRight,
   Bell,
   Image,
+  LayoutDashboard,
   Link as LinkIcon,
   Server,
   Settings,
@@ -21,6 +22,8 @@ export interface MenuNode {
   desc?: string;
   icon?: LucideIcon;
   children?: MenuNode[];
+  /** 目标页面内部还有一层子区块导航（如 SubPageLayout），点进去前先提示一下 */
+  hasSections?: boolean;
 }
 
 export type MenuColumn = MenuNode[];
@@ -28,7 +31,8 @@ export type MenuColumn = MenuNode[];
 /** 基础菜单（非服务器编辑态）。 */
 export const basicMenu = (): MenuColumn[] => [
   [
-    { icon: Server, label: "服务器管理", to: "/" },
+    { icon: LayoutDashboard, label: "总览", to: "/" },
+    { icon: Server, label: "服务器管理", to: "/servers" },
     { icon: LinkIcon, label: "Bot 实例", to: "/bots" },
     { icon: Users, label: "玩家列表", to: "/players" },
     {
@@ -49,7 +53,12 @@ export const basicMenu = (): MenuColumn[] => [
 /** 服务器编辑态菜单。 */
 export const serverMenu = (sid: string): MenuColumn[] => [
   [
-    { desc: "返回服务器列表主页。", icon: ArrowLeft, label: "返回", to: "/" },
+    {
+      desc: "返回服务器列表。",
+      icon: ArrowLeft,
+      label: "返回",
+      to: "/servers",
+    },
     {
       children: [
         {
@@ -71,9 +80,10 @@ export const serverMenu = (sid: string): MenuColumn[] => [
       children: [
         {
           desc: "设置社交账号与游戏账号的绑定规则",
+          hasSections: true,
           icon: UserCheck,
           label: "账号绑定",
-          to: `/servers/${sid}/binding`,
+          to: `/servers/${sid}/binding/basic`,
         },
         {
           desc: "配置服务器的远程指令",
@@ -94,9 +104,10 @@ export const serverMenu = (sid: string): MenuColumn[] => [
       children: [
         {
           desc: "Minecraft 与 聊天平台消息双向同步配置",
+          hasSections: true,
           icon: ArrowLeftRight,
           label: "消息互通",
-          to: `/servers/${sid}/msgbridge`,
+          to: `/servers/${sid}/msgbridge/basic`,
         },
       ],
       label: "聊天与消息",

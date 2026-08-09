@@ -1,7 +1,7 @@
-import { useLocation, useParams } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import dayjs from "dayjs";
 import { MessageSquare, Settings, ShieldAlert, UserPen } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { z } from "zod";
 
 import type { BindingConfigSchema } from "#shared/model/server/schema/binding";
@@ -16,6 +16,7 @@ import {
   renderUnbindKick,
   renderUnbindSuccess,
 } from "#shared/utils/template/binding";
+import { AutoSaveIndicator } from "@/components/common/auto-save-indicator";
 import { LoadingState } from "@/components/common/loading-state";
 import { MinecraftText } from "@/components/common/minecraft-text";
 import {
@@ -27,8 +28,8 @@ import {
 import type { SubNavItem } from "@/components/common/settings-section";
 import { useLayout } from "@/components/layout/context";
 import { MessageTemplateField } from "@/components/target/message-template-field";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import {
   Select,
   SelectContent,
@@ -42,7 +43,6 @@ import { BindingData } from "@/lib/api";
 import { findMenuNode } from "@/lib/menu";
 import { RENAME_VARS, USER_VAR, WHY_VAR } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
-import { usePageStateStore } from "@/stores/page-state";
 
 type Config = z.infer<typeof BindingConfigSchema>;
 
@@ -81,28 +81,29 @@ const NAV_ITEMS: SubNavItem[] = [
   },
 ];
 
-// oxlint-disable-next-line eslint/complexity
 export const ServerBindingPage = () => {
-  const { id } = useParams({ from: "/dashboard/servers/$id/binding" });
+  const { id, section } = useParams({
+    from: "/dashboard/servers/$id/binding/$section",
+  });
   const serverId = Number(id);
+  const navigate = useNavigate();
   const { menu } = useLayout();
   const { pathname } = useLocation();
   const node = findMenuNode(menu, pathname);
-  const dirty = usePageStateStore((s) => s.dirty);
-  const savePage = usePageStateStore((s) => s.savePage);
-  const cancelPage = usePageStateStore((s) => s.cancelPage);
 
   const { data: server, refetch } = useServer(serverId);
-  const { form: config, setForm: setConfig } = useServerForm(
+  const {
+    form: config,
+    setForm: setConfig,
+    status,
+  } = useServerForm(
     server?.bindingConfig,
     (c) => structuredClone(c),
     async (c) => {
       await BindingData.patch(serverId, { config: c });
       await refetch();
     },
-    { successMessage: "绑定配置已保存" },
   );
-  const [section, setSection] = useState("basic");
 
   const set = (patch: Partial<Config>): void => {
     if (config) {
@@ -134,27 +135,16 @@ export const ServerBindingPage = () => {
     );
   }
 
-  const dirtyActions = dirty ? (
-    <div className="flex gap-2">
-      <Button onClick={cancelPage} size="sm" variant="secondary">
-        取消更改
-      </Button>
-      <Button
-        onClick={() => {
-          void savePage();
-        }}
-        size="sm"
-      >
-        保存配置
-      </Button>
-    </div>
-  ) : undefined;
-
   return (
     <SubPageLayout
-      headerActions={dirtyActions}
+      headerActions={<AutoSaveIndicator status={status} />}
       items={NAV_ITEMS}
-      onChange={setSection}
+      onChange={(next) => {
+        void navigate({
+          params: { id, section: next },
+          to: "/servers/$id/binding/$section",
+        });
+      }}
       title={node?.label ?? "账号绑定"}
       value={section}
     >
@@ -162,22 +152,20 @@ export const ServerBindingPage = () => {
         <>
           <SettingsSection description="验证码与绑定数量配置" title="绑定参数">
             <SettingsRow label="绑定数量">
-              <Input
+              <NumberInput
                 className="w-28 text-right"
-                onChange={(e) => {
-                  set({ maxBindCount: Number(e.target.value) });
+                onChange={(maxBindCount) => {
+                  set({ maxBindCount });
                 }}
-                type="number"
                 value={config.maxBindCount}
               />
             </SettingsRow>
             <SettingsRow label="验证码长度">
-              <Input
+              <NumberInput
                 className="w-28 text-right"
-                onChange={(e) => {
-                  set({ codeLength: Number(e.target.value) });
+                onChange={(codeLength) => {
+                  set({ codeLength });
                 }}
-                type="number"
                 value={config.codeLength}
               />
             </SettingsRow>
@@ -201,12 +189,11 @@ export const ServerBindingPage = () => {
               </Select>
             </SettingsRow>
             <SettingsRow label="过期时间（分钟）">
-              <Input
+              <NumberInput
                 className="w-28 text-right"
-                onChange={(e) => {
-                  set({ codeExpire: Number(e.target.value) });
+                onChange={(codeExpire) => {
+                  set({ codeExpire });
                 }}
-                type="number"
                 value={config.codeExpire}
               />
             </SettingsRow>

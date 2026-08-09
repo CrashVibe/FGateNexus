@@ -1,4 +1,4 @@
-import { useLocation, useParams } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { differenceWith, isEqual, pick } from "lodash-es";
 import { MessageSquare, Settings, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -10,6 +10,7 @@ import {
   formatMCToPlatformMessage,
   formatPlatformToMCMessage,
 } from "#shared/utils/chat-sync";
+import { AutoSaveIndicator } from "@/components/common/auto-save-indicator";
 import { LoadingState } from "@/components/common/loading-state";
 import {
   SettingsBlock,
@@ -25,19 +26,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/sonner";
+import { NumberInput } from "@/components/ui/number-input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useRegisterPageState } from "@/hooks/use-page-state";
+import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
 import { ChatSyncData } from "@/lib/api";
-import { errorMessage } from "@/lib/http";
 import { findMenuNode } from "@/lib/menu";
 import {
   MC_TO_PLATFORM_VARS,
   PLATFORM_TO_MC_VARS,
 } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
-import { usePageStateStore } from "@/stores/page-state";
 
 type ChatSyncConfig = z.infer<typeof ChatSyncConfigSchema>;
 type ArrayFilterKey =
@@ -119,17 +118,15 @@ const ArrayField = ({
   );
 };
 
-// 视图容器：三分区 + 目标抽屉，分支较多但均为展示逻辑。
-// oxlint-disable-next-line eslint/complexity
 export const ServerMsgbridgePage = () => {
-  const { id } = useParams({ from: "/dashboard/servers/$id/msgbridge" });
+  const { id, section } = useParams({
+    from: "/dashboard/servers/$id/msgbridge/$section",
+  });
   const serverId = Number(id);
+  const navigate = useNavigate();
   const { menu } = useLayout();
   const { pathname } = useLocation();
   const node = findMenuNode(menu, pathname);
-  const dirty = usePageStateStore((s) => s.dirty);
-  const savePage = usePageStateStore((s) => s.savePage);
-  const cancelPage = usePageStateStore((s) => s.cancelPage);
 
   const { data: server, refetch } = useServer(serverId);
 
@@ -140,7 +137,6 @@ export const ServerMsgbridgePage = () => {
     targets: targetResponse[];
   } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [section, setSection] = useState("basic");
 
   useEffect(() => {
     if (server) {
@@ -168,30 +164,15 @@ export const ServerMsgbridgePage = () => {
     const changed = differenceWith(targets, original.targets, isEqual).map(
       (t) => pick(t, ["id", "config"]),
     );
-    try {
-      await ChatSyncData.patch(serverId, {
-        chatsync: config,
-        targets: changed,
-      });
-      toast.success("消息同步配置已保存");
-      setSelectedId(null);
-      await refetch();
-    } catch (error) {
-      toast.error("保存配置失败", { description: errorMessage(error) });
-    }
+    await ChatSyncData.patch(serverId, {
+      chatsync: config,
+      targets: changed,
+    });
+    setSelectedId(null);
+    await refetch();
   };
 
-  useRegisterPageState(
-    isDirty,
-    async () => {
-      await handleSubmit();
-    },
-    () => {
-      setConfig(structuredClone(original?.config ?? null));
-      setTargets(structuredClone(original?.targets ?? []));
-      setSelectedId(null);
-    },
-  );
+  const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
 
   if (!(original && config)) {
     return (
@@ -210,28 +191,17 @@ export const ServerMsgbridgePage = () => {
     setFilter({ [key]: next });
   };
 
-  const dirtyActions = dirty ? (
-    <div className="flex gap-2">
-      <Button onClick={cancelPage} size="sm" variant="secondary">
-        取消更改
-      </Button>
-      <Button
-        onClick={() => {
-          void savePage();
-        }}
-        size="sm"
-      >
-        保存配置
-      </Button>
-    </div>
-  ) : undefined;
-
   return (
     <>
       <SubPageLayout
-        headerActions={dirtyActions}
+        headerActions={<AutoSaveIndicator status={status} />}
         items={NAV_ITEMS}
-        onChange={setSection}
+        onChange={(next) => {
+          void navigate({
+            params: { id, section: next },
+            to: "/servers/$id/msgbridge/$section",
+          });
+        }}
         title={node?.label ?? "消息互通"}
         value={section}
       >
@@ -273,14 +243,11 @@ export const ServerMsgbridgePage = () => {
                 description="低于此长度的消息将被忽略"
                 label="最小长度"
               >
-                <Input
+                <NumberInput
                   className="w-28 text-right"
-                  onChange={(e) => {
-                    setFilter({
-                      minMessageLength: Number(e.target.value),
-                    });
+                  onChange={(minMessageLength) => {
+                    setFilter({ minMessageLength });
                   }}
-                  type="number"
                   value={config.filters.minMessageLength}
                 />
               </SettingsRow>
@@ -288,14 +255,11 @@ export const ServerMsgbridgePage = () => {
                 description="超过此长度的消息将被截断或忽略"
                 label="最大长度"
               >
-                <Input
+                <NumberInput
                   className="w-28 text-right"
-                  onChange={(e) => {
-                    setFilter({
-                      maxMessageLength: Number(e.target.value),
-                    });
+                  onChange={(maxMessageLength) => {
+                    setFilter({ maxMessageLength });
                   }}
-                  type="number"
                   value={config.filters.maxMessageLength}
                 />
               </SettingsRow>

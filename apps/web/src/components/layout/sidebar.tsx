@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { ChevronRight, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "tanstack-theme-kit";
 
 import { AppLogo } from "@/components/common/app-logo";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 
 const leafClass =
-  "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
+  "flex items-center gap-2.5 rounded-md px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
 const leafActiveClass = "bg-accent text-accent-foreground";
 
 const NavLeaf = ({
@@ -20,20 +20,26 @@ const NavLeaf = ({
   node: MenuNode;
   onNavigate?: () => void;
 }) => {
+  const { pathname } = useLocation();
   if (!node.to) {
     return null;
   }
+  // 含子区块的项：所在子区块随便切都算"在这一项里"；否则要求精确匹配
+  const isActive = node.hasSections
+    ? pathname.startsWith(node.to.split("/").slice(0, -1).join("/"))
+    : pathname === node.to;
   const Icon = node.icon;
   return (
     <Link
-      activeOptions={{ exact: true }}
-      activeProps={{ className: leafActiveClass }}
-      className={leafClass}
+      className={cn(leafClass, isActive && leafActiveClass)}
       onClick={onNavigate}
       to={node.to}
     >
-      {Icon ? <Icon className="size-4 shrink-0" /> : null}
-      <span className="truncate">{node.label}</span>
+      {Icon ? <Icon className="size-[18px] shrink-0" /> : null}
+      <span className="min-w-0 flex-1 truncate">{node.label}</span>
+      {node.hasSections ? (
+        <ChevronRight className="size-3.5 shrink-0 opacity-50" />
+      ) : null}
     </Link>
   );
 };
@@ -85,15 +91,15 @@ export const Sidebar = ({
   return (
     <div className="bg-sidebar text-sidebar-foreground flex h-full flex-col">
       <Link
-        className="border-sidebar-border flex h-12 shrink-0 items-center gap-2 border-b px-4"
+        className="border-sidebar-border flex h-16 shrink-0 items-center gap-2.5 border-b px-5"
         onClick={onNavigate}
         to="/"
       >
-        <AppLogo className="h-6 w-auto shrink-0" />
-        <span className="text-sm font-semibold">FlowGate</span>
+        <AppLogo className="h-7 w-auto shrink-0" />
+        <span className="text-base font-semibold">FlowGate</span>
       </Link>
 
-      <nav className="scrollbar-custom flex-1 space-y-3 overflow-y-auto px-2 py-3">
+      <nav className="scrollbar-custom flex-1 space-y-3 overflow-y-auto px-3 py-4">
         {menu.map((column, i) => (
           <div className="space-y-1" key={column.map((n) => n.label).join("|")}>
             {i > 0 ? <Separator className="my-2" /> : null}
@@ -118,7 +124,7 @@ export const Sidebar = ({
 
       <div
         className={cn(
-          "border-sidebar-border flex items-center justify-between border-t p-3",
+          "border-sidebar-border flex items-center justify-between border-t p-4",
         )}
       >
         <Button
