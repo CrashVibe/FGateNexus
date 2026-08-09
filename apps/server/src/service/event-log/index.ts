@@ -1,5 +1,7 @@
 import { insertPlayerEvent } from "#server/db/queries/player-event";
+import { broadcastDashboardEvent } from "#server/service/dashboard/event-stream";
 import type { MCEvent, MCEventType } from "#server/service/mcwsbridge/types";
+import { getCachedServer } from "#server/service/server-cache";
 import { logger } from "#server/utils/logger";
 
 const log = logger.child({}, { msgPrefix: "[EventLog] " });
@@ -26,13 +28,25 @@ export const recordMcEvent = async (event: MCEvent): Promise<void> => {
     event.type === "player.death"
       ? { message: payload.deathMessage ?? null }
       : null;
+  const createdAt = new Date(event.timestamp);
   try {
-    await insertPlayerEvent({
-      createdAt: new Date(event.timestamp),
+    const id = await insertPlayerEvent({
+      createdAt,
       data,
       playerName: payload.playerName ?? null,
       playerUuid: payload.playerUUID,
       serverId: event.serverId,
+      type: event.type,
+    });
+
+    const server = await getCachedServer(event.serverId);
+    broadcastDashboardEvent({
+      createdAt,
+      data,
+      id,
+      playerName: payload.playerName ?? null,
+      serverId: event.serverId,
+      serverName: server?.name ?? "未知服务器",
       type: event.type,
     });
   } catch (error) {

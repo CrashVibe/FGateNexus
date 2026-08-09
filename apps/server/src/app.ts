@@ -5,6 +5,7 @@ import { errorHandler } from "#server/http/respond";
 
 import { authRouter } from "./routes/auth";
 import { botRouter } from "./routes/bot";
+import { dashboardRouter } from "./routes/dashboard";
 import { playersRouter } from "./routes/players";
 import { serversRouter } from "./routes/servers";
 import { settingsRouter } from "./routes/settings";
@@ -19,6 +20,7 @@ const app = new Hono()
   .use("/api/*", authMiddleware)
   .route("/api/auth", authRouter)
   .route("/api/bot", botRouter)
+  .route("/api/dashboard", dashboardRouter)
   .route("/api/servers", serversRouter)
   .route("/api/players", playersRouter)
   .route("/api/settings", settingsRouter)

@@ -4,13 +4,13 @@ import type { ForkScope, Session } from "koishi";
 import { Context, Logger as log } from "koishi";
 
 import { db } from "#server/db/client";
-import { getServerByIdWithBotAndTargets } from "#server/db/queries/server";
 import type { ServerWithBotAndTargets } from "#server/db/queries/server";
 import { botTable } from "#server/db/schema";
 import type { Target } from "#server/db/schema";
 import { bindingService } from "#server/service/bindingmanager";
 import { handlePlatformMessage } from "#server/service/chatbridge/message-router";
 import { recordMcEvent } from "#server/service/event-log";
+import { getCachedServer } from "#server/service/server-cache";
 import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
@@ -28,28 +28,6 @@ type EventHandlerMap = {
     target: Target,
     server: ServerWithBotAndTargets,
   ) => Promise<void>;
-};
-
-/** 避免每条事件都查库 */
-const SERVER_CACHE_TTL_MS = 5000;
-const serverCache = new Map<
-  number,
-  { data: ServerWithBotAndTargets | undefined; expiresAt: number }
->();
-
-const getCachedServer = async (
-  serverId: number,
-): Promise<ServerWithBotAndTargets | undefined> => {
-  const entry = serverCache.get(serverId);
-  if (entry && Date.now() <= entry.expiresAt) {
-    return entry.data;
-  }
-  const data = await getServerByIdWithBotAndTargets(serverId);
-  serverCache.set(serverId, {
-    data,
-    expiresAt: Date.now() + SERVER_CACHE_TTL_MS,
-  });
-  return data;
 };
 
 const handlerMap: EventHandlerMap = {
