@@ -15,6 +15,12 @@ export default defineConfig({
         ignoreOverrideMethods: true,
       },
     ],
+    "eslint/complexity": [
+      "error",
+      {
+        max: 30,
+      },
+    ],
     "eslint/max-statements": "off",
     "eslint/no-inline-comments": "allow",
     "eslint/no-void": [

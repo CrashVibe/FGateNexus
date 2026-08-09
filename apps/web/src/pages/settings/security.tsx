@@ -43,8 +43,6 @@ const passwordFormSchema = PasswordAPI.POST.request.extend({
 });
 type PasswordForm = z.infer<typeof passwordFormSchema>;
 
-// 内容较多但均为展示逻辑，复杂度上限对此类页面过严。
-// oxlint-disable-next-line eslint/complexity
 export const SecurityContent = () => {
   const navigate = useNavigate();
   const authStatus = useAuthStore((s) => s.authStatus);
