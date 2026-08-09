@@ -1,6 +1,6 @@
 {
   "name": "fgatenexus",
-  "version": "0.7.1",
+  "version": "0.8.0-alpha.0",
   "private": true,
   "workspaces": [
     "apps/*",
