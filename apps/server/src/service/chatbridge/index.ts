@@ -30,6 +30,28 @@ type EventHandlerMap = {
   ) => Promise<void>;
 };
 
+/** 避免每条事件都查库 */
+const SERVER_CACHE_TTL_MS = 5000;
+const serverCache = new Map<
+  number,
+  { data: ServerWithBotAndTargets | undefined; expiresAt: number }
+>();
+
+const getCachedServer = async (
+  serverId: number,
+): Promise<ServerWithBotAndTargets | undefined> => {
+  const entry = serverCache.get(serverId);
+  if (entry && Date.now() <= entry.expiresAt) {
+    return entry.data;
+  }
+  const data = await getServerByIdWithBotAndTargets(serverId);
+  serverCache.set(serverId, {
+    data,
+    expiresAt: Date.now() + SERVER_CACHE_TTL_MS,
+  });
+  return data;
+};
+
 const handlerMap: EventHandlerMap = {
   "execute.command": async (s, e, t, srv) => {
     await s.onCommand(e, t, srv.commandConfig);
@@ -188,7 +210,7 @@ class ChatBridge {
 
     const checker = eventConfigMap[event.type];
 
-    const server = await getServerByIdWithBotAndTargets(event.serverId);
+    const server = await getCachedServer(event.serverId);
 
     if (!server?.botId) {
       this.logger.warn(
