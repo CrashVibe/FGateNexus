@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { formatMcVersion } from "@/lib/mc-format";
 import { cn } from "@/lib/utils";
 
 const SOFTWARE_ICONS: Record<string, string> = {
@@ -24,20 +25,6 @@ const SOFTWARE_ICONS: Record<string, string> = {
 
 const getSoftwareIcon = (software: string | null): string =>
   (software && SOFTWARE_ICONS[software]) ?? "/minecraft.svg";
-
-const getVersion = (original: string | null): string => {
-  if (!original) {
-    return "未知版本";
-  }
-  const match =
-    /^(?<full>[\d.]+-\d+-[a-f0-9]+)\s+\(MC:\s*(?<mcVersion>[^)]+)\)/u.exec(
-      original,
-    );
-  if (match) {
-    return `v${match.groups?.mcVersion ?? ""}`;
-  }
-  return original;
-};
 
 /** 服务器卡片：状态、版本、服务端、Token 复制。 */
 export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
@@ -90,7 +77,7 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
             </Badge>
           </div>
           <Badge variant={server.isOnline ? "secondary" : "warning"}>
-            {getVersion(server.minecraft_version)}
+            {formatMcVersion(server.minecraft_version)}
           </Badge>
         </div>
 

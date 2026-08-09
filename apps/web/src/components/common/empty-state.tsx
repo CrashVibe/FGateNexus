@@ -12,7 +12,7 @@ export const EmptyState = ({
   icon?: ReactNode;
   title?: string;
   desc: string;
-  action: ReactNode;
+  action?: ReactNode;
   className?: string;
 }) => (
   <div

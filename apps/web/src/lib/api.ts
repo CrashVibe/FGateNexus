@@ -4,6 +4,7 @@ import type { LoginAPI, PasswordAPI } from "#shared/model/auth/api";
 import type { AuthStatus } from "#shared/model/auth/schema";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
+import { DashboardAPI } from "#shared/model/dashboard";
 import { PlayerAPI } from "#shared/model/player/api";
 import type {
   BindingAPI,
@@ -235,6 +236,42 @@ export const PlayerData = {
   async gets(): Promise<z.infer<typeof PlayerAPI.GETS.response>> {
     const response = await request("/api/players");
     return PlayerAPI.GETS.response.parse(response.data);
+  },
+};
+
+export const DashboardData = {
+  async events(
+    limit = 20,
+  ): Promise<z.infer<typeof DashboardAPI.EVENTS.response>> {
+    const response = await request("/api/dashboard/events", {
+      query: { limit },
+    });
+    return DashboardAPI.EVENTS.response.parse(response.data);
+  },
+  async leaderboard(
+    limit = 5,
+  ): Promise<z.infer<typeof DashboardAPI.LEADERBOARD.response>> {
+    const response = await request("/api/dashboard/leaderboard", {
+      query: { limit },
+    });
+    return DashboardAPI.LEADERBOARD.response.parse(response.data);
+  },
+  async servers(): Promise<z.infer<typeof DashboardAPI.SERVERS.response>> {
+    const response = await request("/api/dashboard/servers");
+    return DashboardAPI.SERVERS.response.parse(response.data);
+  },
+  async statusHistory(
+    serverId: number,
+    hours = 24,
+  ): Promise<z.infer<typeof DashboardAPI.STATUS_HISTORY.response>> {
+    const response = await request("/api/dashboard/status-history", {
+      query: { hours, serverId },
+    });
+    return DashboardAPI.STATUS_HISTORY.response.parse(response.data);
+  },
+  async summary(): Promise<z.infer<typeof DashboardAPI.SUMMARY.response>> {
+    const response = await request("/api/dashboard/summary");
+    return DashboardAPI.SUMMARY.response.parse(response.data);
   },
 };
 
