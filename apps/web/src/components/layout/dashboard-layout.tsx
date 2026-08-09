@@ -1,23 +1,13 @@
-import { Outlet, useBlocker, useLocation } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 
 import { LayoutContext } from "@/components/layout/context";
 import { Sidebar } from "@/components/layout/sidebar";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useDragResize } from "@/hooks/use-drag-resize";
 import { basicMenu, serverMenu } from "@/lib/menu";
-import { usePageStateStore } from "@/stores/page-state";
 
-/** Dashboard 布局：侧边菜单（随服务器编辑态切换）+ 脏页面离开拦截。 */
+/** Dashboard 布局：侧边菜单（随服务器编辑态切换）。 */
 export const DashboardLayout = () => {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,27 +19,7 @@ export const DashboardLayout = () => {
 
   const menu = useMemo(() => (sid ? serverMenu(sid) : basicMenu()), [sid]);
 
-  const [sidebarWidth, startSidebarResize] = useDragResize(240, 180, 400);
-  const isPageDirty = usePageStateStore((s) => s.isPageDirty);
-  const savePage = usePageStateStore((s) => s.savePage);
-  const clearPageState = usePageStateStore((s) => s.clearPageState);
-
-  // 脏页面守卫：存在未保存更改时拦截路由跳转，弹窗让用户保存/放弃。
-  const blocker = useBlocker({
-    enableBeforeUnload: false, // 不在刷新/关闭页签时弹浏览器原生提示
-    shouldBlockFn: () => isPageDirty(),
-    withResolver: true,
-  });
-
-  const handleDiscard = (): void => {
-    clearPageState();
-    blocker.proceed?.();
-  };
-
-  const handleSaveAndGo = async (): Promise<void> => {
-    await savePage();
-    blocker.proceed?.();
-  };
+  const [sidebarWidth, startSidebarResize] = useDragResize(268, 200, 420);
 
   return (
     <LayoutContext.Provider
@@ -92,36 +62,6 @@ export const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
-
-      <Dialog
-        onOpenChange={(open) => {
-          if (!open) {
-            blocker.reset?.();
-          }
-        }}
-        open={blocker.status === "blocked"}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>有未保存的更改</DialogTitle>
-            <DialogDescription>
-              切换页面前请保存更改，或放弃未保存内容。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={handleDiscard} variant="outline">
-              放弃更改
-            </Button>
-            <Button
-              onClick={() => {
-                void handleSaveAndGo();
-              }}
-            >
-              保存并切换
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </LayoutContext.Provider>
   );
 };

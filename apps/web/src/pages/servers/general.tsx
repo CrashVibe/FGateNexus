@@ -41,7 +41,7 @@ export const ServerGeneralPage = () => {
   const { data: bots } = useBots();
   const deleteServer = useDeleteServer();
 
-  const { form, setForm } = useServerForm(
+  const { form, setForm, status } = useServerForm(
     server,
     (s) => ({ botId: s.botId, name: s.name, token: s.token }),
     async (f) => {
@@ -82,7 +82,7 @@ export const ServerGeneralPage = () => {
       await deleteServer.mutateAsync(serverId);
       toast.success("服务器已删除～");
       setShowDelete(false);
-      await navigate({ to: "/" });
+      await navigate({ to: "/servers" });
     } catch (error) {
       toast.error("删除服务器失败", { description: errorMessage(error) });
     } finally {
@@ -92,7 +92,7 @@ export const ServerGeneralPage = () => {
 
   return (
     <>
-      <ServerHeader />
+      <ServerHeader status={status} />
       <div className="scrollbar-custom flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-8 lg:px-6">
           {form ? (

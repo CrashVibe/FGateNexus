@@ -12,10 +12,8 @@ import { ServerHeader } from "@/components/layout/server-header";
 import { ChannelSelector } from "@/components/target/channel-selector";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/sonner";
-import { useRegisterPageState } from "@/hooks/use-page-state";
+import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
 import { TargetData } from "@/lib/api";
-import { errorMessage } from "@/lib/http";
 import { useBot } from "@/queries/bots";
 import { useServer } from "@/queries/servers";
 import { useTargets } from "@/queries/targets";
@@ -46,7 +44,6 @@ export const ServerTargetPage = () => {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [original, setOriginal] = useState<Set<string>>(new Set());
-  const [submitting, setSubmitting] = useState(false);
   const [channelsLoading, setChannelsLoading] = useState(false);
 
   useEffect(() => {
@@ -71,52 +68,36 @@ export const ServerTargetPage = () => {
     if (toCreate.length === 0 && toDelete.length === 0) {
       return;
     }
-    setSubmitting(true);
-    try {
-      if (toCreate.length > 0) {
-        const payload = toCreate.map((k) => {
-          const p = parseSelectionKey(k);
-          return targetSchemaRequest.parse({
-            channelId: p.channelId.trim(),
-            guildId: p.guildId,
-            type: p.type,
-          });
+    if (toCreate.length > 0) {
+      const payload = toCreate.map((k) => {
+        const p = parseSelectionKey(k);
+        return targetSchemaRequest.parse({
+          channelId: p.channelId.trim(),
+          guildId: p.guildId,
+          type: p.type,
         });
-        await TargetData.creates(
-          serverId,
-          payload as [(typeof payload)[number], ...(typeof payload)[number][]],
-        );
-      }
-      if (toDelete.length > 0) {
-        const all = await TargetData.gets(serverId);
-        const delSet = new Set(toDelete);
-        const ids = all
-          .filter((t) => delSet.has(toSelectionKey(t)))
-          .map((t) => t.id);
-        if (ids.length > 0) {
-          await TargetData.deletes(serverId, {
-            ids: ids as [string, ...string[]],
-          });
-        }
-      }
-      toast.success("配置已保存");
-      await refetchTargets();
-    } catch (error) {
-      toast.error("保存配置失败", { description: errorMessage(error) });
-    } finally {
-      setSubmitting(false);
+      });
+      await TargetData.creates(
+        serverId,
+        payload as [(typeof payload)[number], ...(typeof payload)[number][]],
+      );
     }
+    if (toDelete.length > 0) {
+      const all = await TargetData.gets(serverId);
+      const delSet = new Set(toDelete);
+      const ids = all
+        .filter((t) => delSet.has(toSelectionKey(t)))
+        .map((t) => t.id);
+      if (ids.length > 0) {
+        await TargetData.deletes(serverId, {
+          ids: ids as [string, ...string[]],
+        });
+      }
+    }
+    await refetchTargets();
   };
 
-  useRegisterPageState(
-    isDirty,
-    async () => {
-      await handleSubmit();
-    },
-    () => {
-      setSelected(new Set(original));
-    },
-  );
+  const status = useAutoSaveTrigger([selected], isDirty, handleSubmit);
 
   const renderBody = (): React.ReactNode => {
     if (serverLoading || server === undefined) {
@@ -198,33 +179,13 @@ export const ServerTargetPage = () => {
           platform={bot.platform}
           selected={selected}
         />
-
-        <div className="flex justify-end gap-2">
-          <Button
-            disabled={!isDirty || submitting}
-            onClick={() => {
-              setSelected(new Set(original));
-            }}
-            variant="secondary"
-          >
-            取消更改
-          </Button>
-          <Button
-            disabled={!isDirty || submitting}
-            onClick={() => {
-              void handleSubmit();
-            }}
-          >
-            保存配置
-          </Button>
-        </div>
       </div>
     );
   };
 
   return (
     <>
-      <ServerHeader />
+      <ServerHeader status={status} />
       <div className="scrollbar-custom flex-1 overflow-y-auto">
         <div className="mx-auto max-w-5xl px-4 py-8 lg:px-6">
           {renderBody()}

@@ -20,11 +20,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
-import { useRegisterPageState } from "@/hooks/use-page-state";
+import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
 import { BotData, BrowserData, CommandData } from "@/lib/api";
-import { errorMessage } from "@/lib/http";
 import { ONEBOT_ROLES } from "@/lib/permissions";
 import { useBot } from "@/queries/bots";
 import { useServer } from "@/queries/servers";
@@ -112,7 +110,6 @@ const TargetCommandDrawer = ({
   );
 };
 
-// oxlint-disable-next-line eslint/complexity
 export const ServerCommandPage = () => {
   const { id } = useParams({ from: "/dashboard/servers/$id/command" });
   const serverId = Number(id);
@@ -157,34 +154,17 @@ export const ServerCommandPage = () => {
     const changed = differenceWith(targets, original.targets, isEqual).map(
       (t) => pick(t, ["id", "config"]),
     );
-    try {
-      await CommandData.patch(serverId, { command: config, targets: changed });
-      toast.success("配置已保存");
-      setSelectedId(null);
-      await refetch();
-    } catch (error) {
-      toast.error("保存配置失败", { description: errorMessage(error) });
-    }
+    await CommandData.patch(serverId, { command: config, targets: changed });
+    setSelectedId(null);
+    await refetch();
   };
 
-  useRegisterPageState(
-    isDirty,
-    async () => {
-      await handleSubmit();
-    },
-    () => {
-      setConfig(
-        structuredClone(original?.config ?? CommandConfigSchema.parse({})),
-      );
-      setTargets(structuredClone(original?.targets ?? []));
-      setSelectedId(null);
-    },
-  );
+  const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
 
   if (!original) {
     return (
       <>
-        <ServerHeader />
+        <ServerHeader status={status} />
         <div className="flex-1 overflow-y-auto p-6">
           <LoadingState />
         </div>

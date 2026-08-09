@@ -19,17 +19,14 @@ import { ServerHeader } from "@/components/layout/server-header";
 import { MessageTemplateField } from "@/components/target/message-template-field";
 import { TargetConfigSheet } from "@/components/target/target-config-sheet";
 import { Label } from "@/components/ui/label";
-import { toast } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
-import { useRegisterPageState } from "@/hooks/use-page-state";
+import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
 import { NotifyData } from "@/lib/api";
-import { errorMessage } from "@/lib/http";
 import { DEATH_MSG_VAR, PLAYER_NAME_VAR } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
 
 type NotifyConfig = z.infer<typeof NotifyConfigSchema>;
 
-// oxlint-disable-next-line eslint/complexity
 export const ServerNotifyPage = () => {
   const { id } = useParams({ from: "/dashboard/servers/$id/notify" });
   const serverId = Number(id);
@@ -70,27 +67,12 @@ export const ServerNotifyPage = () => {
     const changed = differenceWith(targets, original.targets, isEqual).map(
       (t) => pick(t, ["id", "config"]),
     );
-    try {
-      await NotifyData.patch(serverId, { notify: config, targets: changed });
-      toast.success("配置已保存");
-      setSelectedId(null);
-      await refetch();
-    } catch (error) {
-      toast.error("保存配置失败", { description: errorMessage(error) });
-    }
+    await NotifyData.patch(serverId, { notify: config, targets: changed });
+    setSelectedId(null);
+    await refetch();
   };
 
-  useRegisterPageState(
-    isDirty,
-    async () => {
-      await handleSubmit();
-    },
-    () => {
-      setConfig(structuredClone(original?.config ?? null));
-      setTargets(structuredClone(original?.targets ?? []));
-      setSelectedId(null);
-    },
-  );
+  const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
 
   const selectedTarget = targets.find((t) => t.id === selectedId) ?? null;
 
@@ -121,7 +103,7 @@ export const ServerNotifyPage = () => {
   if (!(original && config)) {
     return (
       <>
-        <ServerHeader />
+        <ServerHeader status={status} />
         <div className="flex-1 overflow-y-auto p-6">
           <LoadingState />
         </div>
