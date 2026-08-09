@@ -15,8 +15,13 @@ const AppConfigSchema = z.object({
         .string()
         .nonempty("browser.executablePath 不能为空")
         .optional(),
+      maxConcurrentRenders: z
+        .number()
+        .int("browser.maxConcurrentRenders 必须是整数")
+        .positive("browser.maxConcurrentRenders 必须是正整数")
+        .default(4),
     })
-    .default({}),
+    .default({ maxConcurrentRenders: 4 }),
   koishi: z
     .object({
       host: z.ipv4().nonempty("koishi.host 不能为空").default("127.0.0.1"),

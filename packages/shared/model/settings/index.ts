@@ -54,12 +54,14 @@ export const SettingsAPI = {
     request: z.void(),
     response: z.object({
       executablePath: z.string().nullable(),
+      maxConcurrentRenders: z.number().int().positive(),
     }),
   },
   PATCH: {
     description: "更新浏览器设置",
     request: z.object({
-      executablePath: z.string().nullable(),
+      executablePath: z.string().nullable().optional(),
+      maxConcurrentRenders: z.number().int().positive().optional(),
     }),
     response: z.void(),
   },

@@ -252,11 +252,8 @@ export const BrowserData = {
     const response = await request("/api/settings/browser");
     return SettingsAPI.GET.response.parse(response.data);
   },
-  async patch(executablePath: string | null): Promise<void> {
-    await request("/api/settings/browser", {
-      body: { executablePath },
-      method: "PATCH",
-    });
+  async patch(patch: z.infer<typeof SettingsAPI.PATCH.request>): Promise<void> {
+    await request("/api/settings/browser", { body: patch, method: "PATCH" });
   },
   async startDownload(): Promise<void> {
     await request("/api/settings/browser/download", { method: "POST" });

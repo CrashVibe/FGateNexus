@@ -19,6 +19,7 @@ import type { DownloadState, DownloadStatus } from "#shared/model/settings";
 import { LoadingState } from "@/components/common/loading-state";
 import {
   SettingsBlock,
+  SettingsRow,
   SettingsSection,
 } from "@/components/common/settings-section";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -89,6 +90,8 @@ export const BrowserContent = () => {
   const [startingDownload, setStartingDownload] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [concurrency, setConcurrency] = useState("");
+  const [savingConcurrency, setSavingConcurrency] = useState(false);
 
   const {
     data: config,
@@ -98,6 +101,12 @@ export const BrowserContent = () => {
     queryFn: async () => await BrowserData.get(),
     queryKey: ["browser-config"],
   });
+
+  useEffect(() => {
+    if (config) {
+      setConcurrency(String(config.maxConcurrentRenders));
+    }
+  }, [config]);
 
   const isDownloading = ACTIVE_STATUSES.has(downloadState.status);
   const downloadProgress = downloadState.totalBytes
@@ -183,7 +192,7 @@ export const BrowserContent = () => {
     }
     setSavingPath(true);
     try {
-      await BrowserData.patch(customPath.trim());
+      await BrowserData.patch({ executablePath: customPath.trim() });
       toast.success("浏览器路径已保存");
       await refetchConfig();
     } catch (error) {
@@ -196,7 +205,7 @@ export const BrowserContent = () => {
   const clearPath = async (): Promise<void> => {
     setSavingPath(true);
     try {
-      await BrowserData.patch(null);
+      await BrowserData.patch({ executablePath: null });
       setCustomPath("");
       toast.success("已清除自定义路径，将使用自动检测");
       await refetchConfig();
@@ -204,6 +213,24 @@ export const BrowserContent = () => {
       toast.error("操作失败");
     } finally {
       setSavingPath(false);
+    }
+  };
+
+  const saveConcurrency = async (): Promise<void> => {
+    const value = Number(concurrency);
+    if (!Number.isInteger(value) || value < 1) {
+      toast.warning("并发数须为正整数");
+      return;
+    }
+    setSavingConcurrency(true);
+    try {
+      await BrowserData.patch({ maxConcurrentRenders: value });
+      toast.success("并发数已保存");
+      await refetchConfig();
+    } catch (error) {
+      toast.error("保存失败", { description: errorMessage(error) });
+    } finally {
+      setSavingConcurrency(false);
     }
   };
 
@@ -257,6 +284,34 @@ export const BrowserContent = () => {
                 </Alert>
               </SettingsBlock>
             )}
+
+            <SettingsRow
+              description="同时进行的图片渲染任务数上限，超出的任务会排队等待"
+              label="渲染并发数"
+            >
+              <div className="flex gap-2">
+                <Input
+                  className="w-20"
+                  id="maxConcurrentRenders"
+                  min={1}
+                  onChange={(e) => {
+                    setConcurrency(e.target.value);
+                  }}
+                  type="number"
+                  value={concurrency}
+                />
+                <Button
+                  disabled={savingConcurrency}
+                  onClick={() => {
+                    void saveConcurrency();
+                  }}
+                  size="icon"
+                  variant="secondary"
+                >
+                  <Save />
+                </Button>
+              </div>
+            </SettingsRow>
           </SettingsSection>
 
           <Tabs

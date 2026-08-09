@@ -7,6 +7,7 @@ import { launch } from "puppeteer-core";
 import { TEMPLATE_DIR } from "#server/service/template/template-store";
 import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
+import { createSemaphore } from "#server/utils/semaphore";
 
 import { getLatestInstalledChromiumPath } from "./browser-downloader";
 
@@ -107,6 +108,8 @@ class ImageRenderer {
   private startPromise: Promise<void> | null = null;
   private staticServer: ReturnType<typeof Bun.serve> | null = null;
   private staticServerOrigin: string | null = null;
+  /** 并发渲染页数上限，见 browser.maxConcurrentRenders */
+  private readonly renderSemaphore = createSemaphore();
 
   async start() {
     if (this.browser) {
@@ -198,36 +201,46 @@ class ImageRenderer {
     viewport: { width: number; height: number } | "auto",
     render_options: RenderOptions = DEFAULT_RENDER_OPTIONS,
   ): Promise<Buffer> {
-    const browser = await this.ensureBrowser();
-    const page = await browser.newPage();
-    await page.goto(`file://${baseURL}`);
-    await page.setContent(html_str, {
-      timeout: render_options.wait_time,
-      waitUntil: render_options.waitUntil,
-    });
-    const bodyElement = await page.$("body");
-    const bodyBox = bodyElement ? await bodyElement.boundingBox() : null;
-    if (viewport === "auto") {
-      if (!bodyBox) {
-        throw new Error("无法获取页面内容的尺寸");
+    const release = await this.renderSemaphore.acquire(
+      configManager.config.browser.maxConcurrentRenders,
+    );
+    try {
+      const browser = await this.ensureBrowser();
+      const page = await browser.newPage();
+      try {
+        await page.goto(`file://${baseURL}`);
+        await page.setContent(html_str, {
+          timeout: render_options.wait_time,
+          waitUntil: render_options.waitUntil,
+        });
+        const bodyElement = await page.$("body");
+        const bodyBox = bodyElement ? await bodyElement.boundingBox() : null;
+        if (viewport === "auto") {
+          if (!bodyBox) {
+            throw new Error("无法获取页面内容的尺寸");
+          }
+          await page.setViewport({
+            height: Math.ceil(bodyBox.height),
+            width: Math.ceil(bodyBox.width),
+          });
+        } else {
+          await page.setViewport({
+            height: viewport.height,
+            width: viewport.width,
+          });
+        }
+        const screenshotBuffer = await page.screenshot({
+          fullPage: true,
+          quality: render_options.quality,
+          type: render_options.type,
+        });
+        return Buffer.from(screenshotBuffer);
+      } finally {
+        await page.close();
       }
-      await page.setViewport({
-        height: Math.ceil(bodyBox.height),
-        width: Math.ceil(bodyBox.width),
-      });
-    } else {
-      await page.setViewport({
-        height: viewport.height,
-        width: viewport.width,
-      });
+    } finally {
+      release();
     }
-    const screenshotBuffer = await page.screenshot({
-      fullPage: true,
-      quality: render_options.quality,
-      type: render_options.type,
-    });
-    await page.close();
-    return Buffer.from(screenshotBuffer);
   }
 
   /** 默认拦截非本地/data: 请求以沙箱化三方代码 */
@@ -236,6 +249,27 @@ class ImageRenderer {
     context: TemplateRenderContext,
     viewport: { width: number; height: number } | "auto",
     options: RenderPageOptions = {},
+  ): Promise<Buffer> {
+    const release = await this.renderSemaphore.acquire(
+      configManager.config.browser.maxConcurrentRenders,
+    );
+    try {
+      return await this.renderPageInner(
+        entryFilePath,
+        context,
+        viewport,
+        options,
+      );
+    } finally {
+      release();
+    }
+  }
+
+  private async renderPageInner(
+    entryFilePath: string,
+    context: TemplateRenderContext,
+    viewport: { width: number; height: number } | "auto",
+    options: RenderPageOptions,
   ): Promise<Buffer> {
     const browser = await this.ensureBrowser();
     const { staticServerOrigin } = this;

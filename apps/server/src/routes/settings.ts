@@ -35,16 +35,18 @@ export const settingsRouter = new Hono()
         StatusCodes.OK,
         SettingsAPI.GET.response.parse({
           executablePath: executablePath ?? null,
+          maxConcurrentRenders: browser.maxConcurrentRenders,
         }),
       );
     }),
   )
   .patch(
     "/browser",
-    guard("更新浏览器路径失败", async (c) => {
-      const { executablePath } = await parseBody(c, SettingsAPI.PATCH.request);
+    guard("更新浏览器设置失败", async (c) => {
+      const body = await parseBody(c, SettingsAPI.PATCH.request);
+      const { executablePath, maxConcurrentRenders } = body;
 
-      if (executablePath !== null) {
+      if (executablePath !== undefined && executablePath !== null) {
         try {
           await fs.promises.access(executablePath, fs.constants.X_OK);
         } catch {
@@ -57,28 +59,38 @@ export const settingsRouter = new Hono()
         }
       }
 
-      logger.info({ executablePath }, "更新浏览器路径配置");
+      logger.info(body, "更新浏览器设置");
+      const { browser } = configManager.config;
       configManager.updateConfig({
-        browser: { executablePath: executablePath ?? undefined },
+        browser: {
+          executablePath:
+            executablePath === undefined
+              ? browser.executablePath
+              : (executablePath ?? undefined),
+          maxConcurrentRenders:
+            maxConcurrentRenders ?? browser.maxConcurrentRenders,
+        },
       });
 
-      if (
-        configManager.config.browser.executablePath !== undefined ||
-        (await getLatestInstalledChromiumPath()) !== undefined
-      ) {
-        try {
-          await imageRenderer.start();
-        } catch (error) {
-          logger.error(error, "图片渲染服务启动失败");
+      if (executablePath !== undefined) {
+        if (
+          configManager.config.browser.executablePath !== undefined ||
+          (await getLatestInstalledChromiumPath()) !== undefined
+        ) {
+          try {
+            await imageRenderer.start();
+          } catch (error) {
+            logger.error(error, "图片渲染服务启动失败");
+          }
+        } else {
+          await imageRenderer.stop();
+          logger.warn(
+            "未配置浏览器路径且未检测到已安装的 Chromium，图片渲染服务已停止",
+          );
         }
-      } else {
-        await imageRenderer.stop();
-        logger.warn(
-          "未配置浏览器路径且未检测到已安装的 Chromium，图片渲染服务已停止",
-        );
       }
 
-      return ok(c, "浏览器路径已更新", StatusCodes.OK);
+      return ok(c, "浏览器设置已更新", StatusCodes.OK);
     }),
   )
   .get(
