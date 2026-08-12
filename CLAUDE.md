@@ -26,7 +26,6 @@ bun run dev:web        # frontend only: vite dev (apps/web)
 bun run typecheck      # tsc --noEmit for both web and server
 bun run check          # ultracite check  (wraps oxlint+oxfmt; run before committing)
 bun run fix            # ultracite fix
-bun run knip           # knip — find unused files, deps, and exports
 bun run db:generate    # drizzle-kit generate — create a migration from schema changes
 bun run db:migrate     # bun scripts/migrate.ts — apply migrations to ./data/sqlite.db
 bun run build:web      # vite build → apps/web/dist (同时生成 apps/server/dist/assets.ts)

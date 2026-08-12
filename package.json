@@ -21,7 +21,6 @@
     "build:mac": "bun build --compile --minify --sourcemap --target=bun-darwin-arm64 apps/server/src/index.ts --outfile ./dist/FGateNexus-mac-arm64 && bun build --compile --minify --sourcemap --target=bun-darwin-x64 apps/server/src/index.ts --outfile ./dist/FGateNexus-mac-x64",
     "build:linux": "bun build --compile --minify --sourcemap --target=bun-linux-arm64 apps/server/src/index.ts --outfile ./dist/FGateNexus-linux-arm64 && bun build --compile --minify --sourcemap --target=bun-linux-x64 apps/server/src/index.ts --outfile ./dist/FGateNexus-linux-x64",
     "build:win": "bun build --compile --minify --sourcemap --target=bun-windows-x64 apps/server/src/index.ts --outfile ./dist/FGateNexus-win-x64.exe",
-    "knip": "knip",
     "check": "ultracite check",
     "fix": "ultracite fix",
     "prepare": "lefthook install",
@@ -35,7 +34,6 @@
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
     "husky": "^9.1.7",
-    "knip": "^6.16.1",
     "lefthook": "^2.1.9",
     "lint-staged": "^17.0.8",
     "oxfmt": "^0.57.0",
