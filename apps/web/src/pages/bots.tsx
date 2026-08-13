@@ -26,9 +26,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/sonner";
+import { useEntityStatusStream } from "@/hooks/use-status-event-stream";
 import { errorMessage } from "@/lib/http";
 import { cn } from "@/lib/utils";
 import {
+  botsKey,
   useBots,
   useCreateBot,
   useDeleteBot,
@@ -84,6 +86,8 @@ export const BotsPage = () => {
   const updateBot = useUpdateBot();
   const deleteBot = useDeleteBot();
   const toggleBot = useToggleBot();
+
+  useEntityStatusStream("bot", botsKey);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [createForm, setCreateForm] = useState<BotFormValue>({});

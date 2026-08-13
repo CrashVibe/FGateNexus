@@ -9,6 +9,7 @@ import { dashboardRouter } from "./routes/dashboard";
 import { playersRouter } from "./routes/players";
 import { serversRouter } from "./routes/servers";
 import { settingsRouter } from "./routes/settings";
+import { statusRouter } from "./routes/status";
 import { templateInstancesRouter } from "./routes/template-instances";
 import { templatesRouter } from "./routes/templates";
 
@@ -24,6 +25,7 @@ const app = new Hono()
   .route("/api/servers", serversRouter)
   .route("/api/players", playersRouter)
   .route("/api/settings", settingsRouter)
+  .route("/api/status", statusRouter)
   .route("/api/templates", templatesRouter)
   .route("/api/servers/:serverId/template-instances", templateInstancesRouter);
 

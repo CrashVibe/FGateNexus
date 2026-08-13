@@ -1,6 +1,5 @@
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
 import { StatusCodes } from "http-status-codes";
 
 import { db } from "#server/db/client";
@@ -12,14 +11,13 @@ import {
 import { getStatusHistory } from "#server/db/queries/server-status-history";
 import { botTable, playerTable, serverTable } from "#server/db/schema";
 import { fail, guard, ok } from "#server/http/respond";
+import { sseStream } from "#server/http/sse";
 import { chatBridge } from "#server/service/chatbridge";
 import { subscribeDashboardEvents } from "#server/service/dashboard/event-stream";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import type ServerSession from "#server/service/mcwsbridge/server-session";
 import { DashboardAPI } from "#shared/model/dashboard";
 import { ApiError } from "#shared/model/error";
-
-const KEEPALIVE_INTERVAL_MS = 15_000;
 
 const clampInt = (raw: string | undefined, fallback: number, max: number) => {
   const n = Number(raw);
@@ -145,29 +143,9 @@ export const dashboardRouter = new Hono()
     }),
   )
   .get("/stream", (c) =>
-    streamSSE(c, async (stream) => {
-      const send = async (event: unknown) => {
-        await stream.writeSSE({
-          data: JSON.stringify(event),
-          event: "player-event",
-        });
-      };
-
-      const unsubscribe = subscribeDashboardEvents((event) => {
-        void send(DashboardAPI.EVENTS.response.element.parse(event));
-      });
-      stream.onAbort(unsubscribe);
-
-      try {
-        while (!stream.aborted) {
-          // 必须在循环中等待，以便在客户端断开时退出循环
-          await stream.sleep(KEEPALIVE_INTERVAL_MS);
-          await stream.writeSSE({ data: "{}", event: "ping" });
-        }
-      } finally {
-        unsubscribe();
-      }
-    }),
+    sseStream(c, "player-event", subscribeDashboardEvents, (event) =>
+      DashboardAPI.EVENTS.response.element.parse(event),
+    ),
   )
   .get(
     "/leaderboard",

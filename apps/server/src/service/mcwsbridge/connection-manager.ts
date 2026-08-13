@@ -5,6 +5,7 @@ import { serverTable } from "#server/db/schema";
 import { clientInfoSchema } from "#server/service/mcwsbridge/model";
 import type { Peer } from "#server/service/mcwsbridge/peer";
 import ServerSession from "#server/service/mcwsbridge/server-session";
+import { broadcastStatusEvent } from "#server/service/status-stream";
 import { logger } from "#server/utils/logger";
 
 /**
@@ -36,6 +37,7 @@ class ConnectionManager {
         cause: error,
       });
     }
+    broadcastStatusEvent({ id: serverId, isOnline: true, kind: "server" });
   }
 
   /**
@@ -96,6 +98,11 @@ class ConnectionManager {
 
     logger.info(`[CONNECTION] 已移除：serverId=${session.serverId}`);
     session.cleanup();
+    broadcastStatusEvent({
+      id: session.serverId,
+      isOnline: false,
+      kind: "server",
+    });
     return { peer: session.peer, serverId: session.serverId };
   }
 

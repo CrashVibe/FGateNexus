@@ -11,6 +11,7 @@ import { bindingService } from "#server/service/bindingmanager";
 import { handlePlatformMessage } from "#server/service/chatbridge/message-router";
 import { recordMcEvent } from "#server/service/event-log";
 import { getCachedServer } from "#server/service/server-cache";
+import { broadcastStatusEvent } from "#server/service/status-stream";
 import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
@@ -120,6 +121,19 @@ class ChatBridge {
         await ChatBridge.handleGroupLeave(connection, session);
       }
     });
+    // 监听所有平台的上下线状态变化，按 platform+selfId 匹配对应连接
+    this.app.on("bot-status-updated", (bot) => {
+      const connection = [...this.connections.values()].find(
+        (c) => c.platformType === bot.platform && c.bot.selfId === bot.selfId,
+      );
+      if (connection) {
+        broadcastStatusEvent({
+          id: connection.botId,
+          isOnline: connection.isOnline(),
+          kind: "bot",
+        });
+      }
+    });
   }
 
   async close(): Promise<void> {
@@ -137,6 +151,7 @@ class ChatBridge {
     const connection = this.connections.remove(botID);
     connection.pluginInstance.dispose();
     this.logger.debug(`已移除 Bot 连接：${botID}`);
+    broadcastStatusEvent({ id: botID, isOnline: false, kind: "bot" });
   }
 
   addBot(
@@ -154,6 +169,12 @@ class ChatBridge {
     );
     this.connections.add(connection);
     this.logger.debug(`已添加 Bot 连接：${botID}`);
+    // 广播 bot 上线状态变化
+    broadcastStatusEvent({
+      id: botID,
+      isOnline: connection.isOnline(),
+      kind: "bot",
+    });
   }
 
   get(botID: number): PlatformSender | undefined {

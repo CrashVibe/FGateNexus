@@ -20,8 +20,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
+import { useEntityStatusStream } from "@/hooks/use-status-event-stream";
 import { errorMessage } from "@/lib/http";
-import { useCreateServer, useServers } from "@/queries/servers";
+import { serversKey, useCreateServer, useServers } from "@/queries/servers";
 
 type FormData = z.infer<typeof ServersAPI.POST.request>;
 
@@ -29,6 +30,8 @@ export const ServersPage = () => {
   const { data: serverList, isLoading } = useServers();
   const createServer = useCreateServer();
   const [open, setOpen] = useState(false);
+
+  useEntityStatusStream("server", serversKey);
 
   const {
     register,

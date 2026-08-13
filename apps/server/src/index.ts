@@ -168,6 +168,8 @@ const main = async (): Promise<void> => {
       return res;
     },
     hostname: host,
+    // 空闲超时放宽到 60s，容纳 SSE 长连接
+    idleTimeout: 60,
     port,
     websocket: { ...mcBridgeWebSocket, perMessageDeflate: true },
   });

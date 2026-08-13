@@ -1,18 +1,7 @@
 import type { RecentEvent } from "#server/db/queries/player-event";
+import { createEventBus } from "#server/utils/event-bus";
 
-type Listener = (event: RecentEvent) => void;
+const bus = createEventBus<RecentEvent>();
 
-const listeners = new Set<Listener>();
-
-export const broadcastDashboardEvent = (event: RecentEvent): void => {
-  for (const listener of listeners) {
-    listener(event);
-  }
-};
-
-export const subscribeDashboardEvents = (listener: Listener): (() => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-};
+export const broadcastDashboardEvent = bus.broadcast;
+export const subscribeDashboardEvents = bus.subscribe;
