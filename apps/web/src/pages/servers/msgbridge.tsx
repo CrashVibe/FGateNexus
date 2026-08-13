@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { differenceWith, isEqual, pick } from "lodash-es";
 import { MessageSquare, Settings, Users } from "lucide-react";
@@ -37,6 +38,7 @@ import {
   PLATFORM_TO_MC_VARS,
 } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
+import { targetsKey } from "@/queries/targets";
 
 type ChatSyncConfig = z.infer<typeof ChatSyncConfigSchema>;
 type ArrayFilterKey =
@@ -128,6 +130,7 @@ export const ServerMsgbridgePage = () => {
   const { pathname } = useLocation();
   const node = findMenuNode(menu, pathname);
 
+  const queryClient = useQueryClient();
   const { data: server, refetch } = useServer(serverId);
 
   const [config, setConfig] = useState<ChatSyncConfig | null>(null);
@@ -168,8 +171,9 @@ export const ServerMsgbridgePage = () => {
       chatsync: config,
       targets: changed,
     });
-    setSelectedId(null);
     await refetch();
+    // 同步失效 targets 缓存
+    await queryClient.invalidateQueries({ queryKey: targetsKey(serverId) });
   };
 
   const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);

@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { differenceWith, isEqual, pick } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
@@ -24,6 +25,7 @@ import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
 import { NotifyData } from "@/lib/api";
 import { DEATH_MSG_VAR, PLAYER_NAME_VAR } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
+import { targetsKey } from "@/queries/targets";
 
 type NotifyConfig = z.infer<typeof NotifyConfigSchema>;
 
@@ -31,6 +33,7 @@ export const ServerNotifyPage = () => {
   const { id } = useParams({ from: "/dashboard/servers/$id/notify" });
   const serverId = Number(id);
 
+  const queryClient = useQueryClient();
   const { data: server, refetch } = useServer(serverId);
 
   const [config, setConfig] = useState<NotifyConfig | null>(null);
@@ -68,8 +71,9 @@ export const ServerNotifyPage = () => {
       (t) => pick(t, ["id", "config"]),
     );
     await NotifyData.patch(serverId, { notify: config, targets: changed });
-    setSelectedId(null);
     await refetch();
+    // 同步失效 targets 缓存
+    await queryClient.invalidateQueries({ queryKey: targetsKey(serverId) });
   };
 
   const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
@@ -113,7 +117,7 @@ export const ServerNotifyPage = () => {
 
   return (
     <>
-      <ServerHeader />
+      <ServerHeader status={status} />
       <div className="scrollbar-custom flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-8 lg:px-6">
           <div className="space-y-8">

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { differenceWith, isEqual, pick } from "lodash-es";
 import { TriangleAlert } from "lucide-react";
@@ -26,6 +26,7 @@ import { BotData, BrowserData, CommandData } from "@/lib/api";
 import { ONEBOT_ROLES } from "@/lib/permissions";
 import { useBot } from "@/queries/bots";
 import { useServer } from "@/queries/servers";
+import { targetsKey } from "@/queries/targets";
 
 const TargetCommandDrawer = ({
   target,
@@ -132,6 +133,7 @@ export const ServerCommandPage = () => {
   const serverId = Number(id);
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
   const { data: server, refetch } = useServer(serverId);
   const { data: bot } = useBot(server?.botId ?? null);
   const { data: browser } = useQuery({
@@ -172,8 +174,9 @@ export const ServerCommandPage = () => {
       (t) => pick(t, ["id", "config"]),
     );
     await CommandData.patch(serverId, { command: config, targets: changed });
-    setSelectedId(null);
     await refetch();
+    // 同步失效 targets 缓存
+    await queryClient.invalidateQueries({ queryKey: targetsKey(serverId) });
   };
 
   const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
@@ -191,7 +194,7 @@ export const ServerCommandPage = () => {
 
   return (
     <>
-      <ServerHeader />
+      <ServerHeader status={status} />
       <div className="scrollbar-custom flex-1 overflow-y-auto">
         <div className="mx-auto max-w-2xl px-4 py-8 lg:px-6">
           <div className="space-y-8">

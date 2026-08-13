@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
 import { TargetData } from "@/lib/api";
 import { useBot } from "@/queries/bots";
-import { useServer } from "@/queries/servers";
+import { serverKey, useServer } from "@/queries/servers";
 import { useTargets } from "@/queries/targets";
 
 const toSelectionKey = (
@@ -95,6 +95,8 @@ export const ServerTargetPage = () => {
       }
     }
     await refetchTargets();
+    // 同步失效 server 缓存
+    await queryClient.invalidateQueries({ queryKey: serverKey(serverId) });
   };
 
   const status = useAutoSaveTrigger([selected], isDirty, handleSubmit);
