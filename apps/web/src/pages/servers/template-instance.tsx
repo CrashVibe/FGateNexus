@@ -200,7 +200,11 @@ export const ServerTemplateInstancePage = () => {
     setInitialized(true);
   }, [existing, initialized]);
 
-  const roleOptions = bot?.platform === PlatformType.Onebot ? ONEBOT_ROLES : [];
+  const roleOptions =
+    bot?.platform === PlatformType.Onebot ||
+    bot?.platform === PlatformType.Milky
+      ? ONEBOT_ROLES
+      : [];
 
   const selectedManifest = useMemo(
     () => templates?.find((t) => t.id === form.templateId),

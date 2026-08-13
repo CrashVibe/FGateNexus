@@ -62,6 +62,28 @@ export const BotAPI = {
     request: z.void(),
     response: z.array(PlatformResponseSchema),
   },
+  KOOK_CHANNELS: {
+    description: "获取 KOOK 频道列表（服务器和频道）",
+    request: z.void(),
+    response: DiscordChannelsSchema,
+  },
+  KOOK_ROLES: {
+    description: "获取 KOOK 机器人服务器权限组列表",
+    request: z.object({
+      guildId: z.string().nonempty("服务器 ID 不能为空"),
+    }),
+    response: z.array(
+      z.object({
+        label: z.string(),
+        value: z.string(),
+      }),
+    ),
+  },
+  MILKY_CHANNELS: {
+    description: "获取 Milky 频道列表（群和好友）",
+    request: z.void(),
+    response: OnebotChannelsSchema,
+  },
   ONEBOT_CHANNELS: {
     description: "获取 OneBot 频道列表（群和私聊）",
     request: z.void(),

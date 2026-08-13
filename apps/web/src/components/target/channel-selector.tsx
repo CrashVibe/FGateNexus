@@ -67,7 +67,7 @@ export const ChannelSelector = ({
     if (query.data === undefined) {
       return [];
     }
-    if (platform === PlatformType.Onebot) {
+    if (platform === PlatformType.Onebot || platform === PlatformType.Milky) {
       return buildOnebotItems(query.data as OnebotChannels);
     }
     return buildDiscordItems(query.data as DiscordChannels);

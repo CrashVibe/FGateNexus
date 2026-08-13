@@ -1,0 +1,14 @@
+diff --git a/lib/index.cjs b/lib/index.cjs
+index 5f76517..ad198d1 100644
+--- a/lib/index.cjs
++++ b/lib/index.cjs
+@@ -268,7 +268,8 @@ var adaptUser = /* @__PURE__ */ __name((user) => ({
+ }), "adaptUser");
+ var decodeGuildMember = /* @__PURE__ */ __name((member) => ({
+   user: adaptUser(member),
+-  nick: member.nickname
++  nick: member.nickname,
++  roles: member.roles?.map((id) => ({ id: String(id) }))
+ }), "decodeGuildMember");
+ var decodeRole = /* @__PURE__ */ __name((role) => ({
+   ...role,

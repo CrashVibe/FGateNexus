@@ -2,11 +2,15 @@ import { z } from "zod";
 
 import { PlatformType } from "../types";
 import { DiscordConfigSchema } from "./discord";
+import { KookConfigSchema } from "./kook";
+import { MilkyConfigSchema } from "./milky";
 import { OneBotConfigSchema } from "./onebot";
 
 export const PlatformSchema = z.union([
   OneBotConfigSchema,
   DiscordConfigSchema,
+  KookConfigSchema,
+  MilkyConfigSchema,
 ]);
 
 export const PlatformResponseSchema = z.object({

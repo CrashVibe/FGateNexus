@@ -1,10 +1,13 @@
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { DiscordBot } from "@koishijs/plugin-adapter-discord";
+import { KookBot } from "@koishijs/plugin-adapter-kook";
 import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
 import { eq } from "drizzle-orm";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { StatusCodes } from "http-status-codes";
+import MilkyBot from "koishi-plugin-adapter-milky";
 import pLimit from "p-limit";
 import pRetry from "p-retry";
 import type { z } from "zod";
@@ -13,6 +16,7 @@ import { db } from "#server/db/client";
 import { botTable } from "#server/db/schema";
 import { fail, guard, ok, parseBody } from "#server/http/respond";
 import { chatBridge } from "#server/service/chatbridge";
+import type { AdapterBot } from "#server/service/chatbridge/types";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
 import { ApiError } from "#shared/model/error";
@@ -120,6 +124,37 @@ const getCachedChannels = <T>(key: string): T | undefined => {
 
 const setCachedChannels = (key: string, data: unknown): void => {
   channelCache.set(key, { data, expiresAt: Date.now() + CHANNEL_CACHE_TTL_MS });
+};
+
+/** 频道/权限组接口共用前置校验，失败抛 ApiError 交给外层 guard() 处理 */
+const requirePlatformBot = async <B extends AdapterBot>(
+  c: Context,
+  platform: PlatformType,
+  platformLabel: string,
+  isInstance: (bot: AdapterBot) => bot is B,
+): Promise<{ botId: number; bot: B }> => {
+  const botId = Number(c.req.param("id"));
+  if (Number.isNaN(botId)) {
+    throw ApiError.validation("无效的 Bot ID");
+  }
+  const botRecord = await db.query.botTable.findFirst({
+    where: eq(botTable.id, botId),
+  });
+  if (!botRecord) {
+    throw ApiError.notFound("未能找到 Bot");
+  }
+  if (botRecord.platform !== platform) {
+    throw ApiError.validation(`Bot 类型不是 ${platformLabel}`);
+  }
+  const botConnection = chatBridge.get(botId);
+  if (!botConnection?.isOnline()) {
+    throw ApiError.notFound("Bot 未上线或机器人未找到");
+  }
+  const { bot } = botConnection;
+  if (!isInstance(bot)) {
+    throw ApiError.internal("Bot 对应的机器人实例类型不匹配");
+  }
+  return { bot, botId };
 };
 
 export const botRouter = new Hono()
@@ -263,27 +298,12 @@ export const botRouter = new Hono()
   .get(
     "/:id/discord-channels",
     guard("获取频道列表失败", async (c) => {
-      const botId = Number(c.req.param("id"));
-      if (Number.isNaN(botId)) {
-        return fail(c, ApiError.validation("无效的 Bot ID"));
-      }
-      const botRecord = await db.query.botTable.findFirst({
-        where: eq(botTable.id, botId),
-      });
-      if (!botRecord) {
-        return fail(c, ApiError.notFound("未能找到 Bot"));
-      }
-      if (botRecord.platform !== PlatformType.Discord) {
-        return fail(c, ApiError.validation("Bot 类型不是 Discord"));
-      }
-      const botConnection = chatBridge.get(botId);
-      if (!botConnection?.isOnline()) {
-        return fail(c, ApiError.notFound("Bot 未上线或机器人未找到"));
-      }
-      const { bot } = botConnection;
-      if (!(bot instanceof DiscordBot)) {
-        return fail(c, ApiError.internal("Bot 对应的机器人实例类型不匹配"));
-      }
+      const { botId, bot } = await requirePlatformBot(
+        c,
+        PlatformType.Discord,
+        "Discord",
+        (b): b is DiscordBot => b instanceof DiscordBot,
+      );
       const dcCacheKey = `dc:${botId}`;
       const dcCached =
         getCachedChannels<z.infer<typeof BotAPI.DISCORD_CHANNELS.response>>(
@@ -306,33 +326,18 @@ export const botRouter = new Hono()
   .get(
     "/:id/discord-roles",
     guard("获取 Discord 权限组列表失败", async (c) => {
-      const botId = Number(c.req.param("id"));
-      if (Number.isNaN(botId)) {
-        return fail(c, ApiError.validation("无效的 Bot ID"));
-      }
       const parsed = BotAPI.DISCORD_ROLES.request.safeParse({
         guildId: c.req.query("guildId"),
       });
       if (!parsed.success) {
         return fail(c, ApiError.validation("无效的群组 ID"), parsed.error);
       }
-      const botRecord = await db.query.botTable.findFirst({
-        where: eq(botTable.id, botId),
-      });
-      if (!botRecord) {
-        return fail(c, ApiError.notFound("Bot 不存在"));
-      }
-      if (botRecord.platform !== PlatformType.Discord) {
-        return fail(c, ApiError.validation("Bot 类型不是 Discord"));
-      }
-      const botConnection = chatBridge.get(botId);
-      if (!botConnection?.isOnline()) {
-        return fail(c, ApiError.notFound("Bot 未上线或机器人未找到"));
-      }
-      const { bot } = botConnection;
-      if (!(bot instanceof DiscordBot)) {
-        return fail(c, ApiError.internal("Bot 对应的机器人实例类型不匹配"));
-      }
+      const { botId, bot } = await requirePlatformBot(
+        c,
+        PlatformType.Discord,
+        "Discord",
+        (b): b is DiscordBot => b instanceof DiscordBot,
+      );
       const drCacheKey = `dr:${botId}:${parsed.data.guildId}`;
       const drCached =
         getCachedChannels<z.infer<typeof BotAPI.DISCORD_ROLES.response>>(
@@ -350,29 +355,140 @@ export const botRouter = new Hono()
     }),
   )
   .get(
+    "/:id/kook-channels",
+    guard("获取频道列表失败", async (c) => {
+      const { botId, bot } = await requirePlatformBot(
+        c,
+        PlatformType.Kook,
+        "KOOK",
+        (b): b is KookBot => b instanceof KookBot,
+      );
+      const kkCacheKey = `kk:${botId}`;
+      const kkCached =
+        getCachedChannels<z.infer<typeof BotAPI.KOOK_CHANNELS.response>>(
+          kkCacheKey,
+        );
+      if (kkCached) {
+        return ok(c, "获取 KOOK 频道列表成功", StatusCodes.OK, kkCached);
+      }
+      const response: DiscordChannelsResponse = {
+        channels: [],
+        dms: [],
+        guilds: [],
+      };
+      const { data: guilds } = await bot.getGuildList();
+      for (const guild of guilds) {
+        response.guilds.push({
+          avatar: guild.avatar,
+          id: guild.id,
+          name: guild.name ?? `服务器 ${guild.id}`,
+        });
+      }
+      const kkLimit = pLimit(CHANNEL_FETCH_CONCURRENCY);
+      await Promise.all(
+        guilds.map(async (guild) => {
+          await kkLimit(async () => {
+            const { data: channelList } = await bot.getChannelList(guild.id);
+            for (const channel of channelList) {
+              if (channel.type !== TEXT_CHANNEL_TYPE) {
+                continue;
+              }
+              response.channels.push({
+                guildId: guild.id,
+                id: channel.id,
+                name: channel.name ?? `频道 ${channel.id}`,
+                type: "group",
+              });
+            }
+          });
+        }),
+      );
+      const kkResult = BotAPI.KOOK_CHANNELS.response.parse(response);
+      setCachedChannels(kkCacheKey, kkResult);
+      return ok(c, "获取 KOOK 频道列表成功", StatusCodes.OK, kkResult);
+    }),
+  )
+  .get(
+    "/:id/kook-roles",
+    guard("获取权限组列表失败", async (c) => {
+      const parsed = BotAPI.KOOK_ROLES.request.safeParse({
+        guildId: c.req.query("guildId"),
+      });
+      if (!parsed.success) {
+        return fail(c, ApiError.validation("无效的服务器 ID"), parsed.error);
+      }
+      const { botId, bot } = await requirePlatformBot(
+        c,
+        PlatformType.Kook,
+        "KOOK",
+        (b): b is KookBot => b instanceof KookBot,
+      );
+      const krCacheKey = `kr:${botId}:${parsed.data.guildId}`;
+      const krCached =
+        getCachedChannels<z.infer<typeof BotAPI.KOOK_ROLES.response>>(
+          krCacheKey,
+        );
+      if (krCached) {
+        return ok(c, "获取 KOOK 权限组列表成功", StatusCodes.OK, krCached);
+      }
+      const { data: roles } = await bot.getGuildRoles(parsed.data.guildId);
+      const krResult = BotAPI.KOOK_ROLES.response.parse(
+        roles.map((role) => ({
+          label: role.name ?? role.id,
+          value: role.id,
+        })),
+      );
+      setCachedChannels(krCacheKey, krResult);
+      return ok(c, "获取 KOOK 权限组列表成功", StatusCodes.OK, krResult);
+    }),
+  )
+  .get(
+    "/:id/milky-channels",
+    guard("获取频道列表失败", async (c) => {
+      const { botId, bot } = await requirePlatformBot(
+        c,
+        PlatformType.Milky,
+        "Milky",
+        (b): b is MilkyBot => b instanceof MilkyBot,
+      );
+      const mkCacheKey = `mk:${botId}`;
+      const mkCached = getCachedChannels<ChannelItem[]>(mkCacheKey);
+      if (mkCached) {
+        return ok(c, "获取 Milky 频道列表成功", StatusCodes.OK, mkCached);
+      }
+      const channels: ChannelItem[] = [];
+      const { data: guilds } = await bot.getGuildList();
+      for (const guild of guilds) {
+        channels.push({
+          avatar: guild.avatar,
+          id: guild.id,
+          name: guild.name ?? `群 ${guild.id}`,
+          type: "group",
+        });
+      }
+      const { data: friends } = await bot.getFriendList();
+      for (const friend of friends) {
+        const userId = friend.user?.id ?? "";
+        channels.push({
+          avatar: friend.user?.avatar,
+          id: `private:${userId}`,
+          name: friend.nick || friend.user?.name || `好友 ${userId}`,
+          type: "private",
+        });
+      }
+      setCachedChannels(mkCacheKey, channels);
+      return ok(c, "获取 Milky 频道列表成功", StatusCodes.OK, channels);
+    }),
+  )
+  .get(
     "/:id/onebot-channels",
     guard("获取频道列表失败", async (c) => {
-      const botId = Number(c.req.param("id"));
-      if (Number.isNaN(botId)) {
-        return fail(c, ApiError.validation("无效的 Bot ID"));
-      }
-      const botRecord = await db.query.botTable.findFirst({
-        where: eq(botTable.id, botId),
-      });
-      if (!botRecord) {
-        return fail(c, ApiError.notFound("未能找到 Bot"));
-      }
-      if (botRecord.platform !== PlatformType.Onebot) {
-        return fail(c, ApiError.validation("Bot 类型不是 OneBot"));
-      }
-      const botConnection = chatBridge.get(botId);
-      if (!botConnection?.isOnline()) {
-        return fail(c, ApiError.notFound("Bot 未上线或机器人未找到"));
-      }
-      const { bot } = botConnection;
-      if (!(bot instanceof OneBot)) {
-        return fail(c, ApiError.validation("Bot 类型不是 OneBot"));
-      }
+      const { botId, bot } = await requirePlatformBot(
+        c,
+        PlatformType.Onebot,
+        "OneBot",
+        (b): b is OneBot => b instanceof OneBot,
+      );
       const obCacheKey = `ob:${botId}`;
       const obCached = getCachedChannels<ChannelItem[]>(obCacheKey);
       if (obCached) {

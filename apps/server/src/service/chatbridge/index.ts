@@ -98,7 +98,14 @@ class ChatBridge {
       if (!bot.enabled) {
         continue;
       }
-      this.addBot(bot.id, bot.platform, bot.config);
+      try {
+        this.addBot(bot.id, bot.platform, bot.config);
+      } catch (error) {
+        this.logger.error(
+          { botId: bot.id, error },
+          `Bot 配置无效，已跳过：${bot.id}`,
+        );
+      }
     }
 
     this.app.on("message", async (session) => {

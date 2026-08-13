@@ -106,12 +106,18 @@ export const BotData = {
     | z.infer<typeof BotAPI.ONEBOT_CHANNELS.response>
     | z.infer<typeof BotAPI.DISCORD_CHANNELS.response>
   > {
-    const endpoint =
-      platform === PlatformType.Onebot
-        ? `/api/bot/${botId}/onebot-channels`
-        : `/api/bot/${botId}/discord-channels`;
-    const response = await request(endpoint);
-    return platform === PlatformType.Onebot
+    const isFlatList =
+      platform === PlatformType.Onebot || platform === PlatformType.Milky;
+    const endpointByPlatform: Record<PlatformType, string> = {
+      [PlatformType.Discord]: "discord-channels",
+      [PlatformType.Kook]: "kook-channels",
+      [PlatformType.Milky]: "milky-channels",
+      [PlatformType.Onebot]: "onebot-channels",
+    };
+    const response = await request(
+      `/api/bot/${botId}/${endpointByPlatform[platform]}`,
+    );
+    return isFlatList
       ? BotAPI.ONEBOT_CHANNELS.response.parse(response.data)
       : BotAPI.DISCORD_CHANNELS.response.parse(response.data);
   },
@@ -123,6 +129,15 @@ export const BotData = {
       query: { guildId },
     });
     return BotAPI.DISCORD_ROLES.response.parse(response.data);
+  },
+  async getKookRoles(
+    botId: number,
+    guildId: string,
+  ): Promise<z.infer<typeof BotAPI.KOOK_ROLES.response>> {
+    const response = await request(`/api/bot/${botId}/kook-roles`, {
+      query: { guildId },
+    });
+    return BotAPI.KOOK_ROLES.response.parse(response.data);
   },
   async gets(): Promise<z.infer<typeof BotAPI.GETS.response>> {
     const response = await request("/api/bot");

@@ -58,6 +58,7 @@
   },
   "patchedDependencies": {
     "@koishijs/loader@4.6.11": "patches/@koishijs%2Floader@4.6.11.patch",
-    "@satorijs/adapter-discord@4.6.1": "patches/@satorijs%2Fadapter-discord@4.6.1.patch"
+    "@satorijs/adapter-discord@4.6.1": "patches/@satorijs%2Fadapter-discord@4.6.1.patch",
+    "@satorijs/adapter-kook@4.8.0": "patches/@satorijs%2Fadapter-kook@4.8.0.patch"
   }
 }

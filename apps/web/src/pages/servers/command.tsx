@@ -50,8 +50,25 @@ const TargetCommandDrawer = ({
     queryKey: ["discord-roles", botId, target.guildId],
   });
 
-  const roleOptions =
-    platform === PlatformType.Onebot ? ONEBOT_ROLES : (discordRoles.data ?? []);
+  const kookRoles = useQuery({
+    enabled:
+      platform === PlatformType.Kook &&
+      botId !== undefined &&
+      target.type === "group" &&
+      target.guildId !== null,
+    queryFn: async () => await BotData.getKookRoles(botId!, target.guildId!),
+    queryKey: ["kook-roles", botId, target.guildId],
+  });
+
+  const roleOptions = (() => {
+    if (platform === PlatformType.Onebot || platform === PlatformType.Milky) {
+      return ONEBOT_ROLES;
+    }
+    if (platform === PlatformType.Kook) {
+      return kookRoles.data ?? [];
+    }
+    return discordRoles.data ?? [];
+  })();
 
   const setCmd = (patch: Partial<typeof cmd>): void => {
     onChange({

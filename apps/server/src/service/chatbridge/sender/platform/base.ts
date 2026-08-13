@@ -15,6 +15,43 @@ import type { PlatformMessage, PlatformSender } from "../types";
 export const toPngDataUri = (image: Buffer): string =>
   `data:image/png;base64,${image.toString("base64")}`;
 
+/** 对齐 pino `logger.error(err, msg)` 签名 */
+export interface ErrorLogger {
+  error: (obj: unknown, msg: string) => void;
+}
+
+/** 消息构建注入而非继承，形状相同的平台共用同一个 builders 实例 */
+export interface MessageBuilders<M extends PlatformMessage> {
+  buildChatMessage: (
+    payload: MCEvent<"player.chat">["payload"],
+    chatSyncConfig: ChatSyncConfig,
+    serverName: string,
+  ) => Promise<M>;
+  buildDeathMessage: (
+    payload: MCEvent<"player.death">["payload"],
+    notifyConfig: NotifyConfig,
+  ) => Promise<M>;
+  buildJoinMessage: (
+    payload: MCEvent<"player.join">["payload"],
+    notifyConfig: NotifyConfig,
+  ) => Promise<M>;
+  buildLeaveMessage: (
+    payload: MCEvent<"player.leave">["payload"],
+    notifyConfig: NotifyConfig,
+  ) => Promise<M>;
+  buildCommandMessage: (
+    payload: MCEvent<"execute.command">["payload"],
+    commandConfig: CommandConfig,
+    log: ErrorLogger,
+  ) => Promise<M>;
+  buildNotifyMessage: (
+    payload: MCEvent<"system.notify">["payload"],
+  ) => Promise<M>;
+  buildTemplateMessage: (
+    payload: MCEvent<"system.template">["payload"],
+  ) => Promise<M>;
+}
+
 export abstract class BaseSender<
   B extends AdapterBot = AdapterBot,
   M extends PlatformMessage = PlatformMessage,
@@ -26,6 +63,7 @@ export abstract class BaseSender<
   bot: B;
 
   protected readonly logger;
+  protected readonly builders: MessageBuilders<M>;
 
   constructor(
     platformType: PlatformType,
@@ -33,53 +71,21 @@ export abstract class BaseSender<
     config: PlatformConfig,
     bot: B,
     pluginInstance: ForkScope,
+    builders: MessageBuilders<M>,
   ) {
     this.platformType = platformType;
     this.botId = botId;
     this.config = config;
     this.bot = bot;
     this.pluginInstance = pluginInstance;
+    this.builders = builders;
     this.logger = logger.child(
       { botId: this.botId, platformType: this.platformType },
       { msgPrefix: `[${this.platformType} Sender](Bot #${this.botId}) ` },
     );
   }
 
-  protected abstract buildChatMessage(
-    payload: MCEvent<"player.chat">["payload"],
-    chatSyncConfig: ChatSyncConfig,
-    serverName: string,
-  ): Promise<M>;
-
-  protected abstract buildDeathMessage(
-    payload: MCEvent<"player.death">["payload"],
-    notifyConfig: NotifyConfig,
-  ): Promise<M>;
-
-  protected abstract buildJoinMessage(
-    payload: MCEvent<"player.join">["payload"],
-    notifyConfig: NotifyConfig,
-  ): Promise<M>;
-
-  protected abstract buildLeaveMessage(
-    payload: MCEvent<"player.leave">["payload"],
-    notifyConfig: NotifyConfig,
-  ): Promise<M>;
-
-  protected abstract buildCommandMessage(
-    payload: MCEvent<"execute.command">["payload"],
-    commandConfig: CommandConfig,
-  ): Promise<M>;
-
   protected abstract send(target: Target, message: M): Promise<void>;
-
-  protected abstract buildNotifyMessage(
-    payload: MCEvent<"system.notify">["payload"],
-  ): Promise<M>;
-
-  protected abstract buildTemplateMessage(
-    payload: MCEvent<"system.template">["payload"],
-  ): Promise<M>;
 
   abstract setGroupCard(
     target: Target,
@@ -104,7 +110,7 @@ export abstract class BaseSender<
       return;
     }
 
-    const message = await this.buildChatMessage(
+    const message = await this.builders.buildChatMessage(
       event.payload,
       chatSyncConfig,
       serverName,
@@ -123,7 +129,7 @@ export abstract class BaseSender<
 
     await this.send(
       target,
-      await this.buildDeathMessage(event.payload, notifyConfig),
+      await this.builders.buildDeathMessage(event.payload, notifyConfig),
     );
   }
 
@@ -138,7 +144,7 @@ export abstract class BaseSender<
 
     await this.send(
       target,
-      await this.buildJoinMessage(event.payload, notifyConfig),
+      await this.builders.buildJoinMessage(event.payload, notifyConfig),
     );
   }
 
@@ -153,7 +159,7 @@ export abstract class BaseSender<
 
     await this.send(
       target,
-      await this.buildLeaveMessage(event.payload, notifyConfig),
+      await this.builders.buildLeaveMessage(event.payload, notifyConfig),
     );
   }
 
@@ -168,7 +174,11 @@ export abstract class BaseSender<
 
     await this.send(
       target,
-      await this.buildCommandMessage(event.payload, commandConfig),
+      await this.builders.buildCommandMessage(
+        event.payload,
+        commandConfig,
+        this.logger,
+      ),
     );
   }
 
@@ -180,7 +190,10 @@ export abstract class BaseSender<
       return;
     }
 
-    await this.send(target, await this.buildNotifyMessage(event.payload));
+    await this.send(
+      target,
+      await this.builders.buildNotifyMessage(event.payload),
+    );
   }
 
   async onTemplate(
@@ -190,7 +203,10 @@ export abstract class BaseSender<
     if (!this.guardOnline()) {
       return;
     }
-    await this.send(target, await this.buildTemplateMessage(event.payload));
+    await this.send(
+      target,
+      await this.builders.buildTemplateMessage(event.payload),
+    );
   }
 
   isOnline(): boolean {

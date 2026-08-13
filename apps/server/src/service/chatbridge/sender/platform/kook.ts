@@ -1,4 +1,4 @@
-import type { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
+import type { KookBot } from "@koishijs/plugin-adapter-kook";
 import type { ForkScope } from "koishi";
 
 import type { Target } from "#server/db/schema";
@@ -8,15 +8,15 @@ import { BaseSender } from "./base";
 import type { ElementTextMessage } from "./element-message";
 import { elementMessageBuilders } from "./element-message";
 
-export default class OneBotSender extends BaseSender<
-  OneBot,
+export default class KookSender extends BaseSender<
+  KookBot,
   ElementTextMessage
 > {
   constructor(
     platformType: PlatformType,
     botId: number,
     config: PlatformConfig,
-    bot: OneBot,
+    bot: KookBot,
     pluginInstance: ForkScope,
   ) {
     super(
@@ -33,10 +33,7 @@ export default class OneBotSender extends BaseSender<
     target: Target,
     message: ElementTextMessage,
   ): Promise<void> {
-    if (target.type === "group") {
-      await this.bot.sendMessage(target.channelId, message.message);
-    }
-    await this.bot.sendPrivateMessage(target.channelId, message.message);
+    await this.bot.sendMessage(target.channelId, message.message);
   }
 
   override async setGroupCard(
@@ -44,12 +41,9 @@ export default class OneBotSender extends BaseSender<
     userId: string,
     card: string,
   ): Promise<void> {
-    const groupIdNumber = Number(target.channelId);
-    const userIdNumber = Number(userId);
-
-    if (!Number.isFinite(groupIdNumber) || !Number.isFinite(userIdNumber)) {
-      throw new TypeError("群组 ID 或用户 ID 非法");
+    if (!target.guildId) {
+      throw new Error("缺少 guildId，无法修改群名片");
     }
-    await this.bot.internal.setGroupCard(groupIdNumber, userIdNumber, card);
+    await this.bot.setGroupNickname(target.guildId, userId, card);
   }
 }

@@ -1,8 +1,5 @@
 import type { Session } from "koishi";
 
-import { OneBotConfigSchema } from "#shared/model/bot/schema/onebot";
-import { PlatformType } from "#shared/model/bot/types";
-
 import type { PlatformSender } from "./sender/types";
 
 export class ConnectionStore {
@@ -41,15 +38,10 @@ export class ConnectionStore {
   }
 
   public findBySession(session: Session): PlatformSender | undefined {
-    return [...this.connectionMap.values()].find((connection) => {
-      if (connection.platformType !== session.bot.platform) {
-        return false;
-      }
-      if (connection.platformType === PlatformType.Onebot) {
-        const parsed = OneBotConfigSchema.safeParse(connection.config);
-        return parsed.success && parsed.data.selfId === session.bot.selfId;
-      }
-      return connection.platformType === PlatformType.Discord;
-    });
+    return [...this.connectionMap.values()].find(
+      (connection) =>
+        connection.platformType === session.bot.platform &&
+        connection.bot.selfId === session.bot.selfId,
+    );
   }
 }
