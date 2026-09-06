@@ -1,7 +1,7 @@
 import { getServerByIdWithBotAndTargets } from "#server/db/queries/server";
 import type { ServerWithBotAndTargets } from "#server/db/queries/server";
 
-/** 避免每条事件都查库 */
+/** 缓存有效期。 */
 const SERVER_CACHE_TTL_MS = 5000;
 const serverCache = new Map<
   number,

@@ -260,7 +260,7 @@ class TemplateInstanceStore {
     );
   }
 
-  /** 串行化，避免并发 PATCH 互相覆盖 */
+  /** 按顺序串行写入磁盘。 */
   private async persist(): Promise<void> {
     const snapshot = [...(this.instances ?? [])];
     const previous = this.writeQueue;

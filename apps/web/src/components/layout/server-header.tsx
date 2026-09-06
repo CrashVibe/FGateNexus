@@ -2,7 +2,9 @@ import { useLocation } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { AutoSaveIndicator } from "@/components/common/auto-save-indicator";
+import { useServerCrumbs } from "@/components/layout/breadcrumb";
 import { useLayout } from "@/components/layout/context";
+import type { PageWidth } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import type { AutoSaveStatus } from "@/hooks/use-auto-save";
 import { findMenuNode } from "@/lib/menu";
@@ -11,23 +13,31 @@ import { findMenuNode } from "@/lib/menu";
 export const ServerHeader = ({
   actions,
   status,
+  width,
 }: {
   actions?: ReactNode;
   status?: AutoSaveStatus;
+  width?: PageWidth;
 }) => {
   const { menu } = useLayout();
   const { pathname } = useLocation();
   const node = findMenuNode(menu, pathname);
+  const serverCrumbs = useServerCrumbs();
 
   return (
     <PageHeader
-      // status 常驻挂载，由 AutoSaveIndicator 自己控制淡入淡出；
-      // 换成三元切换会导致它在 idle 时被卸载，动画根本来不及播放。
+      // status 常驻挂载，淡入淡出由 AutoSaveIndicator 自己控制。
       actions={
-        status === undefined ? actions : <AutoSaveIndicator status={status} />
+        <>
+          {status === undefined ? null : <AutoSaveIndicator status={status} />}
+          {actions}
+        </>
       }
-      description={node?.desc}
-      title={node?.label ?? "服务器配置"}
+      breadcrumb={[
+        ...serverCrumbs,
+        { content: node?.label ?? "服务器配置", key: "page" },
+      ]}
+      width={width}
     />
   );
 };

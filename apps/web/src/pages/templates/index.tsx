@@ -1,9 +1,12 @@
-import { Trash2, Upload } from "lucide-react";
+import { Image, Trash2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { TEMPLATE_DATA_SOURCE_LABELS } from "#shared/model/template/schema/manifest";
 import type { TemplateManifest } from "#shared/model/template/schema/manifest";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -82,9 +85,9 @@ export const TemplatesPage = () => {
       toast.success("模板已删除");
     } catch (error) {
       toast.error("删除失败", { description: errorMessage(error) });
-    } finally {
-      setPendingDelete(null);
+      throw error;
     }
+    setPendingDelete(null);
   };
 
   return (
@@ -92,7 +95,7 @@ export const TemplatesPage = () => {
       <PageHeader
         actions={
           <Button
-            disabled={upload.isPending}
+            loading={upload.isPending}
             onClick={() => fileInputRef.current?.click()}
             size="sm"
           >
@@ -117,12 +120,24 @@ export const TemplatesPage = () => {
         ref={fileInputRef}
         type="file"
       />
-      <div className="scrollbar-custom flex-1 overflow-y-auto p-4 lg:p-6">
+      <PageContent>
         {templates === undefined && <LoadingState />}
         {templates?.length === 0 && (
-          <p className="text-muted-foreground py-12 text-center text-sm">
-            还没有安装任何模板，点击右上角「上传模板」开始。
-          </p>
+          <EmptyState
+            action={
+              <Button
+                loading={upload.isPending}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="size-4" />
+                上传模板
+              </Button>
+            }
+            className="py-16"
+            desc="上传一个模板包（zip），再到服务器里配置实例并绑定聊天指令"
+            icon={<Image className="text-muted-foreground size-12" />}
+            title="还没有安装任何模板"
+          />
         )}
         {templates !== undefined && templates.length > 0 && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,40 +186,19 @@ export const TemplatesPage = () => {
             ))}
           </div>
         )}
-      </div>
+      </PageContent>
 
-      <Dialog
+      <ConfirmDialog
+        description={`确定删除模板「${pendingDelete?.name ?? ""}」吗？若仍有服务器实例引用该模板将无法删除。`}
+        onConfirm={handleDelete}
         onOpenChange={(open) => {
           if (!open) {
             setPendingDelete(null);
           }
         }}
         open={pendingDelete !== null}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>删除模板</DialogTitle>
-            <DialogDescription>
-              确定删除模板「{pendingDelete?.name}
-              」吗？若仍有服务器实例引用该模板将无法删除。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">取消</Button>
-            </DialogClose>
-            <Button
-              disabled={remove.isPending}
-              onClick={() => {
-                void handleDelete();
-              }}
-              variant="destructive"
-            >
-              删除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="删除模板"
+      />
 
       <Dialog
         onOpenChange={(open) => {

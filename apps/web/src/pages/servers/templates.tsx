@@ -1,8 +1,12 @@
 import { Link, useParams } from "@tanstack/react-router";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Image, Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 import type { TemplateInstance } from "#shared/model/template/schema/instance";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PageContent } from "@/components/layout/page-content";
 import { ServerHeader } from "@/components/layout/server-header";
 import { TemplatePreview } from "@/components/template/template-preview";
 import { Badge } from "@/components/ui/badge";
@@ -53,12 +57,20 @@ export const ServerTemplatesPage = () => {
     }
   };
 
-  const handleDelete = async (instance: TemplateInstance): Promise<void> => {
+  const [pendingDelete, setPendingDelete] = useState<TemplateInstance | null>(
+    null,
+  );
+
+  const handleDelete = async (): Promise<void> => {
+    if (!pendingDelete) {
+      return;
+    }
     try {
-      await remove.mutateAsync(instance.id);
+      await remove.mutateAsync(pendingDelete.id);
       toast.success("实例已删除");
     } catch (error) {
       toast.error("删除失败", { description: errorMessage(error) });
+      throw error;
     }
   };
 
@@ -77,12 +89,26 @@ export const ServerTemplatesPage = () => {
           </Button>
         }
       />
-      <div className="scrollbar-custom flex-1 overflow-y-auto p-4 lg:p-6">
+      <PageContent>
         {instances === undefined && <LoadingState />}
         {instances?.length === 0 && (
-          <p className="text-muted-foreground py-12 text-center text-sm">
-            该服务器还没有模板实例，点击右上角「新增实例」开始。
-          </p>
+          <EmptyState
+            action={
+              <Button asChild>
+                <Link
+                  params={{ id, instanceId: "new" }}
+                  to="/servers/$id/templates/$instanceId"
+                >
+                  <Plus className="size-4" />
+                  新增实例
+                </Link>
+              </Button>
+            }
+            className="py-16"
+            desc="该服务器还没有模板实例，创建一个来把渲染结果发到聊天平台"
+            icon={<Image className="text-muted-foreground size-12" />}
+            title="尚无模板实例"
+          />
         )}
         {instances !== undefined && instances.length > 0 && (
           <div className="grid gap-4 lg:grid-cols-2">
@@ -136,7 +162,7 @@ export const ServerTemplatesPage = () => {
                     </Button>
                     <Button
                       onClick={() => {
-                        void handleDelete(instance);
+                        setPendingDelete(instance);
                       }}
                       size="sm"
                       variant="ghost"
@@ -150,7 +176,19 @@ export const ServerTemplatesPage = () => {
             ))}
           </div>
         )}
-      </div>
+      </PageContent>
+
+      <ConfirmDialog
+        description={`确定删除实例「${pendingDelete?.name || ""}」吗？此操作不可恢复。`}
+        onConfirm={handleDelete}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDelete(null);
+          }
+        }}
+        open={pendingDelete !== null}
+        title="删除模板实例"
+      />
     </>
   );
 };

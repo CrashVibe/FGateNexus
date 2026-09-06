@@ -372,7 +372,7 @@ export const SecurityContent = () => {
             >
               取消
             </Button>
-            <Button form="password-form" type="submit">
+            <Button form="password-form" loading={busy} type="submit">
               确认
             </Button>
           </DialogFooter>
@@ -420,6 +420,7 @@ export const SecurityContent = () => {
               取消
             </Button>
             <Button
+              loading={busy}
               onClick={() => {
                 void verify2FA();
               }}
@@ -466,6 +467,7 @@ export const SecurityContent = () => {
               点戳了~
             </Button>
             <Button
+              loading={busy}
               onClick={() => {
                 void confirmDelete();
               }}

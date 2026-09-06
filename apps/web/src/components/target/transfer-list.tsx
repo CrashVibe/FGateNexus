@@ -130,7 +130,7 @@ export const TransferList = ({
   const selectedItems = items.filter((i) => selected.has(i.value));
   const availableItems = items.filter((i) => !selected.has(i.value));
 
-  // 用稳定的字符串键作依赖，并在无变化时返回同一引用，避免无限重渲染。
+  // 用稳定的字符串键作依赖，无变化时返回同一引用。
   const availableKey = availableItems.map((i) => i.value).join("|");
   const selectedKey = selectedItems.map((i) => i.value).join("|");
 

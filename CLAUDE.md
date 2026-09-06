@@ -124,11 +124,21 @@ Server-side auth is hand-rolled on Hono (it replaced `nuxt-auth-utils`):
 
 React 19 SPA, dark-theme-first, shadcn/ui (new-york style) over Tailwind v4.
 
-- **Routing**: TanStack Router, **code-based** (no codegen) in `src/router.tsx`. A pathless layout route `id: "dashboard"` holds the auth guard (`beforeLoad` throws `redirect({ to: "/login" })`) and the dirty-page blocker. Note `useParams({ from })` takes the route **ID** (with the `/dashboard` prefix, e.g. `"/dashboard/servers/$id/binding"`); `to`/`Link`/`navigate` use plain paths without it.
-- **State**: Zustand stores in `src/stores/` (`auth`, `page-state`).
+**设计基调（向 Vercel / shadcn 靠拢）**：
+
+- **灰阶是唯一色源**。`styles.css` 定义中性灰阶（仿 Geist，chroma≈0，100 最贴近底色、1000 是正文色），**只列当前用得到的档位，缺哪档补哪档**，所有语义 token（`--muted` / `--accent` / `--border` / `--foreground` …）都从它派生。**不要新写颜色字面量**，也不要让两个语义 token 指向同一档——那样 hover 和「选中」会长得一模一样。
+- **交互三态各占一档**：hover `gray-100` → selected `gray-200` → pressed `gray-300`（深色同理上移）。新增可点元素必须带 `active:` 态。
+- **层次靠「面 + 描边 + 分隔线 + 圆角递进」，不靠投影**。`--radius` 0.5rem 派生 4/6/8/12 四档（小插槽 / 控件 / 弹层 / 卡片），投影最多到 `shadow-xs`。
+- **焦点环**：表单控件沿用 shadcn 的 `focus-visible:ring-ring/50 ring-[3px]`；列表里贴边的导航项用 `focus-visible:outline-2 outline-offset-2`（无偏移的 ring 会被容器裁掉）。颜色由 `styles.css` 里 `*` 的 `outline-color` 统一供给。
+
+- **Routing**: TanStack Router, **code-based** (no codegen) in `src/router.tsx`. A pathless layout route `id: "dashboard"` holds the auth guard (`beforeLoad` throws `redirect({ to: "/login" })`). Note `useParams({ from })` takes the route **ID** (with the `/dashboard` prefix, e.g. `"/dashboard/servers/$id/binding"`); `to`/`Link`/`navigate` use plain paths without it.
+- **State**: Zustand store in `src/stores/` (`auth`). Theme comes from `tanstack-theme-kit`'s `ThemeProvider` in `main.tsx` (class attribute, `fgate-theme` key).
 - **Data layer**: TanStack Query + per-domain API wrappers in `src/lib/api.ts` over the `request()` fetch helper in `src/lib/http.ts`; responses validated with the `#shared` Zod schemas. Query hooks live in `src/queries/`.
 - **Forms**: React Hook Form + `@hookform/resolvers/zod`, reusing `#shared` schemas.
-- **Dirty-page guard**: TanStack Router `useBlocker` in `DashboardLayout`, backed by the `page-state` store + the `useRegisterPageState` hook.
+- **Page chrome**: every page is `<PageHeader|ServerHeader>` + `<PageContent>` (`components/layout/`). `PageContent` owns the only scroll container, its padding, and the `width` cap (`form`/`wide`/`list`/`full`); pass the _same_ `width` to both so the title and the body share one centred column — never hand-roll `mx-auto max-w-* overflow-y-auto` in a page. **导航只有一层**（侧栏）。账号绑定/消息互通/设置曾经有第二栏导航（`SubPageLayout`）把配置切成 tab，已删除——那一栏的全部作用只是把 19/9/7 个控件分堆，代价却是 320px 宽度、一层多余心智模型，以及 **Cmd+F 搜不到未选中 tab 的内容**（条件渲染不挂载）。新增配置项直接往页面里加 `SettingsSection`，别再引入分栏。顶部两段带（侧栏 Logo 行 / 页头）和侧栏底部按钮区都是 `h-12`，改一处必须三处一起改，否则顶边对不齐。
+- **面包屑**：`components/layout/breadcrumb.tsx`。`useServerCrumbs()` 从 pathname 推出「服务器 › 某台服务器」两级（不在 `/servers/:id` 下返回空数组），调用方展开后补上自己那一级。`ServerHeader` 已接好——服务器子页面靠它才知道自己在编辑哪台服务器。给了 `breadcrumb` 就会替掉标题行，高度不变，并居中显示——`PageHeader` 是三栏结构，左右两侧 `flex-1` 等分，中间那栏才落在真正的中点上（右侧操作按钮再宽也不会把它挤偏）。没有面包屑的顶层页面仍是左对齐的标题+描述。
+- **Saving**: server config pages auto-save (no save button). `useServerConfigForm` covers the "config + targets" pages (远程指令/事件通知/消息互通), `useServerForm` the config-only ones; both debounce through `useAutoSaveTrigger` and surface state via `AutoSaveIndicator` in the header. Let `save()` throw — the hook toasts.
+- **Destructive actions** always go through `ConfirmDialog` (`components/common/confirm-dialog.tsx`); let `onConfirm` throw to keep the dialog open on failure. Async buttons use `<Button loading>`, not a bare `disabled`.
 - **SSE**: native `EventSource` (`src/hooks/use-download-stream.ts`) for browser-download progress.
 - shadcn primitives live in `src/components/ui/`; reuse them rather than pulling in new component libs.
 

@@ -9,7 +9,7 @@ import {
 } from "#shared/model/template/schema/instance";
 import { TemplateManifestSchema } from "#shared/model/template/schema/manifest";
 
-/** 上传走 multipart/form-data（字段名 file），故不用 zod 描述请求体 */
+/** 上传请求体为 multipart/form-data，字段名 file。 */
 export const TemplateAPI = {
   DELETE: {
     description: "删除已安装模板",

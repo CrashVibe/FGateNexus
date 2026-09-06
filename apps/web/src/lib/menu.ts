@@ -22,8 +22,6 @@ export interface MenuNode {
   desc?: string;
   icon?: LucideIcon;
   children?: MenuNode[];
-  /** 目标页面内部还有一层子区块导航（如 SubPageLayout），点进去前先提示一下 */
-  hasSections?: boolean;
 }
 
 export type MenuColumn = MenuNode[];
@@ -80,10 +78,9 @@ export const serverMenu = (sid: string): MenuColumn[] => [
       children: [
         {
           desc: "设置社交账号与游戏账号的绑定规则",
-          hasSections: true,
           icon: UserCheck,
           label: "账号绑定",
-          to: `/servers/${sid}/binding/basic`,
+          to: `/servers/${sid}/binding`,
         },
         {
           desc: "配置服务器的远程指令",
@@ -104,10 +101,9 @@ export const serverMenu = (sid: string): MenuColumn[] => [
       children: [
         {
           desc: "Minecraft 与 聊天平台消息双向同步配置",
-          hasSections: true,
           icon: ArrowLeftRight,
           label: "消息互通",
-          to: `/servers/${sid}/msgbridge/basic`,
+          to: `/servers/${sid}/msgbridge`,
         },
       ],
       label: "聊天与消息",

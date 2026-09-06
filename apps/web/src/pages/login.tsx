@@ -160,7 +160,7 @@ export const LoginPage = () => {
               </div>
             ) : null}
 
-            <Button className="w-full" disabled={isLoading} type="submit">
+            <Button className="w-full" loading={isLoading} type="submit">
               <LogIn />
               登录
             </Button>

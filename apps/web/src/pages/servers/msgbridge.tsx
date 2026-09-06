@@ -1,26 +1,20 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
-import { differenceWith, isEqual, pick } from "lodash-es";
-import { MessageSquare, Settings, Users } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useParams } from "@tanstack/react-router";
+import { useState } from "react";
 import type { z } from "zod";
 
 import type { ChatSyncConfigSchema } from "#shared/model/server/schema/chat-sync";
-import type { targetResponse } from "#shared/model/server/schema/target";
 import {
   formatMCToPlatformMessage,
   formatPlatformToMCMessage,
 } from "#shared/utils/chat-sync";
-import { AutoSaveIndicator } from "@/components/common/auto-save-indicator";
 import { LoadingState } from "@/components/common/loading-state";
 import {
   SettingsBlock,
   SettingsRow,
   SettingsSection,
-  SubPageLayout,
 } from "@/components/common/settings-section";
-import type { SubNavItem } from "@/components/common/settings-section";
-import { useLayout } from "@/components/layout/context";
+import { PageContent } from "@/components/layout/page-content";
+import { ServerHeader } from "@/components/layout/server-header";
 import { MessageTemplateField } from "@/components/target/message-template-field";
 import { TargetConfigSheet } from "@/components/target/target-config-sheet";
 import { Badge } from "@/components/ui/badge";
@@ -30,15 +24,13 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
+import { useServerConfigForm } from "@/hooks/use-server-config-form";
 import { ChatSyncData } from "@/lib/api";
-import { findMenuNode } from "@/lib/menu";
 import {
   MC_TO_PLATFORM_VARS,
   PLATFORM_TO_MC_VARS,
 } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
-import { targetsKey } from "@/queries/targets";
 
 type ChatSyncConfig = z.infer<typeof ChatSyncConfigSchema>;
 type ArrayFilterKey =
@@ -46,27 +38,6 @@ type ArrayFilterKey =
   | "blacklistRegex"
   | "whitelistPrefixes"
   | "whitelistRegex";
-
-const NAV_ITEMS: SubNavItem[] = [
-  {
-    description: "启用、前缀过滤",
-    icon: Settings,
-    label: "基础配置",
-    value: "basic",
-  },
-  {
-    description: "自定义消息格式",
-    icon: MessageSquare,
-    label: "消息模板",
-    value: "templates",
-  },
-  {
-    description: "绑定聊天群组",
-    icon: Users,
-    label: "群聊目标",
-    value: "targets",
-  },
-];
 
 const ArrayField = ({
   label,
@@ -121,75 +92,25 @@ const ArrayField = ({
 };
 
 export const ServerMsgbridgePage = () => {
-  const { id, section } = useParams({
-    from: "/dashboard/servers/$id/msgbridge/$section",
-  });
+  const { id } = useParams({ from: "/dashboard/servers/$id/msgbridge" });
   const serverId = Number(id);
-  const navigate = useNavigate();
-  const { menu } = useLayout();
-  const { pathname } = useLocation();
-  const node = findMenuNode(menu, pathname);
 
-  const queryClient = useQueryClient();
-  const { data: server, refetch } = useServer(serverId);
-
-  const [config, setConfig] = useState<ChatSyncConfig | null>(null);
-  const [targets, setTargets] = useState<targetResponse[]>([]);
-  const [original, setOriginal] = useState<{
-    config: ChatSyncConfig;
-    targets: targetResponse[];
-  } | null>(null);
+  const { data: server } = useServer(serverId);
+  const { config, setConfig, targets, setTargets, status } =
+    useServerConfigForm(
+      serverId,
+      (s) => s.chatSyncConfig,
+      async (chatsync, changedTargets) => {
+        await ChatSyncData.patch(serverId, {
+          chatsync,
+          targets: changedTargets,
+        });
+      },
+    );
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (server) {
-      setConfig(server.chatSyncConfig);
-      setTargets(server.targets);
-      setOriginal({
-        config: structuredClone(server.chatSyncConfig),
-        targets: structuredClone(server.targets),
-      });
-    }
-  }, [server]);
-
-  const isDirty = useMemo(
-    () =>
-      original !== null &&
-      config !== null &&
-      !isEqual({ config, targets }, original),
-    [config, targets, original],
-  );
-
-  const handleSubmit = async (): Promise<void> => {
-    if (!(original && config)) {
-      return;
-    }
-    const changed = differenceWith(targets, original.targets, isEqual).map(
-      (t) => pick(t, ["id", "config"]),
-    );
-    await ChatSyncData.patch(serverId, {
-      chatsync: config,
-      targets: changed,
-    });
-    await refetch();
-    // 同步失效 targets 缓存
-    await queryClient.invalidateQueries({ queryKey: targetsKey(serverId) });
-  };
-
-  const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
-
-  if (!(original && config)) {
-    return (
-      <>
-        <div className="flex-1 overflow-y-auto p-6">
-          <LoadingState />
-        </div>
-      </>
-    );
-  }
-
   const setFilter = (patch: Partial<ChatSyncConfig["filters"]>): void => {
-    setConfig({ ...config, filters: { ...config.filters, ...patch } });
+    setConfig((prev) => ({ ...prev, filters: { ...prev.filters, ...patch } }));
   };
   const setArrayFilter = (key: ArrayFilterKey) => (next: string[]) => {
     setFilter({ [key]: next });
@@ -197,19 +118,11 @@ export const ServerMsgbridgePage = () => {
 
   return (
     <>
-      <SubPageLayout
-        headerActions={<AutoSaveIndicator status={status} />}
-        items={NAV_ITEMS}
-        onChange={(next) => {
-          void navigate({
-            params: { id, section: next },
-            to: "/servers/$id/msgbridge/$section",
-          });
-        }}
-        title={node?.label ?? "消息互通"}
-        value={section}
-      >
-        {section === "basic" && (
+      <ServerHeader status={status} width="form" />
+      <PageContent className="space-y-8" width="form">
+        {config === null ? (
+          <LoadingState />
+        ) : (
           <>
             <SettingsSection
               description="控制聊天同步功能的启用状态及消息方向"
@@ -335,11 +248,6 @@ export const ServerMsgbridgePage = () => {
                 </>
               )}
             </SettingsSection>
-          </>
-        )}
-
-        {section === "templates" && (
-          <>
             <SettingsSection
               description="Minecraft 玩家消息发送到平台时的格式"
               title={
@@ -402,53 +310,50 @@ export const ServerMsgbridgePage = () => {
                 />
               </SettingsBlock>
             </SettingsSection>
+            <SettingsSection
+              description="针对不同目标群聊进行单独配置"
+              title="群聊目标配置"
+            >
+              <SettingsBlock>
+                <TargetConfigSheet
+                  onSelectedChange={setSelectedId}
+                  selectedId={selectedId}
+                  serverId={serverId}
+                  targets={targets}
+                  triggerLabel="选择目标配置"
+                >
+                  {(target) => (
+                    <div className="flex items-center justify-between">
+                      <Label>启用聊天同步</Label>
+                      <Switch
+                        checked={target.config.chatSyncConfigSchema.enabled}
+                        onCheckedChange={(v) => {
+                          setTargets((prev) =>
+                            prev.map((t) =>
+                              t.id === target.id
+                                ? {
+                                    ...t,
+                                    config: {
+                                      ...t.config,
+                                      chatSyncConfigSchema: {
+                                        ...t.config.chatSyncConfigSchema,
+                                        enabled: v,
+                                      },
+                                    },
+                                  }
+                                : t,
+                            ),
+                          );
+                        }}
+                      />
+                    </div>
+                  )}
+                </TargetConfigSheet>
+              </SettingsBlock>
+            </SettingsSection>
           </>
         )}
-
-        {section === "targets" && (
-          <SettingsSection
-            description="针对不同目标群聊进行单独配置"
-            title="群聊目标配置"
-          >
-            <SettingsBlock>
-              <TargetConfigSheet
-                onSelectedChange={setSelectedId}
-                selectedId={selectedId}
-                serverId={serverId}
-                targets={targets}
-                triggerLabel="选择目标配置"
-              >
-                {(target) => (
-                  <div className="flex items-center justify-between">
-                    <Label>启用聊天同步</Label>
-                    <Switch
-                      checked={target.config.chatSyncConfigSchema.enabled}
-                      onCheckedChange={(v) => {
-                        setTargets((prev) =>
-                          prev.map((t) =>
-                            t.id === target.id
-                              ? {
-                                  ...t,
-                                  config: {
-                                    ...t.config,
-                                    chatSyncConfigSchema: {
-                                      ...t.config.chatSyncConfigSchema,
-                                      enabled: v,
-                                    },
-                                  },
-                                }
-                              : t,
-                          ),
-                        );
-                      }}
-                    />
-                  </div>
-                )}
-              </TargetConfigSheet>
-            </SettingsBlock>
-          </SettingsSection>
-        )}
-      </SubPageLayout>
+      </PageContent>
     </>
   );
 };

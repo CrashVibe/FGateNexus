@@ -8,7 +8,7 @@ type Content = Exclude<AutoSaveStatus, "idle">;
 
 const SPINNER_BLADES = 8;
 
-/** 类 iOS/macOS 活动指示器：8 根辐条依次淡出，营造旋转错觉，而非线性 spin */
+/** 8 根辐条依次淡出，形成旋转效果。 */
 const AppleSpinner = () => (
   <span aria-hidden="true" className="apple-spinner">
     {Array.from({ length: SPINNER_BLADES }, (_, i) => (
@@ -50,9 +50,9 @@ const CONFIG: Record<
   },
 };
 
-/** 自动保存状态指示：替代原先的"保存/取消"按钮组 */
+/** 自动保存状态指示。 */
 export const AutoSaveIndicator = ({ status }: { status: AutoSaveStatus }) => {
-  // content 只在非 idle 时更新——回到 idle 时仍渲染上一个状态，让淡出动画有内容可播
+  // content 只在非 idle 时更新，idle 时保留上一个状态的内容。
   const [content, setContent] = useState<Content>("saved");
   const visible = status !== "idle";
 

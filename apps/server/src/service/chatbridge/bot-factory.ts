@@ -106,7 +106,6 @@ export class BotFactory {
 
     const processedConfig = {
       ...config,
-      // 转换一下，因为插件不识别空字符串和 undefined 的区别
       token: config.token === "" ? undefined : config.token,
     };
 
@@ -153,15 +152,12 @@ export class BotFactory {
 
   private createMilky(config: MilkyConfig): PlatformSender["pluginInstance"] {
     logger.debug({ config }, "创建 Milky Bot 实例");
-    // koishi-plugin-adapter-milky 的 static inject 用了当前 @cordisjs/core
-    // 类型定义还不认识的 { required: string[] } 写法，纯类型不兼容，运行时无影响
     const milkyPlugin = MilkyBot as unknown as Plugin.Constructor<
       Context,
       MilkyBot.Config
     >;
     return this.app.plugin(milkyPlugin, {
       ...config,
-      // 转换一下，因为插件不识别空字符串和 undefined 的区别
       token: config.token === "" ? undefined : config.token,
     });
   }

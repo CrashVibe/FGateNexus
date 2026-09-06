@@ -7,6 +7,7 @@ import type { TemplateManifest } from "#shared/model/template/schema/manifest";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
 import { MultiSelectCombobox } from "@/components/common/multi-select-combobox";
+import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import { DynamicConfigForm } from "@/components/template/dynamic-config-form";
 import type { ConfigValue } from "@/components/template/dynamic-config-form";
@@ -299,6 +300,7 @@ export const ServerTemplateInstancePage = () => {
   return (
     <>
       <PageHeader
+        width="wide"
         actions={
           <Button asChild size="sm" variant="outline">
             <Link params={{ id }} to="/servers/$id/templates">
@@ -339,7 +341,7 @@ export const ServerTemplateInstancePage = () => {
           </DialogContent>
         </Dialog>
       ) : null}
-      <div className="scrollbar-custom flex-1 overflow-y-auto p-4 lg:p-6">
+      <PageContent width="wide">
         <div className="space-y-6">
           <div className="max-w-sm space-y-1.5">
             <Label>模板</Label>
@@ -356,7 +358,7 @@ export const ServerTemplateInstancePage = () => {
             />
           ) : null}
         </div>
-      </div>
+      </PageContent>
 
       <div className="border-border flex justify-end gap-2 border-t p-4">
         <Button asChild variant="outline">
@@ -365,7 +367,8 @@ export const ServerTemplateInstancePage = () => {
           </Link>
         </Button>
         <Button
-          disabled={!selectedManifest || create.isPending || update.isPending}
+          disabled={!selectedManifest}
+          loading={create.isPending || update.isPending}
           onClick={() => {
             void handleSubmit();
           }}

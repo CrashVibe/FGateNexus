@@ -24,8 +24,8 @@ const exists = async (p: string): Promise<boolean> => {
 };
 
 /**
- * 准备数据库目录，并把历史遗留在根目录的 sqlite.db 迁到 data/ 下。
- * 必须在任何模块打开数据库（`#server/db/client`）之前调用。
+ * 准备数据库目录，并把根目录的旧 sqlite.db 迁到 data/ 下。
+ * 须在任何模块打开数据库（`#server/db/client`）之前调用。
  */
 export const prepareDatabase = async (): Promise<void> => {
   await fs.mkdir(DB_DIR, { recursive: true });
@@ -53,9 +53,8 @@ const MIGRATIONS_TABLE = "__drizzle_migrations";
 /**
  * 应用内联迁移（单 binary 运行时，migrations 目录不随包分发）。
  *
- * 复用 Drizzle 的 `__drizzle_migrations` 跟踪表与哈希约定（sha256(sql)、
- * created_at=journal.when），与开发态的 folder migrator 完全兼容 —— 同一个库
- * 无论先后被哪种方式迁移都不会重复执行。
+ * 记录到 Drizzle 的 `__drizzle_migrations` 跟踪表（sha256(sql)、
+ * created_at=journal.when），与 folder migrator 使用同一张表。
  */
 const applyEmbeddedMigrations = async (sqlite: Database): Promise<void> => {
   const { embeddedJournal, embeddedSqlFiles } = await import("#gen/migrations");

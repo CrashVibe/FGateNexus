@@ -48,6 +48,7 @@ export const PlayersPage = () => {
   return (
     <>
       <PageHeader
+        width="full"
         description="查看你的玩家，查看玩家的社交账号绑定情况及所在服务器。"
         title="玩家列表"
       />

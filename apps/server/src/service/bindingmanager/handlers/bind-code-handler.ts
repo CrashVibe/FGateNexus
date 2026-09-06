@@ -81,7 +81,6 @@ export class BindCodeHandler implements BindingHandler {
             binding.playerUID,
           );
 
-          // 改名不着急所以放在绑定成功之后
           await BindCodeHandler.performAutoRename(
             userId,
             updatedPlayer.name,

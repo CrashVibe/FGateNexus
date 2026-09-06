@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronRight, LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "tanstack-theme-kit";
 
 import { AppLogo } from "@/components/common/app-logo";
@@ -9,9 +9,14 @@ import type { MenuColumn, MenuNode } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
 
-const leafClass =
-  "flex items-center gap-2.5 rounded-md px-3.5 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground";
-const leafActiveClass = "bg-accent text-accent-foreground";
+// hover / 当前页 / 按下分别取 gray-100 / 200 / 300。
+const leafClass = [
+  "flex h-9 items-center gap-2.5 rounded-md px-3 text-sm font-medium",
+  "text-muted-foreground",
+  "hover:bg-gray-100 hover:text-foreground active:bg-gray-300",
+  "focus-visible:outline-2 focus-visible:outline-offset-2",
+].join(" ");
+const leafActiveClass = "bg-gray-200 text-foreground";
 
 const NavLeaf = ({
   node,
@@ -24,10 +29,7 @@ const NavLeaf = ({
   if (!node.to) {
     return null;
   }
-  // 含子区块的项：所在子区块随便切都算"在这一项里"；否则要求精确匹配
-  const isActive = node.hasSections
-    ? pathname.startsWith(node.to.split("/").slice(0, -1).join("/"))
-    : pathname === node.to;
+  const isActive = pathname === node.to;
   const Icon = node.icon;
   return (
     <Link
@@ -37,9 +39,6 @@ const NavLeaf = ({
     >
       {Icon ? <Icon className="size-[18px] shrink-0" /> : null}
       <span className="min-w-0 flex-1 truncate">{node.label}</span>
-      {node.hasSections ? (
-        <ChevronRight className="size-3.5 shrink-0 opacity-50" />
-      ) : null}
     </Link>
   );
 };
@@ -91,12 +90,12 @@ export const Sidebar = ({
   return (
     <div className="bg-sidebar text-sidebar-foreground flex h-full flex-col">
       <Link
-        className="border-sidebar-border flex h-16 shrink-0 items-center gap-2.5 border-b px-5"
+        className="border-sidebar-border flex h-12 shrink-0 items-center gap-2.5 border-b px-5"
         onClick={onNavigate}
         to="/"
       >
-        <AppLogo className="h-7 w-auto shrink-0" />
-        <span className="text-base font-semibold">FlowGate</span>
+        <AppLogo className="h-6 w-auto shrink-0" />
+        <span className="text-sm font-semibold">FlowGate</span>
       </Link>
 
       <nav className="scrollbar-custom flex-1 space-y-3 overflow-y-auto px-3 py-4">
@@ -122,16 +121,13 @@ export const Sidebar = ({
         ))}
       </nav>
 
-      <div
-        className={cn(
-          "border-sidebar-border flex items-center justify-between border-t p-4",
-        )}
-      >
+      <div className="border-sidebar-border flex h-12 shrink-0 items-center justify-between border-t px-3">
         <Button
           aria-label="切换主题"
           onClick={() => {
             setTheme(theme === "dark" ? "light" : "dark");
           }}
+          className="size-8"
           size="icon"
           variant="ghost"
         >
@@ -143,7 +139,8 @@ export const Sidebar = ({
             onClick={() => {
               void handleLogout();
             }}
-            size="sm"
+            className="size-8"
+            size="icon"
             variant="ghost"
           >
             <LogOut />

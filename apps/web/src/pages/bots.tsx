@@ -5,8 +5,10 @@ import { BotAPI } from "#shared/model/bot/api";
 import type { BotWithStatus } from "#shared/model/bot/api";
 import { BotForm } from "@/components/bot/bot-form";
 import type { BotFormValue } from "@/components/bot/bot-form";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -94,6 +96,7 @@ export const BotsPage = () => {
 
   const [editBot, setEditBot] = useState<BotWithStatus | null>(null);
   const [editForm, setEditForm] = useState<BotFormValue>({});
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const openCreate = (): void => {
     setCreateForm({});
@@ -126,7 +129,7 @@ export const BotsPage = () => {
       toast.success("Bot 实例更新成功");
       setEditBot(null);
     } catch (error) {
-      toast.error("操作失败", { description: errorMessage(error) });
+      toast.error("更新 Bot 实例失败", { description: errorMessage(error) });
     }
   };
 
@@ -139,7 +142,8 @@ export const BotsPage = () => {
       toast.success("Bot 实例删除成功");
       setEditBot(null);
     } catch (error) {
-      toast.error("操作失败", { description: errorMessage(error) });
+      toast.error("删除 Bot 实例失败", { description: errorMessage(error) });
+      throw error;
     }
   };
 
@@ -152,10 +156,10 @@ export const BotsPage = () => {
         enabled: !editBot.enabled,
         id: editBot.id,
       });
-      toast.success(`Bot 实例已${editBot.enabled ? "禁用" : "启用"}成功`);
+      toast.success(`Bot 实例已${editBot.enabled ? "禁用" : "启用"}`);
       setEditBot(null);
     } catch (error) {
-      toast.error("操作失败", { description: errorMessage(error) });
+      toast.error("切换 Bot 状态失败", { description: errorMessage(error) });
     }
   };
 
@@ -196,7 +200,7 @@ export const BotsPage = () => {
     <>
       <PageHeader
         actions={
-          <Button onClick={openCreate}>
+          <Button onClick={openCreate} size="sm">
             <Plus />
             创建新 Bot 实例
           </Button>
@@ -205,11 +209,7 @@ export const BotsPage = () => {
         title="Bot 实例列表"
       />
 
-      <div className="scrollbar-custom flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-          {renderList()}
-        </div>
-      </div>
+      <PageContent>{renderList()}</PageContent>
 
       <Dialog onOpenChange={setCreateOpen} open={createOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -228,7 +228,7 @@ export const BotsPage = () => {
               取消
             </Button>
             <Button
-              disabled={createBot.isPending}
+              loading={createBot.isPending}
               onClick={() => {
                 void handleCreate();
               }}
@@ -258,13 +258,14 @@ export const BotsPage = () => {
           <div className="flex justify-end gap-3 border-t pt-3">
             <Button
               onClick={() => {
-                void handleDelete();
+                setConfirmDelete(true);
               }}
               variant="destructive"
             >
               删除
             </Button>
             <Button
+              loading={toggleBot.isPending}
               onClick={() => {
                 void handleToggle();
               }}
@@ -273,6 +274,7 @@ export const BotsPage = () => {
               {editBot?.enabled ? "禁用" : "启用"}
             </Button>
             <Button
+              loading={updateBot.isPending}
               onClick={() => {
                 void handleSave();
               }}
@@ -282,6 +284,14 @@ export const BotsPage = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <ConfirmDialog
+        description={`确定删除 Bot 实例「${editBot?.name ?? ""}」吗？此操作不可恢复。`}
+        onConfirm={handleDelete}
+        onOpenChange={setConfirmDelete}
+        open={confirmDelete}
+        title="删除 Bot 实例"
+      />
     </>
   );
 };

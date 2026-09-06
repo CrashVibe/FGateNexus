@@ -10,7 +10,7 @@ const SAVED_RESET_MS = 2000;
 
 /**
  * deps 变化时防抖自动保存：停止编辑 900ms 后调用 save()。
- * save() 应该让错误原样抛出——由这里统一 toast，不要在调用方 catch。
+ * save() 抛出的错误在这里统一 toast。
  */
 export const useAutoSaveTrigger = (
   deps: React.DependencyList,

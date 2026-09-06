@@ -20,6 +20,7 @@ import type { z } from "zod";
 import type { DashboardAPI } from "#shared/model/dashboard";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -490,9 +491,7 @@ const useFlipRows = (items: unknown) => {
 };
 
 /**
- * 首屏回填不算新；此后相对上一次渲染"新出现"的 id 判定为新行，用于只让
- * 真正新增的行播放入场动画。按 id 集合判断而非一次性标记，避免无关的
- * 重渲染（如后台 refetch 出同样的数据）误触发已存在行的动画。
+ * 返回相对上一次渲染新出现的 id 集合，首屏回填不计入。
  */
 const useNewItemIds = <T,>(
   items: T[] | undefined,
@@ -650,7 +649,7 @@ const LeaderboardPanel = ({
 
 const EVENTS_LIMIT = 20;
 const LEADERBOARD_LIMIT = 5;
-/** 短时间内连续到达的事件合并成一次列表更新，避免高频推送时反复重渲染/重排 */
+/** 此窗口内连续到达的事件合并成一次列表更新。 */
 const EVENT_BATCH_MS = 200;
 
 export const DashboardPage = () => {
@@ -713,21 +712,7 @@ export const DashboardPage = () => {
   const { data: statusHistory, isLoading: historyLoading } =
     useDashboardStatusHistory(chartServerId);
 
-  if (serversLoading || summaryLoading || !summary) {
-    return (
-      <>
-        <PageHeader
-          description="所有服务器、Bot 与账号绑定的实时状态"
-          title="总览"
-        />
-        <div className="scrollbar-custom flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-            <LoadingState />
-          </div>
-        </div>
-      </>
-    );
-  }
+  const loading = serversLoading || summaryLoading || !summary;
 
   return (
     <>
@@ -736,33 +721,39 @@ export const DashboardPage = () => {
         title="总览"
       />
 
-      <div className="scrollbar-custom flex-1 overflow-y-auto">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-4 py-8 lg:px-6">
-          <StatsRow offlineServers={offlineServers} summary={summary} />
+      <PageContent className="flex flex-col gap-5">
+        {loading ? (
+          <LoadingState />
+        ) : (
+          <>
+            <StatsRow offlineServers={offlineServers} summary={summary} />
 
-          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.6fr_1fr]">
-            <div className="flex flex-col gap-4">
-              <ServerStatusPanel
-                onSelect={setSelectedServerId}
-                servers={servers}
-              />
-              <TrendPanel
-                isLoading={historyLoading}
-                samples={statusHistory?.samples}
-                serverName={servers?.find((s) => s.id === chartServerId)?.name}
-              />
-            </div>
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.6fr_1fr]">
+              <div className="flex flex-col gap-4">
+                <ServerStatusPanel
+                  onSelect={setSelectedServerId}
+                  servers={servers}
+                />
+                <TrendPanel
+                  isLoading={historyLoading}
+                  samples={statusHistory?.samples}
+                  serverName={
+                    servers?.find((s) => s.id === chartServerId)?.name
+                  }
+                />
+              </div>
 
-            <div className="flex flex-col gap-4">
-              <EventFeedPanel events={events} isLoading={eventsLoading} />
-              <LeaderboardPanel
-                isLoading={leaderboardLoading}
-                leaderboard={leaderboard}
-              />
+              <div className="flex flex-col gap-4">
+                <EventFeedPanel events={events} isLoading={eventsLoading} />
+                <LeaderboardPanel
+                  isLoading={leaderboardLoading}
+                  leaderboard={leaderboard}
+                />
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </>
+        )}
+      </PageContent>
     </>
   );
 };

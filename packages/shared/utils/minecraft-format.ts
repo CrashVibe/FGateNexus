@@ -1,6 +1,5 @@
 /**
- * Minecraft 颜色代码映射
- * 注意：'f'（白色）由调用方通过 darkMode 参数动态决定，不在此表中。
+ * Minecraft 颜色代码映射。'f'（白色）不在表中，由调用方通过 darkMode 参数决定。
  */
 export const MINECRAFT_COLORS: Record<string, string> = {
   "0": "#000000",

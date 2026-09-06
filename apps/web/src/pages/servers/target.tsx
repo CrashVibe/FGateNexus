@@ -8,6 +8,7 @@ import type { targetResponse } from "#shared/model/server/schema/target";
 import { targetSchemaRequest } from "#shared/model/server/schema/target";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PageContent } from "@/components/layout/page-content";
 import { ServerHeader } from "@/components/layout/server-header";
 import { ChannelSelector } from "@/components/target/channel-selector";
 import { Badge } from "@/components/ui/badge";
@@ -187,12 +188,8 @@ export const ServerTargetPage = () => {
 
   return (
     <>
-      <ServerHeader status={status} />
-      <div className="scrollbar-custom flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-5xl px-4 py-8 lg:px-6">
-          {renderBody()}
-        </div>
-      </div>
+      <ServerHeader width="wide" status={status} />
+      <PageContent width="wide">{renderBody()}</PageContent>
     </>
   );
 };

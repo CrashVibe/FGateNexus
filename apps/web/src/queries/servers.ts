@@ -17,6 +17,8 @@ export const useServers = (): UseQueryResult<ServerWithStatus[]> =>
 
 export const useServer = (id: number): UseQueryResult<ServerWithStatus> =>
   useQuery({
+    // id 非有限数时不发请求。
+    enabled: Number.isFinite(id),
     queryFn: async () => await ServerData.get(id),
     queryKey: serverKey(id),
   });

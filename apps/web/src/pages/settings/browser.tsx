@@ -299,7 +299,7 @@ export const BrowserContent = () => {
                   value={concurrency}
                 />
                 <Button
-                  disabled={savingConcurrency}
+                  loading={savingConcurrency}
                   onClick={() => {
                     void saveConcurrency();
                   }}
@@ -383,7 +383,7 @@ export const BrowserContent = () => {
                       </Button>
                     ) : (
                       <Button
-                        disabled={startingDownload}
+                        loading={startingDownload}
                         onClick={() => {
                           void startDownload();
                         }}
@@ -395,7 +395,8 @@ export const BrowserContent = () => {
                       </Button>
                     )}
                     <Button
-                      disabled={isDownloading || checkingUpdate}
+                      disabled={isDownloading}
+                      loading={checkingUpdate}
                       onClick={() => {
                         void checkUpdate();
                       }}
@@ -430,7 +431,7 @@ export const BrowserContent = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      disabled={savingPath}
+                      loading={savingPath}
                       onClick={() => {
                         void saveCustomPath();
                       }}
@@ -440,7 +441,7 @@ export const BrowserContent = () => {
                     </Button>
                     {config?.executablePath ? (
                       <Button
-                        disabled={savingPath}
+                        loading={savingPath}
                         onClick={() => {
                           void clearPath();
                         }}

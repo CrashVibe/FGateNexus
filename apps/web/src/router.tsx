@@ -49,28 +49,12 @@ const dashRoute = <const TPath extends string>(
   component: NonNullable<Parameters<typeof createRoute>[0]["component"]>,
 ) => createRoute({ component, getParentRoute: parent, path });
 
-// 仅用于旧路径兼容重定向，to 无需强类型校验。
+// 把 path 重定向到 to，to 不做路径类型校验。
 const makeRedirect = (path: string, to: string) =>
   createRoute({
     beforeLoad: () => {
       // oxlint-disable-next-line typescript/only-throw-error
       throw redirect({ replace: true, to });
-    },
-    component: () => null,
-    getParentRoute: parent,
-    path,
-  });
-
-// 无 $section 时重定向到默认子区块，保留其余参数。
-const makeSectionRedirect = (path: string, to: string) =>
-  createRoute({
-    beforeLoad: ({ params }) => {
-      // oxlint-disable-next-line typescript/only-throw-error
-      throw redirect({
-        params: { ...params, section: "basic" },
-        replace: true,
-        to,
-      });
     },
     component: () => null,
     getParentRoute: parent,
@@ -131,16 +115,31 @@ const serverTargetRoute = dashRoute(
   ),
 );
 const serverBindingRoute = dashRoute(
-  "/servers/$id/binding/$section",
+  "/servers/$id/binding",
   lazyRouteComponent(
     async () => await import("@/pages/servers/binding"),
     "ServerBindingPage",
   ),
 );
-const serverBindingOverviewRoute = makeSectionRedirect(
-  "/servers/$id/binding",
-  "/servers/$id/binding/$section",
-);
+// 带 $section 的旧路径重定向到同名单页，保留 id 参数。
+const serverBindingSectionRoute = createRoute({
+  beforeLoad: ({ params }) => {
+    // oxlint-disable-next-line typescript/only-throw-error
+    throw redirect({ params, replace: true, to: "/servers/$id/binding" });
+  },
+  component: () => null,
+  getParentRoute: parent,
+  path: "/servers/$id/binding/$section",
+});
+const serverMsgbridgeSectionRoute = createRoute({
+  beforeLoad: ({ params }) => {
+    // oxlint-disable-next-line typescript/only-throw-error
+    throw redirect({ params, replace: true, to: "/servers/$id/msgbridge" });
+  },
+  component: () => null,
+  getParentRoute: parent,
+  path: "/servers/$id/msgbridge/$section",
+});
 const serverCommandRoute = dashRoute(
   "/servers/$id/command",
   lazyRouteComponent(
@@ -149,15 +148,11 @@ const serverCommandRoute = dashRoute(
   ),
 );
 const serverMsgbridgeRoute = dashRoute(
-  "/servers/$id/msgbridge/$section",
+  "/servers/$id/msgbridge",
   lazyRouteComponent(
     async () => await import("@/pages/servers/msgbridge"),
     "ServerMsgbridgePage",
   ),
-);
-const serverMsgbridgeOverviewRoute = makeSectionRedirect(
-  "/servers/$id/msgbridge",
-  "/servers/$id/msgbridge/$section",
 );
 const serverNotifyRoute = dashRoute(
   "/servers/$id/notify",
@@ -207,11 +202,11 @@ const routeTree = rootRoute.addChildren([
     serverOverviewRoute,
     serverGeneralRoute,
     serverTargetRoute,
-    serverBindingOverviewRoute,
     serverBindingRoute,
+    serverBindingSectionRoute,
     serverCommandRoute,
-    serverMsgbridgeOverviewRoute,
     serverMsgbridgeRoute,
+    serverMsgbridgeSectionRoute,
     serverNotifyRoute,
     serverTemplatesRoute,
     serverTemplateInstanceRoute,

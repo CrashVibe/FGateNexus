@@ -105,11 +105,7 @@ const appendGuildChannels = async (
   );
 };
 
-/**
- * 频道列表 TTL 缓存
- *
- * 用于避免每次渲染都远程调用 bot API
- */
+/** 频道列表 TTL 缓存。 */
 const CHANNEL_CACHE_TTL_MS = 10_000;
 const channelCache = new Map<string, { data: unknown; expiresAt: number }>();
 

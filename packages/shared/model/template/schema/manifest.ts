@@ -197,7 +197,7 @@ export const TemplateNetworkPermissionSchema = z.object({
   reason: z.string().min(1).max(200),
 });
 
-/** entry 固定为 dist/index.html，避免路径穿越 */
+/** entry 固定为 dist/index.html。 */
 export const TemplateManifestSchema = z.object({
   author: z.string().optional(),
   configSchema: z.array(TemplateConfigFieldSchema).max(50).default([]),

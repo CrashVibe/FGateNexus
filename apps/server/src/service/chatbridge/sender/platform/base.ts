@@ -20,7 +20,7 @@ export interface ErrorLogger {
   error: (obj: unknown, msg: string) => void;
 }
 
-/** 消息构建注入而非继承，形状相同的平台共用同一个 builders 实例 */
+/** 各平台的消息构建函数集合。 */
 export interface MessageBuilders<M extends PlatformMessage> {
   buildChatMessage: (
     payload: MCEvent<"player.chat">["payload"],

@@ -12,7 +12,7 @@ import type {
   TemplateManifest,
 } from "#shared/model/template/schema/manifest";
 
-/** 真实账号，避免头像接口请求失败 */
+/** 预览用的示例玩家。 */
 const MOCK_PLAYERS = [
   // 嘻嘻
   { name: "MrlingXD", uuid: "dc16448a-3c4d-42a9-838e-30f4723f37b9" },
@@ -202,7 +202,7 @@ const ADV_CATEGORIES: Record<string, number> = {
   story: 15,
 };
 
-/** 均有贴图，避免预览缺图 */
+/** 预览用的示例成就图标。 */
 const ADV_ICONS = [
   "iron_pickaxe",
   "diamond",

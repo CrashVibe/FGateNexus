@@ -54,71 +54,75 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
   };
 
   return (
-    <button
-      aria-label={`查看服务器 #${server.id} 详情`}
+    <Card
       className={cn(
-        "cursor-pointer text-left transition-all duration-300 ease-in-out hover:scale-[0.99] hover:opacity-80",
+        "relative gap-4 p-5 transition-all duration-300 ease-in-out hover:scale-[0.99] hover:opacity-80",
         !server.isOnline && "grayscale-[0.8]",
       )}
-      onClick={() => {
-        void navigate({
-          params: { id: String(server.id) },
-          to: "/servers/$id",
-        });
-      }}
-      type="button"
     >
-      <Card className="gap-4 p-5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-semibold">{server.name}</span>
-            <Badge variant={server.isOnline ? "success" : "destructive"}>
-              {server.isOnline ? "在线" : "离线"}
-            </Badge>
-          </div>
-          <Badge variant={server.isOnline ? "secondary" : "warning"}>
-            {formatMcVersion(server.minecraft_version)}
+      {/* 铺满卡片的跳转按钮，Token 那一行以 z-20 浮在其上。 */}
+      <button
+        aria-label={`查看服务器 #${server.id} 详情`}
+        className="absolute inset-0 z-10 cursor-pointer rounded-xl"
+        onClick={() => {
+          void navigate({
+            params: { id: String(server.id) },
+            to: "/servers/$id",
+          });
+        }}
+        type="button"
+      />
+
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-semibold">{server.name}</span>
+          <Badge variant={server.isOnline ? "success" : "destructive"}>
+            {server.isOnline ? "在线" : "离线"}
           </Badge>
         </div>
+        <Badge variant={server.isOnline ? "secondary" : "warning"}>
+          {formatMcVersion(server.minecraft_version)}
+        </Badge>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <img
-            alt="server software icon"
-            className="size-5 object-contain"
-            src={getSoftwareIcon(server.minecraft_software)}
-          />
-          <span className="text-muted-foreground text-sm">
-            {server.minecraft_software ?? "未知服务器端"}
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className="text-muted-foreground text-sm">Token:</span>
-          <div className="flex gap-1">
-            <Input
-              className="flex-1"
-              onClick={(e) => {
-                void copyToken(e);
-              }}
-              readOnly
-              value={showToken ? server.token : "•".repeat(16)}
-            />
-            <Button
-              onClick={(e) => {
-                void copyToken(e);
-              }}
-              size="icon"
-              variant="secondary"
-            >
-              <Copy />
-            </Button>
-          </div>
-        </div>
-
-        <span className="text-muted-foreground text-right text-xs opacity-70 select-none">
-          点击卡片查看更多信息
+      <div className="flex items-center gap-2">
+        <img
+          alt="server software icon"
+          className="size-5 object-contain"
+          src={getSoftwareIcon(server.minecraft_software)}
+        />
+        <span className="text-muted-foreground text-sm">
+          {server.minecraft_software ?? "未知服务器端"}
         </span>
-      </Card>
-    </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-muted-foreground text-sm">Token:</span>
+        <div className="relative z-20 flex gap-1">
+          <Input
+            className="flex-1"
+            onClick={(e) => {
+              void copyToken(e);
+            }}
+            readOnly
+            value={showToken ? server.token : "•".repeat(16)}
+          />
+          <Button
+            aria-label="复制 Token"
+            onClick={(e) => {
+              void copyToken(e);
+            }}
+            size="icon"
+            variant="secondary"
+          >
+            <Copy />
+          </Button>
+        </div>
+      </div>
+
+      <span className="text-muted-foreground text-right text-xs opacity-70 select-none">
+        点击卡片查看更多信息
+      </span>
+    </Card>
   );
 };

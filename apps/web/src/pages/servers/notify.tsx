@@ -1,10 +1,6 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import { differenceWith, isEqual, pick } from "lodash-es";
-import { useEffect, useMemo, useState } from "react";
-import type { z } from "zod";
+import { useState } from "react";
 
-import type { NotifyConfigSchema } from "#shared/model/server/schema/notify";
 import type { targetResponse } from "#shared/model/server/schema/target";
 import {
   renderDeathMessage,
@@ -16,67 +12,29 @@ import {
   SettingsBlock,
   SettingsSection,
 } from "@/components/common/settings-section";
+import { PageContent } from "@/components/layout/page-content";
 import { ServerHeader } from "@/components/layout/server-header";
 import { MessageTemplateField } from "@/components/target/message-template-field";
 import { TargetConfigSheet } from "@/components/target/target-config-sheet";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
+import { useServerConfigForm } from "@/hooks/use-server-config-form";
 import { NotifyData } from "@/lib/api";
 import { DEATH_MSG_VAR, PLAYER_NAME_VAR } from "@/lib/template-variables";
-import { useServer } from "@/queries/servers";
-import { targetsKey } from "@/queries/targets";
-
-type NotifyConfig = z.infer<typeof NotifyConfigSchema>;
 
 export const ServerNotifyPage = () => {
   const { id } = useParams({ from: "/dashboard/servers/$id/notify" });
   const serverId = Number(id);
 
-  const queryClient = useQueryClient();
-  const { data: server, refetch } = useServer(serverId);
-
-  const [config, setConfig] = useState<NotifyConfig | null>(null);
-  const [targets, setTargets] = useState<targetResponse[]>([]);
-  const [original, setOriginal] = useState<{
-    config: NotifyConfig;
-    targets: targetResponse[];
-  } | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (server) {
-      setConfig(server.notifyConfig);
-      setTargets(server.targets);
-      setOriginal({
-        config: structuredClone(server.notifyConfig),
-        targets: structuredClone(server.targets),
-      });
-    }
-  }, [server]);
-
-  const isDirty = useMemo(
-    () =>
-      original !== null &&
-      config !== null &&
-      !isEqual({ config, targets }, original),
-    [config, targets, original],
-  );
-
-  const handleSubmit = async (): Promise<void> => {
-    if (!(original && config)) {
-      return;
-    }
-    const changed = differenceWith(targets, original.targets, isEqual).map(
-      (t) => pick(t, ["id", "config"]),
+  const { config, setConfig, targets, setTargets, status } =
+    useServerConfigForm(
+      serverId,
+      (s) => s.notifyConfig,
+      async (notify, changedTargets) => {
+        await NotifyData.patch(serverId, { notify, targets: changedTargets });
+      },
     );
-    await NotifyData.patch(serverId, { notify: config, targets: changed });
-    await refetch();
-    // 同步失效 targets 缓存
-    await queryClient.invalidateQueries({ queryKey: targetsKey(serverId) });
-  };
-
-  const status = useAutoSaveTrigger([config, targets], isDirty, handleSubmit);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const selectedTarget = targets.find((t) => t.id === selectedId) ?? null;
 
@@ -104,22 +62,13 @@ export const ServerNotifyPage = () => {
     );
   };
 
-  if (!(original && config)) {
-    return (
-      <>
-        <ServerHeader status={status} />
-        <div className="flex-1 overflow-y-auto p-6">
-          <LoadingState />
-        </div>
-      </>
-    );
-  }
-
   return (
     <>
-      <ServerHeader status={status} />
-      <div className="scrollbar-custom flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-2xl px-4 py-8 lg:px-6">
+      <ServerHeader width="form" status={status} />
+      <PageContent width="form">
+        {config === null ? (
+          <LoadingState />
+        ) : (
           <div className="space-y-8">
             <SettingsSection
               description="玩家加入/离开服务器时发送通知"
@@ -215,8 +164,8 @@ export const ServerNotifyPage = () => {
               </SettingsBlock>
             </SettingsSection>
           </div>
-        </div>
-      </div>
+        )}
+      </PageContent>
     </>
   );
 };

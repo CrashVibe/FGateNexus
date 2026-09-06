@@ -7,6 +7,7 @@ import type { z } from "zod";
 import { ServersAPI } from "#shared/model/server/api";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import { ServerCard } from "@/components/server-card";
 import { Button } from "@/components/ui/button";
@@ -98,11 +99,7 @@ export const ServersPage = () => {
         title="服务器列表"
       />
 
-      <div className="scrollbar-custom flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl px-4 py-8 lg:px-6">
-          {renderList()}
-        </div>
-      </div>
+      <PageContent>{renderList()}</PageContent>
 
       <Dialog onOpenChange={setOpen} open={open}>
         <DialogContent>
@@ -167,8 +164,8 @@ export const ServersPage = () => {
               取消
             </Button>
             <Button
-              disabled={createServer.isPending}
               form="create-server-form"
+              loading={createServer.isPending}
               type="submit"
             >
               确认创建
