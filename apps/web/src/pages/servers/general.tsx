@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { Copy, Download, RefreshCw, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
+import { generateServerToken } from "#shared/model/server/validators";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   SettingsRow,
@@ -123,7 +124,7 @@ export const ServerGeneralPage = () => {
 
   const regenerateToken = async (): Promise<void> => {
     try {
-      await GeneralData.patch(serverId, { token: crypto.randomUUID() });
+      await GeneralData.patch(serverId, { token: generateServerToken() });
       toast.success(t("新 Token 到手，旧的已经作废啦"));
     } catch (error) {
       toast.error(t("重新生成失败"), { description: errorMessage(error) });

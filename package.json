@@ -31,24 +31,13 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",
-    "husky": "^9.1.7",
     "lefthook": "^2.1.9",
-    "lint-staged": "^17.0.8",
     "oxfmt": "^0.57.0",
     "oxlint": "^1.72.0",
     "oxlint-tsgolint": "^0.16.0",
     "shadcn": "^4.11.0",
     "typescript": "^5.9.3",
     "ultracite": "7.8.4"
-  },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "oxlint . --fix --quiet",
-      "oxfmt . --write"
-    ],
-    "*.{js,jsx,ts,tsx,json,jsonc,css,scss,md,mdx}": [
-      "bun x ultracite fix"
-    ]
   },
   "apiVersion": "0.1.0",
   "json-comments": {

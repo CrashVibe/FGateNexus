@@ -1,3 +1,0 @@
-# ultracite
-#!/bin/sh
-bunx lint-staged

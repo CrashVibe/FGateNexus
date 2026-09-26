@@ -20,25 +20,25 @@ The runtime target is **Bun**; production ships as a **single compiled Bun binar
 The package manager is **Bun** (`bun.lock`). Use `bun` / `bun run`, not npm/pnpm.
 
 ```bash
-bun run dev            # run server (Bun, --watch) and web (Vite) together; web proxies /api + ws to :3000
-bun run dev:server     # backend only: bun --watch apps/server/src/index.ts
+bun run dev            # run server (Bun, --watch, :3001) and web (Vite, :3000) together; Vite proxies /api + ws to :3001
+bun run dev:server     # backend only (PORT=3001): bun --watch apps/server/src/index.ts
 bun run dev:web        # frontend only: vite dev (apps/web)
 bun run typecheck      # tsc --noEmit for both web and server
 bun run check          # ultracite check  (wraps oxlint+oxfmt; run before committing)
 bun run fix            # ultracite fix
 bun run db:generate    # drizzle-kit generate — create a migration from schema changes
 bun run db:migrate     # bun scripts/migrate.ts — apply migrations to ./data/sqlite.db
-bun run build:web      # vite build → apps/web/dist (同时生成 apps/server/dist/assets.ts)
-bun run build:bundle   # build:web + gen-embedded-migrations (no compile)
+bun run build:web      # vite build → apps/web/dist
+bun run build:bundle   # build:web + embed-server-assets + gen-embedded-migrations (no compile)
 bun run build:all      # build:bundle, then cross-compile binaries (mac/linux/win) into ./dist
 bun run build          # alias for build:all
 ```
 
-`postinstall` 自动运行 `gen-embedded-migrations.ts`，生成 `apps/server/dist/migrations.ts` 并在 `apps/server/dist/assets.ts` 不存在时写入空占位，确保 fresh clone 后 TypeScript 编译通过。`apps/server/dist/assets.ts` 的正式内容由 `build:web`（Vite 插件 `embedServerAssets`）写入。
+`postinstall` 自动运行 `gen-embedded-migrations.ts`，生成 `apps/server/dist/migrations.ts` 并在 `apps/server/dist/assets.ts` 不存在时写入空占位，确保 fresh clone 后 TypeScript 编译通过。`apps/server/dist/assets.ts` 的正式内容由 `build:bundle` 里的 `apps/server/scripts/embed-server-assets.ts` 写入（单跑 `build:web` 不会刷新它）。
 
 There is **no test suite or test runner** configured. Do not invent test commands.
 
-Lint/format runs automatically on commit via Husky + lint-staged (`oxlint --fix` + `oxfmt --write`). Linting/formatting is Oxlint + Oxfmt under the "Ultracite" preset (`oxlint.config.ts` extends `core` + `react`); `.github/copilot-instructions.md` documents the enforced code standards.
+Lint/format runs automatically on commit via **lefthook** (`lefthook.yml` → `ultracite fix`); CI (`build.yml`) runs `typecheck` + `check`. Linting/formatting is Oxlint + Oxfmt under the "Ultracite" preset (`oxlint.config.ts` extends `core` + `react`); `.github/copilot-instructions.md` documents the enforced code standards.
 
 ## Architecture
 
@@ -46,15 +46,15 @@ Lint/format runs automatically on commit via Husky + lint-staged (`oxlint --fix`
 
 The core data flow connects a Minecraft server on one side to a chat platform on the other. Two subsystems handle each side, both living in `apps/server/src/service/`:
 
-1. **`mcwsbridge/`** — the Minecraft side. FGateClient instances connect over **WebSocket**. The Bun-native WS handler lives in `apps/server/src/ws/mc-bridge.ts` (open/message/close), wired into `Bun.serve({ websocket })` from `index.ts`. A thin **Peer adapter** (`service/mcwsbridge/peer.ts`) wraps Bun's `ServerWebSocket` into the `Peer` shape the session layer expects (carrying id/headers via `ws.data`). Auth (in the WS upgrade/open path) is a per-server `token` (Bearer header) checked against `serverTable`, plus an `x-api-version` header validated against `apps/server/src/utils/version.ts` (API version from `package.json` `apiVersion`). `ConnectionManager` (singleton, `connection-manager.ts`) tracks one `ServerSession` per server, indexed by both `serverId` and `peerId`. Each session negotiates a `Capabilities` bitset (`players`/`server_status`/`statistics`/`advancements`/`equipment`, `model.ts`'s `capabilitiesSchema` — all default `false` so older clients without `clientInfo.capabilities` degrade gracefully) and exposes corresponding RPC methods (`getPlayers`, `getServerStatus`, `getPlaceholders`, `getStatistics`, `getAdvancements`, `getEquipment`), each gated on its capability. Incoming MC events dispatch to `handler/*-handler.ts` (chat, join, leave, death, login).
+1. **`mcwsbridge/`** — the Minecraft side. FGateClient instances connect over **WebSocket**. The Bun-native WS handler lives in `apps/server/src/ws/mc-bridge.ts` (open/message/close), wired into `Bun.serve({ websocket })` from `index.ts`. A thin **Peer adapter** (`service/mcwsbridge/peer.ts`) wraps Bun's `ServerWebSocket` into the `Peer` shape the session layer expects (carrying id/headers via `ws.data`). Auth (in the WS upgrade/open path) is a per-server `token` (Bearer header) checked against `serverTable`, plus an `x-api-version` header validated against `apps/server/src/utils/version.ts` (API version from `package.json` `apiVersion`). `ConnectionManager` (singleton, `connection-manager.ts`) tracks one `ServerSession` per server, indexed by both `serverId` and `peerId`. Each session negotiates a `Capabilities` bitset (`players`/`server_status`/`statistics`/`advancements`/`equipment`, `model.ts`'s `capabilitiesSchema` — all default `false` so older clients without `clientInfo.capabilities` degrade gracefully) and exposes corresponding RPC methods (`getPlayers`, `getServerStatus`, `getPlaceholders`, `getStatistics`, `getAdvancements`, `getEquipment`), each gated on its capability. Incoming MC requests dispatch to handlers **injected by `ws/mc-bridge.ts`** via `handler/index.ts` `createHandlers()` (login handler + a `forward()` factory for chat/join/leave/death that calls `chatBridge.dispatch`). `ServerSession`/`ConnectionManager` never import handlers, so the mcwsbridge core has no dependency on chatbridge/bindingmanager — keep it that way (there are no runtime import cycles; don't add one).
 
-2. **`chatbridge/`** — the chat-platform side, built on **Koishi**. `ChatBridge` (singleton, `index.ts`) owns a Koishi `Context`, spins up bots via `BotFactory`, tracks them in `ConnectionStore`, and routes inbound platform messages through `message-router.ts`. Outbound messages go through `sender/platform/{onebot,discord}.ts` (each extends `sender/platform/base.ts`); `event-config-map.ts` maps MC event types to per-target send config.
+2. **`chatbridge/`** — the chat-platform side, built on **Koishi**. `ChatBridge` (singleton, `index.ts`) owns a Koishi `Context`, spins up bots via `BotFactory`, tracks them in `ConnectionStore`, and routes inbound platform messages through `message-router.ts`. Outbound messages go through `sender/platform/{onebot,discord,kook,milky}.ts` (each extends `sender/platform/base.ts`); `event-config-map.ts` maps MC event types to per-target send config. Senders also own platform queries: `listChannels()` (all) / `listRoles(guildId)` (Discord/KOOK), cached 10s per sender instance, exposed as `GET /api/bot/:id/channels|roles`. Bot lifecycle is DB-driven: routes write the `bot` row then call `chatBridge.syncBot(id)` (idempotent add/remove/rebuild). Remote-command results reply only to the originating target (`connection.onCommand`), not via `dispatch`.
 
 The bridges are linked by an `EventHandlerMap` in `chatbridge/index.ts` mapping each `MCEventType` (`player.chat`, `player.join`, `player.death`, `system.notify`, `system.template`, `execute.command`, …) to a `PlatformSender` method. `system.template` carries the result of a chat-triggered image-template render (`{success:true, image:Buffer}` or `{success:false, error}`); `BaseSender.onTemplate()` dispatches to the abstract `buildTemplateMessage(payload)`, implemented per-platform in `sender/platform/{discord,onebot}.ts`.
 
-3. **`bindingmanager/`** — account binding/unbinding between Minecraft players and platform accounts. `BindingService` (singleton facade, `index.ts`) keeps pending bindings in an in-memory `PendingBindingStore` (with TTL) and dispatches platform sessions to ordered `handlers/` (bind-code, unbind-command, group-leave). Expired-binding cleanup is registered via the cleanup registry.
+3. **`bindingmanager/`** — account binding/unbinding between Minecraft players and platform accounts. `BindingService` (singleton facade, `index.ts`) keeps pending bindings in an in-memory `PendingBindingStore` (with TTL) and dispatches platform sessions to ordered `handlers/` (bind-code, unbind-command, group-leave). Expired pending bindings are purged lazily on each `processMessage`.
 
-All three services are **singletons**. They are initialized and torn down by `apps/server/src/index.ts` (which replaced the old Nitro plugins): config → DB → banner → image renderer → `chatBridge.init()` → `Bun.serve`. On `SIGTERM`/`SIGINT`/`SIGQUIT` it closes the bridge / image renderer and runs the cleanup registry.
+All three services are **singletons** (module-level exported instances). They are initialized and torn down by `apps/server/src/index.ts` (which replaced the old Nitro plugins): config → DB → banner → image renderer → `chatBridge.init()` → `Bun.serve`. On `SIGTERM`/`SIGINT`/`SIGQUIT` it closes the bridge / image renderer and runs the cleanup registry.
 
 ### Server entry / lifecycle
 
@@ -66,13 +66,13 @@ All three services are **singletons**. They are initialized and torn down by `ap
 
 ### Database (Drizzle + SQLite)
 
-- Schema lives in `apps/server/src/db/schema/` (one file per table: server, bot, player, player-server, social-accounts, target, user; relations in `relation.ts`). DB client is `apps/server/src/db/client.ts` (`db`), reusable queries in `apps/server/src/db/queries/`.
+- Schema lives in `apps/server/src/db/schema/` (one file per table: server, bot, player, player-server, social-accounts, target, template-instance, user; relations in `relation.ts`). JSON config columns on `server`/`target` use `zodJson(name, schema)` (`zod-json.ts`): values are parsed with the `#shared` schema **on read**, so old rows pick up new fields' defaults — never `JSON.parse`/cast them yourself. DB client is `apps/server/src/db/client.ts` (`db`), reusable queries in `apps/server/src/db/queries/`.
 - Migrations are generated into `migrations/` by `drizzle-kit` (config: `drizzle.config.ts`, `schema: "./apps/server/src/db/schema"`, db at `./data/sqlite.db`).
 - **Production migration is self-contained**: `apps/server/scripts/gen-embedded-migrations.ts` (a build-time script, run by `build:bundle` / `postinstall`) inlines every migration's SQL into `apps/server/dist/migrations.ts`. At runtime `boot/database.ts` applies pending migrations from that embedded module (it does **not** read `migrations/` at runtime) and migrates a legacy root `sqlite.db` into `data/`. So after changing schema you must `db:generate`, and the build re-embeds them.
 
 ### Static asset embedding (single binary)
 
-`apps/web/vite.config.ts` 的 `embedServerAssets` Vite 插件在 `closeBundle` 钩子中遍历 `apps/web/dist`，把每个产物内联为字符串（文本直存、二进制 base64）写入 `apps/server/dist/assets.ts`。`build:web` 结束后即可直接进入 `bun build --compile`，无需额外脚本。运行时 `boot/static.ts` 提供这些资源并对未知路径回退 `index.html`（SPA 路由）；开发态由 Vite dev server 提供前端，不走这里。
+`apps/server/scripts/embed-server-assets.ts`（由 `build:bundle` 调用）遍历 `apps/web/dist`，把每个产物内联为字符串（文本直存、二进制 base64）写入 `apps/server/dist/assets.ts`，之后即可 `bun build --compile`。运行时 `boot/static.ts` 提供这些资源并对未知路径回退 `index.html`（SPA 路由）；开发态由 Vite dev server 提供前端，不走这里。
 
 ### Config
 
@@ -102,7 +102,7 @@ Two SQLite tables back Nexus-side analytics dataSources for image templates (see
 "图片模板" lets admins upload a static-page template package and configure per-server **instances** (custom `config`, optional chat-command `binding`, `enabled` flag) that render to a chat image via the image renderer.
 
 - **`template-store.ts`** — installed template packages live on disk under `data/templates/<id>/` (`manifest.json` + `dist/`, entry fixed at `dist/index.html`). `installTemplate` extracts an uploaded zip with zip-slip/zip-bomb guards (`MAX_FILES=1000`, 50MB file/total caps) and validates `manifest.json` against `TemplateManifestSchema`. `listTemplates`/`getTemplateManifest`/`getTemplateDir`/`removeTemplate` read the filesystem fresh — no in-memory cache.
-- **`template-instance-store.ts`** — `TemplateInstanceStore` singleton; instances (`{templateId, config, binding?, enabled}`) are persisted to `data/templates/instances.json` (separate from the SQLite DB) via a serialized write queue, lazy-loaded into memory. `findBindingByCommand(serverId, command)` does an exact match of a chat message's first whitespace-delimited token against `binding.commands`. `checkEnableCompatibility` gates `enabled` on the manifest's required `dataSources` being supported by the connected `ServerSession`.
+- **`template-instance-store.ts`** — `templateInstanceStore`; instances (`{serverId, templateId, config, binding?, enabled}`) live in the SQLite `template_instance` table (FK → `server` with `ON DELETE CASCADE`, unique `(server_id, template_id)`). Every read/write is scoped by `serverId`. A legacy `data/templates/instances.json` is imported once by `init()` at startup and renamed to `instances.json.migrated`. `findBindingByCommand(serverId, command)` does an exact match of a chat message's first whitespace-delimited token against `binding.commands`. `checkEnableCompatibility` gates `enabled` on the manifest's required `dataSources` being supported by the connected `ServerSession`.
 - **`data-resolver.ts`** / **`dynamic-placeholders.ts`** — `resolveDataSources(manifest, session, ctx)` resolves each `manifest.dataSources[]` entry against a `ServerSession`. `required: true` (default) sources throw `DataResolveError` if unsupported/failing and abort rendering; `required: false` sources degrade to `null`/`[]`. The 12 dataSource types (`packages/shared/model/template/schema/manifest.ts` `TemplateDataSourceSchema` is authoritative) split into: MC-capability-gated (`online_players`, `server_status`, `player_statistics`, `player_advancements`, `player_equipment`), PAPI-gated (`placeholder`, `placeholder_rank`), and pure-Nexus-DB, no MC capability needed (`player_profile`, `recent_joins`, `binding_stats`, plus `server_status_history`/`event_leaderboard` from the event-log/metrics tables above). A `placeholder` source's `placeholdersFrom` merges in the admin-configured `placeholders`-type `configSchema` field (dedup, capped at 20).
 - **`mock-data-resolver.ts`** — faker-based mock data for the render-preview / live-preview path, used when no real `ServerSession` data is needed.
 - **`config-validator.ts`** — `validateInstanceConfig(fields, values)` type/range-checks admin-submitted instance config against the manifest's `configSchema`, filling in defaults.
@@ -129,6 +129,7 @@ React 19 SPA, dark-theme-first, shadcn/ui (new-york style) over Tailwind v4.
 
 **设计基调（向 Vercel / shadcn 靠拢）**：
 
+- **状态色**：`--success` / `--warning` / `--info`（+ `--destructive`）只给徽章、提示条、状态点用，写成 `text-success`、`bg-warning/12` 这类 token 类名，**别再写 `green-500` / `amber-600` 字面量**。
 - **灰阶是唯一色源**。`styles.css` 定义中性灰阶（仿 Geist，chroma≈0，100 最贴近底色、1000 是正文色），**只列当前用得到的档位，缺哪档补哪档**，所有语义 token（`--muted` / `--accent` / `--border` / `--foreground` …）都从它派生。**不要新写颜色字面量**，也不要让两个语义 token 指向同一档——那样 hover 和「选中」会长得一模一样。
 - **交互三态各占一档**：hover `gray-100` → selected `gray-200` → pressed `gray-300`（深色同理上移）。新增可点元素必须带 `active:` 态。
 - **层次靠「面 + 描边 + 分隔线 + 圆角递进」，不靠投影**。`--radius` 0.5rem 派生 4/6/8/12 四档（小插槽 / 控件 / 弹层 / 卡片），投影最多到 `shadow-xs`。
@@ -136,16 +137,16 @@ React 19 SPA, dark-theme-first, shadcn/ui (new-york style) over Tailwind v4.
 
 - **Routing**: TanStack Router, **code-based** (no codegen) in `src/router.tsx`. A pathless layout route `id: "dashboard"` holds the auth guard (`beforeLoad` throws `redirect({ to: "/login" })`). Note `useParams({ from })` takes the route **ID** (with the `/dashboard` prefix, e.g. `"/dashboard/servers/$id/binding"`); `to`/`Link`/`navigate` use plain paths without it.
 - **State**: Zustand store in `src/stores/` (`auth`). Theme comes from `tanstack-theme-kit`'s `ThemeProvider` in `main.tsx` (class attribute, `fgate-theme` key).
-- **Data layer**: TanStack Query + per-domain API wrappers in `src/lib/api.ts` over the `request()` fetch helper in `src/lib/http.ts`; responses validated with the `#shared` Zod schemas. Query hooks live in `src/queries/`.
+- **Data layer**: TanStack Query + per-domain API wrappers in `src/lib/api.ts` over the `request()` fetch helper in `src/lib/http.ts`; responses validated with the `#shared` Zod schemas. Query hooks live in `src/queries/`. **Cache invalidation is global**: any successful non-GET `request()`/`uploadFile()` awaits `queryClient.invalidateQueries()` (only active queries refetch). Don't add per-mutation `onSuccess` invalidation or manual `refetch()` after saves.
 - **Forms**: React Hook Form + `@hookform/resolvers/zod`, reusing `#shared` schemas.
 - **Page chrome**: every page is `<PageHeader|ServerHeader>` + `<PageContent>` (`components/layout/`). `PageContent` owns the only scroll container, its padding, and the `width` cap (`form`/`wide`/`list`/`full`); pass the _same_ `width` to both so the title and the body share one centred column — never hand-roll `mx-auto max-w-* overflow-y-auto` in a page. **导航只有一层**（侧栏）。账号绑定/消息互通/设置曾经有第二栏导航（`SubPageLayout`）把配置切成 tab，已删除——那一栏的全部作用只是把 19/9/7 个控件分堆，代价却是 320px 宽度、一层多余心智模型，以及 **Cmd+F 搜不到未选中 tab 的内容**（条件渲染不挂载）。新增配置项直接往页面里加 `SettingsSection`，别再引入分栏。顶部两段带（侧栏 Logo 行 / 页头）和侧栏底部按钮区都是 `h-12`，改一处必须三处一起改，否则顶边对不齐。
 - **面包屑**：`components/layout/breadcrumb.tsx`。`useServerCrumbs()` 从 pathname 推出「服务器 › 某台服务器」两级（不在 `/servers/:id` 下返回空数组），调用方展开后补上自己那一级。`ServerHeader` 已接好——服务器子页面靠它才知道自己在编辑哪台服务器。给了 `breadcrumb` 就会替掉标题行，高度不变，并居中显示——`PageHeader` 是三栏结构，左右两侧 `flex-1` 等分，中间那栏才落在真正的中点上（右侧操作按钮再宽也不会把它挤偏）。没有面包屑的顶层页面仍是左对齐的标题+描述。
 - **Saving**: no auto-save. Every `SettingsSection` card that edits something gets its own save footer via `save={{ dirty, onSave }}` (Vercel style, button bottom-right). `useServerForm`'s `section(keys)` builds that for a subset of top-level fields: it submits only those keys merged over the last-saved values, so other cards' unsaved edits are neither sent nor lost. Let `onSave` throw — the footer toasts. `useUnsavedGuard(dirty)` blocks leaving with unsaved cards (render the dialog it returns; `useServerForm` exposes it as `guard`).
-- **Settings layout**: `SettingsRow` wraps (label `basis-56`); controls size themselves — text inputs/selects `w-full sm:w-56`, number inputs `w-full text-right sm:w-28`, switches/buttons stay inline. Row actions use `variant="outline"`; solid primary is reserved for the one main CTA. Header-level controls (e.g. a mode switch) go in `SettingsSection`'s `actions`. All config pages use `width="settings"` + `SettingsColumns` (two masonry columns once the content box is ≥66rem, via container query); single-card pages still use `width="settings"` so the column doesn't jump between pages.
+- **Settings layout**: `SettingsRow` wraps (label `basis-56`); controls size themselves — text inputs/selects `w-full sm:w-56`, number inputs `w-full text-right sm:w-28`, switches/buttons stay inline. Row actions use `variant="outline"`; solid primary is reserved for the one main CTA. Header-level controls (e.g. a mode switch) go in `SettingsSection`'s `actions`. Server config pages wrap themselves in `ServerSettingsPage` (`components/layout/server-settings-page.tsx`: guard + `ServerHeader` + `PageContent` + `SettingsColumns`, render-prop `value` so the form is non-null inside). All config pages use `width="settings"` + `SettingsColumns` (two masonry columns once the content box is ≥66rem, via container query); single-card pages still use `width="settings"` so the column doesn't jump between pages.
 - **Per-group (target) switches** live only on 群聊连接 (`pages/servers/target.tsx`, saved via `PATCH /api/servers/:id/target-configs`). 消息互通/事件通知/远程指令 pages hold server-level templates/filters only and link there with `TargetsHint`.
 - **i18n**: `t()` from `@/i18n` with the **Chinese source text as the key**; English lives in `packages/shared/locales/en.json` (missing key → falls back to Chinese). Switching language reloads the page, so module-level `t()` is fine. Server/zod messages are translated at display time (`lib/http.ts`, form errors). Keep the playful persona in English too.
 - **Destructive actions** always go through `ConfirmDialog` (`components/common/confirm-dialog.tsx`); let `onConfirm` throw to keep the dialog open on failure. Async buttons use `<Button loading>`, not a bare `disabled`.
-- **SSE**: native `EventSource` (`src/hooks/use-download-stream.ts`) for browser-download progress.
+- **SSE**: one hook, `src/hooks/use-sse.ts` (`useSSE(enabled, url, event, onEvent)`, auto-reconnect); server side uses `http/sse.ts` `sseStream` (optional initial snapshot).
 - shadcn primitives live in `src/components/ui/`; reuse them rather than pulling in new component libs.
 
 ## Path aliases
@@ -160,7 +161,7 @@ Prefer these aliases over deep relative paths, matching existing imports.
 
 - Code comments and user-facing log/error strings are predominantly in **Chinese**; follow the surrounding language when editing a file.
 - Server logging uses a shared `pino` `logger` (`apps/server/src/utils/logger.ts`), often `logger.child({}, { msgPrefix: "[Name] " })` per service. Don't use `console.*` in server code.
-- Core services are singletons exposed via `getInstance()` / a pre-instantiated export — extend the existing instance rather than constructing new ones.
+- Core services are singletons exposed as a pre-instantiated module export — extend the existing instance rather than constructing new ones.
 - Reuse the `packages/shared` Zod schemas on both client and server rather than redefining types.
 
 ## Coding guidelines

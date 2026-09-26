@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import type { z } from "zod";
 
 import { ServersAPI } from "#shared/model/server/api";
+import { generateServerToken } from "#shared/model/server/validators";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
 import { PageContent } from "@/components/layout/page-content";
@@ -48,7 +49,7 @@ export const ServersPage = () => {
   });
 
   const openModal = (): void => {
-    reset({ servername: "", token: crypto.randomUUID() });
+    reset({ servername: "", token: generateServerToken() });
     setOpen(true);
   };
 
@@ -146,7 +147,7 @@ export const ServersPage = () => {
                 />
                 <Button
                   onClick={() => {
-                    setValue("token", crypto.randomUUID());
+                    setValue("token", generateServerToken());
                   }}
                   type="button"
                   variant="secondary"

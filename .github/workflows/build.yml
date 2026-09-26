@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Typecheck & lint
+        run: bun run typecheck && bun run check
+
       - name: Get version
         id: package_version
         run: echo "version=$(node -p 'require("./package.json").version')" >> $GITHUB_OUTPUT
