@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { t } from "@/i18n";
 import { usePlayers } from "@/queries/players";
 
 const PAGE_SIZE = 10;
@@ -49,8 +50,10 @@ export const PlayersPage = () => {
     <>
       <PageHeader
         width="full"
-        description="查看你的玩家，查看玩家的社交账号绑定情况及所在服务器。"
-        title="玩家列表"
+        description={t(
+          "查看你的玩家，查看玩家的社交账号绑定情况及所在服务器。",
+        )}
+        title={t("玩家列表")}
       />
       <div className="scrollbar-custom flex-1 overflow-y-auto">
         <div className="border-b">
@@ -62,7 +65,7 @@ export const PlayersPage = () => {
                 setSearch(e.target.value);
                 setPageIndex(0);
               }}
-              placeholder="搜索玩家名、UUID、IP 或社交账号..."
+              placeholder={t("搜索玩家名、UUID、IP 或社交账号...")}
               value={search}
             />
           </div>
@@ -74,11 +77,13 @@ export const PlayersPage = () => {
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
-                  <TableHead className="pl-4 lg:pl-6">玩家名</TableHead>
+                  <TableHead className="pl-4 lg:pl-6">{t("玩家名")}</TableHead>
                   <TableHead>UUID</TableHead>
-                  <TableHead>IP 地址</TableHead>
-                  <TableHead>社交账号</TableHead>
-                  <TableHead className="pr-4 lg:pr-6">所在服务器</TableHead>
+                  <TableHead>{t("IP 地址")}</TableHead>
+                  <TableHead>{t("社交账号")}</TableHead>
+                  <TableHead className="pr-4 lg:pr-6">
+                    {t("所在服务器")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -88,7 +93,7 @@ export const PlayersPage = () => {
                       className="text-muted-foreground py-8 text-center text-sm"
                       colSpan={5}
                     >
-                      暂无玩家数据
+                      {t("暂无玩家数据")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -113,7 +118,7 @@ export const PlayersPage = () => {
                             </span>
                           </div>
                         ) : (
-                          <Badge variant="destructive">未绑定</Badge>
+                          <Badge variant="destructive">{t("未绑定")}</Badge>
                         )}
                       </TableCell>
                       <TableCell className="pr-4 lg:pr-6">
@@ -127,7 +132,8 @@ export const PlayersPage = () => {
             <div className="border-t">
               <div className="flex items-center justify-end gap-2 px-4 py-4 lg:px-6">
                 <span className="text-muted-foreground text-sm">
-                  第 {safePage + 1} / {pageCount} 页 · 共 {filtered.length} 条
+                  {t("第")} {safePage + 1} / {pageCount} {t("页 · 共")}{" "}
+                  {filtered.length} {t("条")}
                 </span>
                 <Button
                   disabled={safePage === 0}
@@ -137,7 +143,7 @@ export const PlayersPage = () => {
                   size="sm"
                   variant="outline"
                 >
-                  上一页
+                  {t("上一页")}
                 </Button>
                 <Button
                   disabled={safePage >= pageCount - 1}
@@ -147,7 +153,7 @@ export const PlayersPage = () => {
                   size="sm"
                   variant="outline"
                 >
-                  下一页
+                  {t("下一页")}
                 </Button>
               </div>
             </div>

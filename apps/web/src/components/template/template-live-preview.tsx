@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import type { ConfigValue } from "@/components/template/dynamic-config-form";
 import { useBlobUrl } from "@/hooks/use-blob-url";
+import { t } from "@/i18n";
 import { TemplateInstanceData } from "@/lib/api";
 import { errorMessage } from "@/lib/http";
 
@@ -63,7 +64,9 @@ export const TemplateLivePreview = ({
 
   const renderBody = (): ReactNode => {
     if (url) {
-      return <img alt="模板预览" className="max-w-full rounded" src={url} />;
+      return (
+        <img alt={t("模板预览")} className="max-w-full rounded" src={url} />
+      );
     }
     if (error) {
       return (
@@ -76,7 +79,7 @@ export const TemplateLivePreview = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">预览</p>
+        <p className="text-sm font-medium">{t("预览")}</p>
         {loading ? (
           <Loader2 className="text-muted-foreground size-4 animate-spin" />
         ) : null}

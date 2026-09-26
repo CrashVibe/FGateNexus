@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { t } from "@/i18n";
 
 export type BotFormValue = Partial<z.infer<typeof BotAPI.POST.request>>;
 
@@ -175,18 +176,18 @@ export const BotForm = ({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Field full label="Bot 实例名称">
+        <Field full label={t("机器人名称")}>
           <Input
             maxLength={12}
             onChange={(e) => {
               onChange({ ...value, name: e.target.value });
             }}
-            placeholder="请输入 Bot 实例名称"
+            placeholder={t("请输入机器人名称")}
             value={value.name ?? ""}
           />
         </Field>
 
-        <Field full label="适配器类型" required>
+        <Field full label={t("适配器类型")} required>
           <Select
             disabled={isEdit}
             onValueChange={(v) => {
@@ -195,7 +196,7 @@ export const BotForm = ({
             value={value.platform ?? ""}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="请选择适配器类型" />
+              <SelectValue placeholder={t("请选择适配器类型")} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={PlatformType.Onebot}>OneBot</SelectItem>
@@ -214,7 +215,7 @@ export const BotForm = ({
               onChange={(e) => {
                 onChange({ ...value, config: { token: e.target.value } });
               }}
-              placeholder="请输入 Discord Bot Token"
+              placeholder={t("请输入 Discord Bot Token")}
               value={discord.token}
             />
           </Field>
@@ -228,7 +229,7 @@ export const BotForm = ({
               onChange={(e) => {
                 setOnebot({ selfId: e.target.value });
               }}
-              placeholder="请输入机器人的账号"
+              placeholder={t("请输入机器人的账号")}
               value={onebot.selfId}
             />
           </Field>
@@ -237,11 +238,11 @@ export const BotForm = ({
               onChange={(e) => {
                 setOnebot({ token: e.target.value });
               }}
-              placeholder="发送信息时用于验证的字段"
+              placeholder={t("发送信息时用于验证的字段")}
               value={onebot.token}
             />
           </Field>
-          <Field full label="连接协议" required>
+          <Field full label={t("连接协议")} required>
             <Select
               onValueChange={(v) => {
                 onProtocolChange(v as "ws" | "ws-reverse");
@@ -249,22 +250,24 @@ export const BotForm = ({
               value={onebot.protocol}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="请选择连接协议" />
+                <SelectValue placeholder={t("请选择连接协议")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ws-reverse">WebSocket 反向连接</SelectItem>
-                <SelectItem value="ws">WebSocket 正向连接</SelectItem>
+                <SelectItem value="ws-reverse">
+                  {t("WebSocket 反向连接")}
+                </SelectItem>
+                <SelectItem value="ws">{t("WebSocket 正向连接")}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
 
           {wsReverse ? (
-            <Field full label="路径" required>
+            <Field full label={t("路径")} required>
               <Input
                 onChange={(e) => {
                   setOnebot({ path: e.target.value });
                 }}
-                placeholder="如 /onebot"
+                placeholder={t("如 /onebot")}
                 value={wsReverse.path}
               />
             </Field>
@@ -272,7 +275,7 @@ export const BotForm = ({
 
           {ws ? (
             <>
-              <Field full label="连接地址" required>
+              <Field full label={t("连接地址")} required>
                 <Input
                   onChange={(e) => {
                     setOnebot({ endpoint: e.target.value });
@@ -283,10 +286,10 @@ export const BotForm = ({
               </Field>
               {(
                 [
-                  ["超时时间（毫秒）", "timeout", ws.timeout],
-                  ["重试次数", "retryTimes", ws.retryTimes],
-                  ["重试间隔（毫秒）", "retryInterval", ws.retryInterval],
-                  ["重试延迟（毫秒）", "retryLazy", ws.retryLazy],
+                  [t("超时时间（毫秒）"), "timeout", ws.timeout],
+                  [t("重试次数"), "retryTimes", ws.retryTimes],
+                  [t("重试间隔（毫秒）"), "retryInterval", ws.retryInterval],
+                  [t("重试延迟（毫秒）"), "retryLazy", ws.retryLazy],
                 ] as const
               ).map(([label, key, val]) => (
                 <Field key={key} label={label} required>
@@ -311,11 +314,11 @@ export const BotForm = ({
               onChange={(e) => {
                 setKook({ token: e.target.value });
               }}
-              placeholder="机器人的用户令牌"
+              placeholder={t("机器人的用户令牌")}
               value={kook.token}
             />
           </Field>
-          <Field label="连接协议" required>
+          <Field label={t("连接协议")} required>
             <Select
               onValueChange={(v) => {
                 onKookProtocolChange(v as "ws" | "http");
@@ -323,7 +326,7 @@ export const BotForm = ({
               value={kook.protocol}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="请选择连接协议" />
+                <SelectValue placeholder={t("请选择连接协议")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ws">WebSocket</SelectItem>
@@ -335,9 +338,13 @@ export const BotForm = ({
           {kookWs
             ? (
                 [
-                  ["重试次数", "retryTimes", kookWs.retryTimes],
-                  ["重试间隔（毫秒）", "retryInterval", kookWs.retryInterval],
-                  ["重试延迟（毫秒）", "retryLazy", kookWs.retryLazy],
+                  [t("重试次数"), "retryTimes", kookWs.retryTimes],
+                  [
+                    t("重试间隔（毫秒）"),
+                    "retryInterval",
+                    kookWs.retryInterval,
+                  ],
+                  [t("重试延迟（毫秒）"), "retryLazy", kookWs.retryLazy],
                 ] as const
               ).map(([label, key, val]) => (
                 <Field key={key} label={label} required>
@@ -353,21 +360,21 @@ export const BotForm = ({
 
           {kookHttp ? (
             <>
-              <Field label="验证令牌" required>
+              <Field label={t("验证令牌")} required>
                 <Input
                   onChange={(e) => {
                     setKook({ verifyToken: e.target.value });
                   }}
-                  placeholder="Webhook 验证令牌"
+                  placeholder={t("Webhook 验证令牌")}
                   value={kookHttp.verifyToken}
                 />
               </Field>
-              <Field label="路径" required>
+              <Field label={t("路径")} required>
                 <Input
                   onChange={(e) => {
                     setKook({ path: e.target.value });
                   }}
-                  placeholder="如 /kook"
+                  placeholder={t("如 /kook")}
                   value={kookHttp.path}
                 />
               </Field>
@@ -378,7 +385,7 @@ export const BotForm = ({
 
       {milky ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Field full label="连接地址" required>
+          <Field full label={t("连接地址")} required>
             <Input
               onChange={(e) => {
                 setMilky({ endpoint: e.target.value });
@@ -392,15 +399,15 @@ export const BotForm = ({
               onChange={(e) => {
                 setMilky({ token: e.target.value });
               }}
-              placeholder="API 访问令牌"
+              placeholder={t("API 访问令牌")}
               value={milky.token}
             />
           </Field>
           {(
             [
-              ["重试次数", "retryTimes", milky.retryTimes],
-              ["重试间隔（毫秒）", "retryInterval", milky.retryInterval],
-              ["重试延迟（毫秒）", "retryLazy", milky.retryLazy],
+              [t("重试次数"), "retryTimes", milky.retryTimes],
+              [t("重试间隔（毫秒）"), "retryInterval", milky.retryInterval],
+              [t("重试延迟（毫秒）"), "retryLazy", milky.retryLazy],
             ] as const
           ).map(([label, key, val]) => (
             <Field key={key} label={label} required>

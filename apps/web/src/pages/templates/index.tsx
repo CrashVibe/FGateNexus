@@ -32,6 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { t } from "@/i18n";
 import { errorMessage } from "@/lib/http";
 import {
   useDeleteTemplate,
@@ -45,12 +46,14 @@ const DataSourceBadges = ({
   sources: TemplateManifest["dataSources"];
 }) => {
   if (sources.length === 0) {
-    return <span className="text-muted-foreground text-xs">无数据源</span>;
+    return (
+      <span className="text-muted-foreground text-xs">{t("无数据源")}</span>
+    );
   }
   return sources.map((ds) => (
     <Badge key={ds.id} variant={ds.required ? "default" : "outline"}>
       {TEMPLATE_DATA_SOURCE_LABELS[ds.type]}
-      {ds.required ? "" : "（可选）"}
+      {ds.required ? "" : t("（可选）")}
     </Badge>
   ));
 };
@@ -69,10 +72,10 @@ export const TemplatesPage = () => {
   const handleFile = async (file: File): Promise<void> => {
     try {
       const manifest = await upload.mutateAsync(file);
-      toast.success(`模板「${manifest.name}」已上传`);
+      toast.success(t("模板「{{name}}」已上传", { name: manifest.name }));
       setInstalledManifest(manifest);
     } catch (error) {
-      toast.error("上传失败", { description: errorMessage(error) });
+      toast.error(t("上传失败"), { description: errorMessage(error) });
     }
   };
 
@@ -82,9 +85,9 @@ export const TemplatesPage = () => {
     }
     try {
       await remove.mutateAsync(pendingDelete.id);
-      toast.success("模板已删除");
+      toast.success(t("模板已删除"));
     } catch (error) {
-      toast.error("删除失败", { description: errorMessage(error) });
+      toast.error(t("删除失败"), { description: errorMessage(error) });
       throw error;
     }
     setPendingDelete(null);
@@ -100,15 +103,17 @@ export const TemplatesPage = () => {
             size="sm"
           >
             <Upload className="size-4" />
-            上传模板
+            {t("上传模板")}
           </Button>
         }
-        description="上传并管理图片模板包（.zip），随后在各服务器中配置实例。"
-        title="图片模板"
+        description={t(
+          "上传并管理图片模板包（.zip），随后在各服务器中配置实例。",
+        )}
+        title={t("图片模板")}
       />
       <input
         accept=".zip,application/zip"
-        aria-label="上传模板包"
+        aria-label={t("上传模板包")}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
@@ -130,13 +135,15 @@ export const TemplatesPage = () => {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="size-4" />
-                上传模板
+                {t("上传模板")}
               </Button>
             }
             className="py-16"
-            desc="上传一个模板包（zip），再到服务器里配置实例并绑定聊天指令"
+            desc={t(
+              "上传一个模板包（zip），再到服务器里配置实例并绑定聊天指令",
+            )}
             icon={<Image className="text-muted-foreground size-12" />}
-            title="还没有安装任何模板"
+            title={t("还没有安装任何模板")}
           />
         )}
         {templates !== undefined && templates.length > 0 && (
@@ -179,7 +186,7 @@ export const TemplatesPage = () => {
                     variant="ghost"
                   >
                     <Trash2 className="size-4" />
-                    删除
+                    {t("删除")}
                   </Button>
                 </CardContent>
               </Card>
@@ -189,7 +196,10 @@ export const TemplatesPage = () => {
       </PageContent>
 
       <ConfirmDialog
-        description={`确定删除模板「${pendingDelete?.name ?? ""}」吗？若仍有服务器实例引用该模板将无法删除。`}
+        description={t(
+          "确定删除模板「{{v0}}」吗？若仍有服务器实例引用该模板将无法删除。",
+          { v0: pendingDelete?.name ?? "" },
+        )}
         onConfirm={handleDelete}
         onOpenChange={(open) => {
           if (!open) {
@@ -197,7 +207,7 @@ export const TemplatesPage = () => {
           }
         }}
         open={pendingDelete !== null}
-        title="删除模板"
+        title={t("删除模板")}
       />
 
       <Dialog
@@ -210,14 +220,20 @@ export const TemplatesPage = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>模板「{installedManifest?.name}」已安装</DialogTitle>
+            <DialogTitle>
+              {t("模板「")}
+              {installedManifest?.name}
+              {t("」已安装")}
+            </DialogTitle>
             <DialogDescription>
-              该模板声明的数据需求与第三方网络访问权限如下，未声明的网络请求将在渲染时被拦截。
+              {t(
+                "该模板声明的数据需求与第三方网络访问权限如下，未声明的网络请求将在渲染时被拦截。",
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
             <div>
-              <p className="mb-1.5 text-sm font-medium">所需数据</p>
+              <p className="mb-1.5 text-sm font-medium">{t("所需数据")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {installedManifest ? (
                   <DataSourceBadges sources={installedManifest.dataSources} />
@@ -225,10 +241,12 @@ export const TemplatesPage = () => {
               </div>
             </div>
             <div>
-              <p className="mb-1.5 text-sm font-medium">第三方网络权限</p>
+              <p className="mb-1.5 text-sm font-medium">
+                {t("第三方网络权限")}
+              </p>
               {installedManifest?.networkPermissions.length === 0 ? (
                 <p className="text-muted-foreground text-xs">
-                  未声明任何第三方网络访问，渲染时所有外部请求都将被拦截
+                  {t("未声明任何第三方网络访问，渲染时所有外部请求都将被拦截")}
                 </p>
               ) : (
                 <ul className="space-y-1 text-xs">
@@ -247,7 +265,7 @@ export const TemplatesPage = () => {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button>知道了</Button>
+              <Button>{t("知道了")}</Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

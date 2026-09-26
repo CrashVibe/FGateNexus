@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { t } from "@/i18n";
 
 export interface TemplateVariable {
   value: string;
@@ -55,10 +56,16 @@ export const MessageTemplateField = ({
         value={value}
       />
     )}
-    <p className="text-muted-foreground text-xs">点击变量插入到消息</p>
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span
+        className="text-muted-foreground mr-0.5 text-xs"
+        title={t("点击变量插入到消息")}
+      >
+        {t("插入变量")}
+      </span>
       {variables.map((tag) => (
         <button
+          className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 active:opacity-70"
           key={tag.value}
           onClick={() => {
             onChange(value + tag.value);
@@ -67,7 +74,7 @@ export const MessageTemplateField = ({
           type="button"
         >
           <Badge
-            className="cursor-pointer"
+            className="cursor-pointer font-mono"
             variant={value.includes(tag.value) ? "default" : "secondary"}
           >
             {tag.value}
@@ -75,9 +82,11 @@ export const MessageTemplateField = ({
         </button>
       ))}
     </div>
-    <div className="text-muted-foreground text-sm">
-      预览：
-      {previewNode ?? <span className={previewClassName}>{preview}</span>}
+    <div className="bg-muted/40 flex gap-2 rounded-md border border-dashed px-3 py-2 text-sm">
+      <span className="text-muted-foreground shrink-0">{t("预览")}</span>
+      <div className="min-w-0 break-words">
+        {previewNode ?? <span className={previewClassName}>{preview}</span>}
+      </div>
     </div>
   </div>
 );

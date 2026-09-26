@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/sonner";
 import { useBlobUrl } from "@/hooks/use-blob-url";
+import { t } from "@/i18n";
 import { TemplateInstanceData } from "@/lib/api";
 import { errorMessage } from "@/lib/http";
 
@@ -26,7 +27,7 @@ export const TemplatePreview = ({
       const blob = await TemplateInstanceData.render(serverId, instanceId);
       setBlob(blob);
     } catch (error) {
-      toast.error("渲染失败", { description: errorMessage(error) });
+      toast.error(t("渲染失败"), { description: errorMessage(error) });
     } finally {
       setLoading(false);
     }
@@ -47,17 +48,17 @@ export const TemplatePreview = ({
         ) : (
           <ImageIcon className="size-4" />
         )}
-        立即渲染预览
+        {t("立即渲染预览")}
       </Button>
       {url ? (
         <img
-          alt="模板预览"
+          alt={t("模板预览")}
           className="max-w-full rounded-md border"
           src={url}
         />
       ) : (
         <p className="text-muted-foreground text-xs">
-          点击上方按钮渲染当前配置的预览图。
+          {t("点击上方按钮渲染当前配置的预览图。")}
         </p>
       )}
     </div>

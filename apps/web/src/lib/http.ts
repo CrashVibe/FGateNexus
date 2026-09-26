@@ -1,4 +1,5 @@
 import type { ApiResponse } from "#shared/model";
+import { t } from "@/i18n";
 
 /** 后端返回非 2xx 时抛出，携带状态码与后端错误信息。 */
 export class ApiRequestError extends Error {
@@ -52,7 +53,8 @@ const parseApiResponse = async <T>(
   }
 
   if (!response.ok) {
-    const message = parsed?.message ?? response.statusText;
+    // 服务端文案是中文原文，正好当翻译 key
+    const message = t(parsed?.message ?? response.statusText);
     const code = (parsed as { code?: number } | undefined)?.code;
     const errors = (parsed as { errors?: Record<string, string[]> } | undefined)
       ?.errors;
@@ -106,7 +108,7 @@ export const throwIfNotOk = async (response: Response): Promise<void> => {
   let message = response.statusText;
   try {
     const parsed = (await response.json()) as { message?: string };
-    message = parsed.message ?? message;
+    message = t(parsed.message ?? message);
   } catch {
     /* 非 JSON，保留 statusText */
   }

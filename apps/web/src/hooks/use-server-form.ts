@@ -1,26 +1,25 @@
-import { isEqual } from "lodash-es";
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import { isEqual, pick } from "lodash-es";
+import { useEffect, useRef, useState } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 
-import type { AutoSaveStatus } from "@/hooks/use-auto-save";
-import { useAutoSaveTrigger } from "@/hooks/use-auto-save";
+import type { SectionSave } from "@/components/common/settings-section";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 
-/**
- * 管理服务器配置页面的表单状态：初始化、脏状态检测、防抖自动保存。
- * 封装了所有子页面共用的 useState + useEffect + isDirty + 自动保存模式。
- * TForm 是表单值类型，TInput 是服务端数据类型（默认与 TForm 相同）。
- */
-export const useServerForm = <TForm, TInput = TForm>(
+/** 按卡片保存：section(keys) 只提交这些字段；刷新时保留用户改过的字段 */
+export const useServerForm = <TForm extends object, TInput = TForm>(
   serverData: TInput | undefined,
   buildForm: (data: TInput) => TForm,
   onSubmit: (form: TForm) => Promise<void>,
 ): {
   form: TForm | null;
+  /** 离开页面确认弹窗，页面需渲染 */
+  guard: ReactNode;
+  section: (keys: (keyof TForm)[]) => SectionSave;
   setForm: Dispatch<SetStateAction<TForm | null>>;
-  status: AutoSaveStatus;
 } => {
   const [form, setForm] = useState<TForm | null>(null);
-  const [original, setOriginal] = useState<TForm | null>(null);
+  const [saved, setSaved] = useState<TForm | null>(null);
+  const savedRef = useRef<TForm | null>(null);
 
   const buildFormRef = useRef(buildForm);
   buildFormRef.current = buildForm;
@@ -28,25 +27,48 @@ export const useServerForm = <TForm, TInput = TForm>(
   onSubmitRef.current = onSubmit;
 
   useEffect(() => {
-    if (serverData !== undefined) {
-      const next = buildFormRef.current(serverData);
-      setForm(next);
-      setOriginal(next);
-    }
-  }, [serverData]);
-
-  const isDirty = useMemo(
-    () => form !== null && original !== null && !isEqual(form, original),
-    [form, original],
-  );
-
-  const status = useAutoSaveTrigger([form], isDirty, async () => {
-    if (form === null) {
+    if (serverData === undefined) {
       return;
     }
-    await onSubmitRef.current(form);
-    setOriginal(structuredClone(form));
+    const next = buildFormRef.current(serverData);
+    const prevSaved = savedRef.current;
+    savedRef.current = next;
+    setSaved(next);
+    setForm((prev) =>
+      prev === null || prevSaved === null
+        ? next
+        : (Object.fromEntries(
+            Object.keys(next).map((k) => {
+              const key = k as keyof TForm;
+              return [
+                k,
+                isEqual(prev[key], prevSaved[key]) ? next[key] : prev[key],
+              ];
+            }),
+          ) as TForm),
+    );
+  }, [serverData]);
+
+  const guard = useUnsavedGuard(
+    form !== null && saved !== null && !isEqual(form, saved),
+  );
+
+  const section = (keys: (keyof TForm)[]): SectionSave => ({
+    dirty:
+      form !== null &&
+      saved !== null &&
+      keys.some((k) => !isEqual(form[k], saved[k])),
+    onSave: async () => {
+      const base = savedRef.current;
+      if (form === null || base === null) {
+        return;
+      }
+      const next = { ...base, ...pick(form, keys) } as TForm;
+      await onSubmitRef.current(next);
+      savedRef.current = next;
+      setSaved(next);
+    },
   });
 
-  return { form, setForm, status };
+  return { form, guard, section, setForm };
 };

@@ -1,13 +1,21 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "tanstack-theme-kit";
 
 import { AppLogo } from "@/components/common/app-logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { lang, setLang, t } from "@/i18n";
 import type { MenuColumn, MenuNode } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
+
+// 跟随系统 → 浅色 → 深色 → 跟随系统
+const NEXT_THEME: Record<string, string> = {
+  dark: "system",
+  light: "dark",
+  system: "light",
+};
 
 // hover / 当前页 / 按下分别取 gray-100 / 200 / 300。
 const leafClass = [
@@ -123,19 +131,31 @@ export const Sidebar = ({
 
       <div className="border-sidebar-border flex h-12 shrink-0 items-center justify-between border-t px-3">
         <Button
-          aria-label="切换主题"
+          aria-label={t("切换主题")}
           onClick={() => {
-            setTheme(theme === "dark" ? "light" : "dark");
+            setTheme(NEXT_THEME[theme ?? "system"] ?? "system");
           }}
           className="size-8"
           size="icon"
           variant="ghost"
         >
-          {theme === "dark" ? <Sun /> : <Moon />}
+          {theme === "light" ? <Sun /> : null}
+          {theme === "dark" ? <Moon /> : null}
+          {theme === "light" || theme === "dark" ? null : <Monitor />}
+        </Button>
+        <Button
+          aria-label={t("切换语言")}
+          className="h-8 px-2 text-xs"
+          onClick={() => {
+            setLang(lang === "zh" ? "en" : "zh");
+          }}
+          variant="ghost"
+        >
+          {lang === "zh" ? "EN" : "中文"}
         </Button>
         {hasPassword ? (
           <Button
-            aria-label="退出登录"
+            aria-label={t("退出登录")}
             onClick={() => {
               void handleLogout();
             }}

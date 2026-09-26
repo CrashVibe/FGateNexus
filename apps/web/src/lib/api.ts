@@ -12,9 +12,11 @@ import type {
   CommandAPI,
   GeneralAPI,
   NotifyAPI,
+  TargetConfigAPI,
 } from "#shared/model/server/api";
 import { ServersAPI, TargetAPI } from "#shared/model/server/api";
-import { SettingsAPI } from "#shared/model/settings";
+import { SettingsAPI, VersionInfoSchema } from "#shared/model/settings";
+import type { VersionInfo } from "#shared/model/settings";
 import { TemplateAPI, TemplateInstanceAPI } from "#shared/model/template/api";
 import type {
   TemplateInstanceConfig,
@@ -77,8 +79,14 @@ export const ServerData = {
     const response = await request("/api/servers");
     return ServersAPI.GETS.response.parse(response.data);
   },
-  async post(data: z.infer<typeof ServersAPI.POST.request>): Promise<void> {
-    await request("/api/servers", { body: data, method: "POST" });
+  async post(
+    data: z.infer<typeof ServersAPI.POST.request>,
+  ): Promise<z.infer<typeof ServersAPI.POST.response>> {
+    const response = await request("/api/servers", {
+      body: data,
+      method: "POST",
+    });
+    return ServersAPI.POST.response.parse(response.data);
   },
 };
 
@@ -157,6 +165,18 @@ export const BotData = {
     data: z.infer<typeof BotAPI.PUT.request>,
   ): Promise<void> {
     await request(`/api/bot/${botId}`, { body: data, method: "PUT" });
+  },
+};
+
+export const TargetConfigData = {
+  async patch(
+    serverId: number,
+    body: z.infer<typeof TargetConfigAPI.PATCH.request>,
+  ): Promise<void> {
+    await request(`/api/servers/${serverId}/target-configs`, {
+      body,
+      method: "PATCH",
+    });
   },
 };
 
@@ -271,6 +291,14 @@ export const DashboardData = {
     });
     return DashboardAPI.LEADERBOARD.response.parse(response.data);
   },
+  async relays(
+    limit = 30,
+  ): Promise<z.infer<typeof DashboardAPI.RELAYS.response>> {
+    const response = await request("/api/dashboard/relays", {
+      query: { limit },
+    });
+    return DashboardAPI.RELAYS.response.parse(response.data);
+  },
   async servers(): Promise<z.infer<typeof DashboardAPI.SERVERS.response>> {
     const response = await request("/api/dashboard/servers");
     return DashboardAPI.SERVERS.response.parse(response.data);
@@ -287,6 +315,13 @@ export const DashboardData = {
   async summary(): Promise<z.infer<typeof DashboardAPI.SUMMARY.response>> {
     const response = await request("/api/dashboard/summary");
     return DashboardAPI.SUMMARY.response.parse(response.data);
+  },
+};
+
+export const VersionData = {
+  async get(): Promise<VersionInfo> {
+    const response = await request("/api/settings/version");
+    return VersionInfoSchema.parse(response.data);
   },
 };
 

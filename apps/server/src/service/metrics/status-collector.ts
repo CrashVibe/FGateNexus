@@ -1,3 +1,4 @@
+import { deletePlayerEventsBefore } from "#server/db/queries/player-event";
 import {
   deleteStatusBefore,
   insertStatusSample,
@@ -7,7 +8,10 @@ import { registerCleanup } from "#server/utils/cleanup-registry";
 import { logger } from "#server/utils/logger";
 
 const INTERVAL_MS = 60_000;
-const RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const RETENTION_MS = 7 * DAY_MS;
+// ponytail: 写死 90 天，有人要改再进配置
+const EVENT_RETENTION_MS = 90 * DAY_MS;
 /** 无需每次采集都清理 */
 const PURGE_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -44,6 +48,7 @@ const collectOnce = async (): Promise<void> => {
     );
     if (Date.now() - lastPurgeAt >= PURGE_INTERVAL_MS) {
       await deleteStatusBefore(new Date(Date.now() - RETENTION_MS));
+      await deletePlayerEventsBefore(new Date(Date.now() - EVENT_RETENTION_MS));
       lastPurgeAt = Date.now();
     }
   } catch (error) {

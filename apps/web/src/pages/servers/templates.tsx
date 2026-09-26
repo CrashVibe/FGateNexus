@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
+import { t } from "@/i18n";
 import { errorMessage } from "@/lib/http";
 import {
   useDeleteInstance,
@@ -38,7 +39,7 @@ export const ServerTemplatesPage = () => {
   const remove = useDeleteInstance(serverId);
 
   const templateName = (templateId: string): string =>
-    templates?.find((t) => t.id === templateId)?.name ?? templateId;
+    templates?.find((item) => item.id === templateId)?.name ?? templateId;
 
   const handleToggle = async (
     instance: TemplateInstance,
@@ -53,7 +54,7 @@ export const ServerTemplatesPage = () => {
         toast.warning(result.warning);
       }
     } catch (error) {
-      toast.error("切换状态失败", { description: errorMessage(error) });
+      toast.error(t("切换状态失败"), { description: errorMessage(error) });
     }
   };
 
@@ -67,9 +68,9 @@ export const ServerTemplatesPage = () => {
     }
     try {
       await remove.mutateAsync(pendingDelete.id);
-      toast.success("实例已删除");
+      toast.success(t("实例已删除"));
     } catch (error) {
-      toast.error("删除失败", { description: errorMessage(error) });
+      toast.error(t("删除失败"), { description: errorMessage(error) });
       throw error;
     }
   };
@@ -84,7 +85,7 @@ export const ServerTemplatesPage = () => {
               to="/servers/$id/templates/$instanceId"
             >
               <Plus className="size-4" />
-              新增实例
+              {t("新增实例")}
             </Link>
           </Button>
         }
@@ -100,14 +101,14 @@ export const ServerTemplatesPage = () => {
                   to="/servers/$id/templates/$instanceId"
                 >
                   <Plus className="size-4" />
-                  新增实例
+                  {t("新增实例")}
                 </Link>
               </Button>
             }
             className="py-16"
-            desc="该服务器还没有模板实例，创建一个来把渲染结果发到聊天平台"
+            desc={t("该服务器还没有图片指令，创建一个来把渲染结果发到聊天平台")}
             icon={<Image className="text-muted-foreground size-12" />}
-            title="尚无模板实例"
+            title={t("尚无图片指令")}
           />
         )}
         {instances !== undefined && instances.length > 0 && (
@@ -127,22 +128,27 @@ export const ServerTemplatesPage = () => {
                     />
                   </CardTitle>
                   <CardDescription>
-                    模板：{templateName(instance.templateId)}
+                    {t("模板：")}
+                    {templateName(instance.templateId)}
                     {instance.binding
-                      ? ` · 指令：${instance.binding.commands.join("、")}`
+                      ? t(" · 指令：{{v0}}", {
+                          v0: instance.binding.commands.join("、"),
+                        })
                       : ""}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex flex-wrap gap-2">
                     <Badge variant={instance.enabled ? "default" : "secondary"}>
-                      {instance.enabled ? "已启用" : "未启用"}
+                      {instance.enabled ? t("已启用") : t("未启用")}
                     </Badge>
                     {instance.binding ? (
                       <Badge variant="outline">
                         {instance.binding.permissions.length > 0
-                          ? `权限：${instance.binding.permissions.join(", ")}`
-                          : "所有人可用"}
+                          ? t("权限：{{v0}}", {
+                              v0: instance.binding.permissions.join(", "),
+                            })
+                          : t("所有人可用")}
                       </Badge>
                     ) : null}
                   </div>
@@ -157,7 +163,7 @@ export const ServerTemplatesPage = () => {
                         to="/servers/$id/templates/$instanceId"
                       >
                         <Pencil className="size-4" />
-                        编辑
+                        {t("编辑")}
                       </Link>
                     </Button>
                     <Button
@@ -168,7 +174,7 @@ export const ServerTemplatesPage = () => {
                       variant="ghost"
                     >
                       <Trash2 className="size-4" />
-                      删除
+                      {t("删除")}
                     </Button>
                   </div>
                 </CardContent>
@@ -179,7 +185,9 @@ export const ServerTemplatesPage = () => {
       </PageContent>
 
       <ConfirmDialog
-        description={`确定删除实例「${pendingDelete?.name || ""}」吗？此操作不可恢复。`}
+        description={t("确定删除实例「{{v0}}」吗？此操作不可恢复。", {
+          v0: pendingDelete?.name || "",
+        })}
         onConfirm={handleDelete}
         onOpenChange={(open) => {
           if (!open) {
@@ -187,7 +195,7 @@ export const ServerTemplatesPage = () => {
           }
         }}
         open={pendingDelete !== null}
-        title="删除模板实例"
+        title={t("删除图片指令")}
       />
     </>
   );

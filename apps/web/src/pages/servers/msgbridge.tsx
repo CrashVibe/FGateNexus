@@ -6,8 +6,10 @@ import type { ChatSyncConfigSchema } from "#shared/model/server/schema/chat-sync
 import {
   formatMCToPlatformMessage,
   formatPlatformToMCMessage,
+  getFilterReason,
 } from "#shared/utils/chat-sync";
 import { LoadingState } from "@/components/common/loading-state";
+import { SettingsColumns } from "@/components/common/settings-columns";
 import {
   SettingsBlock,
   SettingsRow,
@@ -16,15 +18,15 @@ import {
 import { PageContent } from "@/components/layout/page-content";
 import { ServerHeader } from "@/components/layout/server-header";
 import { MessageTemplateField } from "@/components/target/message-template-field";
-import { TargetConfigSheet } from "@/components/target/target-config-sheet";
+import { TargetsHint } from "@/components/target/targets-hint";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui/number-input";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useServerConfigForm } from "@/hooks/use-server-config-form";
+import { useServerForm } from "@/hooks/use-server-form";
+import { t } from "@/i18n";
 import { ChatSyncData } from "@/lib/api";
 import {
   MC_TO_PLATFORM_VARS,
@@ -91,26 +93,62 @@ const ArrayField = ({
   );
 };
 
+// 过滤规则试一试：用当前（未保存的）配置判断
+const FilterTester = ({ config }: { config: ChatSyncConfig }) => {
+  const [text, setText] = useState("");
+  const reason = text ? getFilterReason(text, config) : null;
+  return (
+    <SettingsBlock>
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium">{t("试一试")}</p>
+        <Input
+          onChange={(e) => {
+            setText(e.target.value);
+          }}
+          placeholder={t("输入一条消息，看看会不会被转发")}
+          value={text}
+        />
+        {text ? (
+          <p
+            className={
+              reason === null
+                ? "text-xs text-green-500"
+                : "text-destructive text-xs"
+            }
+          >
+            {reason === null
+              ? t("会转发 ✓")
+              : t("不会转发：{{reason}}", { reason })}
+          </p>
+        ) : null}
+      </div>
+    </SettingsBlock>
+  );
+};
+
 export const ServerMsgbridgePage = () => {
   const { id } = useParams({ from: "/dashboard/servers/$id/msgbridge" });
   const serverId = Number(id);
 
-  const { data: server } = useServer(serverId);
-  const { config, setConfig, targets, setTargets, status } =
-    useServerConfigForm(
-      serverId,
-      (s) => s.chatSyncConfig,
-      async (chatsync, changedTargets) => {
-        await ChatSyncData.patch(serverId, {
-          chatsync,
-          targets: changedTargets,
-        });
-      },
-    );
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { data: server, refetch } = useServer(serverId);
+  const {
+    form: config,
+    guard,
+    section,
+    setForm: setConfig,
+  } = useServerForm(
+    server?.chatSyncConfig,
+    (c) => structuredClone(c),
+    async (chatsync) => {
+      await ChatSyncData.patch(serverId, { chatsync });
+      await refetch();
+    },
+  );
 
   const setFilter = (patch: Partial<ChatSyncConfig["filters"]>): void => {
-    setConfig((prev) => ({ ...prev, filters: { ...prev.filters, ...patch } }));
+    if (config) {
+      setConfig({ ...config, filters: { ...config.filters, ...patch } });
+    }
   };
   const setArrayFilter = (key: ArrayFilterKey) => (next: string[]) => {
     setFilter({ [key]: next });
@@ -118,19 +156,22 @@ export const ServerMsgbridgePage = () => {
 
   return (
     <>
-      <ServerHeader status={status} width="form" />
-      <PageContent className="space-y-8" width="form">
+      {guard}
+      <ServerHeader width="settings" />
+      <PageContent width="settings">
         {config === null ? (
           <LoadingState />
         ) : (
-          <>
+          <SettingsColumns>
+            <TargetsHint feature={t("互通消息")} serverId={serverId} />
             <SettingsSection
-              description="控制聊天同步功能的启用状态及消息方向"
-              title="聊天同步"
+              description={t("控制聊天同步功能的启用状态及消息方向")}
+              save={section(["mcToPlatformEnabled", "platformToMcEnabled"])}
+              title={t("聊天同步")}
             >
               <SettingsRow
-                description="将 Minecraft 玩家消息转发到聊天平台"
-                label="MC → 平台"
+                description={t("将 Minecraft 玩家消息转发到聊天平台")}
+                label={t("MC → 平台")}
               >
                 <Switch
                   checked={config.mcToPlatformEnabled}
@@ -140,8 +181,8 @@ export const ServerMsgbridgePage = () => {
                 />
               </SettingsRow>
               <SettingsRow
-                description="将聊天平台消息转发到 Minecraft 服务器"
-                label="平台 → MC"
+                description={t("将聊天平台消息转发到 Minecraft 服务器")}
+                label={t("平台 → MC")}
               >
                 <Switch
                   checked={config.platformToMcEnabled}
@@ -153,15 +194,16 @@ export const ServerMsgbridgePage = () => {
             </SettingsSection>
 
             <SettingsSection
-              description="配置消息长度限制和内容过滤规则"
-              title="消息过滤"
+              description={t("配置消息长度限制和内容过滤规则")}
+              save={section(["filters"])}
+              title={t("消息过滤")}
             >
               <SettingsRow
-                description="低于此长度的消息将被忽略"
-                label="最小长度"
+                description={t("低于此长度的消息将被忽略")}
+                label={t("最小长度")}
               >
                 <NumberInput
-                  className="w-28 text-right"
+                  className="w-full text-right sm:w-28"
                   onChange={(minMessageLength) => {
                     setFilter({ minMessageLength });
                   }}
@@ -169,96 +211,81 @@ export const ServerMsgbridgePage = () => {
                 />
               </SettingsRow>
               <SettingsRow
-                description="超过此长度的消息将被截断或忽略"
-                label="最大长度"
+                description={t("超过此长度的消息将被截断或忽略")}
+                label={t("最大长度")}
               >
                 <NumberInput
-                  className="w-28 text-right"
+                  className="w-full text-right sm:w-28"
                   onChange={(maxMessageLength) => {
                     setFilter({ maxMessageLength });
                   }}
                   value={config.filters.maxMessageLength}
                 />
               </SettingsRow>
-              <SettingsRow label="过滤模式">
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => {
-                      setFilter({ filterMode: "blacklist" });
-                    }}
-                    size="sm"
-                    variant={
-                      config.filters.filterMode === "blacklist"
-                        ? "default"
-                        : "outline"
-                    }
-                  >
-                    黑名单
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setFilter({ filterMode: "whitelist" });
-                    }}
-                    size="sm"
-                    variant={
-                      config.filters.filterMode === "whitelist"
-                        ? "default"
-                        : "outline"
-                    }
-                  >
-                    白名单
-                  </Button>
-                </div>
+              <SettingsRow label={t("过滤模式")}>
+                <Tabs
+                  onValueChange={(v) => {
+                    setFilter({ filterMode: v as "blacklist" | "whitelist" });
+                  }}
+                  value={config.filters.filterMode}
+                >
+                  <TabsList>
+                    <TabsTrigger value="blacklist">{t("黑名单")}</TabsTrigger>
+                    <TabsTrigger value="whitelist">{t("白名单")}</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </SettingsRow>
               {config.filters.filterMode === "blacklist" ? (
                 <>
                   <ArrayField
-                    desc="包含这些关键词的消息将被过滤，不会转发"
-                    label="屏蔽关键词"
+                    desc={t("包含这些关键词的消息将被过滤，不会转发")}
+                    label={t("屏蔽关键词")}
                     onChange={setArrayFilter("blacklistKeywords")}
-                    placeholder="用逗号分隔多个关键词，如：广告,刷屏,垃圾"
+                    placeholder={t("用逗号分隔多个关键词，如：广告,刷屏,垃圾")}
                     value={config.filters.blacklistKeywords}
                   />
                   <ArrayField
-                    desc="匹配这些正则表达式的消息将被过滤"
-                    label="屏蔽正则表达式"
+                    desc={t("匹配这些正则表达式的消息将被过滤")}
+                    label={t("屏蔽正则表达式")}
                     multiline
                     onChange={setArrayFilter("blacklistRegex")}
-                    placeholder="用逗号分隔多个正则表达式"
+                    placeholder={t("用逗号分隔多个正则表达式")}
                     value={config.filters.blacklistRegex}
                   />
                 </>
               ) : (
                 <>
                   <ArrayField
-                    desc="仅转发以这些前缀开头的消息"
-                    label="允许前缀"
+                    desc={t("仅转发以这些前缀开头的消息")}
+                    label={t("允许前缀")}
                     onChange={setArrayFilter("whitelistPrefixes")}
-                    placeholder="用逗号分隔多个前缀，如：#,!,?"
+                    placeholder={t("用逗号分隔多个前缀，如：#,!,?")}
                     value={config.filters.whitelistPrefixes}
                   />
                   <ArrayField
-                    desc="仅转发匹配这些正则表达式的消息"
-                    label="允许正则表达式"
+                    desc={t("仅转发匹配这些正则表达式的消息")}
+                    label={t("允许正则表达式")}
                     multiline
                     onChange={setArrayFilter("whitelistRegex")}
-                    placeholder="用逗号分隔多个正则表达式"
+                    placeholder={t("用逗号分隔多个正则表达式")}
                     value={config.filters.whitelistRegex}
                   />
                 </>
               )}
+              <FilterTester config={config} />
             </SettingsSection>
             <SettingsSection
-              description="Minecraft 玩家消息发送到平台时的格式"
+              description={t("Minecraft 玩家消息发送到平台时的格式")}
+              save={section(["mcToPlatformTemplate"])}
               title={
                 <span className="inline-flex items-center gap-2">
-                  MC → 平台模板 <Badge>游戏到平台</Badge>
+                  {t("MC → 平台模板")} <Badge>{t("游戏到平台")}</Badge>
                 </span>
               }
             >
               <SettingsBlock>
                 <MessageTemplateField
-                  label="模板内容"
+                  label={t("模板内容")}
                   multiline
                   onChange={(v) => {
                     setConfig({ ...config, mcToPlatformTemplate: v });
@@ -281,16 +308,18 @@ export const ServerMsgbridgePage = () => {
             </SettingsSection>
 
             <SettingsSection
-              description="平台消息发送到 Minecraft 时的格式"
+              description={t("平台消息发送到 Minecraft 时的格式")}
+              save={section(["platformToMcTemplate"])}
               title={
                 <span className="inline-flex items-center gap-2">
-                  平台 → MC 模板 <Badge variant="success">平台到游戏</Badge>
+                  {t("平台 → MC 模板")}{" "}
+                  <Badge variant="success">{t("平台到游戏")}</Badge>
                 </span>
               }
             >
               <SettingsBlock>
                 <MessageTemplateField
-                  label="模板内容"
+                  label={t("模板内容")}
                   multiline
                   onChange={(v) => {
                     setConfig({ ...config, platformToMcTemplate: v });
@@ -310,48 +339,7 @@ export const ServerMsgbridgePage = () => {
                 />
               </SettingsBlock>
             </SettingsSection>
-            <SettingsSection
-              description="针对不同目标群聊进行单独配置"
-              title="群聊目标配置"
-            >
-              <SettingsBlock>
-                <TargetConfigSheet
-                  onSelectedChange={setSelectedId}
-                  selectedId={selectedId}
-                  serverId={serverId}
-                  targets={targets}
-                  triggerLabel="选择目标配置"
-                >
-                  {(target) => (
-                    <div className="flex items-center justify-between">
-                      <Label>启用聊天同步</Label>
-                      <Switch
-                        checked={target.config.chatSyncConfigSchema.enabled}
-                        onCheckedChange={(v) => {
-                          setTargets((prev) =>
-                            prev.map((t) =>
-                              t.id === target.id
-                                ? {
-                                    ...t,
-                                    config: {
-                                      ...t.config,
-                                      chatSyncConfigSchema: {
-                                        ...t.config.chatSyncConfigSchema,
-                                        enabled: v,
-                                      },
-                                    },
-                                  }
-                                : t,
-                            ),
-                          );
-                        }}
-                      />
-                    </div>
-                  )}
-                </TargetConfigSheet>
-              </SettingsBlock>
-            </SettingsSection>
-          </>
+          </SettingsColumns>
         )}
       </PageContent>
     </>

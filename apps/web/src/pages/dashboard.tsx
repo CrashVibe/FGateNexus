@@ -1,12 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import dayjs from "dayjs";
-import "dayjs/locale/zh-cn";
-import relativeTime from "dayjs/plugin/relativeTime";
 import {
   Activity,
   Bot,
   ChevronRight,
+  Circle,
+  CircleCheck,
   Link as LinkIcon,
   LogIn,
   LogOut,
@@ -20,11 +20,13 @@ import type { z } from "zod";
 import type { DashboardAPI } from "#shared/model/dashboard";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { RelayPanel } from "@/components/dashboard/relay-panel";
 import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useDashboardEventStream } from "@/hooks/use-dashboard-event-stream";
+import { t } from "@/i18n";
 import { formatMcVersion } from "@/lib/mc-format";
 import { cn } from "@/lib/utils";
 import {
@@ -37,9 +39,6 @@ import {
   useDashboardStatusHistory,
   useDashboardSummary,
 } from "@/queries/dashboard";
-
-dayjs.extend(relativeTime);
-dayjs.locale("zh-cn");
 
 type EventItem = z.infer<typeof DashboardAPI.EVENTS.response>[number];
 type LeaderboardEntry = z.infer<
@@ -105,47 +104,63 @@ const StatsRow = ({
     <StatTile
       icon={Server}
       iconClass="bg-green-500/12 text-green-500"
-      label="在线服务器"
+      label={t("在线服务器")}
       of={`/ ${summary.servers.total}`}
       sub={
         offlineServers.length > 0
-          ? `${offlineServers.length} 台离线：${offlineServers[0]?.name}${offlineServers.length > 1 ? " 等" : ""}`
-          : "全部在线"
+          ? t("{{length}} 台离线：{{name}}{{v2}}", {
+              length: offlineServers.length,
+              name: offlineServers[0]?.name,
+              v2: offlineServers.length > 1 ? t(" 等") : "",
+            })
+          : t("全部在线")
       }
       value={summary.servers.online}
     />
     <StatTile
       icon={Users}
       iconClass="bg-primary/12 text-primary"
-      label="在线玩家"
-      sub="实时统计，来自已连接服务器"
+      label={t("在线玩家")}
+      sub={t("实时统计，来自已连接服务器")}
       value={summary.players.online}
     />
     <StatTile
       icon={Bot}
       iconClass="bg-green-500/12 text-green-500"
-      label="Bot 连接"
+      label={t("机器人在线")}
       of={`/ ${summary.bots.total}`}
-      sub={summary.bots.online === summary.bots.total ? "全部在线" : "部分离线"}
+      sub={
+        summary.bots.online === summary.bots.total
+          ? t("全部在线")
+          : t("部分离线")
+      }
       value={summary.bots.online}
     />
     <StatTile
       icon={LinkIcon}
       iconClass="bg-primary/12 text-primary"
-      label="已绑定账号"
+      label={t("已绑定账号")}
       of={`/ ${summary.bindings.total}`}
       sub={
         summary.bindings.total > 0
-          ? `绑定率 ${Math.round((summary.bindings.bound / summary.bindings.total) * 100)}%`
-          : "暂无玩家"
+          ? t("绑定率 {{v0}}%", {
+              v0: Math.round(
+                (summary.bindings.bound / summary.bindings.total) * 100,
+              ),
+            })
+          : t("暂无玩家")
       }
       value={summary.bindings.bound}
     />
     <StatTile
       icon={Activity}
       iconClass="bg-amber-500/12 text-amber-600 dark:text-amber-400"
-      label="今日事件"
-      sub={`加入 ${summary.eventsToday.join} · 离开 ${summary.eventsToday.leave} · 死亡 ${summary.eventsToday.death}`}
+      label={t("今日事件")}
+      sub={t("加入 {{join}} · 离开 {{leave}} · 死亡 {{death}}", {
+        death: summary.eventsToday.death,
+        join: summary.eventsToday.join,
+        leave: summary.eventsToday.leave,
+      })}
       value={
         summary.eventsToday.join +
         summary.eventsToday.leave +
@@ -198,7 +213,7 @@ const MiniTpsSpark = ({ samples }: { samples: { tps: number | null }[] }) => {
         preserveAspectRatio="none"
         viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
       >
-        <title>近期 TPS 走势</title>
+        <title>{t("近期 TPS 走势")}</title>
         <polyline
           fill="none"
           points={path}
@@ -226,7 +241,10 @@ const ServerStatusPanel = ({
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <PanelHeader hint={`${servers?.length ?? 0} 台`} title="服务器状态" />
+      <PanelHeader
+        hint={t("{{v0}} 台", { v0: servers?.length ?? 0 })}
+        title={t("服务器状态")}
+      />
       {servers && servers.length > 0 ? (
         <div>
           {servers.map((s) => (
@@ -251,8 +269,8 @@ const ServerStatusPanel = ({
                 </div>
                 <span className="text-muted-foreground truncate text-xs">
                   {s.isOnline
-                    ? `${s.software ?? "未知服务端"} · ${formatMcVersion(s.version)}`
-                    : "未连接"}
+                    ? `${s.software ?? t("未知服务端")} · ${formatMcVersion(s.version)}`
+                    : t("未连接")}
                 </span>
                 <span className="text-muted-foreground flex items-center gap-1 text-xs tabular-nums">
                   {s.isOnline && s.onlinePlayers !== null ? (
@@ -268,12 +286,12 @@ const ServerStatusPanel = ({
                   <MiniTpsSpark samples={s.recentTps} />
                 ) : (
                   <Badge className="w-fit" variant="secondary">
-                    离线
+                    {t("离线")}
                   </Badge>
                 )}
               </button>
               <button
-                aria-label="查看服务器详情"
+                aria-label={t("查看服务器详情")}
                 className="text-muted-foreground hover:text-foreground hover:bg-accent shrink-0 rounded-md p-1.5"
                 onClick={() => {
                   void navigate({
@@ -298,11 +316,11 @@ const ServerStatusPanel = ({
               }}
               type="button"
             >
-              去创建服务器
+              {t("去创建服务器")}
             </button>
           }
           className="py-10"
-          desc="还没有配置服务器"
+          desc={t("还没有配置服务器")}
         />
       )}
     </Card>
@@ -322,7 +340,7 @@ const TrendChart = ({ samples }: { samples: StatusSample[] }) => {
     return (
       <EmptyState
         className="py-10"
-        desc="样本不足，等待下一次状态采集（每 60 秒一次）"
+        desc={t("样本不足，等待下一次状态采集（每 60 秒一次）")}
       />
     );
   }
@@ -346,11 +364,11 @@ const TrendChart = ({ samples }: { samples: StatusSample[] }) => {
           {last.tps.toFixed(1)}
         </span>
         <span className="text-muted-foreground text-[11px]">
-          当前 TPS，均值 {avg.toFixed(1)}
+          {t("当前 TPS，均值")} {avg.toFixed(1)}
         </span>
       </div>
       <svg
-        aria-label="TPS 趋势图"
+        aria-label={t("TPS 趋势图")}
         className="block h-[108px] w-full"
         preserveAspectRatio="none"
         viewBox={`0 0 ${CHART_W} ${CHART_H}`}
@@ -396,11 +414,13 @@ const TrendPanel = ({
   isLoading: boolean;
   samples: StatusSample[] | undefined;
 }) => {
-  const title = serverName ? `TPS 趋势 · ${serverName}` : "TPS 趋势";
+  const title = serverName
+    ? t("TPS 趋势 · {{serverName}}", { serverName })
+    : t("TPS 趋势");
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <PanelHeader hint="最近 24 小时" title={title} />
+      <PanelHeader hint={t("最近 24 小时")} title={title} />
       {(() => {
         if (isLoading) {
           return <LoadingState />;
@@ -409,7 +429,10 @@ const TrendPanel = ({
           return <TrendChart samples={samples} />;
         }
         return (
-          <EmptyState className="py-10" desc="选择一台在线服务器查看趋势" />
+          <EmptyState
+            className="py-10"
+            desc={t("选择一台在线服务器查看趋势")}
+          />
         );
       })()}
     </Card>
@@ -432,18 +455,18 @@ const EVENT_META: Record<
 };
 
 const eventLine = (e: EventItem): string => {
-  const name = e.playerName ?? "未知玩家";
+  const name = e.playerName ?? t("未知玩家");
   if (e.type === "player.join") {
-    return `${name} 加入了服务器`;
+    return t("{{name}} 加入了服务器", { name });
   }
   if (e.type === "player.leave") {
-    return `${name} 离开了服务器`;
+    return t("{{name}} 离开了服务器", { name });
   }
   if (e.type === "player.death") {
     const message = (e.data as { message?: string } | null)?.message;
-    return message ? `${name} ${message}` : `${name} 死亡了`;
+    return message ? `${name} ${message}` : t("{{name}} 死亡了", { name });
   }
-  return `${name} 触发了 ${e.type}`;
+  return t("{{name}} 触发了 {{type}}", { name, type: e.type });
 };
 
 const FLIP_MS = 420;
@@ -531,7 +554,7 @@ const EventFeedPanel = ({
       return (
         <EmptyState
           className="py-10"
-          desc="暂无事件，玩家加入/离开/死亡后会出现在这里"
+          desc={t("暂无事件，玩家加入/离开/死亡后会出现在这里")}
         />
       );
     }
@@ -574,7 +597,7 @@ const EventFeedPanel = ({
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <PanelHeader hint="全部服务器" title="实时事件" />
+      <PanelHeader hint={t("全部服务器")} title={t("实时事件")} />
       {body}
     </Card>
   );
@@ -595,7 +618,9 @@ const LeaderboardPanel = ({
       return <LoadingState />;
     }
     if (!leaderboard || leaderboard.length === 0) {
-      return <EmptyState className="py-10" desc="今天还没有玩家死亡记录" />;
+      return (
+        <EmptyState className="py-10" desc={t("今天还没有玩家死亡记录")} />
+      );
     }
     return (
       <div className="overflow-x-hidden">
@@ -619,18 +644,18 @@ const LeaderboardPanel = ({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold">
-                {entry.playerName ?? "未知玩家"}
+                {entry.playerName ?? t("未知玩家")}
               </p>
               <p className="text-muted-foreground truncate text-[10.5px]">
-                最近：
+                {t("最近：")}
                 {(entry.lastData as { message?: string } | null)?.message ??
-                  "未知死因"}
+                  t("未知死因")}
               </p>
             </div>
             <span className="shrink-0 text-sm font-bold tabular-nums">
               {entry.count}
               <span className="text-muted-foreground ml-0.5 text-[10.5px] font-medium">
-                次
+                {t("次")}
               </span>
             </span>
           </div>
@@ -641,7 +666,7 @@ const LeaderboardPanel = ({
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <PanelHeader hint="全部服务器" title="今日死亡榜" />
+      <PanelHeader hint={t("全部服务器")} title={t("今日死亡榜")} />
       {body}
     </Card>
   );
@@ -651,6 +676,94 @@ const EVENTS_LIMIT = 20;
 const LEADERBOARD_LIMIT = 5;
 /** 此窗口内连续到达的事件合并成一次列表更新。 */
 const EVENT_BATCH_MS = 200;
+
+// 上手清单：全部完成后自动消失
+const SetupChecklist = ({
+  servers,
+  summary,
+}: {
+  servers: DashboardServer[];
+  summary: Summary;
+}) => {
+  const navigate = useNavigate();
+  const [firstServer] = servers;
+  const steps = [
+    {
+      done: summary.bots.online > 0,
+      go: () => navigate({ to: "/bots" }),
+      label: t("创建一个机器人，并让它上线"),
+    },
+    {
+      done: summary.servers.total > 0,
+      go: () => navigate({ to: "/servers" }),
+      label: t("创建一台服务器"),
+    },
+    {
+      done: summary.servers.online > 0,
+      go: () =>
+        firstServer
+          ? navigate({
+              params: { id: String(firstServer.id) },
+              to: "/servers/$id/general",
+            })
+          : navigate({ to: "/servers" }),
+      label: t("在 MC 服务器装好 FGateClient 并连上"),
+    },
+    {
+      done: summary.chatSyncTargets > 0,
+      go: () =>
+        firstServer
+          ? navigate({
+              params: { id: String(firstServer.id) },
+              to: "/servers/$id/target",
+            })
+          : navigate({ to: "/servers" }),
+      label: t("给至少一个群聊开启消息互通"),
+    },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
+  if (doneCount === steps.length) {
+    return null;
+  }
+
+  return (
+    <Card className="gap-0 p-0">
+      <PanelHeader
+        hint={`${doneCount} / ${steps.length}`}
+        title={t("还差几步就能用了……才不是特意提醒你的")}
+      />
+      <div className="divide-y">
+        {steps.map((step) => (
+          <button
+            className="flex w-full hover:bg-gray-100 active:bg-gray-300 items-center gap-3 px-4 py-3 text-left text-sm focus-visible:outline-2 focus-visible:outline-offset-2"
+            key={step.label}
+            onClick={() => {
+              void step.go();
+            }}
+            type="button"
+          >
+            {step.done ? (
+              <CircleCheck className="size-4 text-green-500" />
+            ) : (
+              <Circle className="text-muted-foreground size-4" />
+            )}
+            <span
+              className={cn(
+                "flex-1",
+                step.done && "text-muted-foreground line-through",
+              )}
+            >
+              {step.label}
+            </span>
+            {step.done ? null : (
+              <ChevronRight className="text-muted-foreground size-4" />
+            )}
+          </button>
+        ))}
+      </div>
+    </Card>
+  );
+};
 
 export const DashboardPage = () => {
   const queryClient = useQueryClient();
@@ -717,8 +830,8 @@ export const DashboardPage = () => {
   return (
     <>
       <PageHeader
-        description="所有服务器、Bot 与账号绑定的实时状态"
-        title="总览"
+        description={t("所有服务器、机器人与账号绑定的实时状态")}
+        title={t("总览")}
       />
 
       <PageContent className="flex flex-col gap-5">
@@ -726,6 +839,7 @@ export const DashboardPage = () => {
           <LoadingState />
         ) : (
           <>
+            <SetupChecklist servers={servers ?? []} summary={summary} />
             <StatsRow offlineServers={offlineServers} summary={summary} />
 
             <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[1.6fr_1fr]">
@@ -744,6 +858,11 @@ export const DashboardPage = () => {
               </div>
 
               <div className="flex flex-col gap-4">
+                <RelayPanel
+                  serverNames={
+                    new Map((servers ?? []).map((s) => [s.id, s.name]))
+                  }
+                />
                 <EventFeedPanel events={events} isLoading={eventsLoading} />
                 <LeaderboardPanel
                   isLoading={leaderboardLoading}

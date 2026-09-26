@@ -7,7 +7,9 @@ import { db } from "#server/db/client";
 import type { Target } from "#server/db/schema";
 import { serverTable, targetTable } from "#server/db/schema";
 import { fail, guard, ok, parseBody } from "#server/http/respond";
+import { getLastEvent, noteLastEvent } from "#server/service/diagnostics";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+import en from "#shared/locales/en.json";
 import { ApiError } from "#shared/model/error";
 import {
   BindingAPI,
@@ -17,6 +19,7 @@ import {
   NotifyAPI,
   ServersAPI,
   TargetAPI,
+  TargetConfigAPI,
 } from "#shared/model/server/api";
 import { BindingConfigSchema } from "#shared/model/server/schema/binding";
 import { ChatSyncConfigSchema } from "#shared/model/server/schema/chat-sync";
@@ -33,24 +36,13 @@ const parseServerId = (raw: string | undefined): number => {
 };
 
 /**
- * 事务：更新服务器某项配置 + 批量更新其下目标配置（chat-sync / command / notify
- * 三个 PATCH 共用）。目标 ID 必须全部属于该服务器，否则抛 ApiError.validation。
+ * 事务：批量更新服务器下的目标配置。目标 ID 必须全部属于该服务器，否则抛 ApiError.validation。
  */
-const updateServerWithTargets = (
+const updateTargetConfigs = (
   serverId: number,
-  serverSet: Partial<typeof serverTable.$inferInsert>,
   items: { id: string; config: Target["config"] }[],
 ): void => {
   db.transaction((tx) => {
-    tx.update(serverTable)
-      .set(serverSet)
-      .where(eq(serverTable.id, serverId))
-      .run();
-
-    if (items.length === 0) {
-      return;
-    }
-
     const ids = items.map((i) => i.id);
     const exists = tx
       .select()
@@ -94,6 +86,7 @@ export const serversRouter = new Hono()
           return {
             ...server,
             isOnline: Boolean(connection),
+            lastEvent: getLastEvent("server", server.id),
             supports_command: connection?.supports_command ?? null,
             supports_papi: connection?.supports_papi ?? null,
           };
@@ -110,15 +103,30 @@ export const serversRouter = new Hono()
         ServersAPI.POST.request,
         "添加服务器失败",
       );
-      await db.insert(serverTable).values({
-        bindingConfig: BindingConfigSchema.parse({}),
-        chatSyncConfig: ChatSyncConfigSchema.parse({}),
-        commandConfig: CommandConfigSchema.parse({}),
-        name: data.servername,
-        notifyConfig: NotifyConfigSchema.parse({}),
-        token: data.token,
-      });
-      return ok(c, "添加服务器成功", StatusCodes.CREATED);
+      // 英文界面建的服务器，默认模板也给英文（只翻顶层字符串字段）
+      const localize = <T extends object>(config: T): T =>
+        data.lang === "en"
+          ? (Object.fromEntries(
+              Object.entries(config).map(([k, v]) => [
+                k,
+                typeof v === "string"
+                  ? ((en as Record<string, string>)[v] ?? v)
+                  : v,
+              ]),
+            ) as T)
+          : config;
+      const [created] = await db
+        .insert(serverTable)
+        .values({
+          bindingConfig: localize(BindingConfigSchema.parse({})),
+          chatSyncConfig: localize(ChatSyncConfigSchema.parse({})),
+          commandConfig: CommandConfigSchema.parse({}),
+          name: data.servername,
+          notifyConfig: localize(NotifyConfigSchema.parse({})),
+          token: data.token,
+        })
+        .returning({ id: serverTable.id });
+      return ok(c, "添加服务器成功", StatusCodes.CREATED, created);
     }),
   )
   .get(
@@ -140,6 +148,7 @@ export const serversRouter = new Hono()
         ServersAPI.GET.response.parse({
           ...result,
           isOnline: Boolean(connection),
+          lastEvent: getLastEvent("server", result.id),
           supports_command: connection?.supports_command ?? null,
           supports_papi: connection?.supports_papi ?? null,
         }),
@@ -187,15 +196,15 @@ export const serversRouter = new Hono()
       if (Object.keys(updatePayload).length === 0) {
         return ok(c, "无需更新", StatusCodes.OK);
       }
-      if (botId !== undefined) {
-        const existingServer = await db.query.serverTable.findFirst({
-          where: eq(serverTable.id, serverId),
-        });
-        if (existingServer && existingServer.botId !== (botId ?? null)) {
-          await db
-            .delete(targetTable)
-            .where(eq(targetTable.serverId, serverId));
-        }
+      const existingServer = await db.query.serverTable.findFirst({
+        where: eq(serverTable.id, serverId),
+      });
+      if (
+        botId !== undefined &&
+        existingServer &&
+        existingServer.botId !== (botId ?? null)
+      ) {
+        await db.delete(targetTable).where(eq(targetTable.serverId, serverId));
       }
       const result = await db
         .update(serverTable)
@@ -206,6 +215,20 @@ export const serversRouter = new Hono()
         return fail(
           c,
           ApiError.database("更新服务器基础信息失败：未能找到服务器"),
+        );
+      }
+      // 换了 Token：踢掉还拿着旧 Token 的连接
+      const session =
+        token === undefined || token === existingServer?.token
+          ? undefined
+          : connectionManager.getConnectionByServerId(serverId);
+      if (session) {
+        connectionManager.removeConnection(session);
+        noteLastEvent(
+          "server",
+          serverId,
+          "Token 已更换，旧连接被踢下线",
+          false,
         );
       }
       return ok(c, "更新服务器基础信息成功", StatusCodes.OK);
@@ -235,11 +258,10 @@ export const serversRouter = new Hono()
     guard("更新服务器聊天同步配置失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
       const data = await parseBody(c, ChatSyncAPI.PATCH.request, "参数错误");
-      updateServerWithTargets(
-        serverID,
-        { chatSyncConfig: data.chatsync },
-        data.targets,
-      );
+      await db
+        .update(serverTable)
+        .set({ chatSyncConfig: data.chatsync })
+        .where(eq(serverTable.id, serverID));
       return ok(c, "更新服务器聊天同步配置成功", StatusCodes.OK);
     }),
   )
@@ -248,11 +270,10 @@ export const serversRouter = new Hono()
     guard("更新服务器指令配置失败", async (c) => {
       const serverID = parseServerId(c.req.param("id"));
       const data = await parseBody(c, CommandAPI.PATCH.request, "参数错误");
-      updateServerWithTargets(
-        serverID,
-        { commandConfig: data.command },
-        data.targets,
-      );
+      await db
+        .update(serverTable)
+        .set({ commandConfig: data.command })
+        .where(eq(serverTable.id, serverID));
       return ok(c, "更新服务器指令配置成功", StatusCodes.OK);
     }),
   )
@@ -261,12 +282,24 @@ export const serversRouter = new Hono()
     guard("更新服务器通知配置失败", async (c) => {
       const serverId = parseServerId(c.req.param("id"));
       const data = await parseBody(c, NotifyAPI.PATCH.request, "参数错误");
-      updateServerWithTargets(
-        serverId,
-        { notifyConfig: data.notify },
-        data.targets,
-      );
+      await db
+        .update(serverTable)
+        .set({ notifyConfig: data.notify })
+        .where(eq(serverTable.id, serverId));
       return ok(c, "更新服务器通知配置成功", StatusCodes.OK);
+    }),
+  )
+  .patch(
+    "/:id/target-configs",
+    guard("更新目标配置失败", async (c) => {
+      const serverId = parseServerId(c.req.param("id"));
+      const data = await parseBody(
+        c,
+        TargetConfigAPI.PATCH.request,
+        "参数错误",
+      );
+      updateTargetConfigs(serverId, data.items);
+      return ok(c, "更新目标配置成功", StatusCodes.OK);
     }),
   )
   .get(

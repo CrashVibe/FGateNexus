@@ -5,6 +5,7 @@ import { runCleanups } from "#server/utils/cleanup-registry";
 import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
 
+import { applyPendingRestore } from "./boot/backup";
 import { printBanner } from "./boot/banner";
 import { prepareDatabase, runMigrations } from "./boot/database";
 import { loadStaticHandler } from "./boot/static";
@@ -99,6 +100,8 @@ const main = async (): Promise<void> => {
     process.chdir(path.dirname(process.execPath));
   }
 
+  // 恢复会覆盖 config/，得在读配置之前
+  await applyPendingRestore();
   configManager.init();
   resolveChromiumPath();
   resolveSentry();

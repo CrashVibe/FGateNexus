@@ -66,3 +66,11 @@ export const SettingsAPI = {
     response: z.void(),
   },
 } satisfies ApiSchemaRegistry;
+
+export const VersionInfoSchema = z.object({
+  current: z.string(),
+  hasUpdate: z.boolean(),
+  latest: z.object({ url: z.string(), version: z.string() }).nullable(),
+});
+
+export type VersionInfo = z.infer<typeof VersionInfoSchema>;

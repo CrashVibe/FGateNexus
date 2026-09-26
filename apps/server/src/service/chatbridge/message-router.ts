@@ -5,6 +5,7 @@ import { getServersByBotIdWithTargets } from "#server/db/queries/server";
 import type { ServerWithTargets } from "#server/db/queries/server";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import { buildSystemTemplateEvent } from "#server/service/mcwsbridge/types";
+import { recordRelay } from "#server/service/relay-log";
 import { resolveDataSources } from "#server/service/template/data-resolver";
 import { templateInstanceStore } from "#server/service/template/template-instance-store";
 import { renderTemplateInstance } from "#server/service/template/template-renderer";
@@ -12,7 +13,7 @@ import { getTemplateManifest } from "#server/service/template/template-store";
 import { logger } from "#server/utils/logger";
 import {
   formatPlatformToMCMessage,
-  shouldForwardMessage,
+  getFilterReason,
 } from "#shared/utils/chat-sync";
 
 import { chatBridge } from ".";
@@ -163,20 +164,37 @@ const handlePlatformChatSync = (
   session: Session,
   server: ServerWithTargets,
   serverSession: ServerSession,
+  target: ServerTarget | undefined,
 ): void => {
   const { chatSyncConfig } = server;
-  if (session.elements === undefined) {
+  // 没加进这台服务器的群，不关它的事
+  if (session.elements === undefined || !target) {
     return;
   }
   const content = elements_to_string(session.elements);
-  if (
-    !chatSyncConfig.platformToMcEnabled ||
-    !shouldForwardMessage(content, chatSyncConfig)
-  ) {
+  const relay = {
+    direction: "platform_to_mc",
+    from: session.username ?? session.userId ?? "",
+    serverId: server.id,
+    target: target.channelId,
+    text: content,
+  } as const;
+  if (!target.config.chatSyncConfigSchema.enabled) {
+    recordRelay({ ...relay, reason: "该群未开启消息互通", status: "skipped" });
+    return;
+  }
+  if (!chatSyncConfig.platformToMcEnabled) {
+    recordRelay({ ...relay, reason: "未开启平台 → MC", status: "skipped" });
+    return;
+  }
+  const reason = getFilterReason(content, chatSyncConfig);
+  if (reason !== null) {
+    recordRelay({ ...relay, reason, status: "filtered" });
     return;
   }
 
   if (!serverSession) {
+    recordRelay({ ...relay, reason: "MC 服务器未连接", status: "failed" });
     logger.warn(`服务器 ${server.id} 没有活动的 MCWS 连接，无法广播`);
     return;
   }
@@ -197,6 +215,7 @@ const handlePlatformChatSync = (
   );
 
   serverSession.broadcastMessageToServer(formattedMessage);
+  recordRelay({ ...relay, status: "sent" });
   logger.info(`[消息路由] 已将平台消息转发到 MC 服务器 ${server.id}`);
 };
 
@@ -246,7 +265,7 @@ export const handlePlatformMessage = async (
       } // 阻断不处理
 
       // 3. 处理聊天消息同步
-      handlePlatformChatSync(session, server, serverSession);
+      handlePlatformChatSync(session, server, serverSession, target);
     }
   } catch (error) {
     logger.error(error, `[消息路由] 处理平台消息时出错：`);

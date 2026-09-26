@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { LastEventSchema } from "#shared/model/status";
+
 import { PlatformType } from "../types";
 import { DiscordConfigSchema } from "./discord";
 import { KookConfigSchema } from "./kook";
@@ -18,6 +20,7 @@ export const PlatformResponseSchema = z.object({
   enabled: z.boolean(),
   id: z.number(),
   isOnline: z.boolean(),
+  lastEvent: LastEventSchema.nullish(),
   name: z.string(),
   platform: z.enum(PlatformType),
 });

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export interface MultiSelectOption {
@@ -25,8 +26,8 @@ export const MultiSelectCombobox = ({
   options,
   value,
   onChange,
-  placeholder = "请选择",
-  emptyText = "无匹配项",
+  placeholder = t("请选择"),
+  emptyText = t("无匹配项"),
   creatable = false,
 }: MultiSelectComboboxProps) => {
   const [open, setOpen] = useState(false);
@@ -112,7 +113,9 @@ export const MultiSelectCombobox = ({
           type="button"
           variant="outline"
         >
-          {value.length > 0 ? `已选择 ${value.length} 项` : placeholder}
+          {value.length > 0
+            ? t("已选择 {{length}} 项", { length: value.length })
+            : placeholder}
           <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
         </Button>
         {open ? (
@@ -134,7 +137,7 @@ export const MultiSelectCombobox = ({
                   toggle(trimmedSearch);
                 }
               }}
-              placeholder="搜索..."
+              placeholder={t("搜索...")}
               value={search}
             />
             <div className="max-h-60 space-y-0.5 overflow-y-auto">
@@ -172,7 +175,8 @@ export const MultiSelectCombobox = ({
                   type="button"
                 >
                   <Plus className="size-4 shrink-0" />
-                  添加“{trimmedSearch}”
+                  {t("添加“")}
+                  {trimmedSearch}”
                 </button>
               ) : null}
             </div>
@@ -185,7 +189,7 @@ export const MultiSelectCombobox = ({
             <Badge className="gap-1" key={v} variant="secondary">
               {labelOf(v)}
               <button
-                aria-label={`移除 ${labelOf(v)}`}
+                aria-label={t("移除 {{v0}}", { v0: labelOf(v) })}
                 className="hover:text-foreground -mr-0.5 rounded-full"
                 onClick={() => {
                   remove(v);

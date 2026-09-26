@@ -1,14 +1,22 @@
 import * as Sentry from "@sentry/react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/zh-cn";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "tanstack-theme-kit";
 
+import { lang } from "@/i18n";
 import { queryClient } from "@/lib/query";
 import { router } from "@/router";
 
 import "./styles.css";
+
+dayjs.extend(relativeTime);
+dayjs.locale(lang === "zh" ? "zh-cn" : "en");
+document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
 
 declare const __SENTRY_RELEASE__: string;
 
@@ -68,7 +76,8 @@ createRoot(root).render(
   <StrictMode>
     <ThemeProvider
       attribute="class"
-      defaultTheme="dark"
+      defaultTheme="system"
+      enableSystem
       storageKey="fgate-theme"
     >
       <QueryClientProvider client={queryClient}>

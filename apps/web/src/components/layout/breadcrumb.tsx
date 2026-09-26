@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { Fragment } from "react";
 import type { ReactNode } from "react";
 
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { useServer } from "@/queries/servers";
 
@@ -14,7 +15,7 @@ export interface Crumb {
 /** 单行面包屑：最后一级是当前位置，前面的都可点。 */
 export const Breadcrumb = ({ items }: { items: Crumb[] }) => (
   <nav
-    aria-label="面包屑"
+    aria-label={t("面包屑")}
     className="flex min-w-0 items-center gap-1.5 text-sm"
   >
     {items.map((item, i) => (
@@ -50,7 +51,7 @@ export const useServerCrumbs = (): Crumb[] => {
     return [];
   }
   return [
-    { content: <Link to="/servers">服务器</Link>, key: "servers" },
+    { content: <Link to="/servers">{t("服务器")}</Link>, key: "servers" },
     {
       content: (
         <Link params={{ id }} to="/servers/$id/general">

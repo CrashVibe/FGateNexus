@@ -31,12 +31,6 @@ export const ChatSyncAPI = {
     description: "更新服务器聊天同步配置",
     request: z.object({
       chatsync: ChatSyncConfigSchema,
-      targets: z.array(
-        z.object({
-          config: TargetConfigSchema,
-          id: z.uuidv4(),
-        }),
-      ),
     }),
     response: z.void(),
   },
@@ -47,12 +41,6 @@ export const CommandAPI = {
     description: "更新服务器命令配置",
     request: z.object({
       command: CommandConfigSchema,
-      targets: z.array(
-        z.object({
-          config: TargetConfigSchema,
-          id: z.uuidv4(),
-        }),
-      ),
     }),
     response: z.void(),
   },
@@ -75,12 +63,6 @@ export const NotifyAPI = {
     description: "更新服务器通知配置",
     request: z.object({
       notify: NotifyConfigSchema,
-      targets: z.array(
-        z.object({
-          config: TargetConfigSchema,
-          id: z.uuidv4(),
-        }),
-      ),
     }),
     response: z.void(),
   },
@@ -100,8 +82,22 @@ export const ServersAPI = {
   POST: {
     description: "添加服务器",
     request: z.object({
+      /** 界面语言：en 时默认消息模板用英文 */
+      lang: z.enum(["en", "zh"]).optional(),
       servername: ServerNameSchema,
       token: ServerTokenSchema,
+    }),
+    response: z.object({ id: z.number() }),
+  },
+} satisfies ApiSchemaRegistry;
+
+export const TargetConfigAPI = {
+  PATCH: {
+    description: "批量更新目标配置（消息互通 / 事件通知 / 远程指令开关）",
+    request: z.object({
+      items: z
+        .array(z.object({ config: TargetConfigSchema, id: z.uuidv4() }))
+        .nonempty(),
     }),
     response: z.void(),
   },

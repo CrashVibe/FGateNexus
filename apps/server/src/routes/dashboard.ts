@@ -9,13 +9,19 @@ import {
   getRecentEvents,
 } from "#server/db/queries/player-event";
 import { getStatusHistory } from "#server/db/queries/server-status-history";
-import { botTable, playerTable, serverTable } from "#server/db/schema";
+import {
+  botTable,
+  playerTable,
+  serverTable,
+  targetTable,
+} from "#server/db/schema";
 import { fail, guard, ok } from "#server/http/respond";
 import { sseStream } from "#server/http/sse";
 import { chatBridge } from "#server/service/chatbridge";
 import { subscribeDashboardEvents } from "#server/service/dashboard/event-stream";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import type ServerSession from "#server/service/mcwsbridge/server-session";
+import { getRelays, subscribeRelays } from "#server/service/relay-log";
 import { DashboardAPI } from "#shared/model/dashboard";
 import { ApiError } from "#shared/model/error";
 
@@ -49,10 +55,11 @@ export const dashboardRouter = new Hono()
   .get(
     "/summary",
     guard("获取首页统计失败", async (c) => {
-      const [servers, bots, players] = await Promise.all([
+      const [servers, bots, players, targets] = await Promise.all([
         db.select().from(serverTable),
         db.select().from(botTable),
         db.select().from(playerTable),
+        db.select({ config: targetTable.config }).from(targetTable),
       ]);
 
       const onlineServerIds = servers
@@ -76,6 +83,9 @@ export const dashboardRouter = new Hono()
         DashboardAPI.SUMMARY.response.parse({
           bindings: { bound: boundPlayers.length, total: players.length },
           bots: { online: onlineBots.length, total: bots.length },
+          chatSyncTargets: targets.filter(
+            (t) => t.config.chatSyncConfigSchema.enabled,
+          ).length,
           eventsToday: {
             death: eventCounts["player.death"] ?? 0,
             join: eventCounts["player.join"] ?? 0,
@@ -142,6 +152,22 @@ export const dashboardRouter = new Hono()
       );
     }),
   )
+  .get(
+    "/relays",
+    guard("获取消息记录失败", async (c) => {
+      const serverId = c.req.query("serverId");
+      return await ok(
+        c,
+        "获取消息记录成功",
+        StatusCodes.OK,
+        getRelays(
+          clampInt(c.req.query("limit"), 30, 200),
+          serverId === undefined ? undefined : Number(serverId),
+        ),
+      );
+    }),
+  )
+  .get("/relay-stream", (c) => sseStream(c, "relay", subscribeRelays, (e) => e))
   .get("/stream", (c) =>
     sseStream(c, "player-event", subscribeDashboardEvents, (event) =>
       DashboardAPI.EVENTS.response.element.parse(event),

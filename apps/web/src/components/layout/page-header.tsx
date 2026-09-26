@@ -7,6 +7,7 @@ import { useLayout } from "@/components/layout/context";
 import type { PageWidth } from "@/components/layout/page-content";
 import { PAGE_WIDTH } from "@/components/layout/page-content";
 import { Button } from "@/components/ui/button";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 interface PageHeaderProps {
@@ -30,7 +31,7 @@ export const PageHeader = ({
 }: PageHeaderProps) => {
   const { openMobileSidebar } = useLayout();
   return (
-    <div className="border-border h-12 shrink-0 border-b px-5 lg:px-8">
+    <div className="border-border @container h-12 shrink-0 border-b px-5 lg:px-8">
       {/* 三栏布局：左右两栏 flex-1 等分，中间栏居中。 */}
       <div
         className={cn(
@@ -40,7 +41,7 @@ export const PageHeader = ({
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <Button
-            aria-label="打开菜单"
+            aria-label={t("打开菜单")}
             className="lg:hidden"
             onClick={openMobileSidebar}
             size="icon"

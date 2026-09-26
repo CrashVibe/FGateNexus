@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,12 +23,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
 import { useEntityStatusStream } from "@/hooks/use-status-event-stream";
+import { lang, t } from "@/i18n";
 import { errorMessage } from "@/lib/http";
 import { serversKey, useCreateServer, useServers } from "@/queries/servers";
 
 type FormData = z.infer<typeof ServersAPI.POST.request>;
 
 export const ServersPage = () => {
+  const navigate = useNavigate();
   const { data: serverList, isLoading } = useServers();
   const createServer = useCreateServer();
   const [open, setOpen] = useState(false);
@@ -51,11 +54,16 @@ export const ServersPage = () => {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await createServer.mutateAsync(data);
-      toast.success("服务器创建成功～");
+      const { id } = await createServer.mutateAsync({ ...data, lang });
+      toast.success(t("服务器创建成功～"));
       setOpen(false);
+      // 直接去接入指引
+      await navigate({
+        params: { id: String(id) },
+        to: "/servers/$id/general",
+      });
     } catch (error) {
-      toast.error("创建服务器失败", { description: errorMessage(error) });
+      toast.error(t("创建服务器失败"), { description: errorMessage(error) });
     }
   });
 
@@ -69,11 +77,11 @@ export const ServersPage = () => {
           action={
             <Button onClick={openModal}>
               <Plus />
-              创建服务器
+              {t("创建服务器")}
             </Button>
           }
           className="mt-10"
-          desc="暂无服务器，请先创建一个服务器"
+          desc={t("暂无服务器，请先创建一个服务器")}
         />
       );
     }
@@ -92,11 +100,11 @@ export const ServersPage = () => {
         actions={
           <Button onClick={openModal} size="sm">
             <Plus />
-            创建服务器
+            {t("创建服务器")}
           </Button>
         }
-        description="管理你的服务器，点击卡片进入详细配置"
-        title="服务器列表"
+        description={t("管理你的服务器，点击卡片进入详细配置")}
+        title={t("服务器列表")}
       />
 
       <PageContent>{renderList()}</PageContent>
@@ -104,7 +112,7 @@ export const ServersPage = () => {
       <Dialog onOpenChange={setOpen} open={open}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>创建服务器</DialogTitle>
+            <DialogTitle>{t("创建服务器")}</DialogTitle>
           </DialogHeader>
           <form
             className="space-y-4"
@@ -114,15 +122,15 @@ export const ServersPage = () => {
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="servername">服务器名字</Label>
+              <Label htmlFor="servername">{t("服务器名字")}</Label>
               <Input
                 id="servername"
-                placeholder="请输入服务器名称"
+                placeholder={t("请输入服务器名称")}
                 {...register("servername")}
               />
               {errors.servername ? (
                 <p className="text-destructive text-sm">
-                  {errors.servername.message}
+                  {t(errors.servername.message ?? "")}
                 </p>
               ) : null}
             </div>
@@ -132,8 +140,8 @@ export const ServersPage = () => {
                 <Input
                   className="flex-1"
                   id="token"
-                  placeholder="请输入服务器の秘密 Token"
-                  title="用于识别和验证服务器身份的密钥,请妥善保管。"
+                  placeholder={t("请输入服务器の秘密 Token")}
+                  title={t("用于识别和验证服务器身份的密钥,请妥善保管。")}
                   {...register("token")}
                 />
                 <Button
@@ -143,12 +151,12 @@ export const ServersPage = () => {
                   type="button"
                   variant="secondary"
                 >
-                  随机生成
+                  {t("随机生成")}
                 </Button>
               </div>
               {errors.token ? (
                 <p className="text-destructive text-sm">
-                  {errors.token.message}
+                  {t(errors.token.message ?? "")}
                 </p>
               ) : null}
             </div>
@@ -161,14 +169,14 @@ export const ServersPage = () => {
               }}
               variant="outline"
             >
-              取消
+              {t("取消")}
             </Button>
             <Button
               form="create-server-form"
               loading={createServer.isPending}
               type="submit"
             >
-              确认创建
+              {t("确认创建")}
             </Button>
           </DialogFooter>
         </DialogContent>

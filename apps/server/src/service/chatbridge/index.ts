@@ -9,7 +9,9 @@ import { botTable } from "#server/db/schema";
 import type { Target } from "#server/db/schema";
 import { bindingService } from "#server/service/bindingmanager";
 import { handlePlatformMessage } from "#server/service/chatbridge/message-router";
+import { noteLastEvent } from "#server/service/diagnostics";
 import { recordMcEvent } from "#server/service/event-log";
+import { recordRelay } from "#server/service/relay-log";
 import { getCachedServer } from "#server/service/server-cache";
 import { broadcastStatusEvent } from "#server/service/status-stream";
 import { configManager } from "#server/utils/config";
@@ -127,9 +129,17 @@ class ChatBridge {
         (c) => c.platformType === bot.platform && c.bot.selfId === bot.selfId,
       );
       if (connection) {
+        const online = connection.isOnline();
+        const error = bot.error instanceof Error ? bot.error.message : "";
+        noteLastEvent(
+          "bot",
+          connection.botId,
+          online ? "已上线" : `已离线${error ? `：${error}` : ""}`,
+          online,
+        );
         broadcastStatusEvent({
           id: connection.botId,
-          isOnline: connection.isOnline(),
+          isOnline: online,
           kind: "bot",
         });
       }
@@ -217,8 +227,23 @@ class ChatBridge {
     const checker = eventConfigMap[event.type];
 
     const server = await getCachedServer(event.serverId);
+    // 聊天发不出去时记一笔，方便在总览里查
+    const skipChat = (reason: string): void => {
+      if (event.type === "player.chat") {
+        const { payload } = event as MCEvent<"player.chat">;
+        recordRelay({
+          direction: "mc_to_platform",
+          from: payload.playerName,
+          reason,
+          serverId: event.serverId,
+          status: "skipped",
+          text: payload.message,
+        });
+      }
+    };
 
     if (!server?.botId) {
+      skipChat("服务器没有关联机器人");
       this.logger.warn(
         `服务器 ${event.serverId} 无配置机器人，无法处理事件：${event.type}`,
       );
@@ -227,6 +252,7 @@ class ChatBridge {
 
     const connection = this.connections.get(server.botId);
     if (!connection) {
+      skipChat("机器人没有启用");
       this.logger.warn(
         { botId: server.botId },
         `找不到 Bot 连接，无法发送消息`,
@@ -235,6 +261,9 @@ class ChatBridge {
     }
 
     const targets = server.targets.filter((t) => checker(t.config));
+    if (targets.length === 0) {
+      skipChat("没有群聊开启消息互通");
+    }
     const handler = handlerMap[event.type];
     await Promise.all(
       targets.map(async (target) => {

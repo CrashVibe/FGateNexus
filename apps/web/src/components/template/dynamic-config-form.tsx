@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { t } from "@/i18n";
 
 export type ConfigValue = Record<
   string,
@@ -59,7 +60,7 @@ const PlaceholderListField = ({
             onChange={(e) => {
               update(i, { label: e.target.value });
             }}
-            placeholder="显示名称"
+            placeholder={t("显示名称")}
             value={entry.label}
           />
           <Input
@@ -67,7 +68,7 @@ const PlaceholderListField = ({
             onChange={(e) => {
               update(i, { placeholder: e.target.value });
             }}
-            placeholder="占位符，如 vault_eco_balance"
+            placeholder={t("占位符，如 vault_eco_balance")}
             value={entry.placeholder}
           />
           <Button
@@ -90,7 +91,7 @@ const PlaceholderListField = ({
         variant="outline"
       >
         <Plus className="size-4" />
-        添加字段
+        {t("添加字段")}
       </Button>
     </div>
   );
@@ -109,7 +110,9 @@ export const DynamicConfigForm = ({
 }: DynamicConfigFormProps) => {
   if (fields.length === 0) {
     return (
-      <p className="text-muted-foreground text-sm">该模板无可配置参数。</p>
+      <p className="text-muted-foreground text-sm">
+        {t("该模板无可配置参数。")}
+      </p>
     );
   }
 
@@ -161,7 +164,7 @@ export const DynamicConfigForm = ({
                 value={typeof current === "string" ? current : undefined}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="请选择" />
+                  <SelectValue placeholder={t("请选择")} />
                 </SelectTrigger>
                 <SelectContent>
                   {field.options.map((opt) => (
@@ -200,7 +203,9 @@ export const DynamicConfigForm = ({
                   set(field.key, e.target.value);
                 }}
                 placeholder={
-                  field.type === "placeholder" ? "如 %player_name%" : undefined
+                  field.type === "placeholder"
+                    ? t("如 %player_name%")
+                    : undefined
                 }
                 value={typeof current === "string" ? current : ""}
               />

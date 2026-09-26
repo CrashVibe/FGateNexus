@@ -1,9 +1,9 @@
 import { sample } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
-import { useTheme } from "tanstack-theme-kit";
 
 import { parseMinecraftText } from "#shared/utils/minecraft-format";
+import { useResolvedTheme } from "@/lib/theme";
 
 const OBFUSCATED_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?~`";
 const SEGMENTER = new Intl.Segmenter();
@@ -17,8 +17,7 @@ const obfuscateText = (text: string): string =>
 
 /** 渲染 Minecraft 富文本（颜色码、加粗/斜体/混淆动画）。 */
 export const MinecraftText = ({ text }: { text: string }) => {
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
+  const isDark = useResolvedTheme() === "dark";
   const [tick, setTick] = useState(0);
 
   const segments = useMemo(

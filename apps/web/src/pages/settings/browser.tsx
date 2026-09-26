@@ -8,7 +8,6 @@ import {
   FolderOpen,
   Info,
   RefreshCw,
-  Save,
   Trash2,
   X,
 } from "lucide-react";
@@ -31,6 +30,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDownloadStream } from "@/hooks/use-download-stream";
+import { t } from "@/i18n";
 import { BrowserData } from "@/lib/api";
 import { errorMessage } from "@/lib/http";
 
@@ -56,7 +56,7 @@ const UpdateInfoAlert = ({ info }: { info: UpdateInfo }) => {
       <Alert variant="info">
         <CheckCircle />
         <AlertDescription>
-          已是最新版本 <strong>{info.latestBuildId}</strong>
+          {t("已是最新版本")} <strong>{info.latestBuildId}</strong>
         </AlertDescription>
       </Alert>
     );
@@ -67,11 +67,12 @@ const UpdateInfoAlert = ({ info }: { info: UpdateInfo }) => {
       <AlertDescription>
         <div className="flex flex-col gap-1 text-sm">
           <span>
-            发现新版本 <strong>{info.latestBuildId}</strong>
+            {t("发现新版本")} <strong>{info.latestBuildId}</strong>
           </span>
           {info.currentBuildId ? (
             <span className="text-muted-foreground text-xs">
-              当前版本：{info.currentBuildId}
+              {t("当前版本：")}
+              {info.currentBuildId}
             </span>
           ) : null}
         </div>
@@ -89,7 +90,6 @@ export const BrowserContent = () => {
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [concurrency, setConcurrency] = useState("");
-  const [savingConcurrency, setSavingConcurrency] = useState(false);
 
   const {
     data: config,
@@ -126,12 +126,14 @@ export const BrowserContent = () => {
       return;
     }
     if (downloadState.status === "done") {
-      toast.success("Chrome Headless Shell 下载完成", {
-        description: `已安装到：${downloadState.executablePath ?? ""}`,
+      toast.success(t("Chrome Headless Shell 下载完成"), {
+        description: t("已安装到：{{v0}}", {
+          v0: downloadState.executablePath ?? "",
+        }),
       });
       void refetchConfig();
     } else if (downloadState.status === "error") {
-      toast.error("下载失败", { description: downloadState.error });
+      toast.error(t("下载失败"), { description: downloadState.error });
     }
   }, [downloadState, refetchConfig]);
 
@@ -141,17 +143,23 @@ export const BrowserContent = () => {
     const { status, downloadedBytes, totalBytes } = downloadState;
     if (status === "downloading") {
       return totalBytes > 0
-        ? `下载中 ${toMB(downloadedBytes)} / ${toMB(totalBytes)} MB (${downloadProgress}%)`
-        : "下载中...";
+        ? t("下载中 {{v0}} / {{v1}} MB ({{downloadProgress}}%)", {
+            downloadProgress,
+            v0: toMB(downloadedBytes),
+            v1: toMB(totalBytes),
+          })
+        : t("下载中...");
     }
     if (status === "error") {
-      return `下载失败：${downloadState.error ?? "未知错误"}`;
+      return t("下载失败：{{v0}}", {
+        v0: downloadState.error ?? t("未知错误"),
+      });
     }
     const map: Partial<Record<DownloadStatus, string>> = {
-      done: "下载完成！",
-      idle: "等待下载",
-      resolving: "正在获取最新版本信息...",
-      unpacking: "正在解压安装...",
+      done: t("下载完成！"),
+      idle: t("等待下载"),
+      resolving: t("正在获取最新版本信息..."),
+      unpacking: t("正在解压安装..."),
     };
     return map[status] ?? "";
   })();
@@ -167,7 +175,7 @@ export const BrowserContent = () => {
       await BrowserData.startDownload();
       setDownloadState({ ...IDLE_STATE, status: "resolving" });
     } catch (error) {
-      toast.error("启动下载失败", { description: errorMessage(error) });
+      toast.error(t("启动下载失败"), { description: errorMessage(error) });
     } finally {
       setStartingDownload(false);
     }
@@ -177,27 +185,15 @@ export const BrowserContent = () => {
     try {
       await BrowserData.cancelDownload();
       setDownloadState(IDLE_STATE);
-      toast("下载已取消");
+      toast(t("下载已取消"));
     } catch {
-      toast.error("取消失败");
+      toast.error(t("取消失败"));
     }
   };
 
   const saveCustomPath = async (): Promise<void> => {
-    if (!customPath.trim()) {
-      toast.warning("请输入浏览器可执行文件路径");
-      return;
-    }
-    setSavingPath(true);
-    try {
-      await BrowserData.patch({ executablePath: customPath.trim() });
-      toast.success("浏览器路径已保存");
-      await refetchConfig();
-    } catch (error) {
-      toast.error("保存失败", { description: errorMessage(error) });
-    } finally {
-      setSavingPath(false);
-    }
+    await BrowserData.patch({ executablePath: customPath.trim() });
+    await refetchConfig();
   };
 
   const clearPath = async (): Promise<void> => {
@@ -205,10 +201,10 @@ export const BrowserContent = () => {
     try {
       await BrowserData.patch({ executablePath: null });
       setCustomPath("");
-      toast.success("已清除自定义路径，将使用自动检测");
+      toast.success(t("已清除自定义路径，将使用自动检测"));
       await refetchConfig();
     } catch {
-      toast.error("操作失败");
+      toast.error(t("操作失败"));
     } finally {
       setSavingPath(false);
     }
@@ -217,19 +213,10 @@ export const BrowserContent = () => {
   const saveConcurrency = async (): Promise<void> => {
     const value = Number(concurrency);
     if (!Number.isInteger(value) || value < 1) {
-      toast.warning("并发数须为正整数");
-      return;
+      throw new Error(t("并发数须为正整数"));
     }
-    setSavingConcurrency(true);
-    try {
-      await BrowserData.patch({ maxConcurrentRenders: value });
-      toast.success("并发数已保存");
-      await refetchConfig();
-    } catch (error) {
-      toast.error("保存失败", { description: errorMessage(error) });
-    } finally {
-      setSavingConcurrency(false);
-    }
+    await BrowserData.patch({ maxConcurrentRenders: value });
+    await refetchConfig();
   };
 
   const checkUpdate = async (): Promise<void> => {
@@ -237,27 +224,55 @@ export const BrowserContent = () => {
     try {
       setUpdateInfo((await BrowserData.checkUpdate()) ?? null);
     } catch {
-      toast.error("检查更新失败");
+      toast.error(t("检查更新失败"));
     } finally {
       setCheckingUpdate(false);
     }
   };
+
+  const modeSwitch = (
+    <Tabs
+      onValueChange={(v) => {
+        setMode(v as "custom" | "download");
+      }}
+      value={mode}
+    >
+      <TabsList>
+        <TabsTrigger value="download">
+          <Download className="size-4" />
+          {t("自动下载")}
+        </TabsTrigger>
+        <TabsTrigger value="custom">
+          <FolderOpen className="size-4" />
+          {t("手动指定路径")}
+        </TabsTrigger>
+      </TabsList>
+    </Tabs>
+  );
 
   return (
     <>
       {configLoading ? (
         <LoadingState />
       ) : (
-        <div className="flex flex-col gap-8">
+        <>
           <SettingsSection
-            description="图片渲染功能需要浏览器支持（chrome-headless-shell）"
+            description={t(
+              "图片渲染功能需要浏览器支持（chrome-headless-shell）",
+            )}
+            save={{
+              dirty:
+                config !== undefined &&
+                concurrency !== String(config.maxConcurrentRenders),
+              onSave: saveConcurrency,
+            }}
             title={
               <span className="inline-flex items-center gap-2">
-                浏览器
+                {t("浏览器")}
                 {config?.executablePath ? (
-                  <Badge variant="success">已配置</Badge>
+                  <Badge variant="success">{t("已配置")}</Badge>
                 ) : (
-                  <Badge variant="warning">未配置</Badge>
+                  <Badge variant="warning">{t("未配置")}</Badge>
                 )}
               </span>
             }
@@ -276,64 +291,40 @@ export const BrowserContent = () => {
                 <Alert variant="info">
                   <Info />
                   <AlertDescription>
-                    未设置自定义路径。系统将自动检测已下载的
-                    Chromium，或你可以在下方下载/设置。
+                    {t(
+                      "未设置自定义路径。系统将自动检测已下载的 Chromium，或你可以在下方下载/设置。",
+                    )}
                   </AlertDescription>
                 </Alert>
               </SettingsBlock>
             )}
 
             <SettingsRow
-              description="同时进行的图片渲染任务数上限，超出的任务会排队等待"
-              label="渲染并发数"
+              description={t(
+                "同时进行的图片渲染任务数上限，超出的任务会排队等待",
+              )}
+              label={t("渲染并发数")}
             >
-              <div className="flex gap-2">
-                <Input
-                  className="w-20"
-                  id="maxConcurrentRenders"
-                  min={1}
-                  onChange={(e) => {
-                    setConcurrency(e.target.value);
-                  }}
-                  type="number"
-                  value={concurrency}
-                />
-                <Button
-                  loading={savingConcurrency}
-                  onClick={() => {
-                    void saveConcurrency();
-                  }}
-                  size="icon"
-                  variant="secondary"
-                >
-                  <Save />
-                </Button>
-              </div>
+              <Input
+                className="w-full text-right sm:w-28"
+                id="maxConcurrentRenders"
+                min={1}
+                onChange={(e) => {
+                  setConcurrency(e.target.value);
+                }}
+                type="number"
+                value={concurrency}
+              />
             </SettingsRow>
           </SettingsSection>
 
-          <Tabs
-            onValueChange={(v) => {
-              setMode(v as "custom" | "download");
-            }}
-            value={mode}
-          >
-            <TabsList className="w-full">
-              <TabsTrigger value="download">
-                <Download className="size-4" />
-                自动下载
-              </TabsTrigger>
-              <TabsTrigger value="custom">
-                <FolderOpen className="size-4" />
-                手动指定路径
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-
           {mode === "download" ? (
             <SettingsSection
-              description="自动下载适合当前系统的 Chrome Headless Shell，并保存至 ./data/browsers/"
-              title="下载 Chrome Headless Shell"
+              description={t(
+                "自动下载适合当前系统的 Chrome Headless Shell，并保存至 ./data/browsers/",
+              )}
+              actions={modeSwitch}
+              title={t("下载 Chrome Headless Shell")}
             >
               <SettingsBlock>
                 <div className="flex flex-col gap-4">
@@ -359,14 +350,22 @@ export const BrowserContent = () => {
                       />
                       {downloadState.buildId ? (
                         <div className="text-muted-foreground flex gap-4 text-xs">
-                          <span>版本：{downloadState.buildId}</span>
-                          <span>平台：{downloadState.platform}</span>
+                          <span>
+                            {t("版本：")}
+                            {downloadState.buildId}
+                          </span>
+                          <span>
+                            {t("平台：")}
+                            {downloadState.platform}
+                          </span>
                         </div>
                       ) : null}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-sm">
-                      将自动选择适合当前系统的版本下载并安装，速度取决于网络环境。
+                      {t(
+                        "将自动选择适合当前系统的版本下载并安装，速度取决于网络环境。",
+                      )}
                     </p>
                   )}
 
@@ -379,7 +378,7 @@ export const BrowserContent = () => {
                         variant="destructive"
                       >
                         <X />
-                        取消
+                        {t("取消")}
                       </Button>
                     ) : (
                       <Button
@@ -390,8 +389,8 @@ export const BrowserContent = () => {
                       >
                         <Download />
                         {downloadState.executablePath === undefined
-                          ? "开始下载"
-                          : "重新下载"}
+                          ? t("开始下载")
+                          : t("重新下载")}
                       </Button>
                     )}
                     <Button
@@ -403,7 +402,7 @@ export const BrowserContent = () => {
                       variant="secondary"
                     >
                       <RefreshCw />
-                      检查更新
+                      {t("检查更新")}
                     </Button>
                   </div>
 
@@ -413,32 +412,32 @@ export const BrowserContent = () => {
             </SettingsSection>
           ) : (
             <SettingsSection
-              description="填写系统中已安装的 Chrome Headless Shell 或 Chromium 可执行文件的绝对路径"
-              title="手动指定浏览器路径"
+              description={t(
+                "填写系统中已安装的 Chrome Headless Shell 或 Chromium 可执行文件的绝对路径",
+              )}
+              save={{
+                dirty:
+                  customPath.trim() !== "" &&
+                  customPath.trim() !== (config?.executablePath ?? ""),
+                onSave: saveCustomPath,
+              }}
+              actions={modeSwitch}
+              title={t("手动指定浏览器路径")}
             >
               <SettingsBlock>
                 <div className="flex flex-col gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="customPath">可执行文件路径</Label>
+                    <Label htmlFor="customPath">{t("可执行文件路径")}</Label>
                     <Input
                       id="customPath"
                       onChange={(e) => {
                         setCustomPath(e.target.value);
                       }}
-                      placeholder="例如：/usr/bin/chrome-headless-shell"
+                      placeholder={t("例如：/usr/bin/chrome-headless-shell")}
                       value={customPath}
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      loading={savingPath}
-                      onClick={() => {
-                        void saveCustomPath();
-                      }}
-                    >
-                      <Save />
-                      保存路径
-                    </Button>
                     {config?.executablePath ? (
                       <Button
                         loading={savingPath}
@@ -448,7 +447,7 @@ export const BrowserContent = () => {
                         variant="destructive"
                       >
                         <Trash2 />
-                        清除
+                        {t("清除")}
                       </Button>
                     ) : null}
                   </div>
@@ -456,7 +455,7 @@ export const BrowserContent = () => {
               </SettingsBlock>
             </SettingsSection>
           )}
-        </div>
+        </>
       )}
     </>
   );

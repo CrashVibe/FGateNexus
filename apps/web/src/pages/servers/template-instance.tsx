@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 import { Switch } from "@/components/ui/switch";
+import { t } from "@/i18n";
 import { errorMessage } from "@/lib/http";
 import { ONEBOT_ROLES } from "@/lib/permissions";
 import { useBot } from "@/queries/bots";
@@ -72,14 +73,14 @@ const TemplateSelect = ({
   if (options.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
-        所有模板均已添加到该服务器。
+        {t("所有模板均已添加到该服务器。")}
       </p>
     );
   }
   return (
     <Select onValueChange={onValueChange} value={value || undefined}>
       <SelectTrigger>
-        <SelectValue placeholder="请选择模板" />
+        <SelectValue placeholder={t("请选择模板")} />
       </SelectTrigger>
       <SelectContent>
         {options.map((tpl) => (
@@ -118,34 +119,34 @@ const InstanceConfigPanel = ({
       />
 
       <div className="space-y-1.5">
-        <Label>触发指令（可空，支持多个）</Label>
+        <Label>{t("触发指令（可空，支持多个）")}</Label>
         <MultiSelectCombobox
           creatable
-          emptyText="输入指令后回车添加，如 rank"
+          emptyText={t("输入指令后回车添加，如 rank")}
           onChange={(commands) => {
             setForm((f) => ({ ...f, commands }));
           }}
           options={[]}
-          placeholder="输入指令（聊天中发送对应指令触发渲染）"
+          placeholder={t("输入指令（聊天中发送对应指令触发渲染）")}
           value={form.commands}
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>权限（可空表示所有人）</Label>
+        <Label>{t("权限（可空表示所有人）")}</Label>
         <MultiSelectCombobox
           creatable
           onChange={(permissions) => {
             setForm((f) => ({ ...f, permissions }));
           }}
           options={roleOptions}
-          placeholder="选择或输入权限"
+          placeholder={t("选择或输入权限")}
           value={form.permissions}
         />
       </div>
 
       <div className="flex items-center justify-between">
-        <Label>启用</Label>
+        <Label>{t("启用")}</Label>
         <Switch
           checked={form.enabled}
           onCheckedChange={(v) => {
@@ -208,7 +209,7 @@ export const ServerTemplateInstancePage = () => {
       : [];
 
   const selectedManifest = useMemo(
-    () => templates?.find((t) => t.id === form.templateId),
+    () => templates?.find((item) => item.id === form.templateId),
     [templates, form.templateId],
   );
 
@@ -220,7 +221,7 @@ export const ServerTemplateInstancePage = () => {
   // 每服务器每模板限一实例
   const availableTemplates = useMemo(() => {
     const usedTemplateIds = new Set((instances ?? []).map((i) => i.templateId));
-    return (templates ?? []).filter((t) => !usedTemplateIds.has(t.id));
+    return (templates ?? []).filter((item) => !usedTemplateIds.has(item.id));
   }, [templates, instances]);
 
   const buildBinding = () =>
@@ -250,13 +251,13 @@ export const ServerTemplateInstancePage = () => {
           },
           instanceId: existing.id,
         });
-        toast.success("实例已更新");
+        toast.success(t("实例已更新"));
         if (result.warning) {
           toast.warning(result.warning);
         }
       } else {
         if (!form.templateId) {
-          toast.error("请选择模板");
+          toast.error(t("请选择模板"));
           return;
         }
         await create.mutateAsync({
@@ -265,11 +266,11 @@ export const ServerTemplateInstancePage = () => {
           enabled: form.enabled,
           templateId: form.templateId,
         });
-        toast.success("实例已创建");
+        toast.success(t("实例已创建"));
       }
       await navigate({ params: { id }, to: "/servers/$id/templates" });
     } catch (error) {
-      toast.error("保存失败", { description: errorMessage(error) });
+      toast.error(t("保存失败"), { description: errorMessage(error) });
     }
   };
 
@@ -286,13 +287,13 @@ export const ServerTemplateInstancePage = () => {
           <Button asChild>
             <Link params={{ id }} to="/servers/$id/templates">
               <ArrowLeft />
-              返回实例列表
+              {t("返回实例列表")}
             </Link>
           </Button>
         }
         className="py-16"
-        desc="该实例不存在或已被删除。"
-        title="未找到实例"
+        desc={t("该实例不存在或已被删除。")}
+        title={t("未找到实例")}
       />
     );
   }
@@ -305,11 +306,11 @@ export const ServerTemplateInstancePage = () => {
           <Button asChild size="sm" variant="outline">
             <Link params={{ id }} to="/servers/$id/templates">
               <ArrowLeft className="size-4" />
-              返回
+              {t("返回")}
             </Link>
           </Button>
         }
-        title={isNew ? "新增模板实例" : "编辑实例"}
+        title={isNew ? t("新增图片指令") : t("编辑图片指令")}
       />
       {isNew ? (
         <Dialog
@@ -318,9 +319,9 @@ export const ServerTemplateInstancePage = () => {
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>选择模板</DialogTitle>
+              <DialogTitle>{t("选择模板")}</DialogTitle>
               <DialogDescription>
-                每个模板只能在同一服务器中添加一个实例。
+                {t("每个模板只能在同一服务器中添加一个实例。")}
               </DialogDescription>
             </DialogHeader>
             <TemplateSelect
@@ -334,7 +335,7 @@ export const ServerTemplateInstancePage = () => {
             <DialogFooter>
               <Button asChild variant="outline">
                 <Link params={{ id }} to="/servers/$id/templates">
-                  取消
+                  {t("取消")}
                 </Link>
               </Button>
             </DialogFooter>
@@ -344,7 +345,7 @@ export const ServerTemplateInstancePage = () => {
       <PageContent width="wide">
         <div className="space-y-6">
           <div className="max-w-sm space-y-1.5">
-            <Label>模板</Label>
+            <Label>{t("模板")}</Label>
             <p className="text-sm">{templateLabel}</p>
           </div>
 
@@ -363,7 +364,7 @@ export const ServerTemplateInstancePage = () => {
       <div className="border-border flex justify-end gap-2 border-t p-4">
         <Button asChild variant="outline">
           <Link params={{ id }} to="/servers/$id/templates">
-            取消
+            {t("取消")}
           </Link>
         </Button>
         <Button
@@ -373,7 +374,7 @@ export const ServerTemplateInstancePage = () => {
             void handleSubmit();
           }}
         >
-          保存
+          {t("保存")}
         </Button>
       </div>
     </>

@@ -9,6 +9,7 @@ import {
 import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 
 import { Label } from "@/components/ui/label";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export const Form = FormProvider;
@@ -134,7 +135,7 @@ export const FormMessage = ({
   ...props
 }: React.ComponentProps<"p">) => {
   const { error, formMessageId } = useFormField();
-  const body = error ? String(error.message ?? "") : children;
+  const body = error ? t(String(error.message ?? "")) : children;
   if (!body) {
     return null;
   }

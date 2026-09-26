@@ -26,9 +26,8 @@ export const useServer = (id: number): UseQueryResult<ServerWithStatus> =>
 export const useCreateServer = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (data: z.infer<typeof ServersAPI.POST.request>) => {
-      await ServerData.post(data);
-    },
+    mutationFn: async (data: z.infer<typeof ServersAPI.POST.request>) =>
+      await ServerData.post(data),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: serversKey });
     },

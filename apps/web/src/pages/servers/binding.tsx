@@ -17,6 +17,7 @@ import {
 } from "#shared/utils/template/binding";
 import { LoadingState } from "@/components/common/loading-state";
 import { MinecraftText } from "@/components/common/minecraft-text";
+import { SettingsColumns } from "@/components/common/settings-columns";
 import {
   SettingsBlock,
   SettingsRow,
@@ -36,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useServerForm } from "@/hooks/use-server-form";
+import { t } from "@/i18n";
 import { BindingData } from "@/lib/api";
 import { RENAME_VARS, USER_VAR, WHY_VAR } from "@/lib/template-variables";
 import { useServer } from "@/queries/servers";
@@ -43,11 +45,11 @@ import { useServer } from "@/queries/servers";
 type Config = z.infer<typeof BindingConfigSchema>;
 
 const CODE_MODE_OPTIONS = [
-  { label: "纯数字", value: CODE_MODES.NUMBER },
-  { label: "纯单词 (小写)", value: CODE_MODES.LOWER },
-  { label: "纯单词 (大写)", value: CODE_MODES.UPPER },
-  { label: "纯单词 (大小写)", value: CODE_MODES.WORD },
-  { label: "大小写单词和数字", value: CODE_MODES.MIX },
+  { label: t("纯数字"), value: CODE_MODES.NUMBER },
+  { label: t("纯单词 (小写)"), value: CODE_MODES.LOWER },
+  { label: t("纯单词 (大写)"), value: CODE_MODES.UPPER },
+  { label: t("纯单词 (大小写)"), value: CODE_MODES.WORD },
+  { label: t("大小写单词和数字"), value: CODE_MODES.MIX },
 ];
 
 export const ServerBindingPage = () => {
@@ -57,8 +59,9 @@ export const ServerBindingPage = () => {
   const { data: server, refetch } = useServer(serverId);
   const {
     form: config,
+    guard,
+    section,
     setForm: setConfig,
-    status,
   } = useServerForm(
     server?.bindingConfig,
     (c) => structuredClone(c),
@@ -90,42 +93,49 @@ export const ServerBindingPage = () => {
 
   return (
     <>
-      <ServerHeader status={status} width="form" />
-      <PageContent className="space-y-8" width="form">
+      {guard}
+      <ServerHeader width="settings" />
+      <PageContent width="settings">
         {config === null || examples === null ? (
           <LoadingState />
         ) : (
-          <>
+          <SettingsColumns>
             <SettingsSection
-              description="验证码与绑定数量配置"
-              title="绑定参数"
+              description={t("验证码与绑定数量配置")}
+              save={section([
+                "maxBindCount",
+                "codeLength",
+                "codeMode",
+                "codeExpire",
+              ])}
+              title={t("绑定参数")}
             >
-              <SettingsRow label="绑定数量">
+              <SettingsRow label={t("绑定数量")}>
                 <NumberInput
-                  className="w-28 text-right"
+                  className="w-full text-right sm:w-28"
                   onChange={(maxBindCount) => {
                     set({ maxBindCount });
                   }}
                   value={config.maxBindCount}
                 />
               </SettingsRow>
-              <SettingsRow label="验证码长度">
+              <SettingsRow label={t("验证码长度")}>
                 <NumberInput
-                  className="w-28 text-right"
+                  className="w-full text-right sm:w-28"
                   onChange={(codeLength) => {
                     set({ codeLength });
                   }}
                   value={config.codeLength}
                 />
               </SettingsRow>
-              <SettingsRow label="验证码模式">
+              <SettingsRow label={t("验证码模式")}>
                 <Select
                   onValueChange={(v) => {
                     set({ codeMode: v as CODE_MODES });
                   }}
                   value={config.codeMode}
                 >
-                  <SelectTrigger className="w-48">
+                  <SelectTrigger className="w-full sm:w-56">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,9 +147,9 @@ export const ServerBindingPage = () => {
                   </SelectContent>
                 </Select>
               </SettingsRow>
-              <SettingsRow label="过期时间（分钟）">
+              <SettingsRow label={t("过期时间（分钟）")}>
                 <NumberInput
-                  className="w-28 text-right"
+                  className="w-full text-right sm:w-28"
                   onChange={(codeExpire) => {
                     set({ codeExpire });
                   }}
@@ -148,36 +158,47 @@ export const ServerBindingPage = () => {
               </SettingsRow>
             </SettingsSection>
 
-            <SettingsSection description="绑定/解绑前缀与开关" title="指令配置">
+            <SettingsSection
+              description={t("绑定/解绑前缀与开关")}
+              save={section([
+                "prefix",
+                "unbindPrefix",
+                "allowUnbind",
+                "allowGroupUnbind",
+              ])}
+              title={t("指令配置")}
+            >
               <SettingsRow
-                description="玩家在社交平台聊天中发送此前缀加验证码完成绑定"
-                label="绑定前缀"
+                description={t(
+                  "玩家在社交平台聊天中发送此前缀加验证码完成绑定",
+                )}
+                label={t("绑定前缀")}
               >
                 <Input
-                  className="w-52"
+                  className="w-full sm:w-56"
                   maxLength={50}
                   onChange={(e) => {
                     set({ prefix: e.target.value });
                   }}
-                  placeholder="如：/绑定 "
+                  placeholder={t("如：/绑定 ")}
                   value={config.prefix}
                 />
               </SettingsRow>
               <SettingsRow
-                description="玩家发送此前缀加游戏名完成解绑"
-                label="解绑前缀"
+                description={t("玩家发送此前缀加游戏名完成解绑")}
+                label={t("解绑前缀")}
               >
                 <Input
-                  className="w-52"
+                  className="w-full sm:w-56"
                   maxLength={50}
                   onChange={(e) => {
                     set({ unbindPrefix: e.target.value });
                   }}
-                  placeholder="如：/解绑 "
+                  placeholder={t("如：/解绑 ")}
                   value={config.unbindPrefix}
                 />
               </SettingsRow>
-              <SettingsRow label="允许解绑">
+              <SettingsRow label={t("允许解绑")}>
                 <Switch
                   checked={config.allowUnbind}
                   onCheckedChange={(v) => {
@@ -186,8 +207,8 @@ export const ServerBindingPage = () => {
                 />
               </SettingsRow>
               <SettingsRow
-                description="玩家退出绑定群组后自动解除账号绑定"
-                label="离群自动解绑"
+                description={t("玩家退出绑定群组后自动解除账号绑定")}
+                label={t("离群自动解绑")}
               >
                 <Switch
                   checked={config.allowGroupUnbind}
@@ -199,14 +220,16 @@ export const ServerBindingPage = () => {
             </SettingsSection>
 
             <SettingsSection
-              description="根据当前配置生成的示例指令"
-              title="指令预览"
+              description={t("根据当前配置生成的示例指令")}
+              title={t("指令预览")}
             >
               <SettingsBlock>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-green-500">绑定指令</p>
+                  <p className="text-sm font-medium text-green-500">
+                    {t("绑定指令")}
+                  </p>
                   <p className="text-muted-foreground text-xs">
-                    用户在社交平台聊天中发送此指令来绑定游戏账号
+                    {t("用户在社交平台聊天中发送此指令来绑定游戏账号")}
                   </p>
                   <code className="bg-muted block rounded px-3 py-2 font-mono text-sm">
                     {examples.bindCommand}
@@ -217,10 +240,10 @@ export const ServerBindingPage = () => {
                 <SettingsBlock>
                   <div className="space-y-1">
                     <p className="text-sm font-medium text-amber-500">
-                      解绑指令
+                      {t("解绑指令")}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      使用专用解绑前缀进行解绑操作，直接输入玩家名称即可
+                      {t("使用专用解绑前缀进行解绑操作，直接输入玩家名称即可")}
                     </p>
                     <code className="bg-muted block rounded px-3 py-2 font-mono text-sm">
                       {examples.unbindCommand}
@@ -230,12 +253,13 @@ export const ServerBindingPage = () => {
               ) : null}
             </SettingsSection>
             <SettingsSection
-              description="绑定成功/失败时的消息"
-              title="绑定反馈"
+              description={t("绑定成功/失败时的消息")}
+              save={section(["bindSuccessMsg", "bindFailMsg"])}
+              title={t("绑定反馈")}
             >
               <SettingsBlock>
                 <MessageTemplateField
-                  label="绑定成功"
+                  label={t("绑定成功")}
                   maxLength={200}
                   onChange={(v) => {
                     set({ bindSuccessMsg: v });
@@ -247,7 +271,7 @@ export const ServerBindingPage = () => {
               </SettingsBlock>
               <SettingsBlock>
                 <MessageTemplateField
-                  label="绑定失败"
+                  label={t("绑定失败")}
                   maxLength={200}
                   onChange={(v) => {
                     set({ bindFailMsg: v });
@@ -255,7 +279,7 @@ export const ServerBindingPage = () => {
                   preview={renderBindFail(
                     config.bindFailMsg,
                     "Steve",
-                    "因为某种奇妙の原因",
+                    t("因为某种奇妙の原因"),
                   )}
                   previewClassName="text-destructive"
                   value={config.bindFailMsg}
@@ -265,12 +289,13 @@ export const ServerBindingPage = () => {
             </SettingsSection>
 
             <SettingsSection
-              description="解绑成功/失败时的消息"
-              title="解绑反馈"
+              description={t("解绑成功/失败时的消息")}
+              save={section(["unbindSuccessMsg", "unbindFailMsg"])}
+              title={t("解绑反馈")}
             >
               <SettingsBlock>
                 <MessageTemplateField
-                  label="解绑成功"
+                  label={t("解绑成功")}
                   maxLength={200}
                   onChange={(v) => {
                     set({ unbindSuccessMsg: v });
@@ -285,7 +310,7 @@ export const ServerBindingPage = () => {
               </SettingsBlock>
               <SettingsBlock>
                 <MessageTemplateField
-                  label="解绑失败"
+                  label={t("解绑失败")}
                   maxLength={200}
                   onChange={(v) => {
                     set({ unbindFailMsg: v });
@@ -293,7 +318,7 @@ export const ServerBindingPage = () => {
                   preview={renderUnbindFail(
                     config.unbindFailMsg,
                     "Steve",
-                    "因为某种奇妙の原因",
+                    t("因为某种奇妙の原因"),
                   )}
                   previewClassName="text-destructive"
                   value={config.unbindFailMsg}
@@ -302,10 +327,11 @@ export const ServerBindingPage = () => {
               </SettingsBlock>
             </SettingsSection>
             <SettingsSection
-              description="开关与群昵称改名模板"
-              title="改名配置"
+              description={t("开关与群昵称改名模板")}
+              save={section(["autoRenameEnabled", "autoRenameNameTemplate"])}
+              title={t("改名配置")}
             >
-              <SettingsRow label="绑定后自动改名">
+              <SettingsRow label={t("绑定后自动改名")}>
                 <Switch
                   checked={config.autoRenameEnabled}
                   onCheckedChange={(v) => {
@@ -315,7 +341,7 @@ export const ServerBindingPage = () => {
               </SettingsRow>
               <SettingsBlock>
                 <MessageTemplateField
-                  label="改名模板"
+                  label={t("改名模板")}
                   maxLength={32}
                   onChange={(v) => {
                     set({ autoRenameNameTemplate: v });
@@ -323,7 +349,7 @@ export const ServerBindingPage = () => {
                   preview={renderBindRenameName(config.autoRenameNameTemplate, {
                     platform: "onebot",
                     playerName: "Steve",
-                    socialNickname: "小明",
+                    socialNickname: t("小明"),
                     socialUid: "114514",
                   })}
                   previewClassName="text-primary"
@@ -333,12 +359,13 @@ export const ServerBindingPage = () => {
               </SettingsBlock>
             </SettingsSection>
             <SettingsSection
-              description="未绑定玩家的处理方式"
-              title="强制绑定"
+              description={t("未绑定玩家的处理方式")}
+              save={section(["forceBind", "nobindkickMsg"])}
+              title={t("强制绑定")}
             >
               <SettingsRow
-                description="未绑定账号的玩家进入服务器时将被踢出"
-                label="强制绑定"
+                description={t("未绑定账号的玩家进入服务器时将被踢出")}
+                label={t("强制绑定")}
               >
                 <Switch
                   checked={config.forceBind}
@@ -349,7 +376,7 @@ export const ServerBindingPage = () => {
               </SettingsRow>
               <SettingsBlock>
                 <MessageTemplateField
-                  label="未绑定踢出消息"
+                  label={t("未绑定踢出消息")}
                   maxLength={500}
                   multiline
                   onChange={(v) => {
@@ -370,17 +397,17 @@ export const ServerBindingPage = () => {
                   variables={[
                     {
                       example: examples.bindCommand,
-                      label: "消息",
+                      label: t("消息"),
                       value: "{message}",
                     },
                     {
                       example: "Steve",
-                      label: "玩家名",
+                      label: t("玩家名"),
                       value: "{name}",
                     },
                     {
                       example: examples.expireTime,
-                      label: "过期时间",
+                      label: t("过期时间"),
                       value: "{time}",
                     },
                   ]}
@@ -389,12 +416,13 @@ export const ServerBindingPage = () => {
             </SettingsSection>
 
             <SettingsSection
-              description="解绑后的踢出消息配置"
-              title="解绑踢出"
+              description={t("解绑后的踢出消息配置")}
+              save={section(["unbindkickMsg"])}
+              title={t("解绑踢出")}
             >
               <SettingsBlock>
                 <MessageTemplateField
-                  label="解绑踢出消息"
+                  label={t("解绑踢出消息")}
                   maxLength={500}
                   multiline
                   onChange={(v) => {
@@ -409,14 +437,14 @@ export const ServerBindingPage = () => {
                   variables={[
                     {
                       example: "114514",
-                      label: "社交账号",
+                      label: t("社交账号"),
                       value: "{social_account}",
                     },
                   ]}
                 />
               </SettingsBlock>
             </SettingsSection>
-          </>
+          </SettingsColumns>
         )}
       </PageContent>
     </>

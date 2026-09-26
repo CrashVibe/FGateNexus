@@ -3,11 +3,13 @@ import { Copy } from "lucide-react";
 import { useRef, useState } from "react";
 
 import type { ServerWithStatus } from "#shared/model/server/schema/servers";
+import { LastEventLine } from "@/components/common/last-event";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { t } from "@/i18n";
 import { formatMcVersion } from "@/lib/mc-format";
 import { cn } from "@/lib/utils";
 
@@ -35,20 +37,20 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
   const copyToken = async (e: React.MouseEvent): Promise<void> => {
     e.stopPropagation();
     if (copying.current) {
-      toast.warning("我*，这么快干什么！");
+      toast.warning(t("我*，这么快干什么！"));
       return;
     }
     copying.current = true;
     try {
       await navigator.clipboard.writeText(server.token);
-      toast.success("Token 被剪贴板带跑啦，3 秒后消失~");
+      toast.success(t("Token 被剪贴板带跑啦，3 秒后消失~"));
       setShowToken(true);
       setTimeout(() => {
         setShowToken(false);
         copying.current = false;
       }, 3000);
     } catch {
-      toast.error("复制失败，小 clipboard 罢工了！");
+      toast.error(t("复制失败，小 clipboard 罢工了！"));
       copying.current = false;
     }
   };
@@ -62,7 +64,7 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
     >
       {/* 铺满卡片的跳转按钮，Token 那一行以 z-20 浮在其上。 */}
       <button
-        aria-label={`查看服务器 #${server.id} 详情`}
+        aria-label={t("查看服务器 #{{id}} 详情", { id: server.id })}
         className="absolute inset-0 z-10 cursor-pointer rounded-xl"
         onClick={() => {
           void navigate({
@@ -77,7 +79,7 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
         <div className="flex items-center gap-2">
           <span className="text-lg font-semibold">{server.name}</span>
           <Badge variant={server.isOnline ? "success" : "destructive"}>
-            {server.isOnline ? "在线" : "离线"}
+            {server.isOnline ? t("在线") : t("离线")}
           </Badge>
         </div>
         <Badge variant={server.isOnline ? "secondary" : "warning"}>
@@ -92,7 +94,7 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
           src={getSoftwareIcon(server.minecraft_software)}
         />
         <span className="text-muted-foreground text-sm">
-          {server.minecraft_software ?? "未知服务器端"}
+          {server.minecraft_software ?? t("未知服务器端")}
         </span>
       </div>
 
@@ -108,7 +110,7 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
             value={showToken ? server.token : "•".repeat(16)}
           />
           <Button
-            aria-label="复制 Token"
+            aria-label={t("复制 Token")}
             onClick={(e) => {
               void copyToken(e);
             }}
@@ -120,8 +122,10 @@ export const ServerCard = ({ server }: { server: ServerWithStatus }) => {
         </div>
       </div>
 
+      <LastEventLine event={server.lastEvent} />
+
       <span className="text-muted-foreground text-right text-xs opacity-70 select-none">
-        点击卡片查看更多信息
+        {t("点击卡片查看更多信息")}
       </span>
     </Card>
   );

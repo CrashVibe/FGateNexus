@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 export interface TransferItem {
@@ -63,7 +64,7 @@ const Listbox = ({
           onChange={(e) => {
             setQuery(e.target.value);
           }}
-          placeholder="搜索..."
+          placeholder={t("搜索...")}
           value={query}
         />
       </div>
@@ -72,7 +73,7 @@ const Listbox = ({
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             {loading ? null : emptyIcon}
             <span className="text-muted-foreground text-sm">
-              {loading ? "加载中..." : emptyText}
+              {loading ? t("加载中...") : emptyText}
             </span>
           </div>
         ) : (
@@ -182,7 +183,7 @@ export const TransferList = ({
       <div className="flex h-[460px] flex-col overflow-hidden rounded-xl border">
         <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
           <List className="text-muted-foreground size-4 shrink-0" />
-          <span className="text-sm font-medium">可选频道</span>
+          <span className="text-sm font-medium">{t("可选频道")}</span>
           <Badge className="ml-auto" variant="secondary">
             {availableItems.length}
           </Badge>
@@ -190,15 +191,17 @@ export const TransferList = ({
         {error ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
             <WifiOff className="text-muted-foreground size-8" />
-            <p className="text-muted-foreground text-sm">加载失败，请重试</p>
+            <p className="text-muted-foreground text-sm">
+              {t("加载失败，请重试")}
+            </p>
             <Button onClick={onReload} size="sm" variant="destructive">
-              重试
+              {t("重试")}
             </Button>
           </div>
         ) : (
           <Listbox
             emptyIcon={<Inbox className="text-muted-foreground size-7" />}
-            emptyText="暂无可选频道"
+            emptyText={t("暂无可选频道")}
             items={availableItems}
             loading={loading}
             onPicked={setAvailablePicked}
@@ -236,14 +239,14 @@ export const TransferList = ({
       <div className="flex h-[460px] flex-col overflow-hidden rounded-xl border">
         <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
           <CheckCircle className="size-4 shrink-0 text-green-500" />
-          <span className="text-sm font-medium">已选频道</span>
+          <span className="text-sm font-medium">{t("已选频道")}</span>
           {selectedItems.length > 0 ? (
             <>
               <Badge className="ml-auto" variant="success">
                 {selectedItems.length}
               </Badge>
               <Button onClick={clearAll} size="sm" variant="ghost">
-                清空
+                {t("清空")}
               </Button>
             </>
           ) : null}
@@ -252,7 +255,7 @@ export const TransferList = ({
           emptyIcon={
             <ArrowLeftRight className="text-muted-foreground size-7" />
           }
-          emptyText="从左侧选择要转发的频道"
+          emptyText={t("从左侧选择要转发的频道")}
           items={selectedItems}
           loading={loading}
           onPicked={setSelectedPicked}

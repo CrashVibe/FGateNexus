@@ -4,6 +4,8 @@ import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { StatusCodes } from "http-status-codes";
 
+import { createBackup, stageRestore } from "#server/boot/backup";
+import { db } from "#server/db/client";
 import { fail, guard, ok, parseBody } from "#server/http/respond";
 import {
   cancelDownload,
@@ -14,6 +16,7 @@ import {
   subscribeDownloadState,
 } from "#server/service/browser-downloader";
 import { imageRenderer } from "#server/service/image-renderer";
+import { getVersionInfo } from "#server/service/update-check";
 import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
 import { ApiError } from "#shared/model/error";
@@ -23,6 +26,46 @@ const KEEPALIVE_INTERVAL_MS = 15_000;
 
 export const settingsRouter = new Hono()
   .get("/sentry", (c) => c.json(configManager.config.sentry))
+  .get(
+    "/version",
+    guard("获取版本信息失败", async (c) =>
+      ok(c, "获取版本信息成功", StatusCodes.OK, await getVersionInfo()),
+    ),
+  )
+  .get(
+    "/backup",
+    guard("备份失败", async (c) => {
+      const bytes = await createBackup((file) => {
+        db.$client.run(`VACUUM INTO '${file.replaceAll("'", "''")}'`);
+      });
+      const stamp = new Date().toISOString().slice(0, 10);
+      return c.body(bytes, StatusCodes.OK, {
+        "content-disposition": `attachment; filename="fgate-backup-${stamp}.tar.gz"`,
+        "content-type": "application/gzip",
+      });
+    }),
+  )
+  .post(
+    "/restore",
+    guard("恢复失败", async (c) => {
+      const form = await c.req.formData();
+      const file = form.get("file");
+      if (!(file instanceof File)) {
+        return fail(c, ApiError.badRequest("缺少上传文件（字段名 file）"));
+      }
+      try {
+        await stageRestore(file);
+      } catch (error) {
+        return fail(
+          c,
+          ApiError.validation(
+            error instanceof Error ? error.message : String(error),
+          ),
+        );
+      }
+      return ok(c, "备份已暂存，重启后生效", StatusCodes.OK);
+    }),
+  )
   .get(
     "/browser",
     guard("获取浏览器配置失败", async (c) => {

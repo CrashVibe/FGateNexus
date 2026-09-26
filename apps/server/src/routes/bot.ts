@@ -17,6 +17,7 @@ import { botTable } from "#server/db/schema";
 import { fail, guard, ok, parseBody } from "#server/http/respond";
 import { chatBridge } from "#server/service/chatbridge";
 import type { AdapterBot } from "#server/service/chatbridge/types";
+import { getLastEvent } from "#server/service/diagnostics";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformType } from "#shared/model/bot/types";
 import { ApiError } from "#shared/model/error";
@@ -162,6 +163,7 @@ export const botRouter = new Hono()
         (bot) => ({
           ...bot,
           isOnline: chatBridge.get(bot.id)?.isOnline() ?? false,
+          lastEvent: getLastEvent("bot", bot.id),
         }),
       );
       return ok(
@@ -215,6 +217,7 @@ export const botRouter = new Hono()
         BotAPI.GET.response.parse({
           ...bot,
           isOnline: chatBridge.get(bot.id)?.isOnline() ?? false,
+          lastEvent: getLastEvent("bot", bot.id),
         }),
       );
     }),

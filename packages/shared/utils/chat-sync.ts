@@ -34,54 +34,43 @@ export const formatMCToPlatformMessage = (
     .replace("{message}", data.message)
     .replace("{timestamp}", new Date(data.timestamp).toLocaleString());
 
-/**
- * 检查消息是否应该被转发
- * @returns 是否应该转发该消息
- */
-export const shouldForwardMessage = (
+/** null = 放行 */
+export const getFilterReason = (
   message: string,
   config: ChatSyncConfig,
-): boolean => {
+): string | null => {
   const { filters } = config;
-  // 消息长度
-  if (
-    message.length < filters.minMessageLength ||
-    message.length > filters.maxMessageLength
-  ) {
-    return false;
+  if (message.length < filters.minMessageLength) {
+    return `太短了（少于 ${filters.minMessageLength} 字）`;
+  }
+  if (message.length > filters.maxMessageLength) {
+    return `太长了（超过 ${filters.maxMessageLength} 字）`;
   }
 
-  if (filters.filterMode === "blacklist") {
-    // 黑名单模式：检查是否包含黑名单关键词或匹配正则表达式
-    if (
-      filters.blacklistKeywords.some((keyword) =>
-        message.toLowerCase().includes(keyword.toLowerCase()),
-      )
-    ) {
+  const safeTest = (regex: string, flags: string): boolean => {
+    try {
+      return new RegExp(regex, flags).test(message);
+    } catch {
       return false;
     }
-    return !filters.blacklistRegex.some((regex) => {
-      try {
-        return new RegExp(regex, "iu").test(message);
-      } catch {
-        return false;
-      }
-    });
-  } else if (filters.filterMode === "whitelist") {
-    // 白名单模式：检查是否以指定前缀开头或匹配正则表达式
-    const hasPrefix = filters.whitelistPrefixes.some((prefix) =>
-      message.startsWith(prefix),
-    );
-    const hasRegexMatch = filters.whitelistRegex.some((regex) => {
-      try {
-        return new RegExp(regex, "u").test(message);
-      } catch {
-        return false;
-      }
-    });
-    return hasPrefix ?? hasRegexMatch;
+  };
+
+  if (filters.filterMode === "whitelist") {
+    const pass =
+      filters.whitelistPrefixes.some((prefix) => message.startsWith(prefix)) ||
+      filters.whitelistRegex.some((regex) => safeTest(regex, "u"));
+    return pass ? null : "不符合白名单前缀或正则";
   }
 
-  // 默认黑名单模式
-  return true;
+  const keyword = filters.blacklistKeywords.find((k) =>
+    message.toLowerCase().includes(k.toLowerCase()),
+  );
+  if (keyword !== undefined) {
+    return `命中屏蔽词「${keyword}」`;
+  }
+  const regex = filters.blacklistRegex.find((r) => safeTest(r, "iu"));
+  if (regex !== undefined) {
+    return `命中屏蔽正则 /${regex}/`;
+  }
+  return null;
 };

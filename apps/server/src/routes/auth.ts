@@ -23,10 +23,17 @@ import type { AuthStatus } from "#shared/model/auth/schema";
 import { ApiError } from "#shared/model/error";
 import { validatePasswordStrength } from "#shared/utils/password";
 
-const getClientIP = (c: Context): string =>
-  c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ??
-  getConnInfo(c).remote.address ??
-  "unknown";
+const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+// 只信本机反代给的 XFF，且取最右一段（反代追加的那段）；否则 XFF 可被伪造绕过限流
+const getClientIP = (c: Context): string => {
+  const peer = getConnInfo(c).remote.address;
+  const forwarded = c.req.header("x-forwarded-for");
+  if (peer && LOOPBACK.has(peer) && forwarded) {
+    return forwarded.split(",").at(-1)?.trim() || peer;
+  }
+  return peer ?? "unknown";
+};
 
 const loginRateLimiter = rateLimiter({
   handler: (c) => {

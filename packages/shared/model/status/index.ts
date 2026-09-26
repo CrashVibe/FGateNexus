@@ -8,3 +8,11 @@ export const StatusEventSchema = z.object({
 });
 
 export type StatusEvent = z.infer<typeof StatusEventSchema>;
+
+export const LastEventSchema = z.object({
+  at: z.number(),
+  ok: z.boolean(),
+  text: z.string(),
+});
+
+export type LastEvent = z.infer<typeof LastEventSchema>;

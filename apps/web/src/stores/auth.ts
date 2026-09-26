@@ -10,7 +10,7 @@ interface AuthState {
   checkAuthStatus: () => Promise<AuthStatus>;
   login: (data: z.infer<typeof LoginAPI.POST.request>) => Promise<void>;
   logout: () => Promise<void>;
-  /** 是否需要跳转登录页（已设密码但未登录）。 */
+  /** 是否需要跳转登录页（未登录，或尚未设密码）。 */
   requireAuth: () => Promise<boolean>;
 }
 
@@ -50,6 +50,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async requireAuth() {
     const status = await get().checkAuthStatus();
-    return status.hasPassword && !status.loggedIn;
+    return !status.loggedIn;
   },
 }));

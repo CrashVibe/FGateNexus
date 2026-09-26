@@ -7,6 +7,7 @@ import { BotForm } from "@/components/bot/bot-form";
 import type { BotFormValue } from "@/components/bot/bot-form";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
+import { LastEventLine } from "@/components/common/last-event";
 import { LoadingState } from "@/components/common/loading-state";
 import { PageContent } from "@/components/layout/page-content";
 import { PageHeader } from "@/components/layout/page-header";
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/sonner";
 import { useEntityStatusStream } from "@/hooks/use-status-event-stream";
+import { t } from "@/i18n";
 import { errorMessage } from "@/lib/http";
 import { cn } from "@/lib/utils";
 import {
@@ -48,7 +50,7 @@ const BotCard = ({
   onClick: () => void;
 }) => (
   <button
-    aria-label={`编辑 Bot #${bot.id}`}
+    aria-label={t("编辑机器人 #{{id}}", { id: bot.id })}
     className={cn(
       "cursor-pointer text-left transition-all duration-300 ease-in-out hover:scale-[0.99] hover:opacity-80",
       !bot.isOnline && "grayscale-[0.8]",
@@ -60,7 +62,7 @@ const BotCard = ({
       <div className="flex items-center gap-2">
         <span className="text-lg font-semibold"># {bot.id}</span>
         <Badge variant={bot.isOnline ? "success" : "destructive"}>
-          {bot.isOnline ? "在线" : "离线"}
+          {bot.isOnline ? t("在线") : t("离线")}
         </Badge>
         <span className="text-muted-foreground text-sm">{bot.platform}</span>
       </div>
@@ -70,13 +72,14 @@ const BotCard = ({
         </span>
       </div>
       <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">机器人开关</span>
+        <span className="text-muted-foreground">{t("机器人开关")}</span>
         <Badge variant={bot.enabled ? "success" : "warning"}>
-          {bot.enabled ? "启用" : "禁用"}
+          {bot.enabled ? t("启用") : t("禁用")}
         </Badge>
       </div>
+      <LastEventLine event={bot.lastEvent} />
       <span className="text-muted-foreground text-right text-xs opacity-70 select-none">
-        点击卡片修改配置
+        {t("点击卡片修改配置")}
       </span>
     </Card>
   </button>
@@ -112,10 +115,10 @@ export const BotsPage = () => {
     try {
       const parsed = BotAPI.POST.request.parse(createForm);
       await createBot.mutateAsync(parsed);
-      toast.success("Bot 实例创建成功");
+      toast.success(t("机器人创建成功"));
       setCreateOpen(false);
     } catch (error) {
-      toast.error("创建 Bot 实例失败", { description: errorMessage(error) });
+      toast.error(t("创建机器人失败"), { description: errorMessage(error) });
     }
   };
 
@@ -126,10 +129,10 @@ export const BotsPage = () => {
     try {
       const parsed = BotAPI.PUT.request.parse(editForm);
       await updateBot.mutateAsync({ data: parsed, id: editBot.id });
-      toast.success("Bot 实例更新成功");
+      toast.success(t("机器人更新成功"));
       setEditBot(null);
     } catch (error) {
-      toast.error("更新 Bot 实例失败", { description: errorMessage(error) });
+      toast.error(t("更新机器人失败"), { description: errorMessage(error) });
     }
   };
 
@@ -139,10 +142,10 @@ export const BotsPage = () => {
     }
     try {
       await deleteBot.mutateAsync(editBot.id);
-      toast.success("Bot 实例删除成功");
+      toast.success(t("机器人删除成功"));
       setEditBot(null);
     } catch (error) {
-      toast.error("删除 Bot 实例失败", { description: errorMessage(error) });
+      toast.error(t("删除机器人失败"), { description: errorMessage(error) });
       throw error;
     }
   };
@@ -156,10 +159,14 @@ export const BotsPage = () => {
         enabled: !editBot.enabled,
         id: editBot.id,
       });
-      toast.success(`Bot 实例已${editBot.enabled ? "禁用" : "启用"}`);
+      toast.success(
+        t("机器人已{{v0}}", { v0: editBot.enabled ? t("禁用") : t("启用") }),
+      );
       setEditBot(null);
     } catch (error) {
-      toast.error("切换 Bot 状态失败", { description: errorMessage(error) });
+      toast.error(t("切换机器人状态失败"), {
+        description: errorMessage(error),
+      });
     }
   };
 
@@ -173,11 +180,11 @@ export const BotsPage = () => {
           action={
             <Button onClick={openCreate}>
               <Plus />
-              创建新 Bot 实例
+              {t("创建新机器人")}
             </Button>
           }
           className="mt-10"
-          desc="暂无 Bot 实例，请先创建一个 Bot 实例"
+          desc={t("暂无机器人，请先创建一个机器人")}
         />
       );
     }
@@ -202,11 +209,11 @@ export const BotsPage = () => {
         actions={
           <Button onClick={openCreate} size="sm">
             <Plus />
-            创建新 Bot 实例
+            {t("创建新机器人")}
           </Button>
         }
-        description="管理多个 Bot 实例，点击进入详细配置。"
-        title="Bot 实例列表"
+        description={t("管理多个机器人，点击进入详细配置。")}
+        title={t("机器人列表")}
       />
 
       <PageContent>{renderList()}</PageContent>
@@ -214,7 +221,7 @@ export const BotsPage = () => {
       <Dialog onOpenChange={setCreateOpen} open={createOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>创建 Bot 实例</DialogTitle>
+            <DialogTitle>{t("创建机器人")}</DialogTitle>
           </DialogHeader>
           <BotForm onChange={setCreateForm} value={createForm} />
           <DialogFooter>
@@ -225,7 +232,7 @@ export const BotsPage = () => {
               }}
               variant="outline"
             >
-              取消
+              {t("取消")}
             </Button>
             <Button
               loading={createBot.isPending}
@@ -233,7 +240,7 @@ export const BotsPage = () => {
                 void handleCreate();
               }}
             >
-              确认创建
+              {t("确认创建")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -249,8 +256,8 @@ export const BotsPage = () => {
       >
         <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>配置修改</SheetTitle>
-            <SheetDescription>修改 Bot 实例配置</SheetDescription>
+            <SheetTitle>{t("配置修改")}</SheetTitle>
+            <SheetDescription>{t("修改机器人配置")}</SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto">
             <BotForm isEdit onChange={setEditForm} value={editForm} />
@@ -262,7 +269,7 @@ export const BotsPage = () => {
               }}
               variant="destructive"
             >
-              删除
+              {t("删除")}
             </Button>
             <Button
               loading={toggleBot.isPending}
@@ -271,7 +278,7 @@ export const BotsPage = () => {
               }}
               variant="secondary"
             >
-              {editBot?.enabled ? "禁用" : "启用"}
+              {editBot?.enabled ? t("禁用") : t("启用")}
             </Button>
             <Button
               loading={updateBot.isPending}
@@ -279,18 +286,20 @@ export const BotsPage = () => {
                 void handleSave();
               }}
             >
-              保存
+              {t("保存")}
             </Button>
           </div>
         </SheetContent>
       </Sheet>
 
       <ConfirmDialog
-        description={`确定删除 Bot 实例「${editBot?.name ?? ""}」吗？此操作不可恢复。`}
+        description={t("确定删除机器人「{{v0}}」吗？此操作不可恢复。", {
+          v0: editBot?.name ?? "",
+        })}
         onConfirm={handleDelete}
         onOpenChange={setConfirmDelete}
         open={confirmDelete}
-        title="删除 Bot 实例"
+        title={t("删除机器人")}
       />
     </>
   );

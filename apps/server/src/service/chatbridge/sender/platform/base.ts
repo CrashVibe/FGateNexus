@@ -1,12 +1,13 @@
 import type { ForkScope } from "koishi";
 
 import type { Target } from "#server/db/schema";
+import { recordRelay } from "#server/service/relay-log";
 import { logger } from "#server/utils/logger";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
 import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
 import type { CommandConfig } from "#shared/model/server/schema/command";
 import type { NotifyConfig } from "#shared/model/server/schema/notify";
-import { shouldForwardMessage } from "#shared/utils/chat-sync";
+import { getFilterReason } from "#shared/utils/chat-sync";
 
 import type { MCEvent } from "../../../mcwsbridge/types";
 import type { AdapterBot } from "../../types";
@@ -99,23 +100,43 @@ export abstract class BaseSender<
     chatSyncConfig: ChatSyncConfig,
     serverName: string,
   ): Promise<void> {
+    const relay = {
+      direction: "mc_to_platform",
+      from: event.payload.playerName,
+      serverId: event.serverId,
+      target: target.channelId,
+      text: event.payload.message,
+    } as const;
     if (!this.guardOnline()) {
+      recordRelay({ ...relay, reason: "机器人不在线", status: "failed" });
       return;
     }
-
     if (!chatSyncConfig.mcToPlatformEnabled) {
+      recordRelay({ ...relay, reason: "未开启 MC → 平台", status: "skipped" });
       return;
     }
-    if (!shouldForwardMessage(event.payload.message, chatSyncConfig)) {
+    const reason = getFilterReason(event.payload.message, chatSyncConfig);
+    if (reason !== null) {
+      recordRelay({ ...relay, reason, status: "filtered" });
       return;
     }
 
-    const message = await this.builders.buildChatMessage(
-      event.payload,
-      chatSyncConfig,
-      serverName,
-    );
-    await this.send(target, message);
+    try {
+      const message = await this.builders.buildChatMessage(
+        event.payload,
+        chatSyncConfig,
+        serverName,
+      );
+      await this.send(target, message);
+      recordRelay({ ...relay, status: "sent" });
+    } catch (error) {
+      recordRelay({
+        ...relay,
+        reason: error instanceof Error ? error.message : String(error),
+        status: "failed",
+      });
+      throw error;
+    }
   }
 
   async onDeath(

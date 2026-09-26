@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import type { ServersAPI } from "#shared/model/server/api";
+import { LastEventSchema } from "#shared/model/status";
 
 import { ServerNameSchema } from "../validators";
 import { BindingConfigSchema } from "./binding";
@@ -16,6 +17,7 @@ export const ServerResponseSchema = z.object({
   commandConfig: CommandConfigSchema,
   id: z.number(),
   isOnline: z.boolean(),
+  lastEvent: LastEventSchema.nullish(),
   minecraft_software: z.string().nullable(),
   minecraft_version: z.string().nullable(),
   name: ServerNameSchema,

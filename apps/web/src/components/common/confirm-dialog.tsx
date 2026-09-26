@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { t } from "@/i18n";
 
 /**
  * 破坏性操作的统一二次确认。onConfirm 期间按钮转圈，成功后自动关闭；
@@ -20,7 +21,7 @@ export const ConfirmDialog = ({
   onOpenChange,
   title,
   description,
-  confirmText = "确认删除",
+  confirmText = t("确认删除"),
   onConfirm,
 }: {
   open: boolean;
@@ -57,7 +58,7 @@ export const ConfirmDialog = ({
             }}
             variant="outline"
           >
-            取消
+            {t("取消")}
           </Button>
           <Button
             loading={pending}

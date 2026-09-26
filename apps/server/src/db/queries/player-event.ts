@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, lt, sql } from "drizzle-orm";
 
 import { db } from "../client";
 import { playerEventTable, serverTable } from "../schema";
@@ -148,4 +148,10 @@ export const getEventCountsSince = async (
     .groupBy(playerEventTable.type);
 
   return Object.fromEntries(rows.map((r) => [r.type, r.count]));
+};
+
+export const deletePlayerEventsBefore = async (cutoff: Date): Promise<void> => {
+  await db
+    .delete(playerEventTable)
+    .where(lt(playerEventTable.createdAt, cutoff));
 };

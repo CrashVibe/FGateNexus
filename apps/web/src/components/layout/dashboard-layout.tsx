@@ -5,6 +5,7 @@ import { LayoutContext } from "@/components/layout/context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useDragResize } from "@/hooks/use-drag-resize";
+import { t } from "@/i18n";
 import { basicMenu, serverMenu } from "@/lib/menu";
 
 /** Dashboard 布局：侧边菜单（随服务器编辑态切换）。 */
@@ -48,7 +49,7 @@ export const DashboardLayout = () => {
 
         <Sheet onOpenChange={setMobileOpen} open={mobileOpen}>
           <SheetContent className="w-64 p-0" side="left">
-            <SheetTitle className="sr-only">导航菜单</SheetTitle>
+            <SheetTitle className="sr-only">{t("导航菜单")}</SheetTitle>
             <Sidebar
               menu={menu}
               onNavigate={() => {

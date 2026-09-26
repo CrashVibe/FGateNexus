@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "#server/db/client";
 import { serverTable } from "#server/db/schema";
+import { noteLastEvent } from "#server/service/diagnostics";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import type { PeerData } from "#server/service/mcwsbridge/peer";
 import { createPeer } from "#server/service/mcwsbridge/peer";
@@ -68,6 +69,12 @@ export const handleMcBridgeUpgrade = async (
   }
 
   if (connectionManager.hasConnection(undefined, serverRecord.id)) {
+    noteLastEvent(
+      "server",
+      serverRecord.id,
+      "拒绝了一次重复连接（已经有一个插件连着了）",
+      false,
+    );
     logger.warn(
       { serverId: serverRecord.id },
       "WebSocket 接受的对应连接已存在",
@@ -94,6 +101,9 @@ export const mcBridgeWebSocket: WebSocketHandler<PeerData> = {
     const peer = createPeer(ws);
     if (connectionManager.hasConnection(peer)) {
       const removed = connectionManager.onClose(peer);
+      if (removed) {
+        noteLastEvent("server", removed.serverId, "插件断开了连接", false);
+      }
       logger.info(
         { peerId: removed?.peer.id, serverId: removed?.serverId },
         "WebSocket 连接已移除",
@@ -135,9 +145,16 @@ export const mcBridgeWebSocket: WebSocketHandler<PeerData> = {
           ...(warning && { warning }),
         }),
       );
+      noteLastEvent(
+        "server",
+        serverId,
+        warning ? `已连接，但插件版本偏旧：${warning}` : "已连接",
+        true,
+      );
       logger.info({ serverId }, "WebSocket 接受请求成功：");
     } catch (error) {
       // addConnection 内部已记录并清理连接，此处兜底关闭。
+      noteLastEvent("server", serverId, "建立会话失败，看看服务端日志", false);
       logger.error(error, "建立 MC 桥会话失败");
       peer.close(1011, "Failed to initialize session");
     }
