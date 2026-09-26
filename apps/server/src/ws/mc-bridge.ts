@@ -5,6 +5,7 @@ import { db } from "#server/db/client";
 import { serverTable } from "#server/db/schema";
 import { noteLastEvent } from "#server/service/diagnostics";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
+import { createHandlers } from "#server/service/mcwsbridge/handler";
 import type { PeerData } from "#server/service/mcwsbridge/peer";
 import { createPeer } from "#server/service/mcwsbridge/peer";
 import { logger } from "#server/utils/logger";
@@ -136,7 +137,7 @@ export const mcBridgeWebSocket: WebSocketHandler<PeerData> = {
     const peer = createPeer(ws);
     const { serverId, warning } = ws.data;
     try {
-      await connectionManager.addConnection(peer, serverId);
+      await connectionManager.addConnection(peer, serverId, createHandlers());
       peer.send(
         JSON.stringify({
           api_version: CURRENT_API_VERSION,

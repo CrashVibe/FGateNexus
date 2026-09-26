@@ -1,12 +1,12 @@
 import * as fs from "node:fs";
 
 import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
 import { StatusCodes } from "http-status-codes";
 
 import { createBackup, stageRestore } from "#server/boot/backup";
 import { db } from "#server/db/client";
 import { fail, guard, ok, parseBody } from "#server/http/respond";
+import { sseStream } from "#server/http/sse";
 import {
   cancelDownload,
   checkChromiumUpdate,
@@ -21,8 +21,6 @@ import { configManager } from "#server/utils/config";
 import { logger } from "#server/utils/logger";
 import { ApiError } from "#shared/model/error";
 import { SettingsAPI } from "#shared/model/settings";
-
-const KEEPALIVE_INTERVAL_MS = 15_000;
 
 export const settingsRouter = new Hono()
   .get("/sentry", (c) => c.json(configManager.config.sentry))
@@ -169,35 +167,18 @@ export const settingsRouter = new Hono()
     }),
   )
   .get("/browser/download-stream", (c) =>
-    streamSSE(c, async (stream) => {
-      const send = async (payload: unknown) => {
-        await stream.writeSSE({
-          data: JSON.stringify(payload),
-          event: "progress",
-        });
-      };
-
-      const unsubscribe = subscribeDownloadState((next) => {
-        void send(next);
-      });
-      stream.onAbort(unsubscribe);
-
-      try {
+    sseStream(
+      c,
+      "progress",
+      subscribeDownloadState,
+      (state) => state,
+      async () => {
         try {
-          await send(await getEnrichedDownloadState());
+          return await getEnrichedDownloadState();
         } catch (error) {
           logger.error(error, "获取下载状态失败");
-          await send({ error: "获取下载状态失败", status: "error" });
+          return { error: "获取下载状态失败", status: "error" };
         }
-        // 保持连接：周期性 ping，直到客户端断开。
-        while (!stream.aborted) {
-          // oxlint-disable-next-line no-await-in-loop - 必须在循环中等待，以便在客户端断开时退出循环
-          await stream.sleep(KEEPALIVE_INTERVAL_MS);
-          // oxlint-disable-next-line no-await-in-loop
-          await stream.writeSSE({ data: "{}", event: "ping" });
-        }
-      } finally {
-        unsubscribe();
-      }
-    }),
+      },
+    ),
   );

@@ -27,9 +27,7 @@
     "postinstall": "bun apps/server/scripts/gen-embedded-migrations.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2",
-    "p-limit": "^7.3.0",
-    "p-retry": "^8.0.0"
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.10",

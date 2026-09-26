@@ -59,7 +59,6 @@ const handlerMap: EventHandlerMap = {
 };
 
 class ChatBridge {
-  static instance: ChatBridge | null = null;
   private readonly connections = new ConnectionStore();
   private readonly app: Context;
   private readonly pluginsContext: ForkScope[] = [];
@@ -67,14 +66,9 @@ class ChatBridge {
 
   private readonly logger = logger.child({}, { msgPrefix: "[ChatBridge] " });
 
-  private constructor() {
+  constructor() {
     this.app = new Context();
     this.botFactory = new BotFactory(this.app);
-  }
-
-  static getInstance(): ChatBridge {
-    ChatBridge.instance ??= new ChatBridge();
-    return ChatBridge.instance;
   }
 
   async init(): Promise<void> {
@@ -288,4 +282,4 @@ class ChatBridge {
   }
 }
 
-export const chatBridge = ChatBridge.getInstance();
+export const chatBridge = new ChatBridge();

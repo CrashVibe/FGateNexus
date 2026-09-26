@@ -21,6 +21,8 @@ export const playerEventTable = sqliteTable(
   (t) => [
     // 排行榜聚合
     index("idx_event_server_type_time").on(t.serverId, t.type, t.createdAt),
+    // 首页跨服务器事件流
+    index("idx_event_time").on(t.createdAt),
     // 玩家时间线
     index("idx_event_server_player_time").on(
       t.serverId,

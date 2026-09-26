@@ -3,7 +3,6 @@ import type { Session } from "koishi";
 
 import { db } from "#server/db/client";
 import { serverTable } from "#server/db/schema";
-import { registerCleanup } from "#server/utils/cleanup-registry";
 import { generateVerificationCode } from "#shared/utils/binding";
 
 import type { PlatformSender } from "../chatbridge/sender/types";
@@ -21,33 +20,15 @@ import type { BindingHandler, BindingTrigger } from "./types";
  * 分发给已注册的处理器。具体绑定/解绑逻辑见 handlers/ 与 domain.ts。
  */
 export class BindingService {
-  private static instance: BindingService;
-
   private readonly store = new PendingBindingStore();
   private readonly handlers: readonly BindingHandler[];
 
-  private constructor() {
+  constructor() {
     this.handlers = [
       new BindCodeHandler(this.store),
       new UnbindCommandHandler(),
       new GroupLeaveHandler(),
     ];
-
-    registerCleanup("过期绑定清理", () => {
-      this.cleanUpExpiredBindings();
-    });
-  }
-
-  public static getInstance(): BindingService {
-    BindingService.instance ??= new BindingService();
-    return BindingService.instance;
-  }
-
-  /**
-   * 清理过期的待处理绑定
-   */
-  public cleanUpExpiredBindings(): void {
-    this.store.cleanupExpired();
   }
 
   /**
@@ -144,4 +125,4 @@ export class BindingService {
   }
 }
 
-export const bindingService = BindingService.getInstance();
+export const bindingService = new BindingService();

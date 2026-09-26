@@ -50,6 +50,13 @@
       "when": 1790403123063,
       "tag": "0006_salty_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790403917065,
+      "tag": "0007_cynical_hobgoblin",
+      "breakpoints": true
     }
   ]
 }

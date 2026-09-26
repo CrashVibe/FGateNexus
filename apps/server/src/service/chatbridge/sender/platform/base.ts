@@ -11,7 +11,7 @@ import { getFilterReason } from "#shared/utils/chat-sync";
 
 import type { MCEvent } from "../../../mcwsbridge/types";
 import type { AdapterBot } from "../../types";
-import type { PlatformMessage, PlatformSender } from "../types";
+import type { ChannelList, PlatformMessage, PlatformSender } from "../types";
 
 export const toPngDataUri = (image: Buffer): string =>
   `data:image/png;base64,${image.toString("base64")}`;
@@ -85,6 +85,24 @@ export abstract class BaseSender<
       { msgPrefix: `[${this.platformType} Sender](Bot #${this.botId}) ` },
     );
   }
+
+  private readonly listCache = new Map<
+    string,
+    { data: unknown; expiresAt: number }
+  >();
+
+  /** 选择器会反复拉，缓存 10s；bot 重建时随实例丢弃 */
+  protected async cached<T>(key: string, load: () => Promise<T>): Promise<T> {
+    const hit = this.listCache.get(key);
+    if (hit && Date.now() < hit.expiresAt) {
+      return hit.data as T;
+    }
+    const data = await load();
+    this.listCache.set(key, { data, expiresAt: Date.now() + 10_000 });
+    return data;
+  }
+
+  abstract listChannels(): Promise<ChannelList>;
 
   protected abstract send(target: Target, message: M): Promise<void>;
 

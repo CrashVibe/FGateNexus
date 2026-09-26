@@ -1,156 +1,25 @@
-import { setTimeout as sleep } from "node:timers/promises";
-
-import { DiscordBot } from "@koishijs/plugin-adapter-discord";
-import { KookBot } from "@koishijs/plugin-adapter-kook";
-import { OneBot } from "@mrlingxd/koishi-plugin-adapter-onebot";
 import { eq } from "drizzle-orm";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { StatusCodes } from "http-status-codes";
-import MilkyBot from "koishi-plugin-adapter-milky";
-import pLimit from "p-limit";
-import pRetry from "p-retry";
 import type { z } from "zod";
 
 import { db } from "#server/db/client";
 import { botTable } from "#server/db/schema";
 import { fail, guard, idParam, ok, parseBody } from "#server/http/respond";
 import { chatBridge } from "#server/service/chatbridge";
-import type { AdapterBot } from "#server/service/chatbridge/types";
 import { forgetLastEvent, getLastEvent } from "#server/service/diagnostics";
 import { clearServerCache } from "#server/service/server-cache";
 import { BotAPI } from "#shared/model/bot/api";
 import { PlatformConfigSchemas } from "#shared/model/bot/schema";
-import { PlatformType } from "#shared/model/bot/types";
 import { ApiError } from "#shared/model/error";
 
-const TEXT_CHANNEL_TYPE = 0;
-const DISCORD_GUILD_PAGE_SIZE = 200;
-const CHANNEL_FETCH_CONCURRENCY = 5;
-
-interface GuildItem {
-  id: string;
-  name: string;
-  avatar?: string;
-}
-interface ChannelItem {
-  id: string;
-  guildId?: string;
-  name: string;
-  type: "group" | "private";
-  avatar?: string;
-}
-interface DiscordChannelsResponse {
-  guilds: GuildItem[];
-  channels: ChannelItem[];
-  dms: ChannelItem[];
-}
-
-const toGuildAvatarUrl = (guildId: string, icon?: string) =>
-  icon ? `https://cdn.discordapp.com/icons/${guildId}/${icon}.png` : undefined;
-
-const appendGuildChannels = async (
-  bot: DiscordBot,
-  response: DiscordChannelsResponse,
-) => {
-  const collectGuilds = async (
-    after: string | undefined,
-    acc: Awaited<ReturnType<typeof bot.internal.getCurrentUserGuilds>>,
-  ) => {
-    const guildList = await pRetry(
-      async () =>
-        await bot.internal.getCurrentUserGuilds({
-          after,
-          limit: DISCORD_GUILD_PAGE_SIZE,
-        }),
-      { retries: 3 },
-    );
-    const combined = [...acc, ...guildList];
-
-    if (guildList.length < DISCORD_GUILD_PAGE_SIZE) {
-      return combined;
-    }
-    await sleep(200);
-    return await collectGuilds(guildList.at(-1)?.id, combined);
-  };
-
-  const allGuilds = await collectGuilds(undefined, []);
-
-  for (const guild of allGuilds) {
-    response.guilds.push({
-      avatar: toGuildAvatarUrl(guild.id, guild.icon),
-      id: guild.id,
-      name: guild.name ?? `服务器 ${guild.id}`,
-    });
-  }
-
-  const limit = pLimit(CHANNEL_FETCH_CONCURRENCY);
-  await Promise.all(
-    allGuilds.map(async (guild) => {
-      await limit(async () => {
-        const channelList = await pRetry(
-          async () => await bot.internal.getGuildChannels(guild.id),
-          { retries: 3 },
-        );
-        for (const channel of channelList) {
-          if (channel.type !== TEXT_CHANNEL_TYPE) {
-            continue;
-          }
-          response.channels.push({
-            guildId: guild.id,
-            id: channel.id,
-            name: channel.name ?? `频道 ${channel.id}`,
-            type: "group",
-          });
-        }
-      });
-    }),
-  );
-};
-
-/** 频道列表 TTL 缓存。 */
-const CHANNEL_CACHE_TTL_MS = 10_000;
-const channelCache = new Map<string, { data: unknown; expiresAt: number }>();
-
-const getCachedChannels = <T>(key: string): T | undefined => {
-  const entry = channelCache.get(key);
-  if (!entry || Date.now() > entry.expiresAt) {
-    channelCache.delete(key);
-    return undefined;
-  }
-  return entry.data as T;
-};
-
-const setCachedChannels = (key: string, data: unknown): void => {
-  channelCache.set(key, { data, expiresAt: Date.now() + CHANNEL_CACHE_TTL_MS });
-};
-
-/** 频道/权限组接口共用前置校验，失败抛 ApiError 交给外层 guard() 处理 */
-const requirePlatformBot = async <B extends AdapterBot>(
-  c: Context,
-  platform: PlatformType,
-  platformLabel: string,
-  isInstance: (bot: AdapterBot) => bot is B,
-): Promise<{ botId: number; bot: B }> => {
-  const botId = idParam(c);
-  const botRecord = await db.query.botTable.findFirst({
-    where: eq(botTable.id, botId),
-  });
-  if (!botRecord) {
-    throw ApiError.notFound("未能找到 Bot");
-  }
-  if (botRecord.platform !== platform) {
-    throw ApiError.validation(`Bot 类型不是 ${platformLabel}`);
-  }
-  const botConnection = chatBridge.get(botId);
-  if (!botConnection?.isOnline()) {
+const onlineSender = (c: Context) => {
+  const sender = chatBridge.get(idParam(c));
+  if (!sender?.isOnline()) {
     throw ApiError.notFound("Bot 未上线或机器人未找到");
   }
-  const { bot } = botConnection;
-  if (!isInstance(bot)) {
-    throw ApiError.internal("Bot 对应的机器人实例类型不匹配");
-  }
-  return { bot, botId };
+  return sender;
 };
 
 export const botRouter = new Hono()
@@ -305,222 +174,34 @@ export const botRouter = new Hono()
     }),
   )
   .get(
-    "/:id/discord-channels",
-    guard("获取频道列表失败", async (c) => {
-      const { botId, bot } = await requirePlatformBot(
+    "/:id/channels",
+    guard("获取频道列表失败", async (c) =>
+      ok(
         c,
-        PlatformType.Discord,
-        "Discord",
-        (b): b is DiscordBot => b instanceof DiscordBot,
-      );
-      const dcCacheKey = `dc:${botId}`;
-      const dcCached =
-        getCachedChannels<z.infer<typeof BotAPI.DISCORD_CHANNELS.response>>(
-          dcCacheKey,
-        );
-      if (dcCached) {
-        return ok(c, "获取 Discord 频道列表成功", StatusCodes.OK, dcCached);
-      }
-      const response: DiscordChannelsResponse = {
-        channels: [],
-        dms: [],
-        guilds: [],
-      };
-      await appendGuildChannels(bot, response);
-      const dcResult = BotAPI.DISCORD_CHANNELS.response.parse(response);
-      setCachedChannels(dcCacheKey, dcResult);
-      return ok(c, "获取 Discord 频道列表成功", StatusCodes.OK, dcResult);
-    }),
+        "获取频道列表成功",
+        StatusCodes.OK,
+        await onlineSender(c).listChannels(),
+      ),
+    ),
   )
   .get(
-    "/:id/discord-roles",
-    guard("获取 Discord 权限组列表失败", async (c) => {
-      const parsed = BotAPI.DISCORD_ROLES.request.safeParse({
+    "/:id/roles",
+    guard("获取权限组列表失败", async (c) => {
+      const parsed = BotAPI.ROLES.request.safeParse({
         guildId: c.req.query("guildId"),
       });
       if (!parsed.success) {
         return fail(c, ApiError.validation("无效的群组 ID"), parsed.error);
       }
-      const { botId, bot } = await requirePlatformBot(
+      const sender = onlineSender(c);
+      if (!sender.listRoles) {
+        return fail(c, ApiError.badRequest("该平台没有权限组"));
+      }
+      return ok(
         c,
-        PlatformType.Discord,
-        "Discord",
-        (b): b is DiscordBot => b instanceof DiscordBot,
+        "获取权限组列表成功",
+        StatusCodes.OK,
+        await sender.listRoles(parsed.data.guildId),
       );
-      const drCacheKey = `dr:${botId}:${parsed.data.guildId}`;
-      const drCached =
-        getCachedChannels<z.infer<typeof BotAPI.DISCORD_ROLES.response>>(
-          drCacheKey,
-        );
-      if (drCached) {
-        return ok(c, "获取 Discord 权限组列表成功", StatusCodes.OK, drCached);
-      }
-      const roles = await bot.internal.getGuildRoles(parsed.data.guildId);
-      const drResult = BotAPI.DISCORD_ROLES.response.parse(
-        roles.map((role) => ({ label: role.name, value: role.id })),
-      );
-      setCachedChannels(drCacheKey, drResult);
-      return ok(c, "获取 Discord 权限组列表成功", StatusCodes.OK, drResult);
-    }),
-  )
-  .get(
-    "/:id/kook-channels",
-    guard("获取频道列表失败", async (c) => {
-      const { botId, bot } = await requirePlatformBot(
-        c,
-        PlatformType.Kook,
-        "KOOK",
-        (b): b is KookBot => b instanceof KookBot,
-      );
-      const kkCacheKey = `kk:${botId}`;
-      const kkCached =
-        getCachedChannels<z.infer<typeof BotAPI.KOOK_CHANNELS.response>>(
-          kkCacheKey,
-        );
-      if (kkCached) {
-        return ok(c, "获取 KOOK 频道列表成功", StatusCodes.OK, kkCached);
-      }
-      const response: DiscordChannelsResponse = {
-        channels: [],
-        dms: [],
-        guilds: [],
-      };
-      const { data: guilds } = await bot.getGuildList();
-      for (const guild of guilds) {
-        response.guilds.push({
-          avatar: guild.avatar,
-          id: guild.id,
-          name: guild.name ?? `服务器 ${guild.id}`,
-        });
-      }
-      const kkLimit = pLimit(CHANNEL_FETCH_CONCURRENCY);
-      await Promise.all(
-        guilds.map(async (guild) => {
-          await kkLimit(async () => {
-            const { data: channelList } = await bot.getChannelList(guild.id);
-            for (const channel of channelList) {
-              if (channel.type !== TEXT_CHANNEL_TYPE) {
-                continue;
-              }
-              response.channels.push({
-                guildId: guild.id,
-                id: channel.id,
-                name: channel.name ?? `频道 ${channel.id}`,
-                type: "group",
-              });
-            }
-          });
-        }),
-      );
-      const kkResult = BotAPI.KOOK_CHANNELS.response.parse(response);
-      setCachedChannels(kkCacheKey, kkResult);
-      return ok(c, "获取 KOOK 频道列表成功", StatusCodes.OK, kkResult);
-    }),
-  )
-  .get(
-    "/:id/kook-roles",
-    guard("获取权限组列表失败", async (c) => {
-      const parsed = BotAPI.KOOK_ROLES.request.safeParse({
-        guildId: c.req.query("guildId"),
-      });
-      if (!parsed.success) {
-        return fail(c, ApiError.validation("无效的服务器 ID"), parsed.error);
-      }
-      const { botId, bot } = await requirePlatformBot(
-        c,
-        PlatformType.Kook,
-        "KOOK",
-        (b): b is KookBot => b instanceof KookBot,
-      );
-      const krCacheKey = `kr:${botId}:${parsed.data.guildId}`;
-      const krCached =
-        getCachedChannels<z.infer<typeof BotAPI.KOOK_ROLES.response>>(
-          krCacheKey,
-        );
-      if (krCached) {
-        return ok(c, "获取 KOOK 权限组列表成功", StatusCodes.OK, krCached);
-      }
-      const { data: roles } = await bot.getGuildRoles(parsed.data.guildId);
-      const krResult = BotAPI.KOOK_ROLES.response.parse(
-        roles.map((role) => ({
-          label: role.name ?? role.id,
-          value: role.id,
-        })),
-      );
-      setCachedChannels(krCacheKey, krResult);
-      return ok(c, "获取 KOOK 权限组列表成功", StatusCodes.OK, krResult);
-    }),
-  )
-  .get(
-    "/:id/milky-channels",
-    guard("获取频道列表失败", async (c) => {
-      const { botId, bot } = await requirePlatformBot(
-        c,
-        PlatformType.Milky,
-        "Milky",
-        (b): b is MilkyBot => b instanceof MilkyBot,
-      );
-      const mkCacheKey = `mk:${botId}`;
-      const mkCached = getCachedChannels<ChannelItem[]>(mkCacheKey);
-      if (mkCached) {
-        return ok(c, "获取 Milky 频道列表成功", StatusCodes.OK, mkCached);
-      }
-      const channels: ChannelItem[] = [];
-      const { data: guilds } = await bot.getGuildList();
-      for (const guild of guilds) {
-        channels.push({
-          avatar: guild.avatar,
-          id: guild.id,
-          name: guild.name ?? `群 ${guild.id}`,
-          type: "group",
-        });
-      }
-      const { data: friends } = await bot.getFriendList();
-      for (const friend of friends) {
-        const userId = friend.user?.id ?? "";
-        channels.push({
-          avatar: friend.user?.avatar,
-          id: `private:${userId}`,
-          name: friend.nick || friend.user?.name || `好友 ${userId}`,
-          type: "private",
-        });
-      }
-      setCachedChannels(mkCacheKey, channels);
-      return ok(c, "获取 Milky 频道列表成功", StatusCodes.OK, channels);
-    }),
-  )
-  .get(
-    "/:id/onebot-channels",
-    guard("获取频道列表失败", async (c) => {
-      const { botId, bot } = await requirePlatformBot(
-        c,
-        PlatformType.Onebot,
-        "OneBot",
-        (b): b is OneBot => b instanceof OneBot,
-      );
-      const obCacheKey = `ob:${botId}`;
-      const obCached = getCachedChannels<ChannelItem[]>(obCacheKey);
-      if (obCached) {
-        return ok(c, "获取 OneBot 频道列表成功", StatusCodes.OK, obCached);
-      }
-      const channels: ChannelItem[] = [];
-      for (const group of await bot.internal.getGroupList()) {
-        channels.push({
-          avatar: `https://p.qlogo.cn/gh/${group.group_id}/${group.group_id}/640`,
-          id: String(group.group_id),
-          name: group.group_name || `群 ${group.group_id}`,
-          type: "group",
-        });
-      }
-      for (const friend of await bot.internal.getFriendList()) {
-        channels.push({
-          avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${friend.user_id}&spec=640&img_type=jpg`,
-          id: String(friend.user_id),
-          name: friend.nickname || friend.remark || `用户 ${friend.user_id}`,
-          type: "private",
-        });
-      }
-      setCachedChannels(obCacheKey, channels);
-      return ok(c, "获取 OneBot 频道列表成功", StatusCodes.OK, channels);
     }),
   );

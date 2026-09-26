@@ -6,17 +6,14 @@ import type { ServerWithTargets } from "#server/db/queries/server";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import { buildSystemTemplateEvent } from "#server/service/mcwsbridge/types";
 import { recordRelay } from "#server/service/relay-log";
-import { resolveDataSources } from "#server/service/template/data-resolver";
 import { templateInstanceStore } from "#server/service/template/template-instance-store";
-import { renderTemplateInstance } from "#server/service/template/template-renderer";
-import { getTemplateManifest } from "#server/service/template/template-store";
+import { renderLiveInstance } from "#server/service/template/template-renderer";
 import { logger } from "#server/utils/logger";
 import {
   formatPlatformToMCMessage,
   getFilterReason,
 } from "#shared/utils/chat-sync";
 
-import { chatBridge } from ".";
 import type { PlatformSender } from "./sender/types";
 import { elements_to_string } from "./utils";
 
@@ -87,20 +84,14 @@ const handleTemplateCommand = async (
 
   let buffer: Buffer;
   try {
-    const manifest = await getTemplateManifest(instance.templateId);
     const contextPlayer = session.userId
       ? await getBoundPlayer(session.platform, session.userId, server.id)
       : null;
-    const data = await resolveDataSources(manifest, serverSession, {
-      config: instance.config,
-      contextPlayer,
-    });
-    buffer = await renderTemplateInstance(
-      instance.config,
-      instance.name,
-      manifest,
-      data,
+    buffer = await renderLiveInstance(
+      instance,
+      serverSession,
       server.name,
+      contextPlayer,
     );
   } catch (error) {
     logger.error(error, `[模板] 渲染实例 ${instance.id} 失败`);
@@ -121,6 +112,7 @@ const handleTemplateCommand = async (
 };
 
 const handlePlatformCommand = async (
+  connection: PlatformSender,
   session: Session,
   server: ServerWithTargets,
   serverSession: ServerSession,
@@ -150,12 +142,17 @@ const handlePlatformCommand = async (
     server.commandConfig.imageRender,
   );
 
-  await chatBridge.dispatch({
-    payload: { message, success },
-    serverId: server.id,
-    timestamp: Date.now(),
-    type: "execute.command",
-  });
+  // 只回给发指令的群
+  await connection.onCommand(
+    {
+      payload: { message, success },
+      serverId: server.id,
+      timestamp: Date.now(),
+      type: "execute.command",
+    },
+    commandTarget,
+    server.commandConfig,
+  );
 
   return true;
 };
@@ -255,6 +252,7 @@ export const handlePlatformMessage = async (
 
       // 2. 处理远程指令
       const isCommandHandled = await handlePlatformCommand(
+        connection,
         session,
         server,
         serverSession,

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { StatusCodes } from "http-status-codes";
 
@@ -55,10 +55,13 @@ export const dashboardRouter = new Hono()
   .get(
     "/summary",
     guard("获取首页统计失败", async (c) => {
-      const [servers, bots, players, targets] = await Promise.all([
+      const [servers, bots, [players], targets] = await Promise.all([
         db.select().from(serverTable),
         db.select().from(botTable),
-        db.select().from(playerTable),
+        // count(列) 只数非空
+        db
+          .select({ bound: count(playerTable.socialAccountId), total: count() })
+          .from(playerTable),
         db.select({ config: targetTable.config }).from(targetTable),
       ]);
 
@@ -73,7 +76,6 @@ export const dashboardRouter = new Hono()
       );
 
       const onlineBots = bots.filter((b) => chatBridge.get(b.id)?.isOnline());
-      const boundPlayers = players.filter((p) => p.socialAccountId !== null);
       const eventCounts = await getEventCountsSince(startOfToday());
 
       return ok(
@@ -81,7 +83,7 @@ export const dashboardRouter = new Hono()
         "获取首页统计成功",
         StatusCodes.OK,
         DashboardAPI.SUMMARY.response.parse({
-          bindings: { bound: boundPlayers.length, total: players.length },
+          bindings: { bound: players?.bound ?? 0, total: players?.total ?? 0 },
           bots: { online: onlineBots.length, total: bots.length },
           chatSyncTargets: targets.filter(
             (t) => t.config.chatSyncConfigSchema.enabled,

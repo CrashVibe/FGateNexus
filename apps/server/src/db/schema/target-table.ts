@@ -8,16 +8,17 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { v4 as uuidv4 } from "uuid";
 
-import type { TargetConfig } from "#shared/model/server/schema/target";
+import { TargetConfigSchema } from "#shared/model/server/schema/target";
 
 import { platformTypeValues } from "./bot-table";
 import { serverTable } from "./server-table";
+import { zodJson } from "./zod-json";
 
 export const targetTable = sqliteTable(
   "target",
   {
     channelId: text("channel_id").notNull(),
-    config: text("config", { mode: "json" }).notNull().$type<TargetConfig>(),
+    config: zodJson("config", TargetConfigSchema).notNull(),
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
@@ -39,7 +40,6 @@ export const targetTable = sqliteTable(
   },
   (t) => [
     uniqueIndex("uniq_target_in_server").on(t.serverId, t.channelId, t.type),
-    index("idx_target_server").on(t.serverId),
     index("idx_target_group").on(t.channelId),
   ],
 );

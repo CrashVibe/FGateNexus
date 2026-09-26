@@ -36,21 +36,9 @@ const DiscordChannelsSchema = z.object({
 
 export const BotAPI = {
   DISCORD_CHANNELS: {
-    description: "获取 Discord 频道列表（频道和 DM）",
+    description: "分组频道列表（Discord / KOOK：服务器和频道）",
     request: z.void(),
     response: DiscordChannelsSchema,
-  },
-  DISCORD_ROLES: {
-    description: "获取 Discord 机器人群组权限列表",
-    request: z.object({
-      guildId: z.string().nonempty("群组 ID 不能为空"),
-    }),
-    response: z.array(
-      z.object({
-        label: z.string(),
-        value: z.string(),
-      }),
-    ),
   },
   GET: {
     description: "获取单个服务器机器人信息",
@@ -62,30 +50,8 @@ export const BotAPI = {
     request: z.void(),
     response: z.array(PlatformResponseSchema),
   },
-  KOOK_CHANNELS: {
-    description: "获取 KOOK 频道列表（服务器和频道）",
-    request: z.void(),
-    response: DiscordChannelsSchema,
-  },
-  KOOK_ROLES: {
-    description: "获取 KOOK 机器人服务器权限组列表",
-    request: z.object({
-      guildId: z.string().nonempty("服务器 ID 不能为空"),
-    }),
-    response: z.array(
-      z.object({
-        label: z.string(),
-        value: z.string(),
-      }),
-    ),
-  },
-  MILKY_CHANNELS: {
-    description: "获取 Milky 频道列表（群和好友）",
-    request: z.void(),
-    response: OnebotChannelsSchema,
-  },
   ONEBOT_CHANNELS: {
-    description: "获取 OneBot 频道列表（群和私聊）",
+    description: "扁平频道列表（OneBot / Milky：群和私聊）",
     request: z.void(),
     response: OnebotChannelsSchema,
   },
@@ -120,6 +86,13 @@ export const BotAPI = {
         .default(""),
     }),
     response: z.void(),
+  },
+  ROLES: {
+    description: "获取群组权限组列表（Discord / KOOK）",
+    request: z.object({
+      guildId: z.string().nonempty("群组 ID 不能为空"),
+    }),
+    response: z.array(z.object({ label: z.string(), value: z.string() })),
   },
 } satisfies ApiSchemaRegistry;
 

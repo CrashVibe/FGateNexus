@@ -87,17 +87,7 @@ const migrateConfig = (
 };
 
 class AppConfigManager {
-  private static instance: AppConfigManager | null = null;
   private _config: AppConfig | null = null;
-
-  private constructor() {
-    /* empty */
-  }
-
-  public static getInstance(): AppConfigManager {
-    AppConfigManager.instance ??= new AppConfigManager();
-    return AppConfigManager.instance;
-  }
 
   public init(): void {
     if (this._config) {
@@ -177,4 +167,4 @@ class AppConfigManager {
   }
 }
 
-export const configManager = AppConfigManager.getInstance();
+export const configManager = new AppConfigManager();

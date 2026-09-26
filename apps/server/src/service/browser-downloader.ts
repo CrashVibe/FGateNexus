@@ -10,11 +10,10 @@ import {
   resolveBuildId,
 } from "@puppeteer/browsers";
 
+import { createEventBus } from "#server/utils/event-bus";
 import { logger } from "#server/utils/logger";
 import type { DownloadState } from "#shared/model/settings";
 import { ACTIVE_STATUSES } from "#shared/model/settings";
-
-import { imageRenderer } from "./image-renderer";
 
 const BROWSER_CACHE_DIR = path.resolve(process.cwd(), "data/browsers");
 const BROWSER_CACHE_TMP_DIR = path.resolve(process.cwd(), "data/browsers-tmp");
@@ -29,9 +28,7 @@ const state: DownloadState = {
 
 let abortController: AbortController | null = null;
 
-type DownloadStateListener = (state: Readonly<DownloadState>) => void;
-
-const listeners = new Set<DownloadStateListener>();
+const bus = createEventBus<Readonly<DownloadState>>();
 const EMIT_INTERVAL_MS = 500;
 let lastEmittedAt = 0;
 
@@ -41,10 +38,7 @@ const emitState = (force = false): void => {
     return;
   }
   lastEmittedAt = now;
-  const snapshot = { ...state };
-  for (const listener of listeners) {
-    listener(snapshot);
-  }
+  bus.broadcast({ ...state });
 };
 
 const setState = (
@@ -55,14 +49,7 @@ const setState = (
   emitState(options?.force ?? false);
 };
 
-export const subscribeDownloadState = (
-  listener: DownloadStateListener,
-): (() => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-};
+export const subscribeDownloadState = bus.subscribe;
 
 const resetState = (): void => {
   setState(
@@ -335,13 +322,7 @@ export const startChromiumDownload = async (): Promise<void> => {
       { buildId, executablePath: state.executablePath },
       "Chromium 安装完成",
     );
-
-    try {
-      await imageRenderer.start();
-      logger.info("图片渲染服务已启动");
-    } catch (error) {
-      logger.error({ error }, "图片渲染服务启动失败");
-    }
+    // 渲染器首次渲染时自己会启动
   } catch (error) {
     if (signal.aborted) {
       logger.info({ buildId: state.buildId }, "下载已取消（异常捕获阶段）");

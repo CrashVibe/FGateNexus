@@ -4,6 +4,7 @@ import type { ForkScope } from "koishi";
 import type { Target } from "#server/db/schema";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
 
+import type { FlatChannels } from "../types";
 import { BaseSender } from "./base";
 import type { ElementTextMessage } from "./element-message";
 import { elementMessageBuilders } from "./element-message";
@@ -37,6 +38,26 @@ export default class OneBotSender extends BaseSender<
       await this.bot.sendMessage(target.channelId, message.message);
     }
     await this.bot.sendPrivateMessage(target.channelId, message.message);
+  }
+
+  override async listChannels(): Promise<FlatChannels> {
+    return await this.cached("channels", async () => {
+      const groupList = await this.bot.internal.getGroupList();
+      const friendList = await this.bot.internal.getFriendList();
+      const groups = groupList.map((g) => ({
+        avatar: `https://p.qlogo.cn/gh/${g.group_id}/${g.group_id}/640`,
+        id: String(g.group_id),
+        name: g.group_name || `群 ${g.group_id}`,
+        type: "group" as const,
+      }));
+      const friends = friendList.map((f) => ({
+        avatar: `http://q.qlogo.cn/headimg_dl?dst_uin=${f.user_id}&spec=640&img_type=jpg`,
+        id: String(f.user_id),
+        name: f.nickname || f.remark || `用户 ${f.user_id}`,
+        type: "private" as const,
+      }));
+      return [...groups, ...friends];
+    });
   }
 
   override async setGroupCard(

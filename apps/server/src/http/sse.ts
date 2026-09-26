@@ -9,17 +9,22 @@ export const sseStream = <T>(
   eventName: string,
   subscribe: (listener: (event: T) => void) => () => void,
   parse: (event: T) => unknown,
+  /** 连上时先推一份当前状态 */
+  initial?: () => Promise<unknown>,
 ) =>
   streamSSE(c, async (stream) => {
+    const send = async (data: unknown): Promise<void> => {
+      await stream.writeSSE({ data: JSON.stringify(data), event: eventName });
+    };
     const unsubscribe = subscribe((event) => {
-      void stream.writeSSE({
-        data: JSON.stringify(parse(event)),
-        event: eventName,
-      });
+      void send(parse(event));
     });
     stream.onAbort(unsubscribe);
 
     try {
+      if (initial) {
+        await send(await initial());
+      }
       while (!stream.aborted) {
         await stream.sleep(KEEPALIVE_INTERVAL_MS);
         await stream.writeSSE({ data: "{}", event: "ping" });

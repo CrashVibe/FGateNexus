@@ -1,11 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 
-import ChatMessageHandler from "#server/service/mcwsbridge/handler/chat-message-handler";
-import PlayerDeathHandler from "#server/service/mcwsbridge/handler/player-death-handler";
-import PlayerJoinHandler from "#server/service/mcwsbridge/handler/player-join-handler";
-import PlayerLeaveHandler from "#server/service/mcwsbridge/handler/player-leave-handler";
-import PlayerLoginHandler from "#server/service/mcwsbridge/handler/player-login-handler";
 import {
   executeCommandSchema,
   getAdvancementsResponseSchema,
@@ -59,14 +54,13 @@ class ServerSession {
   private closed = false;
   private readonly logger_prefix: string;
 
-  constructor(peer: Peer, serverId: number) {
+  // handlers 由 ws 入口注入：会话层不依赖 chatbridge / bindingmanager
+  constructor(peer: Peer, serverId: number, handlers: RequestHandler[]) {
     this.peer = peer;
     this.serverId = serverId;
-    this.registerHandler(new PlayerLoginHandler());
-    this.registerHandler(new ChatMessageHandler());
-    this.registerHandler(new PlayerLeaveHandler());
-    this.registerHandler(new PlayerJoinHandler());
-    this.registerHandler(new PlayerDeathHandler());
+    for (const handler of handlers) {
+      this.registerHandler(handler);
+    }
     this.logger_prefix = `[Session #${serverId}]`;
   }
 

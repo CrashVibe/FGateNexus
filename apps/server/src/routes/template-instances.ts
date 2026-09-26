@@ -11,14 +11,14 @@ import {
   ConfigValidationError,
   validateInstanceConfig,
 } from "#server/service/template/config-validator";
-import {
-  DataResolveError,
-  resolveDataSources,
-} from "#server/service/template/data-resolver";
+import { DataResolveError } from "#server/service/template/data-resolver";
 import { TemplateInstanceError } from "#server/service/template/instance-errors";
 import { resolveMockDataSources } from "#server/service/template/mock-data-resolver";
 import { templateInstanceStore } from "#server/service/template/template-instance-store";
-import { renderTemplateInstance } from "#server/service/template/template-renderer";
+import {
+  renderLiveInstance,
+  renderTemplateInstance,
+} from "#server/service/template/template-renderer";
 import {
   getTemplateManifest,
   TemplateStoreError,
@@ -202,15 +202,9 @@ export const templateInstancesRouter = new Hono()
       });
 
       return await withDomainErrors(c, async () => {
-        const manifest = await getTemplateManifest(instance.templateId);
-        const data = await resolveDataSources(manifest, session, {
-          config: instance.config,
-        });
-        const buffer = await renderTemplateInstance(
-          instance.config,
-          instance.name,
-          manifest,
-          data,
+        const buffer = await renderLiveInstance(
+          instance,
+          session,
           server?.name ?? `Server #${serverId}`,
         );
         return new Response(new Uint8Array(buffer), {

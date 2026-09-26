@@ -27,7 +27,6 @@ export const playerServerTable = sqliteTable(
       columns: [t.playerId, t.serverId],
       name: "pk_player_server",
     }),
-    index("idx_player_server_player").on(t.playerId),
     index("idx_player_server_server").on(t.serverId),
   ],
 );

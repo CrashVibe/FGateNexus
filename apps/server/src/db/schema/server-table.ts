@@ -1,34 +1,24 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
-import type { z } from "zod";
 
-import type { BindingConfig } from "#shared/model/server/schema/binding";
-import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
-import type { CommandConfig } from "#shared/model/server/schema/command";
-import type { NotifyConfigSchema } from "#shared/model/server/schema/notify";
+import { BindingConfigSchema } from "#shared/model/server/schema/binding";
+import { ChatSyncConfigSchema } from "#shared/model/server/schema/chat-sync";
+import { CommandConfigSchema } from "#shared/model/server/schema/command";
+import { NotifyConfigSchema } from "#shared/model/server/schema/notify";
 
 import { botTable } from "./bot-table";
+import { zodJson } from "./zod-json";
 
 export const serverTable = sqliteTable("server", {
-  bindingConfig: text("binding_config", { mode: "json" })
-    .notNull()
-    .$type<BindingConfig>(),
+  bindingConfig: zodJson("binding_config", BindingConfigSchema).notNull(),
   botId: integer("bot_id").references(() => botTable.id, {
     onDelete: "set null",
   }),
-  chatSyncConfig: text("chat_sync_config", { mode: "json" })
-    .notNull()
-    .$type<ChatSyncConfig>(),
-  commandConfig: text("command_config", { mode: "json" })
-    .notNull()
-    .$type<CommandConfig>(),
+  chatSyncConfig: zodJson("chat_sync_config", ChatSyncConfigSchema).notNull(),
+  commandConfig: zodJson("command_config", CommandConfigSchema).notNull(),
   id: integer("id").primaryKey({ autoIncrement: true }),
   minecraft_software: text("software"),
   minecraft_version: text("version"),
   name: text("name").notNull().unique("name_idx"),
-  notifyConfig: text("notify_config", {
-    mode: "json",
-  })
-    .notNull()
-    .$type<z.infer<typeof NotifyConfigSchema>>(),
+  notifyConfig: zodJson("notify_config", NotifyConfigSchema).notNull(),
   token: text("token").notNull().unique("token_idx"),
 });

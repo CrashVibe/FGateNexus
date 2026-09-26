@@ -4,6 +4,7 @@ import { db } from "#server/db/client";
 import { serverTable } from "#server/db/schema";
 import { clientInfoSchema } from "#server/service/mcwsbridge/model";
 import type { Peer } from "#server/service/mcwsbridge/peer";
+import type RequestHandler from "#server/service/mcwsbridge/request-handler";
 import ServerSession from "#server/service/mcwsbridge/server-session";
 import { broadcastStatusEvent } from "#server/service/status-stream";
 import { logger } from "#server/utils/logger";
@@ -19,12 +20,16 @@ class ConnectionManager {
   /**
    * 添加一个连接
    */
-  public async addConnection(peer: Peer, serverId: number): Promise<void> {
+  public async addConnection(
+    peer: Peer,
+    serverId: number,
+    handlers: RequestHandler[],
+  ): Promise<void> {
     if (this.byServerId.has(serverId)) {
       throw new Error(`连接已存在，无法重复添加：serverId=${serverId}`);
     }
 
-    const session = new ServerSession(peer, serverId);
+    const session = new ServerSession(peer, serverId, handlers);
     this.add(session);
     logger.info(`[CONNECTION] 已添加：serverId=${serverId}`);
 

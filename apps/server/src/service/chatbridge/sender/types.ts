@@ -1,6 +1,8 @@
 import type { ForkScope } from "koishi";
+import type { z } from "zod";
 
 import type { Target } from "#server/db/schema";
+import type { BotAPI } from "#shared/model/bot/api";
 import type { PlatformConfig, PlatformType } from "#shared/model/bot/types";
 import type { ChatSyncConfig } from "#shared/model/server/schema/chat-sync";
 import type { CommandConfig } from "#shared/model/server/schema/command";
@@ -8,6 +10,11 @@ import type { NotifyConfig } from "#shared/model/server/schema/notify";
 
 import type { MCEvent } from "../../mcwsbridge/types";
 import type { AdapterBot } from "../types";
+
+export type FlatChannels = z.infer<typeof BotAPI.ONEBOT_CHANNELS.response>;
+export type GroupedChannels = z.infer<typeof BotAPI.DISCORD_CHANNELS.response>;
+export type ChannelList = FlatChannels | GroupedChannels;
+export type RoleList = z.infer<typeof BotAPI.ROLES.response>;
 
 export interface PlatformMessage {
   type: string;
@@ -55,4 +62,7 @@ export interface PlatformSender {
   ) => Promise<void>;
 
   isOnline: () => boolean;
+  listChannels: () => Promise<ChannelList>;
+  /** 只有 Discord / KOOK 有权限组 */
+  listRoles?: (guildId: string) => Promise<RoleList>;
 }

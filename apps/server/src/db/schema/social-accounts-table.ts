@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  index,
   integer,
   sqliteTable,
   text,
@@ -25,8 +24,5 @@ export const socialAccountTable = sqliteTable(
       .notNull()
       .default(sql`(unixepoch())`),
   },
-  (t) => [
-    uniqueIndex("uniq_social_uid_per_platform").on(t.platform, t.uid),
-    index("idx_social_platform").on(t.platform),
-  ],
+  (t) => [uniqueIndex("uniq_social_uid_per_platform").on(t.platform, t.uid)],
 );

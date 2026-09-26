@@ -26,35 +26,19 @@ export const TargetCommandFields = ({
 }) => {
   const cmd = target.config.CommandConfigSchema;
 
-  const discordRoles = useQuery({
+  const qqLike =
+    platform === PlatformType.Onebot || platform === PlatformType.Milky;
+  const roles = useQuery({
     enabled:
-      platform === PlatformType.Discord &&
+      platform !== undefined &&
+      !qqLike &&
       botId !== undefined &&
       target.type === "group" &&
       target.guildId !== null,
-    queryFn: async () => await BotData.getDiscordRoles(botId!, target.guildId!),
-    queryKey: ["discord-roles", botId, target.guildId],
+    queryFn: async () => await BotData.getRoles(botId!, target.guildId!),
+    queryKey: ["roles", botId, target.guildId],
   });
-
-  const kookRoles = useQuery({
-    enabled:
-      platform === PlatformType.Kook &&
-      botId !== undefined &&
-      target.type === "group" &&
-      target.guildId !== null,
-    queryFn: async () => await BotData.getKookRoles(botId!, target.guildId!),
-    queryKey: ["kook-roles", botId, target.guildId],
-  });
-
-  const roleOptions = (() => {
-    if (platform === PlatformType.Onebot || platform === PlatformType.Milky) {
-      return ONEBOT_ROLES;
-    }
-    if (platform === PlatformType.Kook) {
-      return kookRoles.data ?? [];
-    }
-    return discordRoles.data ?? [];
-  })();
+  const roleOptions = qqLike ? ONEBOT_ROLES : (roles.data ?? []);
 
   const setCmd = (patch: Partial<typeof cmd>): void => {
     onChange({
