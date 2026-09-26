@@ -15,12 +15,6 @@ import { ApiError } from "#shared/model/error";
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
-/** 删除前占用检查 */
-const templateInstanceReferenceCount = (id: string): number =>
-  templateInstanceStore
-    .listInstances()
-    .filter((instance) => instance.templateId === id).length;
-
 export const templatesRouter = new Hono()
   .get(
     "/",
@@ -78,7 +72,7 @@ export const templatesRouter = new Hono()
       if (!id) {
         return fail(c, ApiError.badRequest("缺少模板 id"));
       }
-      const referencingCount = templateInstanceReferenceCount(id);
+      const referencingCount = templateInstanceStore.countByTemplate(id);
       if (referencingCount > 0) {
         return fail(
           c,

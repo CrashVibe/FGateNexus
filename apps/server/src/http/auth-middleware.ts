@@ -17,6 +17,8 @@ const publicEndpoints = [
   { method: "GET", path: "/api/auth/status" },
   { method: "POST", path: "/api/auth/password" },
   { method: "GET", path: "/api/health" },
+  // 登录前就要初始化前端 Sentry
+  { method: "GET", path: "/api/settings/sentry" },
 ] as const;
 
 export const authMiddleware = async (c: Context, next: Next): Promise<void> => {

@@ -109,7 +109,6 @@ export class ApiError extends Error {
       this.type === ApiErrorType.Database ||
       this.type === ApiErrorType.Internal
     ) {
-      console.error(`${this.type} error:`, this.message);
       errorMessage =
         this.type === ApiErrorType.Database
           ? "Database error"

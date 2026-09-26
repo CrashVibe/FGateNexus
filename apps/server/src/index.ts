@@ -148,7 +148,7 @@ const main = async (): Promise<void> => {
   // 单 binary：托管内联的前端 SPA（开发态由 Vite dev server 提供，这里为 null）。
   const staticHandler = isCompiledBinary ? await loadStaticHandler() : null;
 
-  const { host } = configManager.config.server;
+  const host = process.env.HOST ?? configManager.config.server.host;
   const port = Number(process.env.PORT ?? configManager.config.server.port);
   const server = Bun.serve({
     async fetch(req, srv) {

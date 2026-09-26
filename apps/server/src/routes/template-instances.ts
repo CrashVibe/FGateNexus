@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { db } from "#server/db/client";
 import { serverTable } from "#server/db/schema";
-import { fail, guard, ok, parseBody } from "#server/http/respond";
+import { fail, guard, idParam, ok, parseBody } from "#server/http/respond";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import {
   ConfigValidationError,
@@ -15,11 +15,9 @@ import {
   DataResolveError,
   resolveDataSources,
 } from "#server/service/template/data-resolver";
+import { TemplateInstanceError } from "#server/service/template/instance-errors";
 import { resolveMockDataSources } from "#server/service/template/mock-data-resolver";
-import {
-  TemplateInstanceError,
-  templateInstanceStore,
-} from "#server/service/template/template-instance-store";
+import { templateInstanceStore } from "#server/service/template/template-instance-store";
 import { renderTemplateInstance } from "#server/service/template/template-renderer";
 import {
   getTemplateManifest,
@@ -72,22 +70,28 @@ const withDomainErrors = async (
 };
 
 export const templateInstancesRouter = new Hono()
-  .get("/", (c) => {
-    const serverId = c.req.param("serverId");
-    if (!serverId) {
-      return fail(c, ApiError.badRequest("缺少服务器 id"));
-    }
-    const instances = templateInstanceStore.listInstances(serverId);
-    return ok(c, "获取模板实例成功", StatusCodes.OK, instances);
-  })
+  .get(
+    "/",
+    guard("获取模板实例失败", async (c) =>
+      ok(
+        c,
+        "获取模板实例成功",
+        StatusCodes.OK,
+        templateInstanceStore.listInstances(idParam(c, "serverId")),
+      ),
+    ),
+  )
   .post(
     "/",
     guard("创建模板实例失败", async (c) => {
-      const serverId = c.req.param("serverId");
-      if (!serverId) {
-        return fail(c, ApiError.badRequest("缺少服务器 id"));
-      }
+      const serverId = idParam(c, "serverId");
       const data = await parseBody(c, TemplateInstanceCreateSchema);
+      const server = await db.query.serverTable.findFirst({
+        where: eq(serverTable.id, serverId),
+      });
+      if (!server) {
+        return fail(c, ApiError.notFound("服务器不存在"));
+      }
       return await withDomainErrors(c, async () => {
         const manifest = await getTemplateManifest(data.templateId);
         const config = validateInstanceConfig(
@@ -109,12 +113,10 @@ export const templateInstancesRouter = new Hono()
   .patch(
     "/:instanceId",
     guard("更新模板实例失败", async (c) => {
-      const instanceId = c.req.param("instanceId");
-      if (!instanceId) {
-        return fail(c, ApiError.badRequest("缺少实例 id"));
-      }
+      const serverId = idParam(c, "serverId");
+      const instanceId = c.req.param("instanceId") ?? "";
       const data = await parseBody(c, TemplateInstanceUpdateSchema);
-      const existing = templateInstanceStore.getInstance(instanceId);
+      const existing = templateInstanceStore.getInstance(serverId, instanceId);
       if (!existing) {
         return fail(c, ApiError.notFound("模板实例不存在"));
       }
@@ -124,12 +126,16 @@ export const templateInstancesRouter = new Hono()
           const manifest = await getTemplateManifest(existing.templateId);
           config = validateInstanceConfig(manifest.configSchema, config);
         }
-        const result = await templateInstanceStore.updateInstance(instanceId, {
-          binding: data.binding,
-          config,
-          enabled: data.enabled,
-          name: data.name,
-        });
+        const result = await templateInstanceStore.updateInstance(
+          serverId,
+          instanceId,
+          {
+            binding: data.binding,
+            config,
+            enabled: data.enabled,
+            name: data.name,
+          },
+        );
         return ok(c, "更新模板实例成功", StatusCodes.OK, result);
       });
     }),
@@ -137,12 +143,10 @@ export const templateInstancesRouter = new Hono()
   .delete(
     "/:instanceId",
     guard("删除模板实例失败", async (c) => {
-      const instanceId = c.req.param("instanceId");
-      if (!instanceId) {
-        return fail(c, ApiError.badRequest("缺少实例 id"));
-      }
+      const serverId = idParam(c, "serverId");
+      const instanceId = c.req.param("instanceId") ?? "";
       return await withDomainErrors(c, async () => {
-        await templateInstanceStore.deleteInstance(instanceId);
+        templateInstanceStore.deleteInstance(serverId, instanceId);
         return ok(c, "删除模板实例成功", StatusCodes.OK);
       });
     }),
@@ -150,14 +154,11 @@ export const templateInstancesRouter = new Hono()
   .post(
     "/render-preview",
     guard("渲染预览失败", async (c) => {
-      const serverId = c.req.param("serverId");
-      if (!serverId) {
-        return fail(c, ApiError.badRequest("缺少服务器 id"));
-      }
+      const serverId = idParam(c, "serverId");
       const body = await parseBody(c, TemplateInstanceRenderPreviewSchema);
 
       const server = await db.query.serverTable.findFirst({
-        where: eq(serverTable.id, Number(serverId)),
+        where: eq(serverTable.id, serverId),
       });
 
       return await withDomainErrors(c, async () => {
@@ -183,24 +184,21 @@ export const templateInstancesRouter = new Hono()
   .post(
     "/:instanceId/render",
     guard("渲染模板失败", async (c) => {
-      const serverId = c.req.param("serverId");
-      const instanceId = c.req.param("instanceId");
-      if (!(serverId && instanceId)) {
-        return fail(c, ApiError.badRequest("缺少参数"));
-      }
-      const instance = templateInstanceStore.getInstance(instanceId);
-      if (!instance || instance.serverId !== serverId) {
+      const serverId = idParam(c, "serverId");
+      const instance = templateInstanceStore.getInstance(
+        serverId,
+        c.req.param("instanceId") ?? "",
+      );
+      if (!instance) {
         return fail(c, ApiError.notFound("模板实例不存在"));
       }
 
-      const session = connectionManager.getConnectionByServerId(
-        Number(serverId),
-      );
+      const session = connectionManager.getConnectionByServerId(serverId);
       if (!session) {
         return fail(c, ApiError.badRequest("服务器未连接，无法渲染"));
       }
       const server = await db.query.serverTable.findFirst({
-        where: eq(serverTable.id, Number(serverId)),
+        where: eq(serverTable.id, serverId),
       });
 
       return await withDomainErrors(c, async () => {

@@ -20,6 +20,10 @@ export const recordRelay = (entry: Omit<RelayEntry, "t">): void => {
   bus.broadcast(full);
 };
 
+export const forgetRelays = (serverId: number): void => {
+  logs.delete(serverId);
+};
+
 /** 最新在前 */
 export const getRelays = (limit: number, serverId?: number): RelayEntry[] =>
   (serverId === undefined

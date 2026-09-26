@@ -1,5 +1,6 @@
 import { HTTP } from "@koishijs/plugin-http";
 import { Server } from "@koishijs/plugin-server";
+import { eq } from "drizzle-orm";
 import type { ForkScope, Session } from "koishi";
 import { Context, Logger as log } from "koishi";
 
@@ -78,20 +79,19 @@ class ChatBridge {
 
   async init(): Promise<void> {
     const { config } = configManager;
+    const host = process.env.KOISHI_HOST ?? config.koishi.host;
     log.levels.base = 1;
 
     this.pluginsContext.push(
       // @ts-expect-error -- @cordisjs/plugin-server 与 Koishi plugin() 重载存在 Function.prototype.apply 结构性误匹配
       this.app.plugin(Server, {
-        host: config.koishi.host,
+        host,
         port: config.koishi.port,
       }),
     );
     this.pluginsContext.push(this.app.plugin(HTTP));
 
-    this.logger.info(
-      `Koishi 服务启动 http://${config.koishi.host}:${config.koishi.port}`,
-    );
+    this.logger.info(`Koishi 服务启动 http://${host}:${config.koishi.port}`);
 
     await this.app.start();
 
@@ -157,14 +157,34 @@ class ChatBridge {
     await this.app.stop();
   }
 
-  removeBot(botID: number): void {
+  private removeBot(botID: number): void {
     const connection = this.connections.remove(botID);
+    if (!connection) {
+      return;
+    }
     connection.pluginInstance.dispose();
     this.logger.debug(`已移除 Bot 连接：${botID}`);
     broadcastStatusEvent({ id: botID, isOnline: false, kind: "bot" });
   }
 
-  addBot(
+  /** 让连接与 DB 行一致；幂等，连不上只记日志 */
+  async syncBot(botID: number): Promise<void> {
+    const row = await db.query.botTable.findFirst({
+      where: eq(botTable.id, botID),
+    });
+    this.removeBot(botID);
+    if (!row?.enabled) {
+      return;
+    }
+    try {
+      this.addBot(row.id, row.platform, row.config);
+    } catch (error) {
+      this.logger.error({ botId: botID, error }, "Bot 启动失败");
+      noteLastEvent("bot", botID, "启动失败，看看服务端日志", false);
+    }
+  }
+
+  private addBot(
     botID: number,
     platformType: PlatformType,
     config: PlatformConfig,
@@ -189,18 +209,6 @@ class ChatBridge {
 
   get(botID: number): PlatformSender | undefined {
     return this.connections.get(botID);
-  }
-
-  updateConfig(senderId: number, config: PlatformConfig): void {
-    this.logger.debug(`正在更新 Bot 配置：${senderId}`);
-    const connection = this.get(senderId);
-    if (!connection) {
-      throw new Error(`Bot 连接不存在：${senderId}`);
-    }
-    const { platformType } = connection;
-    this.removeBot(senderId);
-    this.addBot(senderId, platformType, config);
-    this.logger.debug(`已更新 Bot 配置：${senderId}`);
   }
 
   private static async receiveMessage(

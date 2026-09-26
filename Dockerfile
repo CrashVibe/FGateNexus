@@ -9,6 +9,8 @@ RUN apt-get update \
 	&& rm -rf /var/lib/apt/lists/*
 
 ENV CHROMIUM_PATH=/usr/bin/chromium-headless-shell
+# 容器里要对外监听
+ENV HOST=0.0.0.0 KOISHI_HOST=0.0.0.0
 
 COPY ./dist/FGateNexus-linux-x64 ./FGateNexus
 

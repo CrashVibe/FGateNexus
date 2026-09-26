@@ -20,11 +20,8 @@ export class ConnectionStore {
     return this.connectionMap.get(botId);
   }
 
-  public remove(botId: number): PlatformSender {
+  public remove(botId: number): PlatformSender | undefined {
     const connection = this.connectionMap.get(botId);
-    if (!connection) {
-      throw new Error(`Platform sender not found: ${botId}`);
-    }
     this.connectionMap.delete(botId);
     return connection;
   }

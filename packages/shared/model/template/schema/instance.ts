@@ -29,7 +29,7 @@ export const TemplateInstanceSchema = z.object({
   enabled: z.boolean().default(false),
   id: z.uuid(),
   name: z.string().default(""),
-  serverId: z.string(),
+  serverId: z.number(),
   templateId: z.string(),
   updatedAt: z.coerce.date(),
 });

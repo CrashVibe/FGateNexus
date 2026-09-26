@@ -13,6 +13,10 @@ export const noteLastEvent = (
   events.set(`${kind}:${id}`, { at: Date.now(), ok, text });
 };
 
+export const forgetLastEvent = (kind: "bot" | "server", id: number): void => {
+  events.delete(`${kind}:${id}`);
+};
+
 export const getLastEvent = (
   kind: "bot" | "server",
   id: number,

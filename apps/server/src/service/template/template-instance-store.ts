@@ -1,10 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { and, count, eq } from "drizzle-orm";
+
+import { db } from "#server/db/client";
+import { serverTable, templateInstanceTable } from "#server/db/schema";
 import { connectionManager } from "#server/service/mcwsbridge/connection-manager";
 import { isDataSourceSupported } from "#server/service/template/data-resolver";
 import { TemplateInstanceError } from "#server/service/template/instance-errors";
-import { getTemplateManifest } from "#server/service/template/template-store";
+import {
+  getTemplateDir,
+  getTemplateManifest,
+  TEMPLATE_DIR,
+} from "#server/service/template/template-store";
 import { logger } from "#server/utils/logger";
 import { TemplateInstanceSchema } from "#shared/model/template/schema/instance";
 import type {
@@ -13,17 +21,12 @@ import type {
   TemplateInstanceConfig,
 } from "#shared/model/template/schema/instance";
 
-const INSTANCES_FILE = path.resolve(
-  process.cwd(),
-  "data/templates/instances.json",
-);
+const LEGACY_FILE = path.join(TEMPLATE_DIR, "instances.json");
 
 const log = logger.child({}, { msgPrefix: "[TemplateInstance] " });
 
-export { TemplateInstanceError };
-
 export interface CreateInstanceInput {
-  serverId: string;
+  serverId: number;
   templateId: string;
   name: string;
   config?: TemplateInstanceConfig;
@@ -38,245 +41,233 @@ export interface UpdateInstancePatch {
   binding?: TemplateBinding | null;
 }
 
-class TemplateInstanceStore {
-  private instances: TemplateInstance[] | null = null;
-  private writeQueue: Promise<void> = Promise.resolve();
+const byId = (id: string) => eq(templateInstanceTable.id, id);
 
-  /** 幂等 */
-  public init(): void {
-    this.ensureLoaded();
+/** excludeId 排除自身（更新场景） */
+const assertBindingUnique = (
+  siblings: TemplateInstance[],
+  binding: TemplateBinding | null,
+  excludeId: string | null,
+): void => {
+  if (!binding) {
+    return;
   }
-
-  public listInstances(serverId?: string): TemplateInstance[] {
-    this.ensureLoaded();
-    const all = this.instances ?? [];
-    return serverId ? all.filter((i) => i.serverId === serverId) : [...all];
-  }
-
-  public getInstance(id: string): TemplateInstance | undefined {
-    this.ensureLoaded();
-    return this.instances?.find((i) => i.id === id);
-  }
-
-  public findBindingByCommand(
-    serverId: string,
-    command: string,
-  ): TemplateInstance | undefined {
-    this.ensureLoaded();
-    return this.instances?.find(
-      (i) =>
-        i.serverId === serverId &&
-        i.enabled &&
-        (i.binding?.commands.includes(command) ?? false),
+  for (const i of siblings) {
+    if (i.id === excludeId) {
+      continue;
+    }
+    const conflictCommand = i.binding?.commands.find((c) =>
+      binding.commands.includes(c),
     );
-  }
-
-  public async createInstance(
-    input: CreateInstanceInput,
-  ): Promise<TemplateInstance> {
-    this.ensureLoaded();
-    this.assertBindingUnique(input.serverId, input.binding ?? null, null);
-    this.assertTemplateUnique(input.serverId, input.templateId);
-
-    const now = new Date();
-    const instance: TemplateInstance = {
-      binding: input.binding ?? null,
-      config: input.config ?? {},
-      createdAt: now,
-      enabled: input.enabled ?? false,
-      id: crypto.randomUUID(),
-      name: input.name,
-      serverId: input.serverId,
-      templateId: input.templateId,
-      updatedAt: now,
-    };
-
-    if (instance.enabled) {
-      await TemplateInstanceStore.checkEnableCompatibility(instance);
-    }
-
-    this.instances?.push(instance);
-    await this.persist();
-    log.info({ id: instance.id, serverId: instance.serverId }, "创建模板实例");
-    return instance;
-  }
-
-  /** 返回值附带可选的兼容性警告 */
-  public async updateInstance(
-    id: string,
-    patch: UpdateInstancePatch,
-  ): Promise<{ instance: TemplateInstance; warning: string | null }> {
-    this.ensureLoaded();
-    const existing = this.getInstance(id);
-    if (!existing) {
-      throw new TemplateInstanceError("模板实例不存在", 404);
-    }
-
-    const nextBinding =
-      patch.binding === undefined ? existing.binding : patch.binding;
-    this.assertBindingUnique(existing.serverId, nextBinding, id);
-
-    const updated: TemplateInstance = {
-      ...existing,
-      binding: nextBinding,
-      config: patch.config ?? existing.config,
-      enabled: patch.enabled ?? existing.enabled,
-      name: patch.name ?? existing.name,
-      updatedAt: new Date(),
-    };
-
-    const enabling = patch.enabled === true && !existing.enabled;
-    let warning: string | null = null;
-    if (updated.enabled && (enabling || patch.config !== undefined)) {
-      ({ warning } =
-        await TemplateInstanceStore.checkEnableCompatibility(updated));
-    }
-
-    const index = this.instances?.findIndex((i) => i.id === id) ?? -1;
-    if (index >= 0 && this.instances) {
-      this.instances[index] = updated;
-    }
-    await this.persist();
-    log.info({ id, serverId: updated.serverId }, "更新模板实例");
-    return { instance: updated, warning };
-  }
-
-  public async deleteInstance(id: string): Promise<void> {
-    this.ensureLoaded();
-    const before = this.instances?.length ?? 0;
-    this.instances = (this.instances ?? []).filter((i) => i.id !== id);
-    if ((this.instances?.length ?? 0) === before) {
-      throw new TemplateInstanceError("模板实例不存在", 404);
-    }
-    await this.persist();
-    log.info({ id }, "删除模板实例");
-  }
-
-  /** excludeId 排除自身（更新场景） */
-  private assertBindingUnique(
-    serverId: string,
-    binding: TemplateBinding | null,
-    excludeId: string | null,
-  ): void {
-    if (!binding) {
-      return;
-    }
-    for (const i of this.instances ?? []) {
-      if (i.id === excludeId || i.serverId !== serverId) {
-        continue;
-      }
-      const conflictCommand = i.binding?.commands.find((c) =>
-        binding.commands.includes(c),
-      );
-      if (conflictCommand) {
-        throw new TemplateInstanceError(
-          `指令「${conflictCommand}」已被其他模板实例占用`,
-          409,
-        );
-      }
-    }
-  }
-
-  private assertTemplateUnique(serverId: string, templateId: string): void {
-    const exists = (this.instances ?? []).some(
-      (i) => i.serverId === serverId && i.templateId === templateId,
-    );
-    if (exists) {
+    if (conflictCommand) {
       throw new TemplateInstanceError(
-        "该模板已添加到此服务器，无法重复添加",
+        `指令「${conflictCommand}」已被其他模板实例占用`,
         409,
       );
     }
   }
+};
 
-  /** 未连接放行+警告；已连接但缺能力则拒绝 */
-  private static async checkEnableCompatibility(
-    instance: TemplateInstance,
-  ): Promise<{ warning: string | null }> {
-    let manifest: Awaited<ReturnType<typeof getTemplateManifest>>;
-    try {
-      manifest = await getTemplateManifest(instance.templateId);
-    } catch {
-      throw new TemplateInstanceError(
-        `模板不存在：${instance.templateId}`,
-        400,
-      );
-    }
+/** 未连接放行+警告；已连接但缺能力则拒绝 */
+const checkEnableCompatibility = async (
+  instance: TemplateInstance,
+): Promise<{ warning: string | null }> => {
+  let manifest: Awaited<ReturnType<typeof getTemplateManifest>>;
+  try {
+    manifest = await getTemplateManifest(instance.templateId);
+  } catch {
+    throw new TemplateInstanceError(`模板不存在：${instance.templateId}`, 400);
+  }
 
-    const requiredSources = manifest.dataSources.filter((d) => d.required);
-    if (requiredSources.length === 0) {
-      return { warning: null };
-    }
-
-    const session = connectionManager.getConnectionByServerId(
-      Number(instance.serverId),
-    );
-    if (!session) {
-      return {
-        warning: "服务器未连接，无法验证模板兼容性，已先行启用",
-      };
-    }
-
-    const missing = requiredSources
-      .filter((ds) => !isDataSourceSupported(ds, session))
-      .map((ds) => ds.id);
-    if (missing.length > 0) {
-      throw new TemplateInstanceError(
-        `当前服务器不支持以下必需数据源所需能力：${missing.join(", ")}`,
-        400,
-      );
-    }
+  const requiredSources = manifest.dataSources.filter((d) => d.required);
+  if (requiredSources.length === 0) {
     return { warning: null };
   }
 
-  private ensureLoaded(): void {
-    if (this.instances !== null) {
-      return;
-    }
-    if (!fs.existsSync(INSTANCES_FILE)) {
-      this.instances = [];
-      TemplateInstanceStore.writeFileSync([]);
-      return;
-    }
-    try {
-      const raw = fs.readFileSync(INSTANCES_FILE, "utf-8");
-      const json = JSON.parse(raw) as { instances?: unknown };
-      this.instances = TemplateInstanceSchema.array().parse(
-        json.instances ?? [],
-      );
-    } catch (error) {
-      log.error(error, "模板实例文件读取/校验失败，已重置为空");
-      this.instances = [];
-      TemplateInstanceStore.writeFileSync([]);
-    }
+  const session = connectionManager.getConnectionByServerId(instance.serverId);
+  if (!session) {
+    return {
+      warning: "服务器未连接，无法验证模板兼容性，已先行启用",
+    };
   }
 
-  private static writeFileSync(instances: TemplateInstance[]): void {
-    fs.mkdirSync(path.dirname(INSTANCES_FILE), { recursive: true });
-    fs.writeFileSync(
-      INSTANCES_FILE,
-      JSON.stringify({ instances }, null, 2),
-      "utf-8",
+  const missing = requiredSources
+    .filter((ds) => !isDataSourceSupported(ds, session))
+    .map((ds) => ds.id);
+  if (missing.length > 0) {
+    throw new TemplateInstanceError(
+      `当前服务器不支持以下必需数据源所需能力：${missing.join(", ")}`,
+      400,
+    );
+  }
+  return { warning: null };
+};
+
+/** 旧版 instances.json 一次性导入，之后改名留底 */
+const init = (): void => {
+  if (!fs.existsSync(LEGACY_FILE)) {
+    return;
+  }
+  let imported = 0;
+  try {
+    const json = JSON.parse(fs.readFileSync(LEGACY_FILE, "utf-8")) as {
+      instances?: unknown[];
+    };
+    const serverIds = new Set(
+      db
+        .select({ id: serverTable.id })
+        .from(serverTable)
+        .all()
+        .map((r) => r.id),
+    );
+    for (const raw of json.instances ?? []) {
+      const parsed = TemplateInstanceSchema.safeParse({
+        ...(raw as object),
+        serverId: Number((raw as { serverId?: unknown }).serverId),
+      });
+      if (
+        !parsed.success ||
+        !serverIds.has(parsed.data.serverId) ||
+        !fs.existsSync(getTemplateDir(parsed.data.templateId))
+      ) {
+        log.warn({ raw }, "旧模板实例无效或已失联，跳过");
+        continue;
+      }
+      db.insert(templateInstanceTable)
+        .values(parsed.data)
+        .onConflictDoNothing()
+        .run();
+      imported += 1;
+    }
+  } catch (error) {
+    // 原文件不动，下次启动再试
+    log.error(error, "导入 instances.json 失败");
+    return;
+  }
+  fs.renameSync(LEGACY_FILE, `${LEGACY_FILE}.migrated`);
+  log.info(`已从 instances.json 导入 ${imported} 个模板实例`);
+};
+
+const listInstances = (serverId: number): TemplateInstance[] =>
+  db
+    .select()
+    .from(templateInstanceTable)
+    .where(eq(templateInstanceTable.serverId, serverId))
+    .all();
+
+const countByTemplate = (templateId: string): number =>
+  db
+    .select({ n: count() })
+    .from(templateInstanceTable)
+    .where(eq(templateInstanceTable.templateId, templateId))
+    .get()?.n ?? 0;
+
+const getInstance = (
+  serverId: number,
+  id: string,
+): TemplateInstance | undefined =>
+  db
+    .select()
+    .from(templateInstanceTable)
+    .where(and(byId(id), eq(templateInstanceTable.serverId, serverId)))
+    .get();
+
+const findBindingByCommand = (
+  serverId: number,
+  command: string,
+): TemplateInstance | undefined =>
+  listInstances(serverId).find(
+    (i) => i.enabled && (i.binding?.commands.includes(command) ?? false),
+  );
+
+const createInstance = async (
+  input: CreateInstanceInput,
+): Promise<TemplateInstance> => {
+  const siblings = listInstances(input.serverId);
+  assertBindingUnique(siblings, input.binding ?? null, null);
+  if (siblings.some((i) => i.templateId === input.templateId)) {
+    throw new TemplateInstanceError(
+      "该模板已添加到此服务器，无法重复添加",
+      409,
     );
   }
 
-  /** 按顺序串行写入磁盘。 */
-  private async persist(): Promise<void> {
-    const snapshot = [...(this.instances ?? [])];
-    const previous = this.writeQueue;
-    this.writeQueue = (async () => {
-      await previous;
-      await fs.promises.mkdir(path.dirname(INSTANCES_FILE), {
-        recursive: true,
-      });
-      await fs.promises.writeFile(
-        INSTANCES_FILE,
-        JSON.stringify({ instances: snapshot }, null, 2),
-        "utf-8",
-      );
-    })();
-    await this.writeQueue;
-  }
-}
+  const now = new Date();
+  const instance: TemplateInstance = {
+    binding: input.binding ?? null,
+    config: input.config ?? {},
+    createdAt: now,
+    enabled: input.enabled ?? false,
+    id: crypto.randomUUID(),
+    name: input.name,
+    serverId: input.serverId,
+    templateId: input.templateId,
+    updatedAt: now,
+  };
 
-export const templateInstanceStore = new TemplateInstanceStore();
+  if (instance.enabled) {
+    await checkEnableCompatibility(instance);
+  }
+
+  db.insert(templateInstanceTable).values(instance).run();
+  log.info({ id: instance.id, serverId: instance.serverId }, "创建模板实例");
+  return instance;
+};
+
+/** 返回值附带可选的兼容性警告 */
+const updateInstance = async (
+  serverId: number,
+  id: string,
+  patch: UpdateInstancePatch,
+): Promise<{ instance: TemplateInstance; warning: string | null }> => {
+  const existing = getInstance(serverId, id);
+  if (!existing) {
+    throw new TemplateInstanceError("模板实例不存在", 404);
+  }
+
+  const nextBinding =
+    patch.binding === undefined ? existing.binding : patch.binding;
+  assertBindingUnique(listInstances(serverId), nextBinding, id);
+
+  const updated: TemplateInstance = {
+    ...existing,
+    binding: nextBinding,
+    config: patch.config ?? existing.config,
+    enabled: patch.enabled ?? existing.enabled,
+    name: patch.name ?? existing.name,
+    updatedAt: new Date(),
+  };
+
+  const enabling = patch.enabled === true && !existing.enabled;
+  let warning: string | null = null;
+  if (updated.enabled && (enabling || patch.config !== undefined)) {
+    ({ warning } = await checkEnableCompatibility(updated));
+  }
+
+  db.update(templateInstanceTable).set(updated).where(byId(id)).run();
+  log.info({ id, serverId }, "更新模板实例");
+  return { instance: updated, warning };
+};
+
+const deleteInstance = (serverId: number, id: string): void => {
+  const deleted = db
+    .delete(templateInstanceTable)
+    .where(and(byId(id), eq(templateInstanceTable.serverId, serverId)))
+    .returning({ id: templateInstanceTable.id })
+    .all();
+  if (deleted.length === 0) {
+    throw new TemplateInstanceError("模板实例不存在", 404);
+  }
+  log.info({ id }, "删除模板实例");
+};
+
+export const templateInstanceStore = {
+  countByTemplate,
+  createInstance,
+  deleteInstance,
+  findBindingByCommand,
+  getInstance,
+  init,
+  listInstances,
+  updateInstance,
+};

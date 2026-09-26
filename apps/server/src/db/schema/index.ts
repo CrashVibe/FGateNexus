@@ -9,3 +9,4 @@ export * from "./server-status-history-table";
 export * from "./server-table";
 export * from "./social-accounts-table";
 export * from "./target-table";
+export * from "./template-instance-table";

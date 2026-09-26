@@ -14,11 +14,13 @@ import type { z } from "zod";
 
 import { db } from "#server/db/client";
 import { botTable } from "#server/db/schema";
-import { fail, guard, ok, parseBody } from "#server/http/respond";
+import { fail, guard, idParam, ok, parseBody } from "#server/http/respond";
 import { chatBridge } from "#server/service/chatbridge";
 import type { AdapterBot } from "#server/service/chatbridge/types";
-import { getLastEvent } from "#server/service/diagnostics";
+import { forgetLastEvent, getLastEvent } from "#server/service/diagnostics";
+import { clearServerCache } from "#server/service/server-cache";
 import { BotAPI } from "#shared/model/bot/api";
+import { PlatformConfigSchemas } from "#shared/model/bot/schema";
 import { PlatformType } from "#shared/model/bot/types";
 import { ApiError } from "#shared/model/error";
 
@@ -130,10 +132,7 @@ const requirePlatformBot = async <B extends AdapterBot>(
   platformLabel: string,
   isInstance: (bot: AdapterBot) => bot is B,
 ): Promise<{ botId: number; bot: B }> => {
-  const botId = Number(c.req.param("id"));
-  if (Number.isNaN(botId)) {
-    throw ApiError.validation("无效的 Bot ID");
-  }
+  const botId = idParam(c);
   const botRecord = await db.query.botTable.findFirst({
     where: eq(botTable.id, botId),
   });
@@ -155,6 +154,12 @@ const requirePlatformBot = async <B extends AdapterBot>(
 };
 
 export const botRouter = new Hono()
+  .use(async (c, next) => {
+    await next();
+    if (c.req.method !== "GET") {
+      clearServerCache();
+    }
+  })
   .get(
     "/",
     guard("获取 Bot 列表失败", async (c) => {
@@ -182,28 +187,35 @@ export const botRouter = new Hono()
         BotAPI.POST.request,
         "添加 Bot 失败：配置无效",
       );
-      const result = await db
+      const config = PlatformConfigSchemas[data.platform].safeParse(
+        data.config,
+      );
+      if (!config.success) {
+        return fail(
+          c,
+          ApiError.validation("添加 Bot 失败：配置与平台不匹配"),
+          config.error,
+        );
+      }
+      const [created] = await db
         .insert(botTable)
         .values({
-          config: data.config,
+          config: config.data,
           name: data.name ?? "",
           platform: data.platform,
         })
-        .returning();
-      if (result[0]) {
-        chatBridge.addBot(result[0].id, data.platform, data.config);
-        return ok(c, "添加 Bot 成功", StatusCodes.CREATED);
+        .returning({ id: botTable.id });
+      if (!created) {
+        return fail(c, ApiError.database("添加 Bot 失败：未能插入数据"));
       }
-      return fail(c, ApiError.database("添加 Bot 失败：未能插入数据"));
+      await chatBridge.syncBot(created.id);
+      return ok(c, "添加 Bot 成功", StatusCodes.CREATED);
     }),
   )
   .get(
     "/:id",
     guard("获取 Bot 详情失败", async (c) => {
-      const botId = Number(c.req.param("id"));
-      if (Number.isNaN(botId)) {
-        return fail(c, ApiError.validation("无效的 Bot ID"));
-      }
+      const botId = idParam(c);
       const bot = await db.query.botTable.findFirst({
         where: eq(botTable.id, botId),
       });
@@ -225,54 +237,56 @@ export const botRouter = new Hono()
   .put(
     "/:id",
     guard("更新 Bot 失败", async (c) => {
-      const id = Number(c.req.param("id"));
-      if (Number.isNaN(id)) {
-        return fail(c, ApiError.validation("更新 Bot 失败：无效的 Bot ID"));
-      }
+      const id = idParam(c);
       const data = await parseBody(
         c,
         BotAPI.PUT.request,
         "更新 Bot 失败：配置无效",
       );
-      const result = await db
-        .update(botTable)
-        .set({ config: data.config, name: data.name })
-        .where(eq(botTable.id, id))
-        .returning();
-      if (result[0]) {
-        if (chatBridge.get(id)) {
-          chatBridge.updateConfig(id, data.config);
-        }
-        return ok(c, "更新 Bot 成功", StatusCodes.OK);
+      const existing = await db.query.botTable.findFirst({
+        where: eq(botTable.id, id),
+      });
+      if (!existing) {
+        return fail(c, ApiError.notFound("Bot 不存在"));
       }
-      return fail(c, ApiError.notFound("Bot 不存在"));
+      const config = PlatformConfigSchemas[existing.platform].safeParse(
+        data.config,
+      );
+      if (!config.success) {
+        return fail(
+          c,
+          ApiError.validation("更新 Bot 失败：配置与平台不匹配"),
+          config.error,
+        );
+      }
+      await db
+        .update(botTable)
+        .set({ config: config.data, name: data.name })
+        .where(eq(botTable.id, id));
+      await chatBridge.syncBot(id);
+      return ok(c, "更新 Bot 成功", StatusCodes.OK);
     }),
   )
   .delete(
     "/:id",
     guard("删除 Bot 失败", async (c) => {
-      const botId = Number(c.req.param("id"));
-      if (Number.isNaN(botId)) {
-        return fail(c, ApiError.validation("无效的 Bot ID"));
-      }
+      const botId = idParam(c);
       const result = await db
         .delete(botTable)
         .where(eq(botTable.id, botId))
-        .returning();
-      if (result[0]) {
-        chatBridge.removeBot(botId);
-        return ok(c, "删除 Bot 成功", StatusCodes.OK);
+        .returning({ id: botTable.id });
+      if (result.length === 0) {
+        return fail(c, ApiError.notFound("Bot 不存在"));
       }
-      return fail(c, ApiError.notFound("Bot 不存在"));
+      await chatBridge.syncBot(botId);
+      forgetLastEvent("bot", botId);
+      return ok(c, "删除 Bot 成功", StatusCodes.OK);
     }),
   )
   .post(
     "/:id/toggle",
     guard("开关 Bot 失败", async (c) => {
-      const botId = Number(c.req.param("id"));
-      if (Number.isNaN(botId)) {
-        return fail(c, ApiError.validation("开关 Bot 失败：无效的 Bot ID"));
-      }
+      const botId = idParam(c);
       const data = await parseBody(
         c,
         BotAPI.POSTTOGGLE.request,
@@ -282,16 +296,12 @@ export const botRouter = new Hono()
         .update(botTable)
         .set({ enabled: data.enabled })
         .where(eq(botTable.id, botId))
-        .returning();
-      if (result[0]) {
-        if (data.enabled) {
-          chatBridge.addBot(botId, result[0].platform, result[0].config);
-        } else {
-          chatBridge.removeBot(botId);
-        }
-        return ok(c, "开关 Bot 成功", StatusCodes.OK);
+        .returning({ id: botTable.id });
+      if (result.length === 0) {
+        return fail(c, ApiError.notFound("Bot 不存在"));
       }
-      return fail(c, ApiError.notFound("Bot 不存在"));
+      await chatBridge.syncBot(botId);
+      return ok(c, "开关 Bot 成功", StatusCodes.OK);
     }),
   )
   .get(

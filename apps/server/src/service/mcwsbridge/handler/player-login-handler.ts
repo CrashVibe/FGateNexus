@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "#server/db/client";
@@ -76,20 +76,10 @@ class PlayerLoginHandler implements RequestHandler {
       throw new Error("Failed to insert or update player");
     }
 
-    // 是否存在关系
-    const existingRelation = await db.query.playerServerTable.findFirst({
-      where: and(
-        eq(playerServerTable.playerId, playerRecord.id),
-        eq(playerServerTable.serverId, serverID),
-      ),
-    });
-
-    if (!existingRelation) {
-      await db.insert(playerServerTable).values({
-        playerId: playerRecord.id,
-        serverId: serverID,
-      });
-    }
+    await db
+      .insert(playerServerTable)
+      .values({ playerId: playerRecord.id, serverId: serverID })
+      .onConflictDoNothing();
 
     const bindingConfig = await getConfig(serverID);
     if (bindingConfig.forceBind && playerRecord.socialAccountId === null) {

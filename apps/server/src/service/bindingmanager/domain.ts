@@ -20,26 +20,18 @@ export const bindAccount = async (params: {
 }): Promise<typeof playerTable.$inferSelect> => {
   const { socialUid, socialNickname, platform, playerUID } = params;
 
-  let socialAccountRecord = await db.query.socialAccountTable.findFirst({
+  await db
+    .insert(socialAccountTable)
+    .values({ nickname: socialNickname, platform, uid: socialUid })
+    .onConflictDoNothing();
+  const socialAccountRecord = await db.query.socialAccountTable.findFirst({
     where: and(
       eq(socialAccountTable.uid, socialUid),
       eq(socialAccountTable.platform, platform),
     ),
   });
-
   if (!socialAccountRecord) {
-    const [newAccount] = await db
-      .insert(socialAccountTable)
-      .values({
-        nickname: socialNickname,
-        platform,
-        uid: socialUid,
-      })
-      .returning();
-    if (!newAccount) {
-      throw new Error(`社交账号 ${socialUid} 创建失败`);
-    }
-    socialAccountRecord = newAccount;
+    throw new Error(`社交账号 ${socialUid} 创建失败`);
   }
 
   const [updatedPlayer] = await db

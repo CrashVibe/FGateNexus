@@ -56,6 +56,7 @@ class ServerSession {
   };
   private readonly handlers = new Map<string, RequestHandler>();
   private readonly pendingRequests = new Map<string, PendingRequest>();
+  private closed = false;
   private readonly logger_prefix: string;
 
   constructor(peer: Peer, serverId: number) {
@@ -110,6 +111,9 @@ class ServerSession {
     params?: P,
     timeout = 10_000,
   ): Promise<unknown> {
+    if (this.closed) {
+      throw new Error("Connection closed");
+    }
     const id = uuidv4();
     const request = {
       id,
@@ -214,6 +218,7 @@ class ServerSession {
   }
 
   public cleanup(): void {
+    this.closed = true;
     const pendingCount = this.pendingRequests.size;
 
     for (const [, request] of this.pendingRequests.entries()) {

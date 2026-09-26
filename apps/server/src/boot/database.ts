@@ -115,6 +115,7 @@ export const runMigrations = async (): Promise<void> => {
       : "[MIGRATION] 检查并执行数据库迁移...",
   );
 
+  // 迁移连接不开外键：SQLite 重建表的迁移依赖这一点
   const sqlite = new Database(DB_PATH);
   try {
     if (await exists(MIGRATIONS_DIR)) {

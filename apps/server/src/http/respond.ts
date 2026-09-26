@@ -47,6 +47,15 @@ export const parseBody = async <S extends ZodType>(
   return parsed.data;
 };
 
+/** 路径参数里的正整数 ID，不合法抛 400 */
+export const idParam = (c: Context, name = "id"): number => {
+  const id = Number(c.req.param(name));
+  if (!Number.isInteger(id) || id <= 0) {
+    throw ApiError.validation("无效 ID");
+  }
+  return id;
+};
+
 /** 全局错误兜底：ApiError 按其状态返回，其余按 500 内部错误。 */
 export const errorHandler = (err: Error, c: Context): Response => {
   if (err instanceof ApiError) {

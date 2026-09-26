@@ -15,6 +15,13 @@ export const PlatformSchema = z.union([
   MilkyConfigSchema,
 ]);
 
+export const PlatformConfigSchemas = {
+  [PlatformType.Discord]: DiscordConfigSchema,
+  [PlatformType.Kook]: KookConfigSchema,
+  [PlatformType.Milky]: MilkyConfigSchema,
+  [PlatformType.Onebot]: OneBotConfigSchema,
+} as const;
+
 export const PlatformResponseSchema = z.object({
   config: PlatformSchema,
   enabled: z.boolean(),

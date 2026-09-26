@@ -35,7 +35,7 @@ export const handleMcBridgeUpgrade = async (
 
   if (!token || !clientApiVersion) {
     logger.warn(
-      { clientVersion: clientApiVersion, token },
+      { clientVersion: clientApiVersion, hasToken: Boolean(token) },
       "WebSocket 请求缺失 Token 或 版本号",
     );
     return unauthorized("Unauthorized: Missing authorization token");
@@ -64,7 +64,7 @@ export const handleMcBridgeUpgrade = async (
     .limit(1);
   const [serverRecord] = rows;
   if (!serverRecord) {
-    logger.warn({ token }, "WebSocket 请求 Token 无效");
+    logger.warn("WebSocket 请求 Token 无效");
     return unauthorized("Unauthorized: Invalid authorization token");
   }
 

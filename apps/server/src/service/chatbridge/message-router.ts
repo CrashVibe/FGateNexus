@@ -67,7 +67,7 @@ const handleTemplateCommand = async (
   }
 
   const instance = templateInstanceStore.findBindingByCommand(
-    String(server.id),
+    server.id,
     commandWord,
   );
   if (!instance) {
