@@ -1,4 +1,4 @@
-import { ImageIcon, Loader2 } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -36,18 +36,14 @@ export const TemplatePreview = ({
   return (
     <div className="space-y-3">
       <Button
-        disabled={loading}
+        loading={loading}
         onClick={() => {
           void run();
         }}
         size="sm"
         variant="outline"
       >
-        {loading ? (
-          <Loader2 className="size-4 animate-spin" />
-        ) : (
-          <ImageIcon className="size-4" />
-        )}
+        {loading ? null : <ImageIcon className="size-4" />}
         {t("立即渲染预览")}
       </Button>
       {url ? (

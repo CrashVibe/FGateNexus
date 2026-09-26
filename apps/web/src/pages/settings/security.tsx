@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { PasswordAPI } from "#shared/model/auth/api";
 import { validatePasswordStrength } from "#shared/utils/password";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   SettingsRow,
   SettingsSection,
@@ -56,6 +57,7 @@ export const SecurityContent = () => {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showRemove2FA, setShowRemove2FA] = useState(false);
 
   const [twoFA, setTwoFA] = useState({ keyuri: "", secret: "" });
   const [otp, setOtp] = useState("");
@@ -106,7 +108,7 @@ export const SecurityContent = () => {
 
   const onSetPassword = handleSubmit(async (data) => {
     if (strength && !strength.isValid) {
-      toast.error(strength.error ?? t("密码强度不够"));
+      toast.error(t(strength.error ?? "密码强度不够"));
       return;
     }
     try {
@@ -158,14 +160,12 @@ export const SecurityContent = () => {
 
   const remove2FA = async (): Promise<void> => {
     try {
-      setBusy(true);
       await AuthData.remove2FA();
       toast.success(t("2FA 已删除"));
       await checkAuthStatus();
     } catch (error) {
       toast.error(t("删除 2FA 失败"), { description: errorMessage(error) });
-    } finally {
-      setBusy(false);
+      throw error;
     }
   };
 
@@ -264,7 +264,7 @@ export const SecurityContent = () => {
                 {authStatus.has2FA ? (
                   <Button
                     onClick={() => {
-                      void remove2FA();
+                      setShowRemove2FA(true);
                     }}
                     size="sm"
                     variant="destructive"
@@ -440,6 +440,15 @@ export const SecurityContent = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        confirmText={t("禁用 2FA")}
+        description={t("禁用之后就只剩密码守门了……真的要这样？")}
+        onConfirm={remove2FA}
+        onOpenChange={setShowRemove2FA}
+        open={showRemove2FA}
+        title={t("禁用 2FA")}
+      />
 
       {/* 删除密码 */}
       <Dialog onOpenChange={setShowDelete} open={showDelete}>

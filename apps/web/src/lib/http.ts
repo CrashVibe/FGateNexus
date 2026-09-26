@@ -1,5 +1,11 @@
 import type { ApiResponse } from "#shared/model";
 import { t } from "@/i18n";
+import { queryClient } from "@/lib/query";
+
+// ponytail: 任何写成功就全量失效并等活跃查询重取完；管理端写得少，精细失效等有性能问题再说
+const invalidateAll = async (): Promise<void> => {
+  await queryClient.invalidateQueries();
+};
 
 /** 后端返回非 2xx 时抛出，携带状态码与后端错误信息。 */
 export class ApiRequestError extends Error {
@@ -81,7 +87,11 @@ export const request = async <T>(
     method,
   });
 
-  return await parseApiResponse<T>(response);
+  const result = await parseApiResponse<T>(response);
+  if (method !== "GET") {
+    await invalidateAll();
+  }
+  return result;
 };
 
 /** 不手动设置 content-type：浏览器自动加 boundary。 */
@@ -98,7 +108,9 @@ export const uploadFile = async <T>(
     method: "POST",
   });
 
-  return await parseApiResponse<T>(response);
+  const result = await parseApiResponse<T>(response);
+  await invalidateAll();
+  return result;
 };
 
 export const throwIfNotOk = async (response: Response): Promise<void> => {

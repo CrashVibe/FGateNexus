@@ -277,24 +277,30 @@ export const ServerTemplateInstancePage = () => {
   const notReady =
     templates === undefined || (!isNew && instances === undefined);
   if (notReady) {
-    return <LoadingState />;
+    return (
+      <PageContent width="wide">
+        <LoadingState />
+      </PageContent>
+    );
   }
 
   if (!isNew && !existing) {
     return (
-      <EmptyState
-        action={
-          <Button asChild>
-            <Link params={{ id }} to="/servers/$id/templates">
-              <ArrowLeft />
-              {t("返回实例列表")}
-            </Link>
-          </Button>
-        }
-        className="py-16"
-        desc={t("该实例不存在或已被删除。")}
-        title={t("未找到实例")}
-      />
+      <PageContent width="wide">
+        <EmptyState
+          action={
+            <Button asChild>
+              <Link params={{ id }} to="/servers/$id/templates">
+                <ArrowLeft />
+                {t("返回实例列表")}
+              </Link>
+            </Button>
+          }
+          className="py-16"
+          desc={t("该实例不存在或已被删除。")}
+          title={t("未找到实例")}
+        />
+      </PageContent>
     );
   }
 

@@ -40,10 +40,10 @@ export const DashboardLayout = () => {
           <button
             type="button"
             className="group absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize border-0 bg-transparent p-0"
-            aria-label="Resize sidebar"
+            aria-label={t("调整侧栏宽度")}
             onMouseDown={startSidebarResize}
           >
-            <div className="absolute top-1/2 left-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-white/50" />
+            <div className="absolute top-1/2 left-1/2 h-10 w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent transition-colors group-hover:bg-foreground/40" />
           </button>
         </aside>
 

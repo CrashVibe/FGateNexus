@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import type { targetResponse } from "#shared/model/server/schema/target";
+import type {
+  TargetConfig as Config,
+  targetResponse,
+} from "#shared/model/server/schema/target";
 import { targetSchemaRequest } from "#shared/model/server/schema/target";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
@@ -37,8 +40,6 @@ import { TargetConfigData, TargetData } from "@/lib/api";
 import { useBot } from "@/queries/bots";
 import { serverKey, useServer } from "@/queries/servers";
 import { useTargets } from "@/queries/targets";
-
-type Config = targetResponse["config"];
 
 const toSelectionKey = (
   target: Pick<targetResponse, "channelId" | "guildId" | "type">,

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { z } from "zod";
 
@@ -21,53 +21,33 @@ export const useBot = (botId: number | null): UseQueryResult<BotWithStatus> =>
     queryKey: ["bot", botId],
   });
 
-export const useCreateBot = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useCreateBot = () =>
+  useMutation({
     mutationFn: async (data: z.infer<typeof BotAPI.POST.request>) => {
       await BotData.post(data);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: botsKey });
-    },
   });
-};
 
-export const useUpdateBot = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useUpdateBot = () =>
+  useMutation({
     mutationFn: async (vars: {
       id: number;
       data: z.infer<typeof BotAPI.PUT.request>;
     }) => {
       await BotData.put(vars.id, vars.data);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: botsKey });
-    },
   });
-};
 
-export const useDeleteBot = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useDeleteBot = () =>
+  useMutation({
     mutationFn: async (id: number) => {
       await BotData.delete(id);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: botsKey });
-    },
   });
-};
 
-export const useToggleBot = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useToggleBot = () =>
+  useMutation({
     mutationFn: async (vars: { id: number; enabled: boolean }) => {
       await BotData.postToggle(vars.id, { enabled: vars.enabled });
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: botsKey });
-    },
   });
-};

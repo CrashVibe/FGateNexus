@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import type { RelayEntry } from "#shared/model/dashboard";
 import { EmptyState } from "@/components/common/empty-state";
 import { LoadingState } from "@/components/common/loading-state";
+import { PanelHeader } from "@/components/dashboard/panel-header";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useSSE } from "@/hooks/use-sse";
@@ -95,10 +96,7 @@ export const RelayPanel = ({
 
   return (
     <Card className="gap-0 overflow-hidden p-0">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-sm font-semibold">{t("最近消息")}</h2>
-        <span className="text-muted-foreground text-xs">{t("重启后清空")}</span>
-      </div>
+      <PanelHeader hint={t("重启后清空")} title={t("最近消息")} />
       {body}
     </Card>
   );

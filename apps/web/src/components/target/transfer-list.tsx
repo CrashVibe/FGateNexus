@@ -238,7 +238,7 @@ export const TransferList = ({
 
       <div className="flex h-[460px] flex-col overflow-hidden rounded-xl border">
         <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5">
-          <CheckCircle className="size-4 shrink-0 text-green-500" />
+          <CheckCircle className="size-4 shrink-0 text-success" />
           <span className="text-sm font-medium">{t("已选频道")}</span>
           {selectedItems.length > 0 ? (
             <>

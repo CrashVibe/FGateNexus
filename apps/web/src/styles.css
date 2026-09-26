@@ -37,6 +37,10 @@
   --accent-pressed: var(--gray-300);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
+  /* 状态色只给徽章/提示/指示点用，不要拿来做面 */
+  --success: oklch(0.6 0.15 150);
+  --warning: oklch(0.64 0.16 65);
+  --info: oklch(0.55 0.2 258);
   --border: var(--gray-300);
   --input: var(--gray-300);
   --ring: oklch(0.55 0.203 258);
@@ -75,6 +79,9 @@
   --accent-pressed: var(--gray-400);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.985 0 0);
+  --success: oklch(0.79 0.18 152);
+  --warning: oklch(0.83 0.16 84);
+  --info: oklch(0.71 0.16 255);
   --border: var(--gray-300);
   --input: var(--gray-400);
   --ring: oklch(0.65 0.18 258);
@@ -111,6 +118,9 @@
   --color-accent-pressed: var(--accent-pressed);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

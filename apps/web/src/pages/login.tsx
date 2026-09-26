@@ -7,7 +7,6 @@ import { z } from "zod";
 
 import { LoginAPI, PasswordAPI } from "#shared/model/auth/api";
 import { ApiErrorType } from "#shared/model/error";
-import { validatePasswordStrength } from "#shared/utils/password";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -72,9 +71,11 @@ const SetupPasswordForm = () => {
   });
 
   const onSubmit = handleSubmit(async ({ newPassword }) => {
+    // zxcvbn 字典约 500KB，只有首次设密码才用到
+    const { validatePasswordStrength } = await import("#shared/utils/password");
     const strength = validatePasswordStrength(newPassword);
     if (!strength.isValid) {
-      toast.error(strength.error ?? t("密码强度不够"));
+      toast.error(t(strength.error ?? "密码强度不够"));
       return;
     }
     try {

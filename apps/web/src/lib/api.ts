@@ -415,5 +415,3 @@ export const TemplateInstanceData = {
     return TemplateInstanceAPI.PATCH.response.parse(response.data);
   },
 };
-
-export { PlatformType };

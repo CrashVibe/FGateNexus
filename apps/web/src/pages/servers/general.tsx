@@ -3,14 +3,11 @@ import { Copy, Download, RefreshCw, Trash2, X } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
-import { LoadingState } from "@/components/common/loading-state";
-import { SettingsColumns } from "@/components/common/settings-columns";
 import {
   SettingsRow,
   SettingsSection,
 } from "@/components/common/settings-section";
-import { PageContent } from "@/components/layout/page-content";
-import { ServerHeader } from "@/components/layout/server-header";
+import { ServerSettingsPage } from "@/components/layout/server-settings-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,17 +100,21 @@ export const ServerGeneralPage = () => {
   const serverId = Number(id);
   const navigate = useNavigate();
 
-  const { data: server, refetch } = useServer(serverId);
+  const { data: server } = useServer(serverId);
   const { data: bots } = useBots();
   const deleteServer = useDeleteServer();
   useEntityStatusStream("server", serverKey(serverId));
 
-  const { form, guard, setForm, section } = useServerForm(
+  const {
+    form: draft,
+    guard,
+    setForm,
+    section,
+  } = useServerForm(
     server,
     (s) => ({ botId: s.botId, name: s.name }),
     async (f) => {
       await GeneralData.patch(serverId, f);
-      await refetch();
     },
   );
 
@@ -123,7 +124,6 @@ export const ServerGeneralPage = () => {
   const regenerateToken = async (): Promise<void> => {
     try {
       await GeneralData.patch(serverId, { token: crypto.randomUUID() });
-      await refetch();
       toast.success(t("新 Token 到手，旧的已经作废啦"));
     } catch (error) {
       toast.error(t("重新生成失败"), { description: errorMessage(error) });
@@ -133,15 +133,15 @@ export const ServerGeneralPage = () => {
   const [showBotChange, setShowBotChange] = useState(false);
   const [pendingBotId, setPendingBotId] = useState<number | null>(null);
 
-  const selectedBotId = form?.botId ?? undefined;
+  const selectedBotId = draft?.botId ?? undefined;
 
   const requestBotChange = (next?: number): void => {
-    if (!form) {
+    if (!draft) {
       return;
     }
     // 没有群聊可丢，直接换
     if (!server?.targets.length) {
-      setForm({ ...form, botId: next ?? null });
+      setForm({ ...draft, botId: next ?? null });
       return;
     }
     setPendingBotId(next ?? null);
@@ -149,8 +149,8 @@ export const ServerGeneralPage = () => {
   };
 
   const confirmBotChange = (): void => {
-    if (form) {
-      setForm({ ...form, botId: pendingBotId });
+    if (draft) {
+      setForm({ ...draft, botId: pendingBotId });
     }
   };
 
@@ -167,11 +167,9 @@ export const ServerGeneralPage = () => {
 
   return (
     <>
-      {guard}
-      <ServerHeader width="settings" />
-      <PageContent width="settings">
-        {form ? (
-          <SettingsColumns>
+      <ServerSettingsPage guard={guard} value={draft}>
+        {(form) => (
+          <>
             {server ? (
               <ConnectSection
                 isOnline={server.isOnline}
@@ -265,11 +263,9 @@ export const ServerGeneralPage = () => {
                 </Button>
               </SettingsRow>
             </SettingsSection>
-          </SettingsColumns>
-        ) : (
-          <LoadingState />
+          </>
         )}
-      </PageContent>
+      </ServerSettingsPage>
 
       <ConfirmDialog
         confirmText={t("重新生成")}

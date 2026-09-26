@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 
 import {
@@ -8,13 +7,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { t } from "@/i18n";
-import { VersionData } from "@/lib/api";
+import { useVersion } from "@/queries/settings";
 
 export const AboutContent = () => {
-  const { data } = useQuery({
-    queryFn: async () => await VersionData.get(),
-    queryKey: ["version"],
-  });
+  const { data } = useVersion();
 
   return (
     <SettingsSection title={t("关于")}>

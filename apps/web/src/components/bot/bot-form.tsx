@@ -1,12 +1,19 @@
 import type { z } from "zod";
 
 import type { BotAPI } from "#shared/model/bot/api";
+import type { DiscordConfig } from "#shared/model/bot/schema/discord";
+import {
+  KookHttpConfigSchema,
+  KookWsConfigSchema,
+} from "#shared/model/bot/schema/kook";
 import type {
   KookConfig,
   KookHttpConfig,
   KookWsConfig,
 } from "#shared/model/bot/schema/kook";
+import { MilkyConfigSchema } from "#shared/model/bot/schema/milky";
 import type { MilkyConfig } from "#shared/model/bot/schema/milky";
+import { OneBotWSConfigSchema } from "#shared/model/bot/schema/onebot";
 import type {
   OneBotConfig,
   OneBotWSConfig,
@@ -27,9 +34,17 @@ import { t } from "@/i18n";
 
 export type BotFormValue = Partial<z.infer<typeof BotAPI.POST.request>>;
 
+// 默认值取自 shared schema；partial() 保留 .default()，必填项给空串
+const kookWsDefaults = (token: string): KookWsConfig =>
+  ({
+    ...KookWsConfigSchema.partial().parse({ protocol: "ws" }),
+    protocol: "ws",
+    token,
+  }) as KookWsConfig;
+
 const buildDefaultConfig = (
   type?: PlatformType,
-): OneBotConfig | { token: string } | KookConfig | MilkyConfig | undefined => {
+): OneBotConfig | DiscordConfig | KookConfig | MilkyConfig | undefined => {
   if (type === PlatformType.Onebot) {
     return { path: "", protocol: "ws-reverse", selfId: "", token: "" };
   }
@@ -37,36 +52,24 @@ const buildDefaultConfig = (
     return { token: "" };
   }
   if (type === PlatformType.Kook) {
-    return {
-      protocol: "ws",
-      retryInterval: 3000,
-      retryLazy: 1000,
-      retryTimes: 3,
-      token: "",
-    };
+    return kookWsDefaults("");
   }
   if (type === PlatformType.Milky) {
     return {
-      endpoint: "http://127.0.0.1:3000",
-      retryInterval: 3000,
-      retryLazy: 1000,
-      retryTimes: 3,
+      ...MilkyConfigSchema.partial().parse({}),
       token: "",
-    };
+    } as MilkyConfig;
   }
   return undefined;
 };
 
-const buildWsConfig = (selfId: string, token: string): OneBotWSConfig => ({
-  endpoint: "",
-  protocol: "ws",
-  retryInterval: 3000,
-  retryLazy: 1000,
-  retryTimes: 3,
-  selfId,
-  timeout: 5000,
-  token,
-});
+const buildWsConfig = (selfId: string, token: string): OneBotWSConfig =>
+  ({
+    ...OneBotWSConfigSchema.partial().parse({ protocol: "ws" }),
+    endpoint: "",
+    selfId,
+    token,
+  }) as OneBotWSConfig;
 
 const buildWsReverseConfig = (
   selfId: string,
@@ -98,6 +101,36 @@ const Field = ({
   </div>
 );
 
+interface Retry {
+  retryTimes: number;
+  retryInterval: number;
+  retryLazy: number;
+}
+
+const RetryFields = ({
+  value,
+  onChange,
+}: {
+  value: Retry;
+  onChange: (patch: Partial<Retry>) => void;
+}) =>
+  (
+    [
+      [t("重试次数"), "retryTimes"],
+      [t("重试间隔（毫秒）"), "retryInterval"],
+      [t("重试延迟（毫秒）"), "retryLazy"],
+    ] as const
+  ).map(([label, key]) => (
+    <Field key={key} label={label} required>
+      <NumberInput
+        onChange={(next) => {
+          onChange({ [key]: next });
+        }}
+        value={value[key]}
+      />
+    </Field>
+  ));
+
 /** Bot 配置表单。受控组件。 */
 export const BotForm = ({
   value,
@@ -114,7 +147,7 @@ export const BotForm = ({
       : undefined;
   const discord =
     value.platform === PlatformType.Discord
-      ? (value.config as { token: string } | undefined)
+      ? (value.config as DiscordConfig | undefined)
       : undefined;
   const kook =
     value.platform === PlatformType.Kook
@@ -157,14 +190,12 @@ export const BotForm = ({
     const token = kook?.token ?? "";
     const config: KookWsConfig | KookHttpConfig =
       protocol === "ws"
-        ? {
-            protocol: "ws",
-            retryInterval: 3000,
-            retryLazy: 1000,
-            retryTimes: 3,
+        ? kookWsDefaults(token)
+        : ({
+            ...KookHttpConfigSchema.partial().parse({ protocol: "http" }),
             token,
-          }
-        : { path: "/kook", protocol: "http", token, verifyToken: "" };
+            verifyToken: "",
+          } as KookHttpConfig);
     onChange({ ...value, config });
   };
 
@@ -284,24 +315,15 @@ export const BotForm = ({
                   value={ws.endpoint}
                 />
               </Field>
-              {(
-                [
-                  [t("超时时间（毫秒）"), "timeout", ws.timeout],
-                  [t("重试次数"), "retryTimes", ws.retryTimes],
-                  [t("重试间隔（毫秒）"), "retryInterval", ws.retryInterval],
-                  [t("重试延迟（毫秒）"), "retryLazy", ws.retryLazy],
-                ] as const
-              ).map(([label, key, val]) => (
-                <Field key={key} label={label} required>
-                  <Input
-                    onChange={(e) => {
-                      setOnebot({ [key]: Number(e.target.value) });
-                    }}
-                    type="number"
-                    value={val}
-                  />
-                </Field>
-              ))}
+              <Field label={t("超时时间（毫秒）")} required>
+                <NumberInput
+                  onChange={(timeout) => {
+                    setOnebot({ timeout });
+                  }}
+                  value={ws.timeout}
+                />
+              </Field>
+              <RetryFields onChange={setOnebot} value={ws} />
             </>
           ) : null}
         </div>
@@ -335,28 +357,7 @@ export const BotForm = ({
             </Select>
           </Field>
 
-          {kookWs
-            ? (
-                [
-                  [t("重试次数"), "retryTimes", kookWs.retryTimes],
-                  [
-                    t("重试间隔（毫秒）"),
-                    "retryInterval",
-                    kookWs.retryInterval,
-                  ],
-                  [t("重试延迟（毫秒）"), "retryLazy", kookWs.retryLazy],
-                ] as const
-              ).map(([label, key, val]) => (
-                <Field key={key} label={label} required>
-                  <NumberInput
-                    onChange={(next) => {
-                      setKook({ [key]: next });
-                    }}
-                    value={val}
-                  />
-                </Field>
-              ))
-            : null}
+          {kookWs ? <RetryFields onChange={setKook} value={kookWs} /> : null}
 
           {kookHttp ? (
             <>
@@ -403,22 +404,7 @@ export const BotForm = ({
               value={milky.token}
             />
           </Field>
-          {(
-            [
-              [t("重试次数"), "retryTimes", milky.retryTimes],
-              [t("重试间隔（毫秒）"), "retryInterval", milky.retryInterval],
-              [t("重试延迟（毫秒）"), "retryLazy", milky.retryLazy],
-            ] as const
-          ).map(([label, key, val]) => (
-            <Field key={key} label={label} required>
-              <NumberInput
-                onChange={(next) => {
-                  setMilky({ [key]: next });
-                }}
-                value={val}
-              />
-            </Field>
-          ))}
+          <RetryFields onChange={setMilky} value={milky} />
         </div>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { UseQueryResult } from "@tanstack/react-query";
 
 import type {
@@ -19,27 +19,17 @@ export const useTemplates = (): UseQueryResult<TemplateManifest[]> =>
     queryKey: templatesKey,
   });
 
-export const useUploadTemplate = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useUploadTemplate = () =>
+  useMutation({
     mutationFn: async (file: File) => await TemplateData.upload(file),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: templatesKey });
-    },
   });
-};
 
-export const useDeleteTemplate = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useDeleteTemplate = () =>
+  useMutation({
     mutationFn: async (id: string) => {
       await TemplateData.delete(id);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: templatesKey });
-    },
   });
-};
 
 export const useTemplateInstances = (
   serverId: number,
@@ -49,39 +39,24 @@ export const useTemplateInstances = (
     queryKey: templateInstancesKey(serverId),
   });
 
-export const useCreateInstance = (serverId: number) => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useCreateInstance = (serverId: number) =>
+  useMutation({
     mutationFn: async (body: TemplateInstanceCreate) =>
       await TemplateInstanceData.create(serverId, body),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: templateInstancesKey(serverId) });
-    },
   });
-};
 
-export const useUpdateInstance = (serverId: number) => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useUpdateInstance = (serverId: number) =>
+  useMutation({
     mutationFn: async (args: {
       instanceId: string;
       body: TemplateInstanceUpdate;
     }) =>
       await TemplateInstanceData.update(serverId, args.instanceId, args.body),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: templateInstancesKey(serverId) });
-    },
   });
-};
 
-export const useDeleteInstance = (serverId: number) => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useDeleteInstance = (serverId: number) =>
+  useMutation({
     mutationFn: async (instanceId: string) => {
       await TemplateInstanceData.delete(serverId, instanceId);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: templateInstancesKey(serverId) });
-    },
   });
-};

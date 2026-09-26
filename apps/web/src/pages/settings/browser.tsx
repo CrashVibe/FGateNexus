@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import { clamp } from "lodash-es";
 import {
   ArrowUpCircle,
@@ -12,9 +11,14 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { z } from "zod";
 
 import { ACTIVE_STATUSES } from "#shared/model/settings";
-import type { DownloadState, DownloadStatus } from "#shared/model/settings";
+import type {
+  DownloadState,
+  DownloadStatus,
+  SettingsAPI,
+} from "#shared/model/settings";
 import { LoadingState } from "@/components/common/loading-state";
 import {
   SettingsBlock,
@@ -29,10 +33,12 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDownloadStream } from "@/hooks/use-download-stream";
+import { useSSE } from "@/hooks/use-sse";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { t } from "@/i18n";
 import { BrowserData } from "@/lib/api";
 import { errorMessage } from "@/lib/http";
+import { useBrowserConfig } from "@/queries/settings";
 
 const IDLE_STATE: DownloadState = {
   buildId: null,
@@ -44,11 +50,7 @@ const IDLE_STATE: DownloadState = {
 
 const toMB = (b: number): string => (b / 1024 / 1024).toFixed(1);
 
-interface UpdateInfo {
-  currentBuildId: string | null;
-  hasUpdate: boolean;
-  latestBuildId: string;
-}
+type UpdateInfo = z.infer<typeof SettingsAPI.CHECK_UPDATE_GET.response>;
 
 const UpdateInfoAlert = ({ info }: { info: UpdateInfo }) => {
   if (!info.hasUpdate) {
@@ -95,10 +97,7 @@ export const BrowserContent = () => {
     data: config,
     isLoading: configLoading,
     refetch: refetchConfig,
-  } = useQuery({
-    queryFn: async () => await BrowserData.get(),
-    queryKey: ["browser-config"],
-  });
+  } = useBrowserConfig();
 
   useEffect(() => {
     if (config) {
@@ -137,7 +136,12 @@ export const BrowserContent = () => {
     }
   }, [downloadState, refetchConfig]);
 
-  useDownloadStream(true, setDownloadState);
+  useSSE<DownloadState>(
+    true,
+    "/api/settings/browser/download-stream",
+    "progress",
+    setDownloadState,
+  );
 
   const downloadStatusText = ((): string => {
     const { status, downloadedBytes, totalBytes } = downloadState;
@@ -250,8 +254,16 @@ export const BrowserContent = () => {
     </Tabs>
   );
 
+  const concurrencyDirty =
+    config !== undefined && concurrency !== String(config.maxConcurrentRenders);
+  const pathDirty =
+    customPath.trim() !== "" &&
+    customPath.trim() !== (config?.executablePath ?? "");
+  const guard = useUnsavedGuard(concurrencyDirty || pathDirty);
+
   return (
     <>
+      {guard}
       {configLoading ? (
         <LoadingState />
       ) : (
@@ -260,12 +272,7 @@ export const BrowserContent = () => {
             description={t(
               "图片渲染功能需要浏览器支持（chrome-headless-shell）",
             )}
-            save={{
-              dirty:
-                config !== undefined &&
-                concurrency !== String(config.maxConcurrentRenders),
-              onSave: saveConcurrency,
-            }}
+            save={{ dirty: concurrencyDirty, onSave: saveConcurrency }}
             title={
               <span className="inline-flex items-center gap-2">
                 {t("浏览器")}
@@ -415,12 +422,7 @@ export const BrowserContent = () => {
               description={t(
                 "填写系统中已安装的 Chrome Headless Shell 或 Chromium 可执行文件的绝对路径",
               )}
-              save={{
-                dirty:
-                  customPath.trim() !== "" &&
-                  customPath.trim() !== (config?.executablePath ?? ""),
-                onSave: saveCustomPath,
-              }}
+              save={{ dirty: pathDirty, onSave: saveCustomPath }}
               actions={modeSwitch}
               title={t("手动指定浏览器路径")}
             >

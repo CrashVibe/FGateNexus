@@ -21,7 +21,7 @@ export const MessageTemplateField = ({
   preview,
   multiline = false,
   maxLength,
-  previewClassName = "text-green-500",
+  previewClassName = "text-success",
   previewNode,
   rows = 2,
 }: {

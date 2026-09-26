@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { z } from "zod";
 
@@ -23,25 +23,15 @@ export const useServer = (id: number): UseQueryResult<ServerWithStatus> =>
     queryKey: serverKey(id),
   });
 
-export const useCreateServer = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useCreateServer = () =>
+  useMutation({
     mutationFn: async (data: z.infer<typeof ServersAPI.POST.request>) =>
       await ServerData.post(data),
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: serversKey });
-    },
   });
-};
 
-export const useDeleteServer = () => {
-  const qc = useQueryClient();
-  return useMutation({
+export const useDeleteServer = () =>
+  useMutation({
     mutationFn: async (id: number) => {
       await ServerData.delete(id);
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: serversKey });
-    },
   });
-};
